@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "migratesqldb_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/RMI/pacta/cmd/tools/migratesqldb",
+    visibility = ["//visibility:private"],
+    deps = ["//cmd/tools/migratesqldb/cmd"],
+)
+
+go_binary(
+    name = "migratesqldb",
+    embed = [":migratesqldb_lib"],
+    visibility = ["//visibility:public"],
+)

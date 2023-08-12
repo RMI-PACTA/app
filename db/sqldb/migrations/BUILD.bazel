@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+filegroup(
+    name = "migrations",
+    srcs = glob(["*.sql"]),
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "migrations_test",
+    srcs = ["migrations_test.go"],
+    data = [
+        ":migrations",
+        "//db/sqldb/golden",
+    ],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_silicon_ally_testpgx//:testpgx",
+        "@com_github_silicon_ally_testpgx//migrate",
+        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+    ],
+)

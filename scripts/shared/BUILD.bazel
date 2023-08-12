@@ -1,0 +1,11 @@
+sh_library(
+    name = "kv",
+    srcs = ["kv.sh"],
+    visibility = ["//visibility:public"],
+)
+
+sh_library(
+    name = "migrate",
+    srcs = ["migrate.sh"],
+    visibility = ["//visibility:public"],
+)

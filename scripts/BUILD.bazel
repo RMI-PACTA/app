@@ -1,0 +1,49 @@
+sh_binary(
+    name = "run_server",
+    srcs = ["run_server.sh"],
+)
+
+sh_binary(
+    name = "run_keygen",
+    srcs = ["run_keygen.sh"],
+)
+
+sh_binary(
+    name = "run_genjwt",
+    srcs = ["run_genjwt.sh"],
+)
+
+sh_binary(
+    name = "db_shell",
+    srcs = ["db_shell.sh"],
+    deps = [
+        "//scripts/shared:kv",
+    ],
+)
+
+sh_binary(
+    name = "regen_db_goldens",
+    srcs = ["regen_db_goldens.sh"],
+    deps = [
+        "//scripts/shared:kv",
+        "//scripts/shared:migrate",
+    ],
+)
+
+sh_binary(
+    name = "rollback_db",
+    srcs = ["rollback_db.sh"],
+    deps = [
+        "//scripts/shared:kv",
+        "//scripts/shared:migrate",
+    ],
+)
+
+sh_binary(
+    name = "run_db",
+    srcs = ["run_db.sh"],
+    deps = [
+        "//scripts/shared:kv",
+        "//scripts/shared:migrate",
+    ],
+)

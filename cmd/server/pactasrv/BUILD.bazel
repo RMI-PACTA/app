@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pactasrv",
+    srcs = ["pactasrv.go"],
+    importpath = "github.com/RMI/pacta/cmd/server/pactasrv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:pacta",
+        "//db",
+        "//openapi:pacta_generated",
+    ],
+)
+
+go_test(
+    name = "pactasrv_test",
+    srcs = ["pactasrv_test.go"],
+    embed = [":pactasrv"],
+    deps = [
+        "//openapi:pacta_generated",
+        "@com_github_go_chi_jwtauth_v5//:jwtauth",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_lestrrat_go_jwx_v2//jwt",
+    ],
+)

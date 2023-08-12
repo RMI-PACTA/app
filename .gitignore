@@ -1,0 +1,6 @@
+/bazel-*
+/test_ed25519.key
+/test_ed25519.pub
+/test_server.key
+/test_server.pub
+/.postgres-data

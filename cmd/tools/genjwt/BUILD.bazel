@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "genjwt_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/RMI/pacta/cmd/tools/genjwt",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//keyutil",
+        "@com_github_go_chi_jwtauth_v5//:jwtauth",
+    ],
+)
+
+go_binary(
+    name = "genjwt",
+    embed = [":genjwt_lib"],
+    visibility = ["//visibility:public"],
+)

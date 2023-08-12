@@ -1,0 +1,8 @@
+load("@com_siliconally_rules_oapi_codegen//oapi_codegen:def.bzl", "oapi_codegen_go")
+
+oapi_codegen_go(
+    name = "pacta",
+    importpath = "github.com/RMI/pacta/openapi/pacta",
+    spec = "pacta.yaml",
+    visibility = ["//visibility:public"],
+)

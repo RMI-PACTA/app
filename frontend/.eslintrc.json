@@ -1,0 +1,50 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "ignorePatterns": [
+    "openapi/generated/**/*.ts"
+  ],
+  "extends": [
+    "standard-with-typescript",
+    "plugin:vue/vue3-recommended",
+    "./.nuxt/.eslint.globals.json"
+  ],
+  "parser": "vue-eslint-parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "parser": "@typescript-eslint/parser",
+    "sourceType": "module",
+    "project": [
+      "tsconfig.json"
+    ],
+    "extraFileExtensions": [
+      "vue"
+    ]
+  },
+  "plugins": [
+    "vue",
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "no-fallthrough": [
+      "error",
+      {
+        "commentPattern": "fallthrough"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "components/*/**/*.vue",
+        "pages/**/*.vue",
+        "layouts/**/*.vue"
+      ],
+      "rules": {
+        "vue/multi-word-component-names": 0
+      }
+    }
+  ]
+}

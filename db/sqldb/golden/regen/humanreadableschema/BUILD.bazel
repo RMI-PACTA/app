@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "humanreadableschema_lib",
+    srcs = ["humanreadableschema.go"],
+    importpath = "github.com/RMI/pacta/db/sqldb/golden/regen/humanreadableschema",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_jackc_pgx_v4//pgxpool",
+        "@com_github_silicon_ally_testpgx//:testpgx",
+        "@com_github_silicon_ally_testpgx//migrate",
+        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "humanreadableschema",
+    data = ["//db/sqldb/migrations"],
+    embed = [":humanreadableschema_lib"],
+    visibility = ["//visibility:public"],
+)
