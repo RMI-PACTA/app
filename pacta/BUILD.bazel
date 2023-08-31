@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pacta",
+    srcs = ["pacta.go"],
+    importpath = "github.com/RMI/pacta/pacta",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pacta_test",
+    srcs = [
+        "clone_test.go",
+        "enum_test.go",
+    ],
+    embed = [":pacta"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+    ],
+)
