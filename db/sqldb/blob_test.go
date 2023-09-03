@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -128,6 +129,38 @@ func TestBlobDeletion(t *testing.T) {
 	if diff := cmp.Diff(m, map[pacta.BlobID]*pacta.Blob{}, blobCmpOpts()); diff != "" {
 		t.Fatalf("unexpected diff (-want +got)\n%s", diff)
 	}
+}
+
+func TestFileTypePersistability(t *testing.T) {
+	ctx := context.Background()
+	tdb := createDBForTesting(t)
+	tx := tdb.NoTxn(ctx)
+	base := &pacta.Blob{
+		BlobURI:  "blob-uri",
+		FileType: pacta.FileType_HTML,
+		FileName: "file-name",
+	}
+	var id pacta.BlobID
+	iteration := 0
+
+	write := func(ft pacta.FileType) error {
+		blob := base.Clone()
+		blob.BlobURI = pacta.BlobURI(fmt.Sprintf("blob-uri-%d", iteration))
+		blob.FileType = ft
+		iteration++
+		id2, err := tdb.CreateBlob(tx, blob)
+		id = id2
+		return err
+	}
+	read := func() (pacta.FileType, error) {
+		b, err := tdb.Blob(tx, id)
+		if err != nil {
+			return "", err
+		}
+		return b.FileType, nil
+	}
+
+	testEnumConvertability(t, write, read, pacta.FileTypeValues)
 }
 
 func blobCmpOpts() cmp.Option {

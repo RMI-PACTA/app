@@ -198,14 +198,15 @@ CREATE TABLE public.audit_log (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     actor_type public.audit_log_actor_type NOT NULL,
     actor_id text NOT NULL,
-    actor_owner_id text,
+    actor_owner_id text NOT NULL,
     action public.audit_log_action NOT NULL,
     primary_target_type public.audit_log_target_type NOT NULL,
     primary_target_id text NOT NULL,
-    primary_target_owner_id text,
-    secondary_target_type public.audit_log_target_type NOT NULL,
+    primary_target_owner_id text NOT NULL,
+    secondary_target_type public.audit_log_target_type,
     secondary_target_id text NOT NULL,
-    secondary_target_owner_id text
+    secondary_target_owner_id text,
+    id text NOT NULL
 );
 
 
@@ -498,6 +499,14 @@ ALTER TABLE ONLY public.analysis
 
 
 --
+-- Name: audit_log audit_log_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.audit_log
+    ADD CONSTRAINT audit_log_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: blob blob_blob_uri_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -708,30 +717,6 @@ ALTER TABLE ONLY public.analysis
 
 ALTER TABLE ONLY public.analysis
     ADD CONSTRAINT analysis_portfolio_snapshot_id_fkey FOREIGN KEY (portfolio_snapshot_id) REFERENCES public.portfolio_snapshot(id) ON DELETE RESTRICT;
-
-
---
--- Name: audit_log audit_log_actor_owner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.audit_log
-    ADD CONSTRAINT audit_log_actor_owner_id_fkey FOREIGN KEY (actor_owner_id) REFERENCES public.owner(id) ON DELETE RESTRICT;
-
-
---
--- Name: audit_log audit_log_primary_target_owner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.audit_log
-    ADD CONSTRAINT audit_log_primary_target_owner_id_fkey FOREIGN KEY (primary_target_owner_id) REFERENCES public.owner(id) ON DELETE RESTRICT;
-
-
---
--- Name: audit_log audit_log_secondary_target_owner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.audit_log
-    ADD CONSTRAINT audit_log_secondary_target_owner_id_fkey FOREIGN KEY (secondary_target_owner_id) REFERENCES public.owner(id) ON DELETE RESTRICT;
 
 
 --
