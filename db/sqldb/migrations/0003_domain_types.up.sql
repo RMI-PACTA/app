@@ -28,7 +28,7 @@ CREATE TABLE pacta_user (
     name TEXT NOT NULL,
     -- Null until the user explicitly choses something. Will be defaulted based on the domain accessed from.
     preferred_language language,
-    created_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(authn_mechanism, authn_id)
 );
 
@@ -37,7 +37,9 @@ CREATE TABLE pacta_version (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     digest TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    -- In order to enforce the constraint that there is at most one default version,
+    -- we use the approach described here: https://dba.stackexchange.com/questions/197562/constraint-one-boolean-row-is-true-all-other-rows-false
     -- NULL = is not default, TRUE = is default, enforced via the checks below.
     is_default BOOLEAN
 );
@@ -55,12 +57,12 @@ CREATE TABLE initiative (
     is_accepting_new_portfolios BOOLEAN NOT NULL,
     pacta_version_id TEXT NOT NULL REFERENCES pacta_version (id) ON DELETE RESTRICT,
     language language NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE initiative_invitation (
     id TEXT PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     used_at TIMESTAMPTZ,
     initiative_id TEXT NOT NULL REFERENCES initiative (id) ON DELETE RESTRICT,
     used_by_user_id TEXT REFERENCES pacta_user (id) ON DELETE RESTRICT
@@ -71,7 +73,7 @@ CREATE TABLE initiative_user_relationship (
     initiative_id TEXT NOT NULL,
     manager BOOLEAN NOT NULL,
     member BOOLEAN NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY(user_id, initiative_id)
 );
 
@@ -87,7 +89,7 @@ CREATE TABLE blob (
     blob_uri TEXT NOT NULL UNIQUE,
     file_type file_type NOT NULL,
     file_name TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- We use the owner abstraction since there are (at minimum) two types of entities that can own data:
@@ -112,7 +114,7 @@ CREATE TABLE incomplete_upload (
     name TEXT NOT NULL,
     description TEXT NOT NULL,    
     holdings_date TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     ran_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
     failure_code failure_code,
@@ -129,7 +131,7 @@ CREATE TABLE portfolio (
     blob_id TEXT NOT NULL REFERENCES blob (id) ON DELETE RESTRICT,
     admin_debug_enabled BOOLEAN NOT NULL,
     -- These are up for debate, but their basic goal is to help the user identify and differentiate between portfolios.
-    number_of_rows INT8
+    number_of_rows INTEGER 
 );
 
 CREATE TABLE portfolio_group (
@@ -137,19 +139,19 @@ CREATE TABLE portfolio_group (
     owner_id TEXT NOT NULL REFERENCES owner (id) ON DELETE RESTRICT,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL 
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
 );
 
 CREATE TABLE portfolio_group_membership (
     portfolio_id TEXT REFERENCES portfolio (id) ON DELETE RESTRICT,
     portfolio_group_id TEXT REFERENCES portfolio_group (id) ON DELETE RESTRICT,
-    created_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
     
 CREATE TABLE portfolio_initiative_membership (
     portfolio_id TEXT NOT NULL REFERENCES portfolio (id) ON DELETE RESTRICT,
     initiative_id TEXT NOT NULL REFERENCES initiative (id) ON DELETE RESTRICT,
-    created_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     added_by_user_id TEXT REFERENCES pacta_user (id) ON DELETE RESTRICT
 );
 
@@ -180,7 +182,7 @@ CREATE TABLE analysis (
     portfolio_snapshot_id TEXT NOT NULL REFERENCES portfolio_snapshot (id) ON DELETE RESTRICT,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     ran_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
     failure_code failure_code,
@@ -226,7 +228,7 @@ CREATE TYPE audit_log_target_type AS ENUM (
 );
 
 CREATE TABLE audit_log (
-    time TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actor_type audit_log_actor_type NOT NULL,
     actor_id TEXT NOT NULL,
     actor_owner_id TEXT REFERENCES owner (id) ON DELETE RESTRICT,

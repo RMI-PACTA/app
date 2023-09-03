@@ -165,7 +165,7 @@ CREATE TABLE public.analysis (
     portfolio_snapshot_id text NOT NULL,
     name text NOT NULL,
     description text NOT NULL,
-    created_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     ran_at timestamp with time zone,
     completed_at timestamp with time zone,
     failure_code public.failure_code,
@@ -195,7 +195,7 @@ ALTER TABLE public.analysis_artifact OWNER TO postgres;
 --
 
 CREATE TABLE public.audit_log (
-    "time" timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     actor_type public.audit_log_actor_type NOT NULL,
     actor_id text NOT NULL,
     actor_owner_id text,
@@ -220,7 +220,7 @@ CREATE TABLE public.blob (
     blob_uri text NOT NULL,
     file_type public.file_type NOT NULL,
     file_name text NOT NULL,
-    created_at timestamp with time zone NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -238,7 +238,7 @@ CREATE TABLE public.incomplete_upload (
     name text NOT NULL,
     description text NOT NULL,
     holdings_date timestamp with time zone,
-    created_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     ran_at timestamp with time zone,
     completed_at timestamp with time zone,
     failure_code public.failure_code,
@@ -263,7 +263,7 @@ CREATE TABLE public.initiative (
     is_accepting_new_portfolios boolean NOT NULL,
     pacta_version_id text NOT NULL,
     language public.language NOT NULL,
-    created_at timestamp with time zone NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -275,7 +275,7 @@ ALTER TABLE public.initiative OWNER TO postgres;
 
 CREATE TABLE public.initiative_invitation (
     id text NOT NULL,
-    created_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     used_at timestamp with time zone,
     initiative_id text NOT NULL,
     used_by_user_id text
@@ -293,7 +293,7 @@ CREATE TABLE public.initiative_user_relationship (
     initiative_id text NOT NULL,
     manager boolean NOT NULL,
     member boolean NOT NULL,
-    updated_at timestamp with time zone NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -327,7 +327,7 @@ CREATE TABLE public.pacta_user (
     super_admin boolean NOT NULL,
     name text NOT NULL,
     preferred_language public.language,
-    created_at timestamp with time zone NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -342,7 +342,7 @@ CREATE TABLE public.pacta_version (
     name text NOT NULL,
     description text NOT NULL,
     digest text NOT NULL,
-    created_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     is_default boolean,
     CONSTRAINT is_default_is_true_or_null CHECK (is_default)
 );
@@ -363,7 +363,7 @@ CREATE TABLE public.portfolio (
     holdings_date timestamp with time zone,
     blob_id text NOT NULL,
     admin_debug_enabled boolean NOT NULL,
-    number_of_rows bigint
+    number_of_rows integer
 );
 
 
@@ -378,7 +378,7 @@ CREATE TABLE public.portfolio_group (
     owner_id text NOT NULL,
     name text NOT NULL,
     description text NOT NULL,
-    created_at timestamp with time zone NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -391,7 +391,7 @@ ALTER TABLE public.portfolio_group OWNER TO postgres;
 CREATE TABLE public.portfolio_group_membership (
     portfolio_id text,
     portfolio_group_id text,
-    created_at timestamp with time zone NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -404,7 +404,7 @@ ALTER TABLE public.portfolio_group_membership OWNER TO postgres;
 CREATE TABLE public.portfolio_initiative_membership (
     portfolio_id text NOT NULL,
     initiative_id text NOT NULL,
-    created_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     added_by_user_id text
 );
 

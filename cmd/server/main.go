@@ -18,7 +18,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/namsral/flag"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
@@ -93,7 +93,7 @@ func run(args []string) error {
 	}
 
 	logger.Info("Connecting to database", zap.String("db_host", postgresCfg.ConnConfig.Host))
-	pgConn, err := pgxpool.ConnectConfig(ctx, postgresCfg)
+	pgConn, err := pgxpool.NewWithConfig(ctx, postgresCfg)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}

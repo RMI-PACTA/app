@@ -6,7 +6,7 @@ import (
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 func (d *DB) PortfolioInitiativeMembershipsByPortfolio(tx db.Tx, pid pacta.PortfolioID) ([]*pacta.PortfolioInitiativeMembership, error) {
@@ -46,9 +46,9 @@ func (d *DB) CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioI
 	createdAt := time.Now()
 	err := d.exec(tx, `
 		INSERT INTO portfolio_initiative_membership	
-			(portfolio_id, initiative_id, created_at, added_by_user_id)
+			(portfolio_id, initiative_id, added_by_user_id)
 			VALUES
-			($1, $2, $3, $4)
+			($1, $2, $3)
 		ON CONFLICT DO NOTHING;`,
 		pim.Portfolio.ID, pim.Initiative.ID, createdAt, pim.AddedBy.ID)
 	if err != nil {

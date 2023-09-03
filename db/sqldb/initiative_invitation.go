@@ -2,16 +2,20 @@ package sqldb
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const initiativeInvitiationIDNamespace = "iivte"
-const initiativeIntivtationSelectColumns = `id, created_at, used_at, initiative_id, used_by_user_id`
+const initiativeIntivtationSelectColumns = `
+	initiative_invitation.id,
+	initiative_invitation.created_at,
+	initiative_invitation.used_at,
+	initiative_invitation.initiative_id,
+	initiative_invitation.used_by_user_id`
 
 func (d *DB) InitiativeInvitation(tx db.Tx, id pacta.InitiativeInvitationID) (*pacta.InitiativeInvitation, error) {
 	rows, err := d.query(tx, `
@@ -51,12 +55,11 @@ func (d *DB) CreateInitiativeInvitation(tx db.Tx, ii *pacta.InitiativeInvitation
 	if ii.ID == "" {
 		ii.ID = pacta.InitiativeInvitationID(d.randomID(initiativeInvitiationIDNamespace))
 	}
-	createdAt := time.Now()
 	err := d.exec(tx, `
 		INSERT INTO initiative_invitation
-			(id, created_at, initiative_id)					
+			(id, initiative_id)					
 			VALUES
-			($1, $2, $3)`, ii.ID, createdAt, ii.Initiative.ID)
+			($1, $2)`, ii.ID, ii.Initiative.ID)
 	if err != nil {
 		return "", fmt.Errorf("creating initiative_invitation: %w", err)
 	}
@@ -108,10 +111,10 @@ func rowToInitiativeInvitation(row rowScanner) (*pacta.InitiativeInvitation, err
 	if err != nil {
 		return nil, fmt.Errorf("scanning into initiative_invitation: %w", err)
 	}
-	if ubid.Status == pgtype.Present {
+	if ubid.Valid {
 		ii.UsedBy = &pacta.User{ID: pacta.UserID(ubid.String)}
 	}
-	if t.Status == pgtype.Present {
+	if t.Valid {
 		ii.UsedAt = t.Time
 	}
 	return ii, nil

@@ -2,16 +2,25 @@ package sqldb
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const userIDNamespace = "user"
-const userSelectColumns = `id, authn_mechanism, authn_id, entered_email, canonical_email, admin, super_admin, name, preferred_language, created_at`
+const userSelectColumns = `
+	pacta_user.id,
+	pacta_user.authn_mechanism,
+	pacta_user.authn_id,
+	pacta_user.entered_email,
+	pacta_user.canonical_email,
+	pacta_user.admin,
+	pacta_user.super_admin,
+	pacta_user.name,
+	pacta_user.preferred_language,
+	pacta_user.created_at`
 
 func (d *DB) User(tx db.Tx, id pacta.UserID) (*pacta.User, error) {
 	rows, err := d.query(tx, `
@@ -67,13 +76,12 @@ func (d *DB) CreateUser(tx db.Tx, u *pacta.User) (pacta.UserID, error) {
 		return "", fmt.Errorf("validating user for creation: %w", err)
 	}
 	id := pacta.UserID(d.randomID(userIDNamespace))
-	createdAt := time.Now()
 	err := d.exec(tx, `
 		INSERT INTO pacta_user 
-			(id, authn_mechanism, authn_id, entered_email, canonical_email, admin, super_admin, name, created_at)
+			(id, authn_mechanism, authn_id, entered_email, canonical_email, admin, super_admin, name)
 			VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9);
-		`, id, u.AuthnMechanism, u.AuthnID, u.EnteredEmail, u.CanonicalEmail, false, false, u.Name, createdAt)
+			($1, $2, $3, $4, $5, $6, $7, $8);
+		`, id, u.AuthnMechanism, u.AuthnID, u.EnteredEmail, u.CanonicalEmail, false, false, u.Name)
 	if err != nil {
 		return "", fmt.Errorf("creating pacta_user row for %q: %w", id, err)
 	}
@@ -185,7 +193,7 @@ func rowToUser(row rowScanner) (*pacta.User, error) {
 		return nil, fmt.Errorf("parsing authn_mechanism: %w", err)
 	}
 	u.AuthnMechanism = a
-	if lang.Status == pgtype.Present {
+	if lang.Valid {
 		l, err := pacta.ParseLanguage(lang.String)
 		if err != nil {
 			return nil, fmt.Errorf("parsing user preffered_language: %w", err)

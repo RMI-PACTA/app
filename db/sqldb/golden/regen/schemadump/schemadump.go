@@ -9,7 +9,7 @@ import (
 	"github.com/Silicon-Ally/testpgx"
 	"github.com/Silicon-Ally/testpgx/migrate"
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {

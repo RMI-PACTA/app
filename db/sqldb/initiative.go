@@ -3,18 +3,24 @@ package sqldb
 import (
 	"fmt"
 	"regexp"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
-const (
-	initiativeSelectColumns = `id, name, affiliation, public_description, internal_description,
-		requires_invitation_to_join, is_accepting_new_members, is_accepting_new_portfolios,
-		pacta_version_id, language, created_atdigest, created_at, COALESCE(is_default, false)`
-)
+const initiativeSelectColumns = `
+	initiative.id,
+	initiative.name,
+	initiative.affiliation,
+	initiative.public_description,
+	initiative.internal_description,
+	initiative.requires_invitation_to_join,
+	initiative.is_accepting_new_members,
+	initiative.is_accepting_new_portfolios,
+	initiative.pacta_version_id,
+	initiative.language,
+	initiative.created_at`
 
 func (d *DB) Initiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Initiative, error) {
 	rows, err := d.query(tx, `
@@ -68,13 +74,12 @@ func (d *DB) CreateInitiative(tx db.Tx, i *pacta.Initiative) error {
 	if err := validateInitiativeForCreation(i); err != nil {
 		return fmt.Errorf("validating initiative for creation: %w", err)
 	}
-	createdAt := time.Now()
 	err := d.exec(tx, `
 		INSERT INTO initiative 
-			(id, name, affiliation, public_description, internal_description, requires_invitation_to_join, is_accepting_new_members, is_accepting_new_portfolios, pacta_version_id, language, created_at)
+			(id, name, affiliation, public_description, internal_description, requires_invitation_to_join, is_accepting_new_members, is_accepting_new_portfolios, pacta_version_id, language)
 			VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`,
-		i.ID, i.Name, i.Affiliation, i.PublicDescription, i.InternalDescription, i.RequiresInvitationToJoin, i.IsAcceptingNewMembers, i.IsAcceptingNewPortfolios, i.PACTAVersion.ID, i.Language, createdAt)
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`,
+		i.ID, i.Name, i.Affiliation, i.PublicDescription, i.InternalDescription, i.RequiresInvitationToJoin, i.IsAcceptingNewMembers, i.IsAcceptingNewPortfolios, i.PACTAVersion.ID, i.Language)
 	if err != nil {
 		return fmt.Errorf("creating initiative: %w", err)
 	}
@@ -182,7 +187,7 @@ func (db *DB) putInitiative(tx db.Tx, i *pacta.Initiative) error {
 			is_accepting_new_members = $7,
 			is_accepting_new_portfolios = $8,
 			pacta_version_id = $9,
-			language = $10,
+			language = $10
 		WHERE id = $1;
 		`, i.ID, i.Name, i.Affiliation, i.PublicDescription, i.InternalDescription, i.RequiresInvitationToJoin, i.IsAcceptingNewMembers, i.IsAcceptingNewPortfolios, i.PACTAVersion.ID, i.Language)
 	if err != nil {
@@ -191,6 +196,7 @@ func (db *DB) putInitiative(tx db.Tx, i *pacta.Initiative) error {
 	return nil
 }
 
+// TODO(grady) move this to the Resolver-equivalent layer when that exists.
 // Unlike other mechanisms for creating IDs, initiative IDs are user-specified.
 var initiativeIDRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 

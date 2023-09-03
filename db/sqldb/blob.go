@@ -2,15 +2,19 @@ package sqldb
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 const blobIDNamespace = "blob"
-const blobSelectColumns = `id, blob_uri, file_type, file_name, created_at`
+const blobSelectColumns = `
+	blob.id,
+	blob.blob_uri,
+	blob.file_type,
+	blob.file_name,
+	blob.created_at`
 
 func (d *DB) Blob(tx db.Tx, id pacta.BlobID) (*pacta.Blob, error) {
 	rows, err := d.query(tx, `
@@ -51,13 +55,12 @@ func (d *DB) CreateBlob(tx db.Tx, b *pacta.Blob) (pacta.BlobID, error) {
 		return "", fmt.Errorf("validating blob for creation: %w", err)
 	}
 	id := pacta.BlobID(d.randomID(blobIDNamespace))
-	createdAt := time.Now()
 	err := d.exec(tx, `
 		INSERT INTO blob 
-			(id, blob_uri, file_type, file_name, created_at)
+			(id, blob_uri, file_type, file_name)
 			VALUES
-			($1, $2, $3, $4, $5);
-	`, id, b.BlobURI, b.FileType, b.FileName, createdAt)
+			($1, $2, $3, $4);
+	`, id, b.BlobURI, b.FileType, b.FileName)
 	if err != nil {
 		return "", fmt.Errorf("creating blob row: %w", err)
 	}
@@ -90,16 +93,10 @@ func (d *DB) UpdateBlob(tx db.Tx, id pacta.BlobID, mutations ...db.UpdateBlobFn)
 
 func (d *DB) DeleteBlob(tx db.Tx, id pacta.BlobID) (pacta.BlobURI, error) {
 	var buri pacta.BlobURI
-	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
-		row := d.queryRow(tx, `DELETE FROM blob WHERE id = $1 RETURNING blob_uri;`, id)
-		err := row.Scan(&buri)
-		if err != nil {
-			return fmt.Errorf("deleting blob: %w", err)
-		}
-		return nil
-	})
+	row := d.queryRow(tx, `DELETE FROM blob WHERE id = $1 RETURNING blob_uri;`, id)
+	err := row.Scan(&buri)
 	if err != nil {
-		return "", fmt.Errorf("while deleting blob: %w", err)
+		return "", fmt.Errorf("when deleting blob: %w", err)
 	}
 	return buri, nil
 }

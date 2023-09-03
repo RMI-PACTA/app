@@ -51,7 +51,7 @@ CREATE TYPE language AS ENUM (
 CREATE TABLE analysis (
 	analysis_type analysis_type NOT NULL,
 	completed_at timestamp with time zone,
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	description text NOT NULL,
 	failure_code failure_code,
 	failure_message text,
@@ -79,11 +79,11 @@ ALTER TABLE ONLY analysis_artifact ADD CONSTRAINT analysis_artifact_blob_id_fkey
 
 
 CREATE TABLE audit_log (
-	"time" timestamp with time zone NOT NULL,
 	action audit_log_action NOT NULL,
 	actor_id text NOT NULL,
 	actor_owner_id text,
 	actor_type audit_log_actor_type NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	primary_target_id text NOT NULL,
 	primary_target_owner_id text,
 	primary_target_type audit_log_target_type NOT NULL,
@@ -97,7 +97,7 @@ ALTER TABLE ONLY audit_log ADD CONSTRAINT audit_log_secondary_target_owner_id_fk
 
 CREATE TABLE blob (
 	blob_uri text NOT NULL,
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	file_name text NOT NULL,
 	file_type file_type NOT NULL,
 	id text NOT NULL);
@@ -109,7 +109,7 @@ CREATE TABLE incomplete_upload (
 	admin_debug_enabled boolean NOT NULL,
 	blob_id text,
 	completed_at timestamp with time zone,
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	description text NOT NULL,
 	failure_code failure_code,
 	failure_message text,
@@ -125,7 +125,7 @@ ALTER TABLE ONLY incomplete_upload ADD CONSTRAINT incomplete_upload_owner_id_fke
 
 CREATE TABLE initiative (
 	affiliation text NOT NULL,
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	id text NOT NULL,
 	internal_description text NOT NULL,
 	is_accepting_new_members boolean NOT NULL,
@@ -140,7 +140,7 @@ ALTER TABLE ONLY initiative ADD CONSTRAINT initiative_pacta_version_id_fkey FORE
 
 
 CREATE TABLE initiative_invitation (
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	id text NOT NULL,
 	initiative_id text NOT NULL,
 	used_at timestamp with time zone,
@@ -154,7 +154,7 @@ CREATE TABLE initiative_user_relationship (
 	initiative_id text NOT NULL,
 	manager boolean NOT NULL,
 	member boolean NOT NULL,
-	updated_at timestamp with time zone NOT NULL,
+	updated_at timestamp with time zone DEFAULT now() NOT NULL,
 	user_id text NOT NULL);
 ALTER TABLE ONLY initiative_user_relationship ADD CONSTRAINT initiative_user_relationship_pkey PRIMARY KEY (user_id, initiative_id);
 
@@ -176,7 +176,7 @@ CREATE TABLE pacta_user (
 	authn_id text NOT NULL,
 	authn_mechanism authn_mechanism NOT NULL,
 	canonical_email text NOT NULL,
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	entered_email text NOT NULL,
 	id text NOT NULL,
 	name text NOT NULL,
@@ -190,7 +190,7 @@ ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_pkey PRIMARY KEY (id);
 
 CREATE TABLE pacta_version (
 	CONSTRAINT is_default_is_true_or_null CHECK (is_default),
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	description text NOT NULL,
 	digest text NOT NULL,
 	id text NOT NULL,
@@ -209,7 +209,7 @@ CREATE TABLE portfolio (
 	holdings_date timestamp with time zone,
 	id text NOT NULL,
 	name text NOT NULL,
-	number_of_rows bigint,
+	number_of_rows integer,
 	owner_id text NOT NULL);
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_blob_id_fkey FOREIGN KEY (blob_id) REFERENCES blob(id) ON DELETE RESTRICT;
@@ -217,7 +217,7 @@ ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_owner_id_fkey FOREIGN KEY (o
 
 
 CREATE TABLE portfolio_group (
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	description text NOT NULL,
 	id text NOT NULL,
 	name text NOT NULL,
@@ -227,7 +227,7 @@ ALTER TABLE ONLY portfolio_group ADD CONSTRAINT portfolio_group_owner_id_fkey FO
 
 
 CREATE TABLE portfolio_group_membership (
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	portfolio_group_id text,
 	portfolio_id text);
 ALTER TABLE ONLY portfolio_group_membership ADD CONSTRAINT portfolio_group_membership_portfolio_group_id_fkey FOREIGN KEY (portfolio_group_id) REFERENCES portfolio_group(id) ON DELETE RESTRICT;
@@ -236,7 +236,7 @@ ALTER TABLE ONLY portfolio_group_membership ADD CONSTRAINT portfolio_group_membe
 
 CREATE TABLE portfolio_initiative_membership (
 	added_by_user_id text,
-	created_at timestamp with time zone NOT NULL,
+	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	initiative_id text NOT NULL,
 	portfolio_id text NOT NULL);
 ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_added_by_user_id_fkey FOREIGN KEY (added_by_user_id) REFERENCES pacta_user(id) ON DELETE RESTRICT;

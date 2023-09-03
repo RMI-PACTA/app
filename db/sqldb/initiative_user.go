@@ -6,10 +6,16 @@ import (
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
-const initiativeUserRelationshipSelectColumns = `initiative_id, user_id, member, manager, updated_at`
+const initiativeUserRelationshipSelectColumns = `
+	initiative_user_relationship.initiative_id,
+	initiative_user_relationship.user_id,
+	initiative_user_relationship.member,
+	initiative_user_relationship.manager,
+	initiative_user_relationship.updated_at
+`
 
 func (d *DB) InitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID) (*pacta.InitiativeUserRelationship, error) {
 	rows, err := d.query(tx, `

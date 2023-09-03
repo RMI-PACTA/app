@@ -167,13 +167,19 @@ func SetInitiativeInvitationUsedAt(t time.Time) UpdateInitiativeInvitationFn {
 	}
 }
 
+func ClearInitiativeInvitationUsedBy() UpdateInitiativeInvitationFn {
+	return func(ii *pacta.InitiativeInvitation) error {
+		ii.UsedBy = nil
+		return nil
+	}
+}
+
 func SetInitiativeInvitationUsedBy(u pacta.UserID) UpdateInitiativeInvitationFn {
 	return func(ii *pacta.InitiativeInvitation) error {
 		if u == "" {
-			ii.UsedBy = nil
-		} else {
-			ii.UsedBy = &pacta.User{ID: u}
+			return fmt.Errorf("cannot set used by to empty user ID")
 		}
+		ii.UsedBy = &pacta.User{ID: u}
 		return nil
 	}
 }

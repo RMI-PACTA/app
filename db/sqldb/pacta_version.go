@@ -2,15 +2,20 @@ package sqldb
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 const pactaVersionIDNamespace = "pv"
-const pactaVersionSelectColumns = `id, name, description, digest, created_at, COALESCE(is_default, false)`
+const pactaVersionSelectColumns = `
+	pacta_version.id,
+	pacta_version.name,
+	pacta_version.description,
+	pacta_version.digest,
+	pacta_version.created_at,
+	COALESCE(pacta_version.is_default, false)`
 
 func (d *DB) PACTAVersion(tx db.Tx, id pacta.PACTAVersionID) (*pacta.PACTAVersion, error) {
 	rows, err := d.query(tx, `
@@ -61,13 +66,12 @@ func (d *DB) CreatePACTAVersion(tx db.Tx, pv *pacta.PACTAVersion) (pacta.PACTAVe
 		return "", fmt.Errorf("failed pacta_version validation: %w", err)
 	}
 	id := pacta.PACTAVersionID(d.randomID(pactaVersionIDNamespace))
-	createdAt := time.Now()
 	err := d.exec(tx, `
 		INSERT INTO pacta_version 
-			(id, name, description, digest, created_at, is_default)
+			(id, name, description, digest, is_default)
 			VALUES
-			($1, $2, $3, $4, $5, $6);
-	`, id, pv.Name, pv.Description, pv.Digest, createdAt, nil)
+			($1, $2, $3, $4, $5);
+	`, id, pv.Name, pv.Description, pv.Digest, nil)
 	if err != nil {
 		return "", fmt.Errorf("creating pacta_version: %w", err)
 	}
