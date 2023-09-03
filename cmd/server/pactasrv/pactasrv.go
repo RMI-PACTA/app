@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/RMI/pacta"
 	"github.com/RMI/pacta/db"
 
 	pactaapi "github.com/RMI/pacta/openapi/pacta"
+	"github.com/RMI/pacta/pacta"
 )
 
 type DB interface {
@@ -20,7 +20,49 @@ type DB interface {
 	Transactional(context.Context, func(tx db.Tx) error) error
 	RunOrContinueTransaction(db.Tx, func(tx db.Tx) error) error
 
-	User(db.Tx, pacta.UserID) (*pacta.User, error)
+	Blob(tx db.Tx, id pacta.BlobID) (*pacta.Blob, error)
+	Blobs(tx db.Tx, ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error)
+	CreateBlob(tx db.Tx, b *pacta.Blob) (pacta.BlobID, error)
+	UpdateBlob(tx db.Tx, id pacta.BlobID, mutations ...db.UpdateBlobFn) error
+	DeleteBlob(tx db.Tx, id pacta.BlobID) (pacta.BlobURI, error)
+
+	InitiativeInvitation(tx db.Tx, id pacta.InitiativeInvitationID) (*pacta.InitiativeInvitation, error)
+	InitiativeInvitationsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeInvitation, error)
+	CreateInitiativeInvitation(tx db.Tx, ii *pacta.InitiativeInvitation) (pacta.InitiativeInvitationID, error)
+	UpdateInitiativeInvitation(tx db.Tx, id pacta.InitiativeInvitationID, mutations ...db.UpdateInitiativeInvitationFn) error
+	DeleteInitiativeInvitation(tx db.Tx, id pacta.InitiativeInvitationID) error
+
+	InitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID) (*pacta.InitiativeUserRelationship, error)
+	InitiativeUserRelationshipsByUser(tx db.Tx, uid pacta.UserID) ([]*pacta.InitiativeUserRelationship, error)
+	InitiativeUserRelationshipsByInitiatives(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error)
+	PutInitiativeUserRelationship(tx db.Tx, iur *pacta.InitiativeUserRelationship) error
+
+	Initiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Initiative, error)
+	Initiatives(tx db.Tx, ids []pacta.InitiativeID) (map[pacta.InitiativeID]*pacta.Initiative, error)
+	AllInitiatives(tx db.Tx) ([]*pacta.Initiative, error)
+	CreateInitiative(tx db.Tx, i *pacta.Initiative) error
+	UpdateInitiative(tx db.Tx, id pacta.InitiativeID, mutations ...db.UpdateInitiativeFn) error
+	DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error
+
+	PACTAVersion(tx db.Tx, id pacta.PACTAVersionID) (*pacta.PACTAVersion, error)
+	DefaultPACTAVersion(tx db.Tx) (*pacta.PACTAVersion, error)
+	PACTAVersions(tx db.Tx) ([]*pacta.PACTAVersion, error)
+	CreatePACTAVersion(tx db.Tx, pv *pacta.PACTAVersion) (pacta.PACTAVersionID, error)
+	SetDefaultPACTAVersion(tx db.Tx, id pacta.PACTAVersionID) error
+	UpdatePACTAVersion(tx db.Tx, id pacta.PACTAVersionID, mutations ...db.UpdatePACTAVersionFn) error
+	DeletePACTAVersion(tx db.Tx, id pacta.PACTAVersionID) error
+
+	PortfolioInitiativeMembershipsByPortfolio(tx db.Tx, pid pacta.PortfolioID) ([]*pacta.PortfolioInitiativeMembership, error)
+	PortfolioInitiativeMembershipsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.PortfolioInitiativeMembership, error)
+	CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioInitiativeMembership) error
+	DeletePortfolioInitiativeMembership(tx db.Tx, pid pacta.PortfolioID, iid pacta.InitiativeID) error
+
+	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
+	UserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string) (*pacta.User, error)
+	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
+	CreateUser(tx db.Tx, u *pacta.User) (pacta.UserID, error)
+	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
+	DeleteUser(tx db.Tx, id pacta.UserID) error
 }
 
 type Server struct {

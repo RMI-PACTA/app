@@ -2,156 +2,207 @@ package sqldb
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/RMI/pacta"
 	"github.com/RMI/pacta/db"
-	"github.com/jackc/pgx/v4"
+	"github.com/RMI/pacta/pacta"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (db *DB) User(tx db.Tx, id pacta.UserID) (*pacta.User, error) {
-	row := db.queryRow(tx, `
-		SELECT
-			id, name, email, created_at, auth_provider_type, auth_provider_id
-		FROM user_account
-		WHERE id = $1;
-		`, id)
-	user, err := rowToUser(row)
-	if err != nil {
-		return nil, fmt.Errorf("reading user: %w", err)
-	}
-	return user, nil
-}
+const userIDNamespace = "user"
+const userSelectColumns = `
+	pacta_user.id,
+	pacta_user.authn_mechanism,
+	pacta_user.authn_id,
+	pacta_user.entered_email,
+	pacta_user.canonical_email,
+	pacta_user.admin,
+	pacta_user.super_admin,
+	pacta_user.name,
+	pacta_user.preferred_language,
+	pacta_user.created_at`
 
-func (d *DB) UserByAuthnProvider(tx db.Tx, authnProvider pacta.Provider, authnProvidedUserID pacta.UserID) (*pacta.User, error) {
+func (d *DB) User(tx db.Tx, id pacta.UserID) (*pacta.User, error) {
 	rows, err := d.query(tx, `
-		SELECT
-			id, name, email, created_at, auth_provider_type, auth_provider_id
-		FROM user_account
-		WHERE auth_provider_type = $1 AND auth_provider_id = $2;
-		`, authnProvider, authnProvidedUserID)
+		SELECT `+userSelectColumns+`
+		FROM pacta_user 
+		WHERE id = $1;`, id)
 	if err != nil {
-		return nil, fmt.Errorf("reading user by auth: %w", err)
+		return nil, fmt.Errorf("querying user: %w", err)
 	}
-	users, err := rowsToUsers(rows)
+	us, err := rowsToUsers(rows)
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to users: %w", err)
 	}
-	if len(users) == 0 {
-		return nil, db.NotFound(authnProvidedUserID, "user")
-	} else if len(users) == 1 {
-		return users[0], nil
-	} else {
-		return nil, fmt.Errorf("expected exactly one user in result but got %d", len(users))
-	}
+	return exactlyOne("user", id, us)
 }
 
-func (db *DB) Users(tx db.Tx) ([]*pacta.User, error) {
-	rows, err := db.query(tx, `
-		SELECT
-			id, name, email, created_at, auth_provider_type, auth_provider_id
-		FROM user_account;`)
+func (d *DB) UserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string) (*pacta.User, error) {
+	rows, err := d.query(tx, `
+		SELECT `+userSelectColumns+`
+		FROM pacta_user 
+		WHERE authn_mechanism = $1 AND authn_id = $2;`, authnMechanism, authnID)
+	if err != nil {
+		return nil, fmt.Errorf("querying user: %w", err)
+	}
+	us, err := rowsToUsers(rows)
+	if err != nil {
+		return nil, fmt.Errorf("translating rows to users: %w", err)
+	}
+	return exactlyOne("user", fmt.Sprintf("%s:%s", authnMechanism, authnID), us)
+}
+
+func (d *DB) Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error) {
+	rows, err := d.query(tx, `
+		SELECT `+userSelectColumns+`
+		FROM pacta_user 
+		WHERE id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
 	if err != nil {
 		return nil, fmt.Errorf("querying users: %w", err)
 	}
-	users, err := rowsToUsers(rows)
+	us, err := rowsToUsers(rows)
 	if err != nil {
-		return nil, fmt.Errorf("reading user: %w", err)
+		return nil, fmt.Errorf("translating rows to users: %w", err)
 	}
-	return users, nil
+	result := make(map[pacta.UserID]*pacta.User)
+	for _, u := range us {
+		result[u.ID] = u
+	}
+	return result, nil
 }
 
-const userIDNamespace = "user"
-
-const defaultUserName = "Unnamed User"
-
-func (db *DB) CreateUser(
-	tx db.Tx,
-	authProviderType pacta.Provider,
-	authProviderId pacta.UserID,
-	name string,
-	email string) (pacta.UserID, error) {
-	id := pacta.UserID(db.randomID(userIDNamespace))
-	createdAt := time.Now()
-	err := db.exec(tx, `
-		INSERT INTO user_account
-			(id, name, email, created_at, auth_provider_type, auth_provider_id)
+func (d *DB) CreateUser(tx db.Tx, u *pacta.User) (pacta.UserID, error) {
+	if err := validateUserForCreation(u); err != nil {
+		return "", fmt.Errorf("validating user for creation: %w", err)
+	}
+	id := pacta.UserID(d.randomID(userIDNamespace))
+	err := d.exec(tx, `
+		INSERT INTO pacta_user 
+			(id, authn_mechanism, authn_id, entered_email, canonical_email, admin, super_admin, name)
 			VALUES
-			($1, $2, $3, $4, $5, $6);
-		`, id, name, email, createdAt, authProviderType, authProviderId)
+			($1, $2, $3, $4, $5, $6, $7, $8);
+		`, id, u.AuthnMechanism, u.AuthnID, u.EnteredEmail, u.CanonicalEmail, false, false, u.Name)
 	if err != nil {
-		return "", fmt.Errorf("creating user_account row for %s: %w", id, err)
+		return "", fmt.Errorf("creating pacta_user row for %q: %w", id, err)
 	}
 	return id, nil
 }
 
-func (d *DB) UpdateUser(
-	tx db.Tx,
-	userID pacta.UserID,
-	userMutations ...db.UpdateUserFn) error {
-	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
-		user, err := d.User(tx, userID)
+func (d *DB) UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error {
+	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
+		u, err := d.User(tx, id)
 		if err != nil {
-			return fmt.Errorf("reading user pre-mutations: %w", err)
+			return fmt.Errorf("reading user: %w", err)
 		}
-		for i, m := range userMutations {
-			err := m(user)
+		for i, m := range mutations {
+			err := m(u)
 			if err != nil {
-				return fmt.Errorf("running mutation #%d: %w", i, err)
+				return fmt.Errorf("running %d-th mutation: %w", i, err)
 			}
 		}
-		err = d.putUser(tx, user)
+		err = d.putUser(tx, u)
 		if err != nil {
-			return fmt.Errorf("writing user post-mutations: %w", err)
+			return fmt.Errorf("putting user: %w", err)
 		}
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("running update user txn: %w", err)
+		return fmt.Errorf("updating user: %w", err)
 	}
 	return nil
 }
 
-func (db *DB) putUser(tx db.Tx, user *pacta.User) error {
-	err := db.exec(tx, `
-		UPDATE user_account SET
-			name = $2,
-			email = $3
-		WHERE id = $1;
-		`, user.ID, user.Name, user.Email)
+func (d *DB) DeleteUser(tx db.Tx, id pacta.UserID) error {
+	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
+		// TODO(grady) add entity deletions here
+		err := d.exec(tx, `DELETE FROM pacta_user WHERE id = $1;`, id)
+		if err != nil {
+			return fmt.Errorf("deleting user: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("updating user_account writable fields: %w", err)
+		return fmt.Errorf("performing initiative deletion: %w", err)
 	}
 	return nil
 }
 
-func rowToUser(s rowScanner) (*pacta.User, error) {
+func (d *DB) putUser(tx db.Tx, u *pacta.User) error {
+	var lang *string
+	if u.PreferredLanguage != "" {
+		s := string(u.PreferredLanguage)
+		lang = &s
+	}
+	err := d.exec(tx, `
+		UPDATE pacta_user SET
+			admin = $2,
+			super_admin = $3,
+			name = $4,
+			preferred_language = $5
+		WHERE id = $1;
+		`, u.ID, u.Admin, u.SuperAdmin, u.Name, lang)
+	if err != nil {
+		return fmt.Errorf("updating pacta_user writable fields: %w", err)
+	}
+	return nil
+}
+
+func validateUserForCreation(u *pacta.User) error {
+	if u.ID != "" {
+		return fmt.Errorf("user ID must be empty")
+	}
+	if u.AuthnID == "" {
+		return fmt.Errorf("user AuthnID must not be empty")
+	}
+	if u.AuthnMechanism == "" {
+		return fmt.Errorf("user AuthnMechanism must not be empty")
+	}
+	if u.EnteredEmail == "" {
+		return fmt.Errorf("user EnteredEmail must not be empty")
+	}
+	if u.CanonicalEmail == "" {
+		return fmt.Errorf("user CanonicalEmail must not be empty")
+	}
+	return nil
+}
+
+func rowToUser(row rowScanner) (*pacta.User, error) {
+	var (
+		lang  pgtype.Text
+		authm string
+	)
+
 	u := &pacta.User{}
-	err := s.Scan(
+	err := row.Scan(
 		&u.ID,
+		&authm,
+		&u.AuthnID,
+		&u.EnteredEmail,
+		&u.CanonicalEmail,
+		&u.Admin,
+		&u.SuperAdmin,
 		&u.Name,
-		&u.Email,
+		&lang,
 		&u.CreatedAt,
-		&u.AuthnProviderType,
-		&u.AuthnProviderID)
+	)
 	if err != nil {
 		return nil, fmt.Errorf("scanning into user: %w", err)
+	}
+	a, err := pacta.ParseAuthnMechanism(authm)
+	if err != nil {
+		return nil, fmt.Errorf("parsing authn_mechanism: %w", err)
+	}
+	u.AuthnMechanism = a
+	if lang.Valid {
+		l, err := pacta.ParseLanguage(lang.String)
+		if err != nil {
+			return nil, fmt.Errorf("parsing user preffered_language: %w", err)
+		}
+		u.PreferredLanguage = l
 	}
 	return u, nil
 }
 
 func rowsToUsers(rows pgx.Rows) ([]*pacta.User, error) {
-	defer rows.Close()
-	var us []*pacta.User
-	for rows.Next() {
-		u, err := rowToUser(rows)
-		if err != nil {
-			return nil, fmt.Errorf("converting row to user: %w", err)
-		}
-		us = append(us, u)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("while processing user rows: %w", err)
-	}
-	return us, nil
+	return allRows("user", rows, rowToUser)
 }

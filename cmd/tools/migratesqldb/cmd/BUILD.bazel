@@ -10,7 +10,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//secrets",
-        "@com_github_jackc_pgx_v4//pgxpool",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_silicon_ally_testpgx//migrate",
         "@com_github_spf13_cobra//:cobra",
         "@io_bazel_rules_go//go/tools/bazel:go_default_library",

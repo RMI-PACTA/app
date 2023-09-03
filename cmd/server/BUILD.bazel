@@ -17,7 +17,7 @@ go_library(
         "@com_github_go_chi_chi_v5//middleware",
         "@com_github_go_chi_httprate//:httprate",
         "@com_github_go_chi_jwtauth_v5//:jwtauth",
-        "@com_github_jackc_pgx_v4//pgxpool",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_namsral_flag//:flag",
         "@com_github_rs_cors//:cors",
         "@com_github_silicon_ally_zaphttplog//:zaphttplog",

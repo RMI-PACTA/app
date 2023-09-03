@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/RMI/pacta/db/sqldb/golden/regen/schemadump",
     visibility = ["//visibility:private"],
     deps = [
-        "@com_github_jackc_pgx_v4//pgxpool",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_silicon_ally_testpgx//:testpgx",
         "@com_github_silicon_ally_testpgx//migrate",
         "@io_bazel_rules_go//go/tools/bazel:go_default_library",

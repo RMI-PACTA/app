@@ -82,6 +82,7 @@ func TestSchemaHistory(t *testing.T) {
 	want := []versionHistory{
 		{ID: 1, Version: 1}, // 0001_create_schema_migrations_history
 		{ID: 2, Version: 2}, // 0002_create_user_table
+		{ID: 3, Version: 3}, // 0003_domain_types
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {

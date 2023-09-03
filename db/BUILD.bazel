@@ -5,5 +5,5 @@ go_library(
     srcs = ["db.go"],
     importpath = "github.com/RMI/pacta/db",
     visibility = ["//visibility:public"],
-    deps = ["//:pacta"],
+    deps = ["//pacta"],
 )

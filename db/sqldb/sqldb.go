@@ -5,13 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/RMI/pacta/db"
 	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/idgen"
-	"github.com/RMI/pacta/db"
 	"github.com/hashicorp/go-multierror"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type DB struct {
@@ -215,4 +216,47 @@ const idNamespaceIDSeparator = "."
 
 func (db *DB) randomID(ns idNamespace) string {
 	return fmt.Sprintf("%s%s%s", ns, idNamespaceIDSeparator, db.idGenerator.NewID())
+}
+
+func allRows[T any](name string, rows pgx.Rows, fn func(rowScanner) (T, error)) ([]T, error) {
+	defer rows.Close()
+	var ts []T
+	for rows.Next() {
+		t, err := fn(rows)
+		if err != nil {
+			return nil, fmt.Errorf("converting row to %s: %w", name, err)
+		}
+		ts = append(ts, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("while processing %s rows: %w", name, err)
+	}
+	return ts, nil
+}
+
+func exactlyOne[T any, I ~string](name string, id I, ts []T) (T, error) {
+	var zeroValue T
+	if len(ts) == 0 {
+		return zeroValue, db.NotFound(id, name)
+	} else if len(ts) == 1 {
+		return ts[0], nil
+	} else {
+		return zeroValue, fmt.Errorf("expected exactly one %s in result but got %d", name, len(ts))
+	}
+}
+
+func createWhereInFmt(n int) string {
+	dollaz := make([]string, n)
+	for i := 0; i < n; i++ {
+		dollaz[i] = fmt.Sprintf("$%d", i+1)
+	}
+	return "(" + strings.Join(dollaz, " , ") + ")"
+}
+
+func idsToInterface[T ~string](in []T) []interface{} {
+	out := make([]interface{}, len(in))
+	for i, e := range in {
+		out[i] = e
+	}
+	return out
 }
