@@ -9,6 +9,7 @@ go_library(
         "initiative_user.go",
         "pacta_version.go",
         "portfolio.go",
+        "portfolio_group.go",
         "portfolio_initiative.go",
         "sqldb.go",
         "user.go",

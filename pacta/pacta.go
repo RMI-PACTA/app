@@ -359,6 +359,7 @@ type PortfolioGroup struct {
 	Name        string
 	Description string
 	CreatedAt   time.Time
+	Members     []*PortfolioGroupMembership
 }
 
 func (o *PortfolioGroup) Clone() *PortfolioGroup {
@@ -371,13 +372,14 @@ func (o *PortfolioGroup) Clone() *PortfolioGroup {
 		Name:        o.Name,
 		Description: o.Description,
 		CreatedAt:   o.CreatedAt,
+		Members:     cloneAll(o.Members),
 	}
 }
 
 type PortfolioGroupMembership struct {
-	PortfolioGroupID PortfolioGroupID
-	PortfolioID      PortfolioID
-	CreatedAt        time.Time
+	PortfolioGroup *PortfolioGroup
+	Portfolio      *Portfolio
+	CreatedAt      time.Time
 }
 
 func (o *PortfolioGroupMembership) Clone() *PortfolioGroupMembership {
@@ -385,9 +387,9 @@ func (o *PortfolioGroupMembership) Clone() *PortfolioGroupMembership {
 		return nil
 	}
 	return &PortfolioGroupMembership{
-		PortfolioGroupID: o.PortfolioGroupID,
-		PortfolioID:      o.PortfolioID,
-		CreatedAt:        o.CreatedAt,
+		PortfolioGroup: o.PortfolioGroup.Clone(),
+		Portfolio:      o.Portfolio.Clone(),
+		CreatedAt:      o.CreatedAt,
 	}
 }
 

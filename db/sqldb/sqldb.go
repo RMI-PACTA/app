@@ -253,6 +253,18 @@ func exactlyOne[T any, I ~string](name string, id I, ts []T) (T, error) {
 	}
 }
 
+func exactlyOneFromMap[V any, K ~string](name string, id K, m map[K]V) (V, error) {
+	var zeroValue V
+	if len(m) > 1 {
+		return zeroValue, fmt.Errorf("expected exactly one %s in result but got %d", name, len(m))
+	}
+	v, ok := m[id]
+	if !ok {
+		return zeroValue, db.NotFound(id, name)
+	}
+	return v, nil
+}
+
 func createWhereInFmt(n int) string {
 	dollaz := make([]string, n)
 	for i := 0; i < n; i++ {

@@ -236,3 +236,26 @@ func SetPortfolioNumberOfRows(value int) UpdatePortfolioFn {
 		return nil
 	}
 }
+
+type UpdatePortfolioGroupFn func(*pacta.PortfolioGroup) error
+
+func SetPortfolioGroupName(value string) UpdatePortfolioGroupFn {
+	return func(v *pacta.PortfolioGroup) error {
+		v.Name = value
+		return nil
+	}
+}
+
+func SetPortfolioGroupDescription(value string) UpdatePortfolioGroupFn {
+	return func(v *pacta.PortfolioGroup) error {
+		v.Description = value
+		return nil
+	}
+}
+
+func SetPortolioGroupOwner(value pacta.OwnerID) UpdatePortfolioGroupFn {
+	return func(v *pacta.PortfolioGroup) error {
+		v.Owner = &pacta.Owner{ID: value}
+		return nil
+	}
+}
