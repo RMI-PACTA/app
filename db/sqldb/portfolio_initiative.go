@@ -9,9 +9,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const portfolioInitiativeMembershipSelectColumns = `
+	portfolio_initiative_membership.portfolio_id,
+	portfolio_initiative_membership.initiative_id,
+	portfolio_initiative_membership.created_at,
+	portfolio_initiative_membership.added_by_user_id
+`
+
 func (d *DB) PortfolioInitiativeMembershipsByPortfolio(tx db.Tx, pid pacta.PortfolioID) ([]*pacta.PortfolioInitiativeMembership, error) {
 	rows, err := d.query(tx, `
-		SELECT portfolio_id, initiative_id, created_at
+		SELECT `+portfolioInitiativeMembershipSelectColumns+` 
 		FROM portfolio_initiative_membership 
 		WHERE portfolio_id = $1;`, pid)
 	if err != nil {
@@ -26,7 +33,7 @@ func (d *DB) PortfolioInitiativeMembershipsByPortfolio(tx db.Tx, pid pacta.Portf
 
 func (d *DB) PortfolioInitiativeMembershipsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.PortfolioInitiativeMembership, error) {
 	rows, err := d.query(tx, `
-		SELECT portfolio_id, initiative_id, created_at
+		SELECT `+portfolioInitiativeMembershipSelectColumns+` 
 		FROM portfolio_initiative_membership 
 		WHERE initiative_id = $1;`, iid)
 	if err != nil {

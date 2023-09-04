@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestCRUDInvitation(t *testing.T) {
+func TestInitiativeCRUD(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
