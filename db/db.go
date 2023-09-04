@@ -326,3 +326,61 @@ func SetAnalysisArtifactSharedToPublic(value bool) UpdateAnalysisArtifactFn {
 		return nil
 	}
 }
+
+type UpdateIncompleteUploadFn func(*pacta.IncompleteUpload) error
+
+func SetIncompleteUploadOwner(value pacta.OwnerID) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Owner = &pacta.Owner{ID: value}
+		return nil
+	}
+}
+
+func SetIncompleteUploadAdminDebugEnabled(value bool) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.AdminDebugEnabled = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadName(value string) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Name = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadDescription(value string) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Description = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadRanAt(value time.Time) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.RanAt = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadCompletedAt(value time.Time) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.CompletedAt = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadFailureCode(value pacta.FailureCode) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.FailureCode = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadFailureMessage(value string) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.FailureMessage = value
+		return nil
+	}
+}

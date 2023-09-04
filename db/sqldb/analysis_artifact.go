@@ -32,6 +32,25 @@ func (d *DB) AnalysisArtifact(tx db.Tx, id pacta.AnalysisArtifactID) (*pacta.Ana
 	return exactlyOne("analysis_artifact", id, analysis_artifacts)
 }
 
+func (d *DB) AnalysisArtifacts(tx db.Tx, id []pacta.AnalysisArtifactID) (map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact, error) {
+	rows, err := d.query(tx, `
+		SELECT `+analysisArtifactSelectColumns+`
+		FROM analysis_artifact 
+		WHERE id IN `+createWhereInFmt(len(id))+`;`, idsToInterface(id)...)
+	if err != nil {
+		return nil, fmt.Errorf("querying analysis_artifacts: %w", err)
+	}
+	aas, err := rowsToAnalysisArtifacts(rows)
+	if err != nil {
+		return nil, fmt.Errorf("translating rows to analysis_artifacts: %w", err)
+	}
+	result := make(map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact, len(aas))
+	for _, aa := range aas {
+		result[aa.ID] = aa
+	}
+	return result, nil
+}
+
 func (d *DB) AnalysisArtifactsForAnalysis(tx db.Tx, id pacta.AnalysisID) ([]*pacta.AnalysisArtifact, error) {
 	rows, err := d.query(tx, `
 		SELECT `+analysisArtifactSelectColumns+`

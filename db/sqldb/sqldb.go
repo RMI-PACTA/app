@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type DB struct {
@@ -287,4 +288,17 @@ func idsToInterface[T ~string](in []T) []interface{} {
 		out[i] = e
 	}
 	return out
+}
+
+func validateHoldingsDate(t time.Time) (*time.Time, error) {
+	// TODO: validate the properties of the holdings date (i.e. aligned to window)
+	return timeToNilable(t), nil
+}
+
+func decodeHoldingsDate(t pgtype.Timestamptz) (time.Time, error) {
+	// TODO: validate the properties of the holdings date (i.e. aligned to window)
+	if !t.Valid {
+		return time.Time{}, nil
+	}
+	return t.Time, nil
 }

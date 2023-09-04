@@ -3,7 +3,6 @@ package sqldb
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
@@ -197,17 +196,4 @@ func validatePortfolioForCreation(p *pacta.Portfolio) error {
 		return fmt.Errorf("portfolio number_of_rows must be non-negative")
 	}
 	return nil
-}
-
-func validateHoldingsDate(t time.Time) (*time.Time, error) {
-	// TODO: validate the properties of the holdings date (i.e. aligned to window)
-	return timeToNilable(t), nil
-}
-
-func decodeHoldingsDate(t pgtype.Timestamptz) (time.Time, error) {
-	// TODO: validate the properties of the holdings date (i.e. aligned to window)
-	if !t.Valid {
-		return time.Time{}, nil
-	}
-	return t.Time, nil
 }
