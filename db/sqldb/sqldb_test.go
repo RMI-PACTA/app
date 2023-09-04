@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/Silicon-Ally/idgen"
 	"github.com/Silicon-Ally/testpgx"
@@ -103,3 +104,14 @@ func createDBForTesting(t *testing.T) *DB {
 		idGenerator: idg,
 	}
 }
+
+var exampleHoldingsDate = time.Date(
+	2010,
+	4,
+	1,
+	0,
+	0,
+	0,
+	0,
+	time.UTC,
+)

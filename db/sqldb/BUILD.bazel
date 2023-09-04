@@ -42,6 +42,7 @@ go_test(
         "initiative_invitation_test.go",
         "initiative_test.go",
         "initiative_user_test.go",
+        "owner_test.go",
         "pacta_version_test.go",
         "portfolio_test.go",
         "sqldb_test.go",

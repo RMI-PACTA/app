@@ -6,13 +6,14 @@ import (
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const ownerIDNamespace = "own"
 const ownerSelectColumns = `
 	owner.id,
 	owner.user_id,
-	owner.initiative_id,
+	owner.initiative_id
 `
 
 func (d *DB) Owners(tx db.Tx, ids []pacta.OwnerID) (map[pacta.OwnerID]*pacta.Owner, error) {
@@ -129,21 +130,20 @@ func rowsToOwners(rows pgx.Rows) (map[pacta.OwnerID]*pacta.Owner, error) {
 
 func rowToOwner(row rowScanner) (*pacta.Owner, error) {
 	o := &pacta.Owner{}
-	u := &pacta.User{}
-	i := &pacta.Initiative{}
+	var uID, iID pgtype.Text
 	err := row.Scan(
 		&o.ID,
-		&u.ID,
-		&i.ID,
+		&uID,
+		&iID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("scanning into owner: %w", err)
 	}
-	if u.ID != "" {
-		o.User = u
+	if uID.Valid {
+		o.User = &pacta.User{ID: pacta.UserID(uID.String)}
 	}
-	if i.ID != "" {
-		o.Initiative = i
+	if iID.Valid {
+		o.Initiative = &pacta.Initiative{ID: pacta.InitiativeID(iID.String)}
 	}
 	return o, nil
 }
@@ -162,3 +162,5 @@ func validateOwnerForCreation(o *pacta.Owner) error {
 	}
 	return nil
 }
+
+// TODO(grady) take on owner deletion

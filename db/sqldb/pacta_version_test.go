@@ -216,3 +216,19 @@ func pactaVersionCmpOpts() cmp.Option {
 		cmpopts.EquateApproxTime(time.Second),
 	}
 }
+
+func pactaVersionForTesting(t *testing.T, tdb *DB) *pacta.PACTAVersion {
+	t.Helper()
+	pv := &pacta.PACTAVersion{
+		Name:        "pacta version",
+		Description: "pacta description",
+		Digest:      "pacta digest",
+	}
+	tx := tdb.NoTxn(context.Background())
+	pvID, err := tdb.CreatePACTAVersion(tx, pv)
+	if err != nil {
+		t.Fatalf("creating pacta_version: %v", err)
+	}
+	pv.ID = pvID
+	return pv
+}
