@@ -20,7 +20,6 @@ func (d *DB) PopulateBlobs(tx db.Tx, hbs []HasBlobs) error {
 		return nil
 	}
 	ids := []pacta.BlobID{}
-	// TODO(grady) Dedupe ids in all multi-lookups using a standard utility
 	for _, blob := range blobs {
 		ids = append(ids, blob.ID)
 	}

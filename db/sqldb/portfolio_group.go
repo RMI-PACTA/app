@@ -20,6 +20,7 @@ func (d *DB) PortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) (*pacta.Portfol
 }
 
 func (d *DB) PortfolioGroups(tx db.Tx, ids []pacta.PortfolioGroupID) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT
 			portfolio_group.id, 
@@ -32,16 +33,16 @@ func (d *DB) PortfolioGroups(tx db.Tx, ids []pacta.PortfolioGroupID) (map[pacta.
 		FROM portfolio_group
 		LEFT JOIN portfolio_group_membership 
 		ON portfolio_group_membership.portfolio_group_id = portfolio_group.id
-		WHERE portfolio_goup.id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
+		WHERE portfolio_group.id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
 	if err != nil {
 		return nil, fmt.Errorf("querying portfolio_groups: %w", err)
 	}
 	return rowsToPortfolioGroups(rows)
 }
 
-func (d *DB) CreatePortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) error {
+func (d *DB) CreatePortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) (pacta.PortfolioGroupID, error) {
 	if err := validatePortfolioGroupForCreation(p); err != nil {
-		return fmt.Errorf("validating portfolio_group for creation: %w", err)
+		return "", fmt.Errorf("validating portfolio_group for creation: %w", err)
 	}
 	p.ID = pacta.PortfolioGroupID(d.randomID("pfgp"))
 	err := d.exec(tx, `
@@ -51,9 +52,9 @@ func (d *DB) CreatePortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) error {
 			($1, $2, $3, $4);`,
 		p.ID, p.Owner.ID, p.Name, p.Description)
 	if err != nil {
-		return fmt.Errorf("creating portfolio_group: %w", err)
+		return "", fmt.Errorf("creating portfolio_group: %w", err)
 	}
-	return nil
+	return p.ID, nil
 }
 
 func (d *DB) UpdatePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID, mutations ...db.UpdatePortfolioGroupFn) error {
@@ -81,11 +82,17 @@ func (d *DB) UpdatePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID, mutations
 }
 
 func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error {
-	err := d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_group_id = $1;`, id)
-	if err != nil {
-		return fmt.Errorf("deleting portfolio_group_memberships: %w", err)
-	}
-	return nil
+	return d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		err := d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_group_id = $1;`, id)
+		if err != nil {
+			return fmt.Errorf("deleting portfolio_group_memberships: %w", err)
+		}
+		err = d.exec(tx, `DELETE FROM portfolio_group WHERE id = $1;`, id)
+		if err != nil {
+			return fmt.Errorf("deleting portfolio_group: %w", err)
+		}
+		return nil
+	})
 }
 
 type portfolioGroupRow struct {
@@ -154,7 +161,7 @@ func (d *DB) putPortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) error {
 		UPDATE portfolio_group SET
 			owner_id = $2,
 			name = $3, 
-			description = $4,
+			description = $4
 		WHERE id = $1;
 		`, p.ID, p.Owner.ID, p.Name, p.Description)
 	if err != nil {
@@ -168,7 +175,8 @@ func (d *DB) CreatePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupI
 		INSERT INTO portfolio_group_membership
 			(portfolio_group_id, portfolio_id)
 			VALUES
-			($1, $2);`,
+			($1, $2)
+		ON CONFLICT (portfolio_group_id, portfolio_id) DO NOTHING;`,
 		pgID, pID)
 	if err != nil {
 		return fmt.Errorf("creating portfolio_group_membership: %w", err)

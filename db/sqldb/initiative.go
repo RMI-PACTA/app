@@ -38,6 +38,7 @@ func (d *DB) Initiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Initiative, err
 }
 
 func (d *DB) Initiatives(tx db.Tx, ids []pacta.InitiativeID) (map[pacta.InitiativeID]*pacta.Initiative, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+initiativeSelectColumns+`
 		FROM initiative 

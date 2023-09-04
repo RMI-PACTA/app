@@ -41,6 +41,7 @@ func (d *DB) IncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (*pacta.Inc
 }
 
 func (d *DB) IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+incompleteUploadSelectColumns+`
 		FROM incomplete_upload 

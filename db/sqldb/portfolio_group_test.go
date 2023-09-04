@@ -11,144 +11,190 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestSnapshotCreation(t *testing.T) {
+func TestPortfolioGroupCRUD(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
-	pv := pactaVersionForTesting(t, tdb)
-	i := &pacta.Initiative{
-		ID:           "initiative-id",
-		Language:     pacta.Language_DE,
-		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pv.ID},
+	u1 := userForTestingWithKey(t, tdb, "1")
+	u2 := userForTestingWithKey(t, tdb, "2")
+	o1 := ownerUserForTesting(t, tdb, u1)
+	o2 := ownerUserForTesting(t, tdb, u2)
+
+	pg1 := &pacta.PortfolioGroup{
+		Name:  "portfolio-group-name",
+		Owner: &pacta.Owner{ID: o1.ID},
 	}
-	err := tdb.CreateInitiative(tx, i)
+	pgID1, err := tdb.CreatePortfolioGroup(tx, pg1)
 	if err != nil {
-		t.Fatalf("creating initiative: %v", err)
+		t.Fatalf("creating portfolio group: %w", err)
 	}
-	i.CreatedAt = time.Now()
+	pg1.CreatedAt = time.Now()
+	pg1.ID = pgID1
 
-	assert := func(i *pacta.Initiative) {
-		t.Helper()
-		actual, err := tdb.Initiative(tx, i.ID)
-		if err != nil {
-			t.Fatalf("reading initiative: %v", err)
-		}
-		if diff := cmp.Diff(i, actual, initiativeCmpOpts()); diff != "" {
-			t.Fatalf("initiative mismatch (-want +got):\n%s", diff)
-		}
-		eM := map[pacta.InitiativeID]*pacta.Initiative{i.ID: i}
-		aM, err := tdb.Initiatives(tx, []pacta.InitiativeID{i.ID})
-		if err != nil {
-			t.Fatalf("reading initiatives: %v", err)
-		}
-		if diff := cmp.Diff(eM, aM, initiativeCmpOpts()); diff != "" {
-			t.Fatalf("initiative mismatch (-want +got):\n%s", diff)
-		}
-		actuals, err := tdb.AllInitiatives(tx)
-		if err != nil {
-			t.Fatalf("reading initiatives: %v", err)
-		}
-		if diff := cmp.Diff([]*pacta.Initiative{i}, actuals, initiativeCmpOpts()); diff != "" {
-			t.Fatalf("initiative mismatch (-want +got):\n%s", diff)
-		}
+	pg2 := &pacta.PortfolioGroup{
+		Name:  "portfolio-group-name",
+		Owner: &pacta.Owner{ID: o1.ID},
 	}
-	assert(i)
+	pgID2, err := tdb.CreatePortfolioGroup(tx, pg2)
+	if err != nil {
+		t.Fatalf("creating portfolio group: %w", err)
+	}
+	pg2.CreatedAt = time.Now()
+	pg2.ID = pgID2
 
-	i.Name = "new name"
-	i.Affiliation = "new affiliation"
-	i.PublicDescription = "new public decsription"
-	i.InternalDescription = "new internal description"
-	i.RequiresInvitationToJoin = true
-	i.Language = pacta.Language_EN
-	err = tdb.UpdateInitiative(tx, i.ID,
-		db.SetInitiativeName(i.Name),
-		db.SetInitiativeAffiliation(i.Affiliation),
-		db.SetInitiativePublicDescription(i.PublicDescription),
-		db.SetInitiativeInternalDescription(i.InternalDescription),
-		db.SetInitiativeRequiresInvitationToJoin(i.RequiresInvitationToJoin),
-		db.SetInitiativeLanguage(pacta.Language_EN),
+	nName := "New Portfolio Group Name"
+	nDesc := "New Portfolio Group Description"
+	err = tdb.UpdatePortfolioGroup(tx, pg1.ID,
+		db.SetPortfolioGroupName(nName),
+		db.SetPortfolioGroupDescription(nDesc),
+		db.SetPortfolioGroupOwner(o2.ID),
 	)
 	if err != nil {
-		t.Fatalf("updating initiative: %v", err)
+		t.Fatalf("updating portfolio group: %v", err)
 	}
-	assert(i)
+	pg1.Name = nName
+	pg1.Description = nDesc
+	pg1.Owner = &pacta.Owner{ID: o2.ID}
 
-	i.IsAcceptingNewMembers = true
-	if err := tdb.UpdateInitiative(tx, i.ID, db.SetInitiativeIsAcceptingNewMembers(true)); err != nil {
-		t.Fatalf("updating initiative: %v", err)
+	actual, err := tdb.PortfolioGroup(tx, pg1.ID)
+	if diff := cmp.Diff(pg1, actual, portfolioGroupCmpOpts()); diff != "" {
+		t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
 	}
-	assert(i)
 
-	i.IsAcceptingNewPortfolios = true
-	if err := tdb.UpdateInitiative(tx, i.ID, db.SetInitiativeIsAcceptingNewPortfolios(true)); err != nil {
-		t.Fatalf("updating initiative: %v", err)
+	actuals, err := tdb.PortfolioGroups(tx, []pacta.PortfolioGroupID{pg1.ID, pg2.ID})
+	expecteds := map[pacta.PortfolioGroupID]*pacta.PortfolioGroup{
+		pg1.ID: pg1,
+		pg2.ID: pg2,
 	}
-	assert(i)
+	if diff := cmp.Diff(expecteds, actuals, portfolioGroupCmpOpts()); diff != "" {
+		t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
+	}
 
-	err = tdb.DeleteInitiative(tx, i.ID)
+	err = tdb.DeletePortfolioGroup(tx, pg1.ID)
 	if err != nil {
-		t.Fatalf("delete initiative: %v", err)
+		t.Fatalf("delete portfolio group: %v", err)
+	}
+	actuals, err = tdb.PortfolioGroups(tx, []pacta.PortfolioGroupID{pg1.ID, pg2.ID})
+	expecteds = map[pacta.PortfolioGroupID]*pacta.PortfolioGroup{
+		pg2.ID: pg2,
+	}
+	if diff := cmp.Diff(expecteds, actuals, portfolioGroupCmpOpts()); diff != "" {
+		t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
 	}
 }
 
-func TestDeleteInitiative(t *testing.T) {
+func TestPortfolioGroupMembership(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
-	i := initiativeForTesting(t, tdb)
-	u := userForTesting(t, tdb)
-	_, err0 := tdb.CreateInitiativeInvitation(tx, &pacta.InitiativeInvitation{
-		Initiative: &pacta.Initiative{ID: i.ID},
-	})
-	iur := &pacta.InitiativeUserRelationship{
-		User:       &pacta.User{ID: u.ID},
-		Initiative: &pacta.Initiative{ID: i.ID},
-	}
-	err1 := tdb.PutInitiativeUserRelationship(tx, iur)
-	noErrDuringSetup(t, err0, err1)
+	u1 := userForTestingWithKey(t, tdb, "1")
+	u2 := userForTestingWithKey(t, tdb, "2")
+	o1 := ownerUserForTesting(t, tdb, u1)
+	o2 := ownerUserForTesting(t, tdb, u2)
+	pg1 := portfolioGroupForTesting(t, tdb, o1)
+	pg2 := portfolioGroupForTesting(t, tdb, o2)
+	pg3 := portfolioGroupForTesting(t, tdb, o2)
+	p1 := portfolioForTestingWithKey(t, tdb, "3")
+	p2 := portfolioForTestingWithKey(t, tdb, "4")
+	p3 := portfolioForTestingWithKey(t, tdb, "5")
 
-	err := tdb.DeleteInitiative(tx, i.ID)
+	assertPGMembership := func(pgID pacta.PortfolioGroupID, ps []*pacta.Portfolio) {
+		idsOnly := make([]*pacta.Portfolio, len(ps))
+		for i, p := range ps {
+			idsOnly[i] = &pacta.Portfolio{ID: p.ID}
+		}
+		t.Helper()
+		pg, err := tdb.PortfolioGroup(tx, pgID)
+		if err != nil {
+			t.Fatalf("getting portfolio group: %v", err)
+		}
+		ms := make([]*pacta.Portfolio, len(pg.Members))
+		for i, m := range pg.Members {
+			ms[i] = m.Portfolio
+		}
+		if diff := cmp.Diff(idsOnly, ms, portfolioCmpOpts()); diff != "" {
+			t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
+		}
+	}
+	createMembership := func(pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) {
+		t.Helper()
+		if err := tdb.CreatePortfolioGroupMembership(tx, pgID, pID); err != nil {
+			t.Fatalf("creating portfolio group membership: %v", err)
+		}
+	}
+	deleteMembership := func(pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) {
+		t.Helper()
+		if err := tdb.DeletePortfolioGroupMembership(tx, pgID, pID); err != nil {
+			t.Fatalf("creating portfolio group membership: %v", err)
+		}
+	}
+	assertPGMembership(pg1.ID, []*pacta.Portfolio{})
+
+	createMembership(pg1.ID, p1.ID)
+	assertPGMembership(pg1.ID, []*pacta.Portfolio{p1})
+
+	createMembership(pg1.ID, p2.ID)
+	assertPGMembership(pg1.ID, []*pacta.Portfolio{p1, p2})
+
+	createMembership(pg2.ID, p2.ID)
+	createMembership(pg2.ID, p2.ID)
+	createMembership(pg2.ID, p2.ID)
+	assertPGMembership(pg2.ID, []*pacta.Portfolio{p2})
+
+	createMembership(pg2.ID, p3.ID)
+	assertPGMembership(pg2.ID, []*pacta.Portfolio{p2, p3})
+
+	deleteMembership(pg2.ID, p2.ID)
+
+	actual, err := tdb.PortfolioGroups(tx, []pacta.PortfolioGroupID{pg1.ID, pg2.ID, pg3.ID})
 	if err != nil {
-		t.Fatalf("delete initiative: %v", err)
+		t.Fatalf("getting portfolio group: %v", err)
 	}
-
-	_, err = tdb.Initiative(tx, i.ID)
-	if err == nil {
-		t.Fatalf("expected error, got nil")
+	pg1.Members = []*pacta.PortfolioGroupMembership{
+		{Portfolio: &pacta.Portfolio{ID: p1.ID}, CreatedAt: time.Now()},
+		{Portfolio: &pacta.Portfolio{ID: p2.ID}, CreatedAt: time.Now()},
+	}
+	pg2.Members = []*pacta.PortfolioGroupMembership{
+		{Portfolio: &pacta.Portfolio{ID: p3.ID}, CreatedAt: time.Now()},
+	}
+	expected := map[pacta.PortfolioGroupID]*pacta.PortfolioGroup{
+		pg1.ID: pg1,
+		pg2.ID: pg2,
+		pg3.ID: pg3,
+	}
+	if diff := cmp.Diff(expected, actual, portfolioCmpOpts()); diff != "" {
+		t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
 	}
 }
 
-func initiativeCmpOpts() cmp.Option {
-	initiativeIDLessFn := func(a, b pacta.InitiativeID) bool {
+func portfolioGroupCmpOpts() cmp.Option {
+	portfolioGroupIDLessFn := func(a, b pacta.PortfolioGroupID) bool {
 		return a < b
 	}
-	initiativeLessFn := func(a, b *pacta.Initiative) bool {
+	portfolioGroupLessFn := func(a, b *pacta.PortfolioGroup) bool {
 		return a.ID < b.ID
 	}
 	return cmp.Options{
-		cmpopts.SortSlices(initiativeLessFn),
-		cmpopts.SortMaps(initiativeIDLessFn),
+		cmpopts.SortSlices(portfolioGroupLessFn),
+		cmpopts.SortMaps(portfolioGroupIDLessFn),
 		cmpopts.EquateEmpty(),
 		cmpopts.EquateApproxTime(time.Second),
 	}
 }
 
-func initiativeForTesting(t *testing.T, tdb *DB) *pacta.Initiative {
+func portfolioGroupForTesting(t *testing.T, tdb *DB, owner *pacta.Owner) *pacta.PortfolioGroup {
 	t.Helper()
-	pv := pactaVersionForTesting(t, tdb)
-	i := &pacta.Initiative{
-		ID:           "initiative-id",
-		Language:     pacta.Language_DE,
-		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pv.ID},
-	}
 	ctx := context.Background()
 	tx := tdb.NoTxn(ctx)
-	err := tdb.CreateInitiative(tx, i)
-	if err != nil {
-		t.Fatalf("creating initiative: %v", err)
+	pg := &pacta.PortfolioGroup{
+		Name:  "portfolio-group-name",
+		Owner: &pacta.Owner{ID: owner.ID},
 	}
-	i.CreatedAt = time.Now()
-	return i
+	pgID, err := tdb.CreatePortfolioGroup(tx, pg)
+	if err != nil {
+		t.Fatalf("creating portfolio group: %w", err)
+	}
+	pg.ID = pgID
+	pg.CreatedAt = time.Now()
+	return pg
 }

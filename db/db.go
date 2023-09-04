@@ -253,7 +253,7 @@ func SetPortfolioGroupDescription(value string) UpdatePortfolioGroupFn {
 	}
 }
 
-func SetPortolioGroupOwner(value pacta.OwnerID) UpdatePortfolioGroupFn {
+func SetPortfolioGroupOwner(value pacta.OwnerID) UpdatePortfolioGroupFn {
 	return func(v *pacta.PortfolioGroup) error {
 		v.Owner = &pacta.Owner{ID: value}
 		return nil

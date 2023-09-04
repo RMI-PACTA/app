@@ -108,15 +108,21 @@ func portfolioCmpOpts() cmp.Option {
 }
 
 func portfolioForTesting(t *testing.T, tdb *DB) *pacta.Portfolio {
+	t.Helper()
+	return portfolioForTestingWithKey(t, tdb, "only")
+}
+
+func portfolioForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.Portfolio {
+	t.Helper()
 	ctx := context.Background()
 	tx := tdb.NoTxn(ctx)
-	b := blobForTesting(t, tdb)
-	u := userForTestingWithKey(t, tdb, "for-portfolio-owner")
+	b := blobForTestingWithKey(t, tdb, key)
+	u := userForTestingWithKey(t, tdb, key)
 	o := ownerUserForTesting(t, tdb, u)
 
 	p := &pacta.Portfolio{
-		Name:         "portfolio-name",
-		Description:  "portfolio-description",
+		Name:         "portfolio-name-" + key,
+		Description:  "portfolio-description-" + key,
 		HoldingsDate: exampleHoldingsDate,
 		Owner:        &pacta.Owner{ID: o.ID},
 		Blob:         &pacta.Blob{ID: b.ID},

@@ -53,6 +53,7 @@ func (d *DB) UserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID 
 }
 
 func (d *DB) Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+userSelectColumns+`
 		FROM pacta_user 

@@ -143,9 +143,10 @@ CREATE TABLE portfolio_group (
 );
 
 CREATE TABLE portfolio_group_membership (
-    portfolio_id TEXT REFERENCES portfolio (id) ON DELETE RESTRICT,
-    portfolio_group_id TEXT REFERENCES portfolio_group (id) ON DELETE RESTRICT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    portfolio_id TEXT NOT NULL REFERENCES portfolio (id) ON DELETE RESTRICT,
+    portfolio_group_id TEXT NOT NULL REFERENCES portfolio_group (id) ON DELETE RESTRICT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(portfolio_id, portfolio_group_id)
 );
     
 CREATE TABLE portfolio_initiative_membership (

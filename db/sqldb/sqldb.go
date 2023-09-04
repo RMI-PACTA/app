@@ -290,6 +290,22 @@ func idsToInterface[T ~string](in []T) []interface{} {
 	return out
 }
 
+func dedupeIDs[T ~string](in []T) []T {
+	if len(in) < 2 {
+		return in
+	}
+	result := []T{}
+	seen := make(map[T]bool)
+	for _, t := range in {
+		if seen[t] {
+			continue
+		}
+		result = append(result, t)
+		seen[t] = true
+	}
+	return result
+}
+
 func validateHoldingsDate(t time.Time) (*time.Time, error) {
 	// TODO: validate the properties of the holdings date (i.e. aligned to window)
 	return timeToNilable(t), nil

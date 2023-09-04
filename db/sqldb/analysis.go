@@ -39,6 +39,7 @@ func (d *DB) Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error) {
 }
 
 func (d *DB) Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*pacta.Analysis, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+analyseSelectColumns+`
 		FROM analysis 

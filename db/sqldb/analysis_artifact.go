@@ -32,11 +32,12 @@ func (d *DB) AnalysisArtifact(tx db.Tx, id pacta.AnalysisArtifactID) (*pacta.Ana
 	return exactlyOne("analysis_artifact", id, analysis_artifacts)
 }
 
-func (d *DB) AnalysisArtifacts(tx db.Tx, id []pacta.AnalysisArtifactID) (map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact, error) {
+func (d *DB) AnalysisArtifacts(tx db.Tx, ids []pacta.AnalysisArtifactID) (map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+analysisArtifactSelectColumns+`
 		FROM analysis_artifact 
-		WHERE id IN `+createWhereInFmt(len(id))+`;`, idsToInterface(id)...)
+		WHERE id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
 	if err != nil {
 		return nil, fmt.Errorf("querying analysis_artifacts: %w", err)
 	}

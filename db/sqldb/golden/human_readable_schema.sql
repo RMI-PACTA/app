@@ -228,8 +228,9 @@ ALTER TABLE ONLY portfolio_group ADD CONSTRAINT portfolio_group_owner_id_fkey FO
 
 CREATE TABLE portfolio_group_membership (
 	created_at timestamp with time zone DEFAULT now() NOT NULL,
-	portfolio_group_id text,
-	portfolio_id text);
+	portfolio_group_id text NOT NULL,
+	portfolio_id text NOT NULL);
+ALTER TABLE ONLY portfolio_group_membership ADD CONSTRAINT portfolio_group_membership_pkey PRIMARY KEY (portfolio_id, portfolio_group_id);
 ALTER TABLE ONLY portfolio_group_membership ADD CONSTRAINT portfolio_group_membership_portfolio_group_id_fkey FOREIGN KEY (portfolio_group_id) REFERENCES portfolio_group(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY portfolio_group_membership ADD CONSTRAINT portfolio_group_membership_portfolio_id_fkey FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE RESTRICT;
 

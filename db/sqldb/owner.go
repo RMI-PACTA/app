@@ -17,6 +17,7 @@ const ownerSelectColumns = `
 `
 
 func (d *DB) Owners(tx db.Tx, ids []pacta.OwnerID) (map[pacta.OwnerID]*pacta.Owner, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+ownerSelectColumns+`
 		FROM owner

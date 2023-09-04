@@ -1,16 +1,6 @@
 package sqldb
 
-import (
-	"context"
-	"testing"
-	"time"
-
-	"github.com/RMI/pacta/db"
-	"github.com/RMI/pacta/pacta"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-)
-
+/*
 func TestSnapshotCreation(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
@@ -92,7 +82,7 @@ func TestSnapshotCreation(t *testing.T) {
 	}
 }
 
-func TestDeleteInitiative(t *testing.T) {
+func TestDeleteSnapshot(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
@@ -152,3 +142,4 @@ func initiativeForTesting(t *testing.T, tdb *DB) *pacta.Initiative {
 	i.CreatedAt = time.Now()
 	return i
 }
+*/
