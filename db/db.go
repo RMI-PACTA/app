@@ -192,3 +192,47 @@ func SetBlobFileName(v string) UpdateBlobFn {
 		return nil
 	}
 }
+
+type UpdatePortfolioFn func(*pacta.Portfolio) error
+
+func SetPortfolioName(value string) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Name = value
+		return nil
+	}
+}
+
+func SetPortfolioDescription(value string) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Description = value
+		return nil
+	}
+}
+
+func SetPortfolioHoldingsDate(value time.Time) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.HoldingsDate = value
+		return nil
+	}
+}
+
+func SetPortfolioOwner(value pacta.OwnerID) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Owner = &pacta.Owner{ID: value}
+		return nil
+	}
+}
+
+func SetPortfolioAdminDebugEnabled(value bool) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.AdminDebugEnabled = value
+		return nil
+	}
+}
+
+func SetPortfolioNumberOfRows(value int) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.NumberOfRows = value
+		return nil
+	}
+}

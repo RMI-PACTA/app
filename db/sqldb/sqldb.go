@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/Silicon-Ally/cryptorand"
@@ -216,6 +217,13 @@ const idNamespaceIDSeparator = "."
 
 func (db *DB) randomID(ns idNamespace) string {
 	return fmt.Sprintf("%s%s%s", ns, idNamespaceIDSeparator, db.idGenerator.NewID())
+}
+
+func timeToNilable(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
 }
 
 func allRows[T any](name string, rows pgx.Rows, fn func(rowScanner) (T, error)) ([]T, error) {

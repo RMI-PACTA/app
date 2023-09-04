@@ -159,7 +159,7 @@ func rowToInitiative(row rowScanner) (*pacta.Initiative, error) {
 		&i.CreatedAt,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("scanning into pacta_version: %w", err)
+		return nil, fmt.Errorf("scanning into initiative: %w", err)
 	}
 	if pvid != "" {
 		i.PACTAVersion = &pacta.PACTAVersion{ID: pvid}
