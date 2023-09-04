@@ -3,7 +3,4 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { NewPet } from './NewPet';
-
-export type Pet = NewPet;
-
+export type EmptySuccess = Record<string, any>;

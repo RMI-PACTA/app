@@ -10,8 +10,12 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { EmptySuccess } from './models/EmptySuccess';
 export type { Error } from './models/Error';
-export type { NewPet } from './models/NewPet';
-export type { Pet } from './models/Pet';
+export { Language } from './models/Language';
+export type { PactaVersion } from './models/PactaVersion';
+export type { PactaVersionChanges } from './models/PactaVersionChanges';
+export { User } from './models/User';
+export { UserChanges } from './models/UserChanges';
 
 export { DefaultService } from './services/DefaultService';
