@@ -13,7 +13,7 @@ import (
 	"github.com/RMI/pacta/cmd/server/pactasrv"
 	"github.com/RMI/pacta/db/sqldb"
 	"github.com/RMI/pacta/keyutil"
-	"github.com/RMI/pacta/openapi/pacta"
+	oapipacta "github.com/RMI/pacta/openapi/pacta"
 	"github.com/Silicon-Ally/zaphttplog"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
@@ -107,7 +107,7 @@ func run(args []string) error {
 		return fmt.Errorf("failed to init sqldb: %w", err)
 	}
 
-	pactaSwagger, err := pacta.GetSwagger()
+	pactaSwagger, err := oapipacta.GetSwagger()
 	if err != nil {
 		return fmt.Errorf("failed to load PACTA swagger spec: %w", err)
 	}
@@ -116,12 +116,12 @@ func run(args []string) error {
 	// that server names match. We don't know how this thing will be run.
 	pactaSwagger.Servers = nil
 
-	// Create an instance of our handler which satisfies the generated interface
-	pactaSrv := &pactasrv.Server{
+	// Create an instance of our handler which satisfies each generated interface
+	srv := &pactasrv.Server{
 		DB: db,
 	}
 
-	pactaStrictHandler := pacta.NewStrictHandlerWithOptions(pactaSrv, nil /* middleware */, pacta.StrictHTTPServerOptions{
+	pactaStrictHandler := oapipacta.NewStrictHandlerWithOptions(srv, nil /* middleware */, oapipacta.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc:  requestErrorHandlerFuncForService(logger, "pacta"),
 		ResponseErrorHandlerFunc: responseErrorHandlerFuncForService(logger, "pacta"),
 	})
@@ -129,7 +129,7 @@ func run(args []string) error {
 	r := chi.NewRouter()
 
 	// We now register our PACTA above as the handler for the interface
-	pacta.HandlerWithOptions(pactaStrictHandler, pacta.ChiServerOptions{
+	oapipacta.HandlerWithOptions(pactaStrictHandler, oapipacta.ChiServerOptions{
 		BaseRouter: r.With(
 			// The order of these is important. We run RequestID and RealIP first to
 			// populate relevant metadata for logging, and we run recovery immediately after
