@@ -472,6 +472,7 @@ type Analysis struct {
 	CompletedAt       time.Time
 	FailureCode       FailureCode
 	FailureMessage    string
+	Artifacts         []*AnalysisArtifact
 }
 
 func (o *Analysis) Clone() *Analysis {
@@ -491,6 +492,7 @@ func (o *Analysis) Clone() *Analysis {
 		CompletedAt:       o.CompletedAt,
 		FailureCode:       o.FailureCode,
 		FailureMessage:    o.FailureMessage,
+		Artifacts:         cloneAll(o.Artifacts),
 	}
 }
 

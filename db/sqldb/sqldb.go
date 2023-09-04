@@ -226,7 +226,7 @@ func timeToNilable(t time.Time) *time.Time {
 	return &t
 }
 
-func idToNilable[T ~string](id T) *string {
+func strToNilable[T ~string](id T) *string {
 	if id == "" {
 		return nil
 	}

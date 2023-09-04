@@ -4,6 +4,7 @@ go_library(
     name = "sqldb",
     srcs = [
         "analysis.go",
+        "analysis_artifact.go",
         "blob.go",
         "initiative.go",
         "initiative_invitation.go",

@@ -52,7 +52,7 @@ func (d *DB) createSnapshot(tx db.Tx, pID pacta.PortfolioID, pgID pacta.Portfoli
 			(id, portfolio_id, portfolio_group_id, initiative_id)
 			VALUES
 			($1, $2, $3, $4);`,
-		snapshotID, idToNilable(pID), idToNilable(pgID), idToNilable(iID), canonical)
+		snapshotID, strToNilable(pID), strToNilable(pgID), strToNilable(iID), canonical)
 	if err != nil {
 		return "", fmt.Errorf("creating portfolio_snapshot: %w", err)
 	}

@@ -259,3 +259,70 @@ func SetPortolioGroupOwner(value pacta.OwnerID) UpdatePortfolioGroupFn {
 		return nil
 	}
 }
+
+type UpdateAnalysisFn func(*pacta.Analysis) error
+
+func SetAnalysisOwner(value pacta.OwnerID) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.Owner = &pacta.Owner{ID: value}
+		return nil
+	}
+}
+
+func SetAnalysisName(value string) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.Name = value
+		return nil
+	}
+}
+
+func SetAnalysisDescription(value string) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.Description = value
+		return nil
+	}
+}
+
+func SetAnalysisRanAt(value time.Time) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.RanAt = value
+		return nil
+	}
+}
+
+func SetAnalysisCompletedAt(value time.Time) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.CompletedAt = value
+		return nil
+	}
+}
+
+func SetAnalysisFailureCode(value pacta.FailureCode) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.FailureCode = value
+		return nil
+	}
+}
+
+func SetAnalysisFailureMessage(value string) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.FailureMessage = value
+		return nil
+	}
+}
+
+type UpdateAnalysisArtifactFn func(*pacta.AnalysisArtifact) error
+
+func SetAnalysisArtifactAdminDebugEnabled(value bool) UpdateAnalysisArtifactFn {
+	return func(v *pacta.AnalysisArtifact) error {
+		v.AdminDebugEnabled = value
+		return nil
+	}
+}
+
+func SetAnalysisArtifactSharedToPublic(value bool) UpdateAnalysisArtifactFn {
+	return func(v *pacta.AnalysisArtifact) error {
+		v.SharedToPublic = value
+		return nil
+	}
+}
