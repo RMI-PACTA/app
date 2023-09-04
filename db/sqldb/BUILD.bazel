@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "sqldb",
     srcs = [
+        "analysis.go",
         "blob.go",
         "initiative.go",
         "initiative_invitation.go",
@@ -12,6 +13,7 @@ go_library(
         "portfolio.go",
         "portfolio_group.go",
         "portfolio_initiative.go",
+        "snapshot.go",
         "sqldb.go",
         "user.go",
     ],

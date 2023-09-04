@@ -226,6 +226,14 @@ func timeToNilable(t time.Time) *time.Time {
 	return &t
 }
 
+func idToNilable[T ~string](id T) *string {
+	if id == "" {
+		return nil
+	}
+	s := string(id)
+	return &s
+}
+
 func allRows[T any](name string, rows pgx.Rows, fn func(rowScanner) (T, error)) ([]T, error) {
 	defer rows.Close()
 	var ts []T
