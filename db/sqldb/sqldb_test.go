@@ -115,3 +115,14 @@ var exampleHoldingsDate = time.Date(
 	0,
 	time.UTC,
 )
+
+var exampleHoldingsDate2 = time.Date(
+	2012,
+	10,
+	1,
+	0,
+	0,
+	0,
+	0,
+	time.UTC,
+)

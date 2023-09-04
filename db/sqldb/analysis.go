@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const analyseselectColumns = `
+const analyseSelectColumns = `
 	analysis.id,
 	analysis.analysis_type,
 	analysis.owner_id,
@@ -25,7 +25,7 @@ const analyseselectColumns = `
 
 func (d *DB) Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error) {
 	rows, err := d.query(tx, `
-		SELECT `+analyseselectColumns+`
+		SELECT `+analyseSelectColumns+`
 		FROM analysis 
 		WHERE id = $1;`, id)
 	if err != nil {
@@ -40,7 +40,7 @@ func (d *DB) Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error) {
 
 func (d *DB) Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*pacta.Analysis, error) {
 	rows, err := d.query(tx, `
-		SELECT `+analyseselectColumns+`
+		SELECT `+analyseSelectColumns+`
 		FROM analysis 
 		WHERE id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
 	if err != nil {
@@ -55,20 +55,6 @@ func (d *DB) Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*p
 		result[pv.ID] = pv
 	}
 	return result, nil
-}
-
-func (d *DB) AllAnalyses(tx db.Tx) ([]*pacta.Analysis, error) {
-	rows, err := d.query(tx, `
-		SELECT `+analyseselectColumns+`
-		FROM analysis;`)
-	if err != nil {
-		return nil, fmt.Errorf("querying analyses: %w", err)
-	}
-	pvs, err := rowsToAnalyses(rows)
-	if err != nil {
-		return nil, fmt.Errorf("translating rows to analyses: %w", err)
-	}
-	return pvs, nil
 }
 
 func (d *DB) CreateAnalysis(tx db.Tx, a *pacta.Analysis) error {

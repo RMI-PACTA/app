@@ -56,25 +56,25 @@ func (d *DB) Portfolios(tx db.Tx, ids []pacta.PortfolioID) (map[pacta.PortfolioI
 	return result, nil
 }
 
-func (d *DB) CreatePortfolio(tx db.Tx, p *pacta.Portfolio) error {
+func (d *DB) CreatePortfolio(tx db.Tx, p *pacta.Portfolio) (pacta.PortfolioID, error) {
 	if err := validatePortfolioForCreation(p); err != nil {
-		return fmt.Errorf("validating portfolio for creation: %w", err)
+		return "", fmt.Errorf("validating portfolio for creation: %w", err)
 	}
 	hd, err := validateHoldingsDate(p.HoldingsDate)
 	if err != nil {
-		return fmt.Errorf("validating holdings date: %w", err)
+		return "", fmt.Errorf("validating holdings date: %w", err)
 	}
 	p.ID = pacta.PortfolioID(d.randomID("pflo"))
 	err = d.exec(tx, `
 		INSERT INTO portfolio 
-			(id, owner_id, name, description, created_at, holdings_date, blob_id, admin_debug_enabled, number_of_rows)
+			(id, owner_id, name, description, holdings_date, blob_id, admin_debug_enabled, number_of_rows)
 			VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
-		p.ID, p.Owner.ID, p.Name, p.Description, p.CreatedAt, hd, p.Blob.ID, p.AdminDebugEnabled, p.NumberOfRows)
+			($1, $2, $3, $4, $5, $6, $7, $8);`,
+		p.ID, p.Owner.ID, p.Name, p.Description, hd, p.Blob.ID, p.AdminDebugEnabled, p.NumberOfRows)
 	if err != nil {
-		return fmt.Errorf("creating portfolio: %w", err)
+		return "", fmt.Errorf("creating portfolio: %w", err)
 	}
-	return nil
+	return p.ID, nil
 }
 
 func (d *DB) UpdatePortfolio(tx db.Tx, id pacta.PortfolioID, mutations ...db.UpdatePortfolioFn) error {
@@ -101,9 +101,14 @@ func (d *DB) UpdatePortfolio(tx db.Tx, id pacta.PortfolioID, mutations ...db.Upd
 	return nil
 }
 
-func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) error {
+func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, error) {
+	buris := []pacta.BlobURI{}
 	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
-		err := d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_id = $1;`, id)
+		p, err := d.Portfolio(tx, id)
+		if err != nil {
+			return fmt.Errorf("reading portfolio: %w", err)
+		}
+		err = d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting portfolio_group_memberships: %w", err)
 		}
@@ -119,12 +124,17 @@ func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) error {
 		if err != nil {
 			return fmt.Errorf("deleting portfolio: %w", err)
 		}
+		buri, err := d.DeleteBlob(tx, p.Blob.ID)
+		if err != nil {
+			return fmt.Errorf("deleting blob: %w", err)
+		}
+		buris = append(buris, buri)
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("performing portfolio deletion: %w", err)
+		return nil, fmt.Errorf("performing portfolio deletion: %w", err)
 	}
-	return nil
+	return buris, nil
 }
 
 func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {

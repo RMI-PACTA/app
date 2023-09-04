@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -15,88 +16,81 @@ func TestPortfolioCRUD(t *testing.T) {
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
 	b := blobForTesting(t, tdb)
-	u := userForTesting(t, tdb)
-	o := ownerUserForTesting(t, tdb, u)
+	u1 := userForTestingWithKey(t, tdb, "1")
+	u2 := userForTestingWithKey(t, tdb, "2")
+	o1 := ownerUserForTesting(t, tdb, u1)
+	o2 := ownerUserForTesting(t, tdb, u2)
 
 	p := &pacta.Portfolio{
 		Name:         "portfolio-name",
 		Description:  "portfolio-description",
 		HoldingsDate: exampleHoldingsDate,
-		Owner:        o,
-		Blob:         b,
+		Owner:        &pacta.Owner{ID: o1.ID},
+		Blob:         &pacta.Blob{ID: b.ID},
 		NumberOfRows: 10,
 	}
-	err := tdb.CreatePortfolio(tx, p)
+	id, err := tdb.CreatePortfolio(tx, p)
 	if err != nil {
 		t.Fatalf("creating portfolio: %v", err)
 	}
+	p.ID = id
 	p.CreatedAt = time.Now()
 
-	/*
-		assert := func(i *pacta.Portfolio) {
-			t.Helper()
-			actual, err := tdb.Portfolio(tx, i.ID)
-			if err != nil {
-				t.Fatalf("reading portfolio: %v", err)
-			}
-			if diff := cmp.Diff(i, actual, portfolioCmpOpts()); diff != "" {
-				t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
-			}
-			eM := map[pacta.PortfolioID]*pacta.Portfolio{i.ID: i}
-			aM, err := tdb.Portfolios(tx, []pacta.PortfolioID{i.ID})
-			if err != nil {
-				t.Fatalf("reading portfolios: %v", err)
-			}
-			if diff := cmp.Diff(eM, aM, portfolioCmpOpts()); diff != "" {
-				t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
-			}
-			actuals, err := tdb.AllPortfolios(tx)
-			if err != nil {
-				t.Fatalf("reading portfolios: %v", err)
-			}
-			if diff := cmp.Diff([]*pacta.Portfolio{i}, actuals, portfolioCmpOpts()); diff != "" {
-				t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
-			}
-		}
-		assert(i)
+	actual, err := tdb.Portfolio(tx, p.ID)
+	if err != nil {
+		t.Fatalf("reading portfolio: %v", err)
+	}
+	if diff := cmp.Diff(p, actual, portfolioCmpOpts()); diff != "" {
+		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
+	}
 
-		i.Name = "new name"
-		i.Affiliation = "new affiliation"
-		i.PublicDescription = "new public decsription"
-		i.InternalDescription = "new internal description"
-		i.RequiresPortfolioToJoin = true
-		i.Language = pacta.Language_EN
-		err = tdb.UpdatePortfolio(tx, i.ID,
-			db.SetPortfolioName(i.Name),
-			db.SetPortfolioAffiliation(i.Affiliation),
-			db.SetPortfolioPublicDescription(i.PublicDescription),
-			db.SetPortfolioInternalDescription(i.InternalDescription),
-			db.SetPortfolioRequiresPortfolioToJoin(i.RequiresPortfolioToJoin),
-			db.SetPortfolioLanguage(pacta.Language_EN),
-		)
-		if err != nil {
-			t.Fatalf("updating portfolio: %v", err)
-		}
-		assert(i)
+	ps, err := tdb.Portfolios(tx, []pacta.PortfolioID{p.ID, p.ID})
+	if err != nil {
+		t.Fatalf("reading portfolios: %w", err)
+	}
+	if diff := cmp.Diff(map[pacta.PortfolioID]*pacta.Portfolio{p.ID: p}, ps, portfolioCmpOpts()); diff != "" {
+		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
+	}
 
-		i.IsAcceptingNewMembers = true
-		if err := tdb.UpdatePortfolio(tx, i.ID, db.SetPortfolioIsAcceptingNewMembers(true)); err != nil {
-			t.Fatalf("updating portfolio: %v", err)
-		}
-		assert(i)
+	nName := "new-name"
+	nDesc := "new-description"
+	nRows := 20
+	err = tdb.UpdatePortfolio(tx, p.ID,
+		db.SetPortfolioName(nName),
+		db.SetPortfolioDescription(nDesc),
+		db.SetPortfolioHoldingsDate(exampleHoldingsDate2),
+		db.SetPortfolioOwner(o2.ID),
+		db.SetPortfolioAdminDebugEnabled(true),
+		db.SetPortfolioNumberOfRows(nRows),
+	)
+	if err != nil {
+		t.Fatalf("updating portfolio: %v", err)
+	}
+	p.Name = nName
+	p.Description = nDesc
+	p.HoldingsDate = exampleHoldingsDate2
+	p.Owner = &pacta.Owner{ID: o2.ID}
+	p.AdminDebugEnabled = true
+	p.NumberOfRows = nRows
 
-		i.IsAcceptingNewPortfolios = true
-		if err := tdb.UpdatePortfolio(tx, i.ID, db.SetPortfolioIsAcceptingNewPortfolios(true)); err != nil {
-			t.Fatalf("updating portfolio: %v", err)
-		}
-		assert(i)
+	actual, err = tdb.Portfolio(tx, p.ID)
+	if err != nil {
+		t.Fatalf("reading portfolio: %v", err)
+	}
+	if diff := cmp.Diff(p, actual, portfolioCmpOpts()); diff != "" {
+		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
+	}
 
-		err = tdb.DeletePortfolio(tx, i.ID)
-		if err != nil {
-			t.Fatalf("delete portfolio: %v", err)
-		}
-	*/
+	buris, err := tdb.DeletePortfolio(tx, p.ID)
+	if err != nil {
+		t.Fatalf("deleting portfolio: %v", err)
+	}
+	if diff := cmp.Diff([]pacta.BlobURI{b.BlobURI}, buris); diff != "" {
+		t.Fatalf("blob uri mismatch (-want +got):\n%s", diff)
+	}
 }
+
+// TODO(grady) write a thorough portfolio deletion test
 
 func portfolioCmpOpts() cmp.Option {
 	portfolioIDLessFn := func(a, b pacta.PortfolioID) bool {
@@ -111,4 +105,28 @@ func portfolioCmpOpts() cmp.Option {
 		cmpopts.EquateEmpty(),
 		cmpopts.EquateApproxTime(time.Second),
 	}
+}
+
+func portfolioForTesting(t *testing.T, tdb *DB) *pacta.Portfolio {
+	ctx := context.Background()
+	tx := tdb.NoTxn(ctx)
+	b := blobForTesting(t, tdb)
+	u := userForTestingWithKey(t, tdb, "for-portfolio-owner")
+	o := ownerUserForTesting(t, tdb, u)
+
+	p := &pacta.Portfolio{
+		Name:         "portfolio-name",
+		Description:  "portfolio-description",
+		HoldingsDate: exampleHoldingsDate,
+		Owner:        &pacta.Owner{ID: o.ID},
+		Blob:         &pacta.Blob{ID: b.ID},
+		NumberOfRows: 10,
+	}
+	id, err := tdb.CreatePortfolio(tx, p)
+	if err != nil {
+		t.Fatalf("creating portfolio: %v", err)
+	}
+	p.CreatedAt = time.Now()
+	p.ID = id
+	return p
 }
