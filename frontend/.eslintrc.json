@@ -35,14 +35,16 @@
       }
     ],
     "@typescript-eslint/explicit-function-return-type": 0,
-    "@typescript-eslint/strict-boolean-expressions": 0 
+    "@typescript-eslint/strict-boolean-expressions": 0,
+    "@typescript-eslint/promise-function-async": 0
   },
   "overrides": [
     {
       "files": [
         "components/*/**/*.vue",
         "pages/**/*.vue",
-        "layouts/**/*.vue"
+        "layouts/**/*.vue",
+        "error.vue"
       ],
       "rules": {
         "vue/multi-word-component-names": 0

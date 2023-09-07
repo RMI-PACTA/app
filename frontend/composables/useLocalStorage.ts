@@ -1,6 +1,5 @@
-import { computed, onMounted, type WritableComputedRef } from 'vue'
+import { type WritableComputedRef } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
-import { present } from '@/lib/preconditions'
 
 export const useLocalStorage = () => {
   // This code will be invoked on server, so we want a simple way of telling all of the computed
@@ -76,10 +75,11 @@ export const useLocalStorage = () => {
   })
 
   const getDeviceId = (): string => {
-    return present(deviceId.value)
+    return presentOrReload(deviceId.value)
   }
 
   const helpTextExpanded = (helpTextId: string) => computedBooleanLocalStorageValue(`helpTextExpanded-${helpTextId}`, true)
+  const showStandardDebug = computedBooleanLocalStorageValue('showStandardDebug', false)
 
   return {
     computedBooleanLocalStorageValue,
@@ -87,6 +87,7 @@ export const useLocalStorage = () => {
     computedStringSetLocalStorageValue,
     computedDateLocalStorageValue,
     helpTextExpanded,
+    showStandardDebug,
     deviceId,
     getDeviceId
   }

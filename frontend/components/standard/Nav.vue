@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { type MenuItem } from 'primevue/menuitem'
 
 const { isAuthenticated, signIn, signOut } = await useMSAL()

@@ -5,7 +5,7 @@ const props = defineProps<{
   pactaVersion: PactaVersion
 }>()
 
-const emit = defineEmits<(e: 'update:pactaVersion', pactaVersion: PactaVersion) => void, >()
+const emit = defineEmits<(e: 'update:pactaVersion', pactaVersion: PactaVersion) => void>()
 
 const model = computed({
   get: () => props.pactaVersion,
@@ -14,15 +14,34 @@ const model = computed({
 </script>
 
 <template>
-  <div class="flex flex-column gap-3">
+  <div>
     <FormField
       label="Version Name"
       help-text="The name of the version of the PACTA algorithm."
       required
-      completed="!!model.name"
+      :completed="model.name.length > 0"
     >
       <PVInputText
         v-model="model.name"
+      />
+    </FormField>
+    <FormField
+      label="Version Description"
+      help-text="An optional description of this version of the PACTA algorithm."
+    >
+      <PVTextarea
+        v-model="model.description"
+        auto-resize
+      />
+    </FormField>
+    <FormField
+      label="Docker Image Digest"
+      help-text="The SHA hash of the docker image that should correspond to this version of the PACTA version."
+      required
+      :completed="model.digest.length > 0"
+    >
+      <PVInputText
+        v-model="model.digest"
       />
     </FormField>
   </div>

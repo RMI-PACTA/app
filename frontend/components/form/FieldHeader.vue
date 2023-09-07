@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 interface Props {
   label: string
   helpText: string
   startHelpTextExpanded: boolean
   helpTextExists: boolean
   required: boolean
+  loading: boolean
   completed: boolean
+  requiredLabel: string
+  loadingLabel: string
+  completedLabel: string
 }
 const props = defineProps<Props>()
 const { helpTextExpanded: computedHTE } = useLocalStorage()
@@ -34,21 +37,30 @@ const helpTextTextClass = computed(() => helpTextExpanded.value ? 'mb-2' : 'h-0'
       />
       <div
         v-if="props.required && !props.completed"
-        class="required-warning flex align-items-center gap-1"
+        class="flex align-items-center gap-1 p-error"
       >
         <i
-          class="pi pi-exclamation-triangle"
+          class="pi pi-circle"
         />
-        <span>Required</span>
+        <span>{{ props.requiredLabel }}</span>
       </div>
       <div
         v-if="props.required && props.completed"
-        class="completed-warning flex align-items-center gap-1"
+        class=" flex align-items-center gap-1 text-success"
       >
         <i
           class="pi pi-check-circle"
         />
-        <span>Completed</span>
+        <span>{{ props.completedLabel }}</span>
+      </div>
+      <div
+        v-if="props.loading"
+        class="flex align-items-center gap-1 text-700"
+      >
+        <i
+          class="pi pi-sync pi-spin"
+        />
+        <span>{{ props.loadingLabel }}</span>
       </div>
     </div>
     <div
@@ -61,11 +73,3 @@ const helpTextTextClass = computed(() => helpTextExpanded.value ? 'mb-2' : 'h-0'
     </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.required-warning {
-  background: $warningMessageBg;
-  border-radius: $borderRadius;
-  padding: 0.25rem 0.5rem;
-}
-</style>

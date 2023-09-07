@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     transpile: ['primevue']
   },
   css: [
+    '@/assets/css/overrides.css',
     '@/assets/css/theme.css',
     'primevue/resources/primevue.css',
     'primeicons/primeicons.css',
@@ -28,5 +29,14 @@ export default defineNuxtConfig({
   },
   typescript: {
     strict: true
+  },
+  imports: {
+    presets: [
+      {
+        from: 'vue',
+        imports: ['computed', 'onMounted']
+      }
+    ],
+    dirs: ['globalimports']
   }
 })
