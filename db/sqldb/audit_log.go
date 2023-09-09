@@ -59,16 +59,16 @@ func (d *DB) CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, erro
 		return "", fmt.Errorf("validating audit_log for creation: %w", err)
 	}
 	id := pacta.AuditLogID(d.randomID(auditLogIDNamespace))
-	ownerFn := func(o *pacta.Owner) any {
+	ownerFn := func(o *pacta.Owner) pgtype.Text {
 		if o == nil {
 			return pgtype.Text{}
 		}
-		return o.ID
+		return pgtype.Text{String: string(o.ID), Valid: true}
 	}
-	var stt *string
+	var stt pgtype.Text
 	if a.SecondaryTargetType != "" {
-		s := string(a.SecondaryTargetType)
-		stt = &s
+		stt.Valid = true
+		stt.String = string(a.SecondaryTargetType)
 	}
 	err := d.exec(tx, `
 		INSERT INTO audit_log 
@@ -106,21 +106,15 @@ func rowToAuditLog(row rowScanner) (*pacta.AuditLog, error) {
 	if err != nil {
 		return nil, fmt.Errorf("scanning into audit_log: %w", err)
 	}
-	if t, err := pacta.ParseAuditLogActorType(actorType); err != nil {
+	if a.ActorType, err = pacta.ParseAuditLogActorType(actorType); err != nil {
 		return nil, fmt.Errorf("parsing audit_log actor_type: %w", err)
-	} else {
-		a.ActorType = t
 	}
-	if t, err := pacta.ParseAuditLogTargetType(primaryType); err != nil {
+	if a.PrimaryTargetType, err = pacta.ParseAuditLogTargetType(primaryType); err != nil {
 		return nil, fmt.Errorf("parsing audit_log primary_target_type: %w", err)
-	} else {
-		a.PrimaryTargetType = t
 	}
 	if secondaryType.Valid {
-		if t, err := pacta.ParseAuditLogTargetType(secondaryType.String); err != nil {
+		if a.SecondaryTargetType, err = pacta.ParseAuditLogTargetType(secondaryType.String); err != nil {
 			return nil, fmt.Errorf("parsing audit_log secondary_target_type: %w", err)
-		} else {
-			a.SecondaryTargetType = t
 		}
 	}
 	if secondaryOwner.Valid {

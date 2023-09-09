@@ -138,10 +138,10 @@ func validateInitiativeInvitationForCreation(ii *pacta.InitiativeInvitation) err
 }
 
 func (db *DB) putInitiativeInvitation(tx db.Tx, ii *pacta.InitiativeInvitation) error {
-	var uid *string
+	var uid pgtype.Text
 	if ii.UsedBy != nil {
-		s := string(ii.UsedBy.ID)
-		uid = &s
+		uid.Valid = true
+		uid.String = string(ii.UsedBy.ID)
 	}
 	err := db.exec(tx, `
 		UPDATE initiative_invitation SET
