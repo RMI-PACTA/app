@@ -81,18 +81,17 @@ ALTER TABLE ONLY analysis_artifact ADD CONSTRAINT analysis_artifact_blob_id_fkey
 CREATE TABLE audit_log (
 	action audit_log_action NOT NULL,
 	actor_id text NOT NULL,
-	actor_owner_id text,
+	actor_owner_id text NOT NULL,
 	actor_type audit_log_actor_type NOT NULL,
 	created_at timestamp with time zone DEFAULT now() NOT NULL,
+	id text NOT NULL,
 	primary_target_id text NOT NULL,
-	primary_target_owner_id text,
+	primary_target_owner_id text NOT NULL,
 	primary_target_type audit_log_target_type NOT NULL,
 	secondary_target_id text NOT NULL,
 	secondary_target_owner_id text,
-	secondary_target_type audit_log_target_type NOT NULL);
-ALTER TABLE ONLY audit_log ADD CONSTRAINT audit_log_actor_owner_id_fkey FOREIGN KEY (actor_owner_id) REFERENCES owner(id) ON DELETE RESTRICT;
-ALTER TABLE ONLY audit_log ADD CONSTRAINT audit_log_primary_target_owner_id_fkey FOREIGN KEY (primary_target_owner_id) REFERENCES owner(id) ON DELETE RESTRICT;
-ALTER TABLE ONLY audit_log ADD CONSTRAINT audit_log_secondary_target_owner_id_fkey FOREIGN KEY (secondary_target_owner_id) REFERENCES owner(id) ON DELETE RESTRICT;
+	secondary_target_type audit_log_target_type);
+ALTER TABLE ONLY audit_log ADD CONSTRAINT audit_log_pkey PRIMARY KEY (id);
 
 
 CREATE TABLE blob (

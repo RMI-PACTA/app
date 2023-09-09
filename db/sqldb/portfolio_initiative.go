@@ -7,6 +7,7 @@ import (
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (d *DB) PortfolioInitiativeMembershipsByPortfolio(tx db.Tx, pid pacta.PortfolioID) ([]*pacta.PortfolioInitiativeMembership, error) {
@@ -68,7 +69,7 @@ func (d *DB) DeletePortfolioInitiativeMembership(tx db.Tx, pid pacta.PortfolioID
 }
 
 func rowToPortfolioInitiativeMembership(row rowScanner) (*pacta.PortfolioInitiativeMembership, error) {
-	var addedByUserID *string
+	var addedByUserID pgtype.Text
 	m := &pacta.PortfolioInitiativeMembership{
 		Portfolio:  &pacta.Portfolio{},
 		Initiative: &pacta.Initiative{},
@@ -82,8 +83,8 @@ func rowToPortfolioInitiativeMembership(row rowScanner) (*pacta.PortfolioInitiat
 	if err != nil {
 		return nil, fmt.Errorf("scanning into portfolio_initiative_membership: %w", err)
 	}
-	if addedByUserID != nil {
-		m.AddedBy = &pacta.User{ID: pacta.UserID(*addedByUserID)}
+	if addedByUserID.Valid {
+		m.AddedBy = &pacta.User{ID: pacta.UserID(addedByUserID.String)}
 	}
 	return m, nil
 }

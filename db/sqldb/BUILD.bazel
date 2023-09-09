@@ -3,7 +3,9 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "sqldb",
     srcs = [
+        "audit_log.go",
         "blob.go",
+        "cursor.go",
         "initiative.go",
         "initiative_invitation.go",
         "initiative_user.go",
@@ -30,6 +32,7 @@ go_test(
     name = "sqldb_test",
     size = "large",
     srcs = [
+        "audit_log_test.go",
         "blob_test.go",
         "initiative_invitation_test.go",
         "initiative_test.go",

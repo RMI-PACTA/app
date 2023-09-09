@@ -260,3 +260,23 @@ func idsToInterface[T ~string](in []T) []interface{} {
 	}
 	return out
 }
+
+type queryArgs struct {
+	values []any
+}
+
+func (a *queryArgs) add(v any) string {
+	a.values = append(a.values, v)
+	return fmt.Sprintf("$%d", len(a.values))
+}
+
+func eqOrIn[T any](col string, values []T, args *queryArgs) string {
+	if len(values) == 1 {
+		return fmt.Sprintf("%s = %s", col, args.add(values[0]))
+	}
+	result := []string{}
+	for _, v := range values {
+		result = append(result, args.add(v))
+	}
+	return fmt.Sprintf("%s IN (%s)", col, strings.Join(result, ", "))
+}
