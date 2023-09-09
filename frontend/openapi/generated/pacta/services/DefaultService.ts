@@ -6,6 +6,7 @@ import type { EmptySuccess } from '../models/EmptySuccess';
 import type { Error } from '../models/Error';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
+import type { PactaVersionCreate } from '../models/PactaVersionCreate';
 import type { User } from '../models/User';
 import type { UserChanges } from '../models/UserChanges';
 
@@ -102,20 +103,19 @@ export class DefaultService {
     /**
      * Creates a PACTA version
      * Creates a PACTA version
-     * @param body PACTA Version object properties to update
+     * @param requestBody PACTA Version object properties to update
      * @returns EmptySuccess pacta version created successfully
      * @returns Error unexpected error
      * @throws ApiError
      */
     public createPactaVersion(
-        body: PactaVersion,
+        requestBody: PactaVersionCreate,
     ): CancelablePromise<EmptySuccess | Error> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/pacta-versions',
-            query: {
-                'body': body,
-            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 403: `caller does not have access to create PACTA versions`,
             },
@@ -149,14 +149,14 @@ export class DefaultService {
      * Updates user properties
      * Updates a user's settable properties
      * @param id ID of user to update
-     * @param body User object properties to update
+     * @param requestBody User object properties to update
      * @returns User the new user object
      * @returns Error unexpected error
      * @throws ApiError
      */
     public updateUser(
         id: string,
-        body: UserChanges,
+        requestBody: UserChanges,
     ): CancelablePromise<User | Error> {
         return this.httpRequest.request({
             method: 'PATCH',
@@ -164,9 +164,8 @@ export class DefaultService {
             path: {
                 'id': id,
             },
-            query: {
-                'body': body,
-            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 403: `caller does not have access or user does not exist`,
             },

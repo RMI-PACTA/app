@@ -140,13 +140,13 @@ paths:
       summary: Creates a PACTA version 
       description: Creates a PACTA version
       operationId: createPactaVersion
-      parameters:
-        - name: body
-          in: query
-          description: PACTA Version object properties to update
-          required: true
-          schema:
-            $ref: '#/components/schemas/PactaVersion'
+      requestBody:
+        description: PACTA Version object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PactaVersionCreate'
       responses:
         '200':
           description: pacta version created successfully 
@@ -209,12 +209,13 @@ paths:
           required: true
           schema:
             type: string
-        - name: body
-          in: query
-          description: User object properties to update
-          required: true
-          schema:
-            $ref: '#/components/schemas/UserChanges'
+      requestBody:
+        description: User object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserChanges'
       responses:
         '200':
           description: the new user object
@@ -273,6 +274,23 @@ components:
     Language:
       type: string
       enum: *LANGUAGES
+
+    PactaVersionCreate:
+      type: object
+      required:
+        - name
+        - description
+        - digest
+      properties:
+        name:
+          type: string
+          description: the human meaningful name of the version of the PACTA model 
+        description:
+          type: string
+          description: Additional information about the version of the PACTA model 
+        digest:
+          type: string 
+          description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model. 
 
     PactaVersion:
       type: object

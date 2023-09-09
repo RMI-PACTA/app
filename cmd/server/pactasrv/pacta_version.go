@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	api "github.com/RMI/pacta/openapi/pacta"
+	"github.com/RMI/pacta/pacta"
+	"go.uber.org/zap"
 )
 
 // Returns a version of the PACTA model by ID
@@ -22,7 +24,16 @@ func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVer
 // Creates a PACTA version
 // (POST /pacta-versions)
 func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) (api.CreatePactaVersionResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	// TODO(grady) Authz
+	_, err := s.DB.CreatePACTAVersion(s.DB.NoTxn(ctx), &pacta.PACTAVersion{
+		Name:        request.Body.Name,
+		Description: request.Body.Description,
+		Digest:      request.Body.Digest,
+	})
+	if err != nil {
+		return nil, zap.Error(ctx, "failed to create PACTA version", zap.Error(err))
+	}
+	return nil, nil
 }
 
 // Updates a PACTA version
