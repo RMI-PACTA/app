@@ -1,4 +1,3 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@bazel_gazelle//:def.bzl", "gazelle")
 
 # gazelle:resolve go github.com/RMI/pacta/openapi/pacta //openapi:pacta_generated
@@ -15,11 +14,4 @@ gazelle(
         "-prune",
     ],
     command = "update-repos",
-)
-
-go_library(
-    name = "pacta",
-    srcs = ["pacta.go"],
-    importpath = "github.com/RMI/pacta",
-    visibility = ["//visibility:public"],
 )
