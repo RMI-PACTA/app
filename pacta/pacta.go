@@ -571,16 +571,14 @@ func ParseAuditLogAction(s string) (AuditLogAction, error) {
 type AuditLogActorType string
 
 const (
-	AuditLogActorType_User            AuditLogActorType = "USER"
-	AuditLogActorType_InitiativeAdmin AuditLogActorType = "INITIATIVE_ADMIN"
-	AuditLogActorType_Admin           AuditLogActorType = "ADMIN"
-	AuditLogActorType_SuperAdmin      AuditLogActorType = "SUPER_ADMIN"
-	AuditLogActorType_System          AuditLogActorType = "SYSTEM"
+	AuditLogActorType_User       AuditLogActorType = "USER"
+	AuditLogActorType_Admin      AuditLogActorType = "ADMIN"
+	AuditLogActorType_SuperAdmin AuditLogActorType = "SUPER_ADMIN"
+	AuditLogActorType_System     AuditLogActorType = "SYSTEM"
 )
 
 var AuditLogActorTypeValues = []AuditLogActorType{
 	AuditLogActorType_User,
-	AuditLogActorType_InitiativeAdmin,
 	AuditLogActorType_Admin,
 	AuditLogActorType_SuperAdmin,
 	AuditLogActorType_System,
@@ -590,8 +588,6 @@ func ParseAuditLogActorType(s string) (AuditLogActorType, error) {
 	switch s {
 	case "USER":
 		return AuditLogActorType_User, nil
-	case "INITIATIVE_ADMIN":
-		return AuditLogActorType_InitiativeAdmin, nil
 	case "ADMIN":
 		return AuditLogActorType_Admin, nil
 	case "SUPER_ADMIN":
@@ -646,15 +642,18 @@ func ParseAuditLogTargetType(s string) (AuditLogTargetType, error) {
 
 type AuditLogID string
 type AuditLog struct {
-	ID                  AuditLogID
-	CreatedAt           time.Time
-	ActorType           AuditLogActorType
-	ActorID             string
-	Action              AuditLogAction
-	PrimaryTargetType   AuditLogTargetType
-	PrimaryTargetID     string
-	SecondaryTargetType AuditLogTargetType
-	SecondaryTargetID   string
+	ID                   AuditLogID
+	CreatedAt            time.Time
+	ActorType            AuditLogActorType
+	ActorID              string
+	ActorOwner           *Owner
+	Action               AuditLogAction
+	PrimaryTargetType    AuditLogTargetType
+	PrimaryTargetID      string
+	PrimaryTargetOwner   *Owner
+	SecondaryTargetType  AuditLogTargetType
+	SecondaryTargetID    string
+	SecondaryTargetOwner *Owner
 }
 
 func (o *AuditLog) Clone() *AuditLog {
@@ -662,15 +661,18 @@ func (o *AuditLog) Clone() *AuditLog {
 		return nil
 	}
 	return &AuditLog{
-		ID:                  o.ID,
-		CreatedAt:           o.CreatedAt,
-		ActorType:           o.ActorType,
-		ActorID:             o.ActorID,
-		Action:              o.Action,
-		PrimaryTargetType:   o.PrimaryTargetType,
-		PrimaryTargetID:     o.PrimaryTargetID,
-		SecondaryTargetType: o.SecondaryTargetType,
-		SecondaryTargetID:   o.SecondaryTargetID,
+		ID:                   o.ID,
+		CreatedAt:            o.CreatedAt,
+		ActorType:            o.ActorType,
+		ActorID:              o.ActorID,
+		ActorOwner:           o.ActorOwner.Clone(),
+		Action:               o.Action,
+		PrimaryTargetType:    o.PrimaryTargetType,
+		PrimaryTargetID:      o.PrimaryTargetID,
+		PrimaryTargetOwner:   o.PrimaryTargetOwner.Clone(),
+		SecondaryTargetType:  o.SecondaryTargetType,
+		SecondaryTargetID:    o.SecondaryTargetID,
+		SecondaryTargetOwner: o.SecondaryTargetOwner.Clone(),
 	}
 }
 

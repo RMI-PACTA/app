@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -243,6 +244,61 @@ func TestDeleteUser(t *testing.T) {
 	if diff := cmp.Diff(eMap, aMap, userCmpOpts()); diff != "" {
 		t.Fatalf("unexpected diff (-want +got)\n%s", diff)
 	}
+}
+
+func TestAuthnMechanismPersistability(t *testing.T) {
+	testUserEnumConvertability(
+		t,
+		func(e pacta.AuthnMechanism, u *pacta.User) { u.AuthnMechanism = e },
+		func(u *pacta.User) pacta.AuthnMechanism { return u.AuthnMechanism },
+		pacta.AuthnMechanismValues,
+	)
+}
+
+func TestLanguagePersistability(t *testing.T) {
+	testUserEnumConvertability(
+		t,
+		func(e pacta.Language, u *pacta.User) { u.PreferredLanguage = e },
+		func(u *pacta.User) pacta.Language { return u.PreferredLanguage },
+		pacta.LanguageValues,
+	)
+}
+
+func testUserEnumConvertability[E comparable](t *testing.T, writeE func(E, *pacta.User), readE func(*pacta.User) E, values []E) {
+	var zeroValue E
+	ctx := context.Background()
+	tdb := createDBForTesting(t)
+	tx := tdb.NoTxn(ctx)
+	base := &pacta.User{
+		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
+		AuthnID:        "authn-id",
+		EnteredEmail:   "entered-email",
+		CanonicalEmail: "canonical-email",
+		Name:           "User's Name",
+	}
+	var id pacta.UserID
+	iteration := 0
+
+	write := func(e E) error {
+		u := base.Clone()
+		u.EnteredEmail = fmt.Sprintf("entered-email-%d", iteration)
+		u.AuthnID = fmt.Sprintf("authn-id-%d", iteration)
+		u.CanonicalEmail = fmt.Sprintf("canonical-email-%d", iteration)
+		writeE(e, u)
+		iteration++
+		id2, err := tdb.CreateUser(tx, u)
+		id = id2
+		return err
+	}
+	read := func() (E, error) {
+		u, err := tdb.User(tx, id)
+		if err != nil {
+			return zeroValue, err
+		}
+		return readE(u), nil
+	}
+
+	testEnumConvertability(t, write, read, values)
 }
 
 func userCmpOpts() cmp.Option {

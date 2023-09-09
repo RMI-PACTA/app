@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -83,6 +84,7 @@ func TestSchemaHistory(t *testing.T) {
 		{ID: 1, Version: 1}, // 0001_create_schema_migrations_history
 		{ID: 2, Version: 2}, // 0002_create_user_table
 		{ID: 3, Version: 3}, // 0003_domain_types
+		{ID: 4, Version: 4}, // 0004_audit_log_tweaks
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {
@@ -101,5 +103,25 @@ func createDBForTesting(t *testing.T) *DB {
 	return &DB{
 		db:          pool,
 		idGenerator: idg,
+	}
+}
+
+// This utility function helps us test that the set of enums in the `pacta` package are persistable to the DB.
+func testEnumConvertability[E comparable](t *testing.T, write func(E) error, read func() (E, error), all []E) {
+	t.Helper()
+	for _, e := range all {
+		t.Run(fmt.Sprintf("case_%v", e), func(t *testing.T) {
+			err := write(e)
+			if err != nil {
+				t.Fatalf("failed to write enum: %v", err)
+			}
+			readBack, err := read()
+			if err != nil {
+				t.Fatalf("failed to read enum: %v", err)
+			}
+			if readBack != e {
+				t.Fatalf("read back enum %v, want %v", readBack, e)
+			}
+		})
 	}
 }
