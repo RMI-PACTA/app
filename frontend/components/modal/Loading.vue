@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { ZIndexUtils } from 'primevue/utils'
-import { watch } from 'vue'
-
 const { loading: { loading, loadingSet } } = useModal()
 
 const prefix = 'ModalLoading'
 const loadingModalEl = useState<HTMLElement>(`${prefix}.loadingModalEl`)
 
+const debug = useState<boolean>(`${prefix}.debug`, () => false)
+const toggleDebug = () => {
+  debug.value = !debug.value
+}
+
+/*
+See https://github.com/RMI-PACTA/app/pull/7#r1319209535 - we may be able to remove this if we don't use modals with nested auto-z-indexed elements
+
+import { ZIndexUtils } from 'primevue/utils'
+import { watch } from 'vue'
+
 const refreshZIndex = () => {
-  const mg = presentOrReload(loadingModalEl.value.parentElement)
+  const mg = presentOrSuggestReload(loadingModalEl.value.parentElement)
   if (loading.value) {
     ZIndexUtils.set('ModalGroup', mg, 10000)
     ZIndexUtils.set('LoadingModal', loadingModalEl.value, 10001)
@@ -17,13 +25,8 @@ const refreshZIndex = () => {
     ZIndexUtils.clear(loadingModalEl.value)
   }
 }
-
-const debug = useState<boolean>(`${prefix}.debug`, () => false)
-const toggleDebug = () => {
-  debug.value = !debug.value
-}
-
 watch(() => loading.value, refreshZIndex)
+*/
 </script>
 
 <template>
@@ -34,6 +37,7 @@ watch(() => loading.value, refreshZIndex)
     class="loading-modal"
     @click="toggleDebug"
   >
+    <!-- TODO(#8) Swap out this reference -->
     <img
       src="@/assets/img/logo_loading_animation_v1.gif"
       class="gif shadow-3"

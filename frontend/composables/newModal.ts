@@ -67,7 +67,7 @@ export const useModal = () => {
 
   const handleOAPIError = async <T>(t: OPAIError | T): Promise<T> => {
     return await new Promise<T>((resolve, reject) => {
-      console.log('handleOAPIError: %v\n', t)
+      // TODO(#10) Rephrase this once we use 300+ for all errors
       if (t instanceof Object && Object.prototype.hasOwnProperty.call(t, 'message')) {
         reject(new Error(JSON.stringify(t)))
       } else {

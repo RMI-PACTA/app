@@ -10,6 +10,6 @@ export const present = <T>(t: T | undefined | null, r: Remediation): T => {
   return t
 }
 
-export const presentOrReload = <T>(t: T | undefined | null): T => present(t, Remediation.Reload)
+export const presentOrSuggestReload = <T>(t: T | undefined | null): T => present(t, Remediation.Reload)
 export const presentOrFileBug = <T>(t: T | undefined | null): T => present(t, Remediation.FileBug)
 export const presentOrCheckURL = <T>(t: T | undefined | null): T => present(t, Remediation.CheckUrl)

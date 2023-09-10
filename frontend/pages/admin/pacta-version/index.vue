@@ -21,7 +21,7 @@ const newPV = () => router.push('/admin/pacta-version/new')
   <StandardContent>
     <TitleBar title="PACTA Versions" />
     <p>
-      General ideas about pacta versions go here.
+      General ideas about PACTA versions go here.
     </p>
     <PVDataTable
       :value="pactaVersions"

@@ -75,7 +75,7 @@ export const useLocalStorage = () => {
   })
 
   const getDeviceId = (): string => {
-    return presentOrReload(deviceId.value)
+    return presentOrSuggestReload(deviceId.value)
   }
 
   const helpTextExpanded = (helpTextId: string) => computedBooleanLocalStorageValue(`helpTextExpanded-${helpTextId}`, true)

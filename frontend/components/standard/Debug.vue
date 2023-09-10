@@ -10,6 +10,7 @@ const props = withDefaults(defineProps<Props>(), { always: false, label: 'Techni
 </script>
 
 <template>
+  <!-- TODO(#9) Remove this ClientOnly once the ULS is fixed. -->
   <ClientOnly>
     <PVAccordion
       v-if="showStandardDebug || props.always"

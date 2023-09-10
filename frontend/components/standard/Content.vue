@@ -1,3 +1,5 @@
+<script setup lang="ts" />
+
 <template>
   <div class="standard-content flex flex-column gap-3 pt-3 pb-4 md:pt-5 md:pb-6 align-items-start">
     <slot />

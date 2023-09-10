@@ -38,9 +38,6 @@ const fullError = computed(() => {
         </div>
       </template>
       <div class="flex gap-3 flex-column">
-        <code class="w-full">
-          {{ error }}
-        </code>
         <StandardDebug
           label="Error Trace"
           :value="fullError"
@@ -56,9 +53,9 @@ const fullError = computed(() => {
             <li><b>Visit this site on a desktop computer</b> - this site works best on desktop web browsers.</li>
           </ul>
           If this issue persists, please report this issue by <a
-            href="https://github.com/RMI/opgee-api/issues/new"
+            href="https://github.com/RMI-pacta/app/issues/new"
             target="_blank"
-          >filing a bug in the OPGEE repository</a>.
+          >filing a bug in the PACTA repository</a>.
         </div>
       </template>
     </PVDialog>
