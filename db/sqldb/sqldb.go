@@ -338,3 +338,11 @@ func eqOrIn[T any](col string, values []T, args *queryArgs) string {
 	}
 	return fmt.Sprintf("%s IN (%s)", col, strings.Join(result, ", "))
 }
+
+func stringsToIDs[T ~string](strs []string) []T {
+	ts := make([]T, len(strs))
+	for i, s := range strs {
+		ts[i] = T(s)
+	}
+	return ts
+}

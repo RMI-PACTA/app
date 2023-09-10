@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -136,9 +137,14 @@ func initiativeCmpOpts() cmp.Option {
 
 func initiativeForTesting(t *testing.T, tdb *DB) *pacta.Initiative {
 	t.Helper()
-	pv := pactaVersionForTesting(t, tdb)
+	return initiativeForTestingWithKey(t, tdb, "only")
+}
+
+func initiativeForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.Initiative {
+	t.Helper()
+	pv := pactaVersionForTestingWithKey(t, tdb, key)
 	i := &pacta.Initiative{
-		ID:           "initiative-id",
+		ID:           pacta.InitiativeID(fmt.Sprintf("initiative-id-%s", key)),
 		Language:     pacta.Language_DE,
 		Name:         "initiative-name",
 		PACTAVersion: &pacta.PACTAVersion{ID: pv.ID},

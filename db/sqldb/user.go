@@ -206,7 +206,6 @@ func rowToUser(row rowScanner) (*pacta.User, error) {
 		}
 		u.PreferredLanguage = l
 	}
-	fmt.Printf("LANG = %s\n", lang.String)
 	return u, nil
 }
 

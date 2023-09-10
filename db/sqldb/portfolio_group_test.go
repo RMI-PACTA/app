@@ -198,3 +198,12 @@ func portfolioGroupForTesting(t *testing.T, tdb *DB, owner *pacta.Owner) *pacta.
 	pg.CreatedAt = time.Now()
 	return pg
 }
+
+func portfolioGroupMembershipForTesting(t *testing.T, tdb *DB, pg *pacta.PortfolioGroup, p *pacta.Portfolio) {
+	t.Helper()
+	ctx := context.Background()
+	tx := tdb.NoTxn(ctx)
+	if err := tdb.CreatePortfolioGroupMembership(tx, pg.ID, p.ID); err != nil {
+		t.Fatalf("creating portfolio group membership: %v", err)
+	}
+}

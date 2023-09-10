@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -219,10 +220,15 @@ func pactaVersionCmpOpts() cmp.Option {
 
 func pactaVersionForTesting(t *testing.T, tdb *DB) *pacta.PACTAVersion {
 	t.Helper()
+	return pactaVersionForTestingWithKey(t, tdb, "only")
+}
+
+func pactaVersionForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.PACTAVersion {
+	t.Helper()
 	pv := &pacta.PACTAVersion{
 		Name:        "pacta version",
 		Description: "pacta description",
-		Digest:      "pacta digest",
+		Digest:      fmt.Sprintf("pacta digest %s", key),
 	}
 	tx := tdb.NoTxn(context.Background())
 	pvID, err := tdb.CreatePACTAVersion(tx, pv)

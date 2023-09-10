@@ -2,7 +2,6 @@ package sqldb
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
@@ -51,14 +50,13 @@ func (d *DB) CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioI
 	if err := validatePortfolioInitiativeMembershipForCreate(pim); err != nil {
 		return fmt.Errorf("validating portfolio_initiative_membership for creation: %w", err)
 	}
-	createdAt := time.Now()
 	err := d.exec(tx, `
 		INSERT INTO portfolio_initiative_membership	
 			(portfolio_id, initiative_id, added_by_user_id)
 			VALUES
 			($1, $2, $3)
 		ON CONFLICT DO NOTHING;`,
-		pim.Portfolio.ID, pim.Initiative.ID, createdAt, pim.AddedBy.ID)
+		pim.Portfolio.ID, pim.Initiative.ID, pim.AddedBy.ID)
 	if err != nil {
 		return fmt.Errorf("creating portfolio_initiative_membership: %w", err)
 	}
