@@ -14,7 +14,7 @@
   - https://vuejs.org/guide/components/attrs.html#disabling-attribute-inheritance
 */
 import type { RouteLocationRaw } from 'vue-router'
-import { computed, useAttrs } from 'vue'
+import { useAttrs } from 'vue'
 import Ripple from 'primevue/ripple'
 
 // See https://vuejs.org/guide/reusability/custom-directives.html#introduction

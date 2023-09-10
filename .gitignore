@@ -4,3 +4,4 @@
 /test_server.key
 /test_server.pub
 /.postgres-data
+/.vscode/**
