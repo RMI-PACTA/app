@@ -29,7 +29,7 @@ func TestAnalysisCRUD(t *testing.T) {
 	cmpOpts := analysisCmpOpts()
 
 	iu := &pacta.Analysis{
-		PortfolioSnapshot: s,
+		PortfolioSnapshot: &pacta.PortfolioSnapshot{ID: s.ID},
 		PACTAVersion:      &pacta.PACTAVersion{ID: pv.ID},
 		Name:              "analysis-name",
 		Description:       "analysis-description",

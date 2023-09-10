@@ -40,6 +40,7 @@ go_test(
     name = "sqldb_test",
     size = "large",
     srcs = [
+        "analysis_artifact_test.go",
         "analysis_test.go",
         "audit_log_test.go",
         "blob_test.go",

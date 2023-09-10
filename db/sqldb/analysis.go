@@ -72,7 +72,7 @@ func (d *DB) CreateAnalysis(tx db.Tx, a *pacta.Analysis) (pacta.AnalysisID, erro
 	if err != nil {
 		return "", fmt.Errorf("creating analysis: %w", err)
 	}
-	return "", nil
+	return a.ID, nil
 }
 
 func (d *DB) UpdateAnalysis(tx db.Tx, id pacta.AnalysisID, mutations ...db.UpdateAnalysisFn) error {
