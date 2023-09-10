@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/RMI/pacta/db"
+	"github.com/RMI/pacta/pacta"
 	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/idgen"
 	"github.com/hashicorp/go-multierror"
@@ -306,17 +307,17 @@ func dedupeIDs[T ~string](in []T) []T {
 	return result
 }
 
-func validateHoldingsDate(t time.Time) (*time.Time, error) {
+func encodeHoldingsDate(hd *pacta.HoldingsDate) (*time.Time, error) {
 	// TODO: validate the properties of the holdings date (i.e. aligned to window)
-	return timeToNilable(t), nil
+	return timeToNilable(hd.Time), nil
 }
 
-func decodeHoldingsDate(t pgtype.Timestamptz) (time.Time, error) {
+func decodeHoldingsDate(t pgtype.Timestamptz) (*pacta.HoldingsDate, error) {
 	// TODO: validate the properties of the holdings date (i.e. aligned to window)
 	if !t.Valid {
-		return time.Time{}, nil
+		return &pacta.HoldingsDate{}, nil
 	}
-	return t.Time, nil
+	return &pacta.HoldingsDate{Time: t.Time}, nil
 }
 
 type queryArgs struct {
@@ -345,4 +346,12 @@ func stringsToIDs[T ~string](strs []string) []T {
 		ts[i] = T(s)
 	}
 	return ts
+}
+
+func asMap[K ~string, V any](vs []V, idFn func(v V) K) map[K]V {
+	result := make(map[K]V, len(vs))
+	for _, v := range vs {
+		result[idFn(v)] = v
+	}
+	return result
 }

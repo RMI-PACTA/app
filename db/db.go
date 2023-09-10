@@ -209,7 +209,7 @@ func SetPortfolioDescription(value string) UpdatePortfolioFn {
 	}
 }
 
-func SetPortfolioHoldingsDate(value time.Time) UpdatePortfolioFn {
+func SetPortfolioHoldingsDate(value *pacta.HoldingsDate) UpdatePortfolioFn {
 	return func(v *pacta.Portfolio) error {
 		v.HoldingsDate = value
 		return nil
@@ -381,6 +381,13 @@ func SetIncompleteUploadFailureCode(value pacta.FailureCode) UpdateIncompleteUpl
 func SetIncompleteUploadFailureMessage(value string) UpdateIncompleteUploadFn {
 	return func(v *pacta.IncompleteUpload) error {
 		v.FailureMessage = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadHoldingsDate(value *pacta.HoldingsDate) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.HoldingsDate = value
 		return nil
 	}
 }

@@ -58,9 +58,9 @@ func (d *DB) Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*p
 	return result, nil
 }
 
-func (d *DB) CreateAnalysis(tx db.Tx, a *pacta.Analysis) error {
+func (d *DB) CreateAnalysis(tx db.Tx, a *pacta.Analysis) (pacta.AnalysisID, error) {
 	if err := validateAnalysisForCreation(a); err != nil {
-		return fmt.Errorf("validating analysis for creation: %w", err)
+		return "", fmt.Errorf("validating analysis for creation: %w", err)
 	}
 	a.ID = pacta.AnalysisID(d.randomID("analysis"))
 	err := d.exec(tx, `
@@ -68,11 +68,11 @@ func (d *DB) CreateAnalysis(tx db.Tx, a *pacta.Analysis) error {
 			(id, analysis_type, owner_id, pacta_version_id, portfolio_snapshot_id, name, description)
 			VALUES
 			($1, $2, $3, $4, $5, $6, $7);`,
-		a.ID, a.Name, a.Owner.ID, a.PACTAVersion.ID, a.PortfolioSnapshot.ID, a.Name, a.Description)
+		a.ID, a.AnalysisType, a.Owner.ID, a.PACTAVersion.ID, a.PortfolioSnapshot.ID, a.Name, a.Description)
 	if err != nil {
-		return fmt.Errorf("creating analysis: %w", err)
+		return "", fmt.Errorf("creating analysis: %w", err)
 	}
-	return nil
+	return "", nil
 }
 
 func (d *DB) UpdateAnalysis(tx db.Tx, id pacta.AnalysisID, mutations ...db.UpdateAnalysisFn) error {

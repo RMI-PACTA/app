@@ -110,3 +110,13 @@ func portfolioSnapshotCmpOpts() cmp.Option {
 		cmpopts.EquateApproxTime(time.Second),
 	}
 }
+
+func snapshotPortfolioGroupForTesting(t *testing.T, tdb *DB, pg *pacta.PortfolioGroup) *pacta.PortfolioSnapshot {
+	t.Helper()
+	spgID, err := tdb.CreateSnapshotOfPortfolioGroup(tdb.NoTxn(context.Background()), pg.ID)
+	if err != nil {
+		t.Fatalf("snapshotting portfolio group: %v", err)
+	}
+	spg, err := tdb.PortfolioSnapshot(tdb.NoTxn(context.Background()), spgID)
+	return spg
+}

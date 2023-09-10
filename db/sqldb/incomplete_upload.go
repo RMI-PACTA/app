@@ -60,25 +60,25 @@ func (d *DB) IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pa
 	return result, nil
 }
 
-func (d *DB) CreateIncompleteUpload(tx db.Tx, i *pacta.IncompleteUpload) error {
+func (d *DB) CreateIncompleteUpload(tx db.Tx, i *pacta.IncompleteUpload) (pacta.IncompleteUploadID, error) {
 	if err := validateIncompleteUploadForCreation(i); err != nil {
-		return fmt.Errorf("validating incomplete_upload for creation: %w", err)
+		return "", fmt.Errorf("validating incomplete_upload for creation: %w", err)
 	}
-	hd, err := validateHoldingsDate(i.HoldingsDate)
+	hd, err := encodeHoldingsDate(i.HoldingsDate)
 	if err != nil {
-		return fmt.Errorf("validating holdings date: %w", err)
+		return "", fmt.Errorf("validating holdings date: %w", err)
 	}
 	i.ID = pacta.IncompleteUploadID(d.randomID("iu"))
 	err = d.exec(tx, `
 		INSERT INTO incomplete_upload 
 			(id, owner_id, admin_debug_enabled, blob_id, name, description, holdings_date)
 			VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
+			($1, $2, $3, $4, $5, $6, $7);`,
 		i.ID, i.Owner.ID, i.AdminDebugEnabled, i.Blob.ID, i.Name, i.Description, hd)
 	if err != nil {
-		return fmt.Errorf("creating incomplete_upload: %w", err)
+		return "", fmt.Errorf("creating incomplete_upload: %w", err)
 	}
-	return nil
+	return i.ID, nil
 }
 
 func (d *DB) UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error {
@@ -112,13 +112,13 @@ func (d *DB) DeleteIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (pact
 		if err != nil {
 			return fmt.Errorf("reading incomplete_upload: %w", err)
 		}
-		buri, err = d.DeleteBlob(tx, iu.Blob.ID)
-		if err != nil {
-			return fmt.Errorf("deleting blob: %w", err)
-		}
 		err = d.exec(tx, `DELETE FROM incomplete_upload WHERE id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting incomplete_upload: %w", err)
+		}
+		buri, err = d.DeleteBlob(tx, iu.Blob.ID)
+		if err != nil {
+			return fmt.Errorf("deleting blob: %w", err)
 		}
 		return nil
 	})
@@ -178,7 +178,7 @@ func rowsToIncompleteUploads(rows pgx.Rows) ([]*pacta.IncompleteUpload, error) {
 }
 
 func (db *DB) putIncompleteUpload(tx db.Tx, iu *pacta.IncompleteUpload) error {
-	hd, err := validateHoldingsDate(iu.HoldingsDate)
+	hd, err := encodeHoldingsDate(iu.HoldingsDate)
 	if err != nil {
 		return fmt.Errorf("validating holdings date: %w", err)
 	}
@@ -194,7 +194,7 @@ func (db *DB) putIncompleteUpload(tx db.Tx, iu *pacta.IncompleteUpload) error {
 			failure_code = $9,
 			failure_message = $10
 		WHERE id = $1;
-		`, iu.Owner.ID, iu.AdminDebugEnabled, iu.Name, iu.Description,
+		`, iu.ID, iu.Owner.ID, iu.AdminDebugEnabled, iu.Name, iu.Description,
 		hd, timeToNilable(iu.RanAt), timeToNilable(iu.CompletedAt),
 		strToNilable(iu.FailureCode), strToNilable(iu.FailureMessage))
 	if err != nil {

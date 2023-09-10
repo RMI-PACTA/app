@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RMI/pacta/pacta"
 	"github.com/Silicon-Ally/idgen"
 	"github.com/Silicon-Ally/testpgx"
 	"github.com/Silicon-Ally/testpgx/migrate"
@@ -107,27 +108,31 @@ func createDBForTesting(t *testing.T) *DB {
 	}
 }
 
-var exampleHoldingsDate = time.Date(
-	2010,
-	4,
-	1,
-	0,
-	0,
-	0,
-	0,
-	time.UTC,
-)
+var exampleHoldingsDate = &pacta.HoldingsDate{
+	Time: time.Date(
+		2010,
+		4,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	),
+}
 
-var exampleHoldingsDate2 = time.Date(
-	2012,
-	10,
-	1,
-	0,
-	0,
-	0,
-	0,
-	time.UTC,
-)
+var exampleHoldingsDate2 = &pacta.HoldingsDate{
+	Time: time.Date(
+		2012,
+		10,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	),
+}
 
 // This utility function helps us test that the set of enums in the `pacta` package are persistable to the DB.
 func testEnumConvertability[E comparable](t *testing.T, write func(E) error, read func() (E, error), all []E) {

@@ -1,145 +1,110 @@
 package sqldb
 
-/*
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/RMI/pacta/db"
+	"github.com/RMI/pacta/pacta"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+)
+
 func TestAnalysisCRUD(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
 	pv := pactaVersionForTesting(t, tdb)
-	a := &pacta.Analysis{
-		ID:           "initiative-id",
-		Language:     pacta.Language_DE,
-		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pv.ID},
+	u1 := userForTestingWithKey(t, tdb, "User1")
+	o1 := ownerUserForTesting(t, tdb, u1)
+	u2 := userForTestingWithKey(t, tdb, "User2")
+	o2 := ownerUserForTesting(t, tdb, u2)
+	p1 := portfolioForTestingWithKey(t, tdb, "Portfolio1")
+	p2 := portfolioForTestingWithKey(t, tdb, "Portfolio2")
+	pg := portfolioGroupForTesting(t, tdb, o1)
+	portfolioGroupMembershipForTesting(t, tdb, pg, p1)
+	portfolioGroupMembershipForTesting(t, tdb, pg, p2)
+	s := snapshotPortfolioGroupForTesting(t, tdb, pg)
+	cmpOpts := analysisCmpOpts()
+
+	iu := &pacta.Analysis{
+		PortfolioSnapshot: s,
+		PACTAVersion:      &pacta.PACTAVersion{ID: pv.ID},
+		Name:              "analysis-name",
+		Description:       "analysis-description",
+		Owner:             &pacta.Owner{ID: o1.ID},
+		AnalysisType:      pacta.AnalysisType_Audit,
 	}
-	err := tdb.CreateAnalysis(tx, i)
+	id, err := tdb.CreateAnalysis(tx, iu)
 	if err != nil {
-		t.Fatalf("creating initiative: %v", err)
+		t.Fatalf("creating analysis: %v", err)
 	}
-	i.CreatedAt = time.Now()
+	iu.ID = id
+	iu.CreatedAt = time.Now()
 
-	assert := func(i *pacta.Analysis) {
-		t.Helper()
-		actual, err := tdb.Analysis(tx, i.ID)
-		if err != nil {
-			t.Fatalf("reading initiative: %v", err)
-		}
-		if diff := cmp.Diff(i, actual, initiativeCmpOpts()); diff != "" {
-			t.Fatalf("initiative mismatch (-want +got):\n%s", diff)
-		}
-		eM := map[pacta.AnalysisID]*pacta.Analysis{i.ID: i}
-		aM, err := tdb.Analysiss(tx, []pacta.AnalysisID{i.ID})
-		if err != nil {
-			t.Fatalf("reading initiatives: %v", err)
-		}
-		if diff := cmp.Diff(eM, aM, initiativeCmpOpts()); diff != "" {
-			t.Fatalf("initiative mismatch (-want +got):\n%s", diff)
-		}
-		actuals, err := tdb.AllAnalysiss(tx)
-		if err != nil {
-			t.Fatalf("reading initiatives: %v", err)
-		}
-		if diff := cmp.Diff([]*pacta.Analysis{i}, actuals, initiativeCmpOpts()); diff != "" {
-			t.Fatalf("initiative mismatch (-want +got):\n%s", diff)
-		}
+	actual, err := tdb.Analysis(tx, iu.ID)
+	if err != nil {
+		t.Fatalf("reading analysis: %v", err)
 	}
-	assert(i)
+	if diff := cmp.Diff(iu, actual, cmpOpts); diff != "" {
+		t.Fatalf("mismatch (-want +got):\n%s", diff)
+	}
 
-	i.Name = "new name"
-	i.Affiliation = "new affiliation"
-	i.PublicDescription = "new public decsription"
-	i.InternalDescription = "new internal description"
-	i.RequiresInvitationToJoin = true
-	i.Language = pacta.Language_EN
-	err = tdb.UpdateAnalysis(tx, i.ID,
-		db.SetAnalysisName(i.Name),
-		db.SetAnalysisAffiliation(i.Affiliation),
-		db.SetAnalysisPublicDescription(i.PublicDescription),
-		db.SetAnalysisInternalDescription(i.InternalDescription),
-		db.SetAnalysisRequiresInvitationToJoin(i.RequiresInvitationToJoin),
-		db.SetAnalysisLanguage(pacta.Language_EN),
+	ius, err := tdb.Analyses(tx, []pacta.AnalysisID{iu.ID, iu.ID, "nonsense"})
+	if err != nil {
+		t.Fatalf("reading analysiss: %w", err)
+	}
+	if diff := cmp.Diff(map[pacta.AnalysisID]*pacta.Analysis{iu.ID: iu}, ius, cmpOpts); diff != "" {
+		t.Fatalf("analysis mismatch (-want +got):\n%s", diff)
+	}
+
+	nName := "new-name"
+	nDesc := "new-description"
+	ranAt := time.UnixMilli(111111111)
+	completedAt := time.UnixMilli(222222222)
+	failureCode := pacta.FailureCode_Unknown
+	failureMessage := "failureMessage"
+	err = tdb.UpdateAnalysis(tx, iu.ID,
+		db.SetAnalysisName(nName),
+		db.SetAnalysisDescription(nDesc),
+		db.SetAnalysisRanAt(ranAt),
+		db.SetAnalysisOwner(o2.ID),
+		db.SetAnalysisFailureCode(failureCode),
+		db.SetAnalysisCompletedAt(completedAt),
+		db.SetAnalysisFailureMessage(failureMessage),
 	)
 	if err != nil {
-		t.Fatalf("updating initiative: %v", err)
+		t.Fatalf("updating portfolio: %v", err)
 	}
-	assert(i)
+	iu.Name = nName
+	iu.Description = nDesc
+	iu.RanAt = ranAt
+	iu.Owner = &pacta.Owner{ID: o2.ID}
+	iu.FailureCode = failureCode
+	iu.CompletedAt = completedAt
+	iu.FailureMessage = failureMessage
 
-	i.IsAcceptingNewMembers = true
-	if err := tdb.UpdateAnalysis(tx, i.ID, db.SetAnalysisIsAcceptingNewMembers(true)); err != nil {
-		t.Fatalf("updating initiative: %v", err)
-	}
-	assert(i)
-
-	i.IsAcceptingNewPortfolios = true
-	if err := tdb.UpdateAnalysis(tx, i.ID, db.SetAnalysisIsAcceptingNewPortfolios(true)); err != nil {
-		t.Fatalf("updating initiative: %v", err)
-	}
-	assert(i)
-
-	err = tdb.DeleteAnalysis(tx, i.ID)
+	actual, err = tdb.Analysis(tx, iu.ID)
 	if err != nil {
-		t.Fatalf("delete initiative: %v", err)
+		t.Fatalf("reading portfolio: %v", err)
+	}
+	if diff := cmp.Diff(iu, actual, cmpOpts); diff != "" {
+		t.Fatalf("mismatch (-want +got):\n%s", diff)
+	}
+
+	buris, err := tdb.DeleteAnalysis(tx, iu.ID)
+	if err != nil {
+		t.Fatalf("deleting analysis: %v", err)
+	}
+	if diff := cmp.Diff([]pacta.BlobURI{}, buris); diff != "" {
+		t.Fatalf("blob uri mismatch (-want +got):\n%s", diff)
 	}
 }
 
-func TestDeleteAnalysis(t *testing.T) {
-	ctx := context.Background()
-	tdb := createDBForTesting(t)
-	tx := tdb.NoTxn(ctx)
-	i := initiativeForTesting(t, tdb)
-	u := userForTesting(t, tdb)
-	_, err0 := tdb.CreateAnalysisInvitation(tx, &pacta.AnalysisInvitation{
-		Analysis: &pacta.Analysis{ID: i.ID},
-	})
-	iur := &pacta.AnalysisUserRelationship{
-		User:       &pacta.User{ID: u.ID},
-		Analysis: &pacta.Analysis{ID: i.ID},
-	}
-	err1 := tdb.PutAnalysisUserRelationship(tx, iur)
-	noErrDuringSetup(t, err0, err1)
-
-	err := tdb.DeleteAnalysis(tx, i.ID)
-	if err != nil {
-		t.Fatalf("delete initiative: %v", err)
-	}
-
-	_, err = tdb.Analysis(tx, i.ID)
-	if err == nil {
-		t.Fatalf("expected error, got nil")
-	}
-}
-
-func initiativeCmpOpts() cmp.Option {
-	initiativeIDLessFn := func(a, b pacta.AnalysisID) bool {
-		return a < b
-	}
-	initiativeLessFn := func(a, b *pacta.Analysis) bool {
-		return a.ID < b.ID
-	}
+func analysisCmpOpts() cmp.Option {
 	return cmp.Options{
-		cmpopts.SortSlices(initiativeLessFn),
-		cmpopts.SortMaps(initiativeIDLessFn),
 		cmpopts.EquateEmpty(),
 		cmpopts.EquateApproxTime(time.Second),
 	}
 }
-
-func initiativeForTesting(t *testing.T, tdb *DB) *pacta.Analysis {
-	t.Helper()
-	pv := pactaVersionForTesting(t, tdb)
-	i := &pacta.Analysis{
-		ID:           "initiative-id",
-		Language:     pacta.Language_DE,
-		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pv.ID},
-	}
-	ctx := context.Background()
-	tx := tdb.NoTxn(ctx)
-	err := tdb.CreateAnalysis(tx, i)
-	if err != nil {
-		t.Fatalf("creating initiative: %v", err)
-	}
-	i.CreatedAt = time.Now()
-	return i
-}
-*/

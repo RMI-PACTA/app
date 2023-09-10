@@ -126,3 +126,33 @@ func (d *DB) PopulateAnalysisArtifacts(tx db.Tx, haas []HasAnalysisArtifacts) er
 	}
 	return nil
 }
+
+type HasSnapshots interface {
+	Snaphsots() []*pacta.PortfolioSnapshot
+}
+
+func (d *DB) PopulateSnapshots(tx db.Tx, hpss []HasSnapshots) error {
+	pss := []*pacta.PortfolioSnapshot{}
+	for _, hps := range hpss {
+		pss = append(pss, hps.Snaphsots()...)
+	}
+	if len(pss) == 0 {
+		return nil
+	}
+	ids := []pacta.PortfolioSnapshotID{}
+	for _, ps := range pss {
+		ids = append(ids, ps.ID)
+	}
+	actual, err := d.PortfolioSnapshots(tx, ids)
+	if err != nil {
+		return fmt.Errorf("looking up portfolio_snapshots: %w", err)
+	}
+	for _, ps := range pss {
+		if actualPS, ok := actual[ps.ID]; ok {
+			*ps = *actualPS
+		} else {
+			return fmt.Errorf("portfolio_snapshot %v not found, but requested", ps.ID)
+		}
+	}
+	return nil
+}

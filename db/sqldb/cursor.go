@@ -7,8 +7,8 @@ import (
 	"github.com/RMI/pacta/db"
 )
 
-func offsetToCursor(i int) string {
-	return fmt.Sprintf("%d", i)
+func offsetToCursor(i int) db.Cursor {
+	return db.Cursor(fmt.Sprintf("%d", i))
 }
 
 func offsetFromCursor(c db.Cursor) (int, error) {

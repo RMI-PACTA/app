@@ -6,6 +6,7 @@ import (
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -38,29 +39,30 @@ func (d *DB) CreateSnapshotOfInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta
 }
 
 func (d *DB) PortfolioSnapshot(tx db.Tx, psID pacta.PortfolioSnapshotID) (*pacta.PortfolioSnapshot, error) {
-	var pID, pgID, iID pgtype.Text
-	var portfolioIDs []string
-	err := d.queryRow(tx, `
-		SELECT portfolio_id, portfolio_group_id, initiative_id, portfolio_ids
+	pss, err := d.PortfolioSnapshots(tx, []pacta.PortfolioSnapshotID{psID})
+	if err != nil {
+		return nil, fmt.Errorf("getting portfolio_snapshots: %w", err)
+	}
+	return exactlyOneFromMap("portfolio_snapshot", psID, pss)
+}
+
+func (d *DB) PortfolioSnapshots(tx db.Tx, psID []pacta.PortfolioSnapshotID) (map[pacta.PortfolioSnapshotID]*pacta.PortfolioSnapshot, error) {
+	rows, err := d.query(tx, `
+		SELECT id, portfolio_id, portfolio_group_id, initiative_id, portfolio_ids
 		FROM portfolio_snapshot
-		WHERE id = $1;`,
-		psID).Scan(&pID, &pgID, &iID, &portfolioIDs)
+		WHERE id IN `+createWhereInFmt(len(psID))+`;`, idsToInterface(psID)...)
 	if err != nil {
 		return nil, fmt.Errorf("reading portfolio snapshot: %w", err)
 	}
-	ps := &pacta.PortfolioSnapshot{
-		PortfolioIDs: stringsToIDs[pacta.PortfolioID](portfolioIDs),
+	pss, err := rowsToPortfolioSnapshots(rows)
+	if err != nil {
+		return nil, fmt.Errorf("scanning portfolio_snapshot: %w", err)
 	}
-	if pID.Valid {
-		ps.PortfolioID = pacta.PortfolioID(pID.String)
+	result := make(map[pacta.PortfolioSnapshotID]*pacta.PortfolioSnapshot)
+	for _, ps := range pss {
+		result[ps.ID] = ps
 	}
-	if pgID.Valid {
-		ps.PortfolioGroupID = pacta.PortfolioGroupID(pgID.String)
-	}
-	if iID.Valid {
-		ps.InitiatiativeID = pacta.InitiativeID(iID.String)
-	}
-	return ps, nil
+	return result, nil
 }
 
 func (d *DB) createSnapshot(tx db.Tx, pID pacta.PortfolioID, pgID pacta.PortfolioGroupID, iID pacta.InitiativeID, portfolioIDs []pacta.PortfolioID) (pacta.PortfolioSnapshotID, error) {
@@ -84,4 +86,34 @@ func (d *DB) createSnapshot(tx db.Tx, pID pacta.PortfolioID, pgID pacta.Portfoli
 		return "", fmt.Errorf("creating portfolio_snapshot: %w", err)
 	}
 	return snapshotID, nil
+}
+
+func rowsToPortfolioSnapshots(rows pgx.Rows) ([]*pacta.PortfolioSnapshot, error) {
+	return allRows("portfolio_snapshot", rows, rowToPortfolioSnapshot)
+}
+
+func rowToPortfolioSnapshot(row rowScanner) (*pacta.PortfolioSnapshot, error) {
+	var (
+		pID, pgID, iID pgtype.Text
+		portfolioIDs   []string
+		id             pacta.PortfolioSnapshotID
+	)
+	err := row.Scan(&id, &pID, &pgID, &iID, &portfolioIDs)
+	if err != nil {
+		return nil, fmt.Errorf("reading portfolio snapshot: %w", err)
+	}
+	ps := &pacta.PortfolioSnapshot{
+		ID:           id,
+		PortfolioIDs: stringsToIDs[pacta.PortfolioID](portfolioIDs),
+	}
+	if pID.Valid {
+		ps.PortfolioID = pacta.PortfolioID(pID.String)
+	}
+	if pgID.Valid {
+		ps.PortfolioGroupID = pacta.PortfolioGroupID(pgID.String)
+	}
+	if iID.Valid {
+		ps.InitiatiativeID = pacta.InitiativeID(iID.String)
+	}
+	return ps, nil
 }

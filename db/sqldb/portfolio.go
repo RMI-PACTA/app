@@ -61,7 +61,7 @@ func (d *DB) CreatePortfolio(tx db.Tx, p *pacta.Portfolio) (pacta.PortfolioID, e
 	if err := validatePortfolioForCreation(p); err != nil {
 		return "", fmt.Errorf("validating portfolio for creation: %w", err)
 	}
-	hd, err := validateHoldingsDate(p.HoldingsDate)
+	hd, err := encodeHoldingsDate(p.HoldingsDate)
 	if err != nil {
 		return "", fmt.Errorf("validating holdings date: %w", err)
 	}
@@ -167,7 +167,7 @@ func rowsToPortfolios(rows pgx.Rows) ([]*pacta.Portfolio, error) {
 }
 
 func (db *DB) putPortfolio(tx db.Tx, p *pacta.Portfolio) error {
-	hd, err := validateHoldingsDate(p.HoldingsDate)
+	hd, err := encodeHoldingsDate(p.HoldingsDate)
 	if err != nil {
 		return fmt.Errorf("validating holdings date: %w", err)
 	}
