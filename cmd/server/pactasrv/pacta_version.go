@@ -6,6 +6,7 @@ import (
 
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
+	"github.com/Silicon-Ally/gqlerr"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +32,7 @@ func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePacta
 		Digest:      request.Body.Digest,
 	})
 	if err != nil {
-		return nil, zap.Error(ctx, "failed to create PACTA version", zap.Error(err))
+		return nil, gqlerr.Internal(ctx, "failed to create PACTA version", zap.Error(err))
 	}
 	return nil, nil
 }

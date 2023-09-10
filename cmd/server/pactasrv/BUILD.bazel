@@ -13,6 +13,7 @@ go_library(
         "//db",
         "//openapi:pacta_generated",
         "//pacta",
+        "@com_github_silicon_ally_gqlerr//:go_default_library",
         "@org_uber_go_zap//:zap",
     ],
 )
