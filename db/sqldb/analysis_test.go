@@ -75,7 +75,7 @@ func TestAnalysisCRUD(t *testing.T) {
 		db.SetAnalysisFailureMessage(failureMessage),
 	)
 	if err != nil {
-		t.Fatalf("updating portfolio: %v", err)
+		t.Fatalf("updating analysis: %v", err)
 	}
 	iu.Name = nName
 	iu.Description = nDesc

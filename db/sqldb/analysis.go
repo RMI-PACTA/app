@@ -117,13 +117,13 @@ func (d *DB) DeleteAnalysis(tx db.Tx, id pacta.AnalysisID) ([]pacta.BlobURI, err
 			}
 			buris = append(buris, buri)
 		}
-		err = d.exec(tx, `DELETE FROM portfolio_snapshot WHERE id = $1;`, a.PortfolioSnapshot.ID)
-		if err != nil {
-			return fmt.Errorf("deleting analysis_invitations: %w", err)
-		}
 		err = d.exec(tx, `DELETE FROM analysis WHERE id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting analysis: %w", err)
+		}
+		err = d.exec(tx, `DELETE FROM portfolio_snapshot WHERE id = $1;`, a.PortfolioSnapshot.ID)
+		if err != nil {
+			return fmt.Errorf("deleting analysis_invitations: %w", err)
 		}
 		return nil
 	})
@@ -199,6 +199,7 @@ func (db *DB) putAnalysis(tx db.Tx, a *pacta.Analysis) error {
 			failure_message = $8
 		WHERE id = $1;
 		`,
+		a.ID,
 		a.Owner.ID,
 		a.Name,
 		a.Description,

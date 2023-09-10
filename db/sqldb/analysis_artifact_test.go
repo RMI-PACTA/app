@@ -68,9 +68,11 @@ func TestAnalysisArtifacts(t *testing.T) {
 	if err := tdb.UpdateAnalysisArtifact(tx, aa2.ID, db.SetAnalysisArtifactAdminDebugEnabled(true)); err != nil {
 		t.Fatalf("updating analysis artifact: %v", err)
 	}
+	aa2.AdminDebugEnabled = true
 	if err := tdb.UpdateAnalysisArtifact(tx, aa3.ID, db.SetAnalysisArtifactSharedToPublic(true)); err != nil {
 		t.Fatalf("updating analysis artifact: %v", err)
 	}
+	aa3.SharedToPublic = true
 
 	actualAA1, err := tdb.AnalysisArtifact(tx, aa1.ID)
 	if err != nil {
@@ -88,11 +90,12 @@ func TestAnalysisArtifacts(t *testing.T) {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}
 
-	listedArtifacts, err := tdb.AnalysisArtifacts(tx, []pacta.AnalysisArtifactID{aa1.ID, aa3.ID})
+	listedActual, err := tdb.AnalysisArtifacts(tx, []pacta.AnalysisArtifactID{aa1.ID, aa3.ID})
 	if err != nil {
 		t.Fatalf("reading analysis artifacts: %v", err)
 	}
-	if diff := cmp.Diff([]*pacta.AnalysisArtifact{aa1, aa3}, listedArtifacts, cmpOpts); diff != "" {
+	listedExpected := map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact{aa1.ID: aa1, aa3.ID: aa3}
+	if diff := cmp.Diff(listedExpected, listedActual, cmpOpts); diff != "" {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}
 

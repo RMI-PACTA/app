@@ -72,7 +72,7 @@ func (d *DB) CreateAnalysisArtifact(tx db.Tx, a *pacta.AnalysisArtifact) (pacta.
 		INSERT INTO analysis_artifact 
 			(id, analysis_id, blob_id, admin_debug_enabled, shared_to_public)
 			VALUES
-			($1, $2, $3, $4);
+			($1, $2, $3, $4, $5);
 	`, id, a.AnalysisID, a.Blob.ID, a.AdminDebugEnabled, a.SharedToPublic)
 	if err != nil {
 		return "", fmt.Errorf("creating analysis_artifact row: %w", err)
