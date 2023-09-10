@@ -4,7 +4,6 @@
 // [1] https://github.com/Azure-Samples/ms-identity-b2c-javascript-spa
 // [2] https://github.com/AzureAD/microsoft-authentication-library-for-js/tree/dev/samples/msal-browser-samples/vue3-sample-app
 import { type AccountInfo, type AuthenticationResult, InteractionRequiredAuthError, type SilentRequest } from '@azure/msal-browser'
-import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import { type APIKey } from '~/openapi/generated/user'
 

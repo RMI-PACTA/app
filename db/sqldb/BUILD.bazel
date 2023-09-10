@@ -7,6 +7,9 @@ go_library(
         "analysis_artifact.go",
         "blob.go",
         "incomplete_upload.go",
+        "audit_log.go",
+        "blob.go",
+        "cursor.go",
         "initiative.go",
         "initiative_invitation.go",
         "initiative_user.go",
@@ -38,7 +41,11 @@ go_test(
     name = "sqldb_test",
     size = "large",
     srcs = [
+<<<<<<< HEAD
         "analysis_test.go",
+=======
+        "audit_log_test.go",
+>>>>>>> main
         "blob_test.go",
         "initiative_invitation_test.go",
         "initiative_test.go",

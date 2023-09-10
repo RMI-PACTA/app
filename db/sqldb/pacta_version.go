@@ -187,9 +187,6 @@ func validatePACTAVersionForCreation(pv *pacta.PACTAVersion) error {
 	if pv.Name == "" {
 		return fmt.Errorf("name is required")
 	}
-	if pv.Description == "" {
-		return fmt.Errorf("description is required")
-	}
 	if pv.ID != "" {
 		return fmt.Errorf("cannot set id on creation")
 	}

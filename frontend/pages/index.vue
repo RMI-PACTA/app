@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { type NewPet } from 'openapi/generated/pacta'
+import { type PactaVersion } from 'openapi/generated/pacta'
 
 const { isAuthenticated, signIn, signOut } = await useMSAL()
 
 const { pactaClient } = useAPI()
 
-const pets = useState<NewPet[]>('index.pets', () => [])
+const pactaVersions = useState<PactaVersion[]>('index.pactaVersions', () => [])
 
 const testAPI = async (): Promise<void> => {
-  const resp = await pactaClient.findPets()
+  const resp = await pactaClient.listPactaVersions()
   if ('message' in resp) {
     console.error('error response from server', resp)
     return
   }
-  pets.value = resp
+  pactaVersions.value = resp
 }
 </script>
 

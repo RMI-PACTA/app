@@ -2,9 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { EmptySuccess } from '../models/EmptySuccess';
 import type { Error } from '../models/Error';
-import type { NewPet } from '../models/NewPet';
-import type { Pet } from '../models/Pet';
+import type { PactaVersion } from '../models/PactaVersion';
+import type { PactaVersionChanges } from '../models/PactaVersionChanges';
+import type { PactaVersionCreate } from '../models/PactaVersionCreate';
+import type { User } from '../models/User';
+import type { UserChanges } from '../models/UserChanges';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -14,65 +18,18 @@ export class DefaultService {
     constructor(public readonly httpRequest: BaseHttpRequest) {}
 
     /**
-     * Returns all pets
-     * Returns all pets from the system that the user has access to
-     * Nam sed condimentum est. Maecenas tempor sagittis sapien, nec rhoncus sem sagittis sit amet. Aenean at gravida augue, ac iaculis sem. Curabitur odio lorem, ornare eget elementum nec, cursus id lectus. Duis mi turpis, pulvinar ac eros ac, tincidunt varius justo. In hac habitasse platea dictumst. Integer at adipiscing ante, a sagittis ligula. Aenean pharetra tempor ante molestie imperdiet. Vivamus id aliquam diam. Cras quis velit non tortor eleifend sagittis. Praesent at enim pharetra urna volutpat venenatis eget eget mauris. In eleifend fermentum facilisis. Praesent enim enim, gravida ac sodales sed, placerat id erat. Suspendisse lacus dolor, consectetur non augue vel, vehicula interdum libero. Morbi euismod sagittis libero sed lacinia.
-     *
-     * Sed tempus felis lobortis leo pulvinar rutrum. Nam mattis velit nisl, eu condimentum ligula luctus nec. Phasellus semper velit eget aliquet faucibus. In a mattis elit. Phasellus vel urna viverra, condimentum lorem id, rhoncus nibh. Ut pellentesque posuere elementum. Sed a varius odio. Morbi rhoncus ligula libero, vel eleifend nunc tristique vitae. Fusce et sem dui. Aenean nec scelerisque tortor. Fusce malesuada accumsan magna vel tempus. Quisque mollis felis eu dolor tristique, sit amet auctor felis gravida. Sed libero lorem, molestie sed nisl in, accumsan tempor nisi. Fusce sollicitudin massa ut lacinia mattis. Sed vel eleifend lorem. Pellentesque vitae felis pretium, pulvinar elit eu, euismod sapien.
-     *
-     * @param tags tags to filter by
-     * @param limit maximum number of results to return
-     * @returns Pet pet response
+     * Returns a version of the PACTA model by ID
+     * @param id ID of pacta version to fetch
+     * @returns PactaVersion pacta response
      * @returns Error unexpected error
      * @throws ApiError
      */
-    public findPets(
-        tags?: Array<string>,
-        limit?: number,
-    ): CancelablePromise<Array<Pet> | Error> {
+    public findPactaVersionById(
+        id: string,
+    ): CancelablePromise<PactaVersion | Error> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/pets',
-            query: {
-                'tags': tags,
-                'limit': limit,
-            },
-        });
-    }
-
-    /**
-     * Creates a new pet
-     * Creates a new pet in the store. Duplicates are allowed
-     * @param requestBody Pet to add to the store
-     * @returns Pet pet response
-     * @returns Error unexpected error
-     * @throws ApiError
-     */
-    public addPet(
-        requestBody: NewPet,
-    ): CancelablePromise<Pet | Error> {
-        return this.httpRequest.request({
-            method: 'POST',
-            url: '/pets',
-            body: requestBody,
-            mediaType: 'application/json',
-        });
-    }
-
-    /**
-     * Returns a pet by ID
-     * Returns a pet based on a single ID
-     * @param id ID of pet to fetch
-     * @returns Pet pet response
-     * @returns Error unexpected error
-     * @throws ApiError
-     */
-    public findPetById(
-        id: number,
-    ): CancelablePromise<Pet | Error> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/pets/{id}',
+            url: '/pacta-version/{id}',
             path: {
                 'id': id,
             },
@@ -80,20 +37,160 @@ export class DefaultService {
     }
 
     /**
-     * Deletes a pet by ID
-     * deletes a single pet based on the ID supplied
-     * @param id ID of pet to delete
+     * Updates a PACTA version
+     * Updates a PACTA version's settable properties
+     * @param id ID of PACTA version to update
+     * @param body PACTA Version object properties to update
+     * @returns EmptySuccess pacta version updated successfully
      * @returns Error unexpected error
      * @throws ApiError
      */
-    public deletePet(
-        id: number,
-    ): CancelablePromise<Error> {
+    public updatePactaVersion(
+        id: string,
+        body: PactaVersionChanges,
+    ): CancelablePromise<EmptySuccess | Error> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/pacta-version/{id}',
+            path: {
+                'id': id,
+            },
+            query: {
+                'body': body,
+            },
+            errors: {
+                403: `caller does not have access or PACTA version does not exist`,
+            },
+        });
+    }
+
+    /**
+     * Deletes a pacta version by ID
+     * deletes a single pacta version based on the ID supplied
+     * @param id ID of pacta version to delete
+     * @returns EmptySuccess pacta version deleted successfully
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public deletePactaVersion(
+        id: string,
+    ): CancelablePromise<EmptySuccess | Error> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/pets/{id}',
+            url: '/pacta-version/{id}',
             path: {
                 'id': id,
+            },
+            errors: {
+                403: `caller does not have access or pacta version does not exist`,
+            },
+        });
+    }
+
+    /**
+     * Returns all versions of the PACTA model
+     * @returns PactaVersion pacta versions
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public listPactaVersions(): CancelablePromise<Array<PactaVersion> | Error> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/pacta-versions',
+        });
+    }
+
+    /**
+     * Creates a PACTA version
+     * Creates a PACTA version
+     * @param requestBody PACTA Version object properties to update
+     * @returns EmptySuccess pacta version created successfully
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public createPactaVersion(
+        requestBody: PactaVersionCreate,
+    ): CancelablePromise<EmptySuccess | Error> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/pacta-versions',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                403: `caller does not have access to create PACTA versions`,
+            },
+        });
+    }
+
+    /**
+     * Returns a user by ID
+     * Returns a user based on a single ID
+     * @param id ID of user to fetch
+     * @returns User user response
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public findUserById(
+        id: string,
+    ): CancelablePromise<User | Error> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/user/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `caller does not have access or user does not exist`,
+            },
+        });
+    }
+
+    /**
+     * Updates user properties
+     * Updates a user's settable properties
+     * @param id ID of user to update
+     * @param requestBody User object properties to update
+     * @returns User the new user object
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public updateUser(
+        id: string,
+        requestBody: UserChanges,
+    ): CancelablePromise<User | Error> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/user/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                403: `caller does not have access or user does not exist`,
+            },
+        });
+    }
+
+    /**
+     * Deletes a user by ID
+     * deletes a single user based on the ID supplied
+     * @param id ID of user to delete
+     * @returns EmptySuccess user deleted
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public deleteUser(
+        id: string,
+    ): CancelablePromise<EmptySuccess | Error> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/user/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                403: `caller does not have access or user does not exist`,
             },
         });
     }

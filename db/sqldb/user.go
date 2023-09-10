@@ -76,13 +76,18 @@ func (d *DB) CreateUser(tx db.Tx, u *pacta.User) (pacta.UserID, error) {
 	if err := validateUserForCreation(u); err != nil {
 		return "", fmt.Errorf("validating user for creation: %w", err)
 	}
+	var pl pgtype.Text
+	if u.PreferredLanguage != "" {
+		pl.Valid = true
+		pl.String = string(u.PreferredLanguage)
+	}
 	id := pacta.UserID(d.randomID(userIDNamespace))
 	err := d.exec(tx, `
 		INSERT INTO pacta_user 
-			(id, authn_mechanism, authn_id, entered_email, canonical_email, admin, super_admin, name)
+			(id, authn_mechanism, authn_id, entered_email, canonical_email, admin, super_admin, name, preferred_language)
 			VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8);
-		`, id, u.AuthnMechanism, u.AuthnID, u.EnteredEmail, u.CanonicalEmail, false, false, u.Name)
+			($1, $2, $3, $4, $5, $6, $7, $8, $9);
+		`, id, u.AuthnMechanism, u.AuthnID, u.EnteredEmail, u.CanonicalEmail, false, false, u.Name, pl)
 	if err != nil {
 		return "", fmt.Errorf("creating pacta_user row for %q: %w", id, err)
 	}
@@ -129,10 +134,10 @@ func (d *DB) DeleteUser(tx db.Tx, id pacta.UserID) error {
 }
 
 func (d *DB) putUser(tx db.Tx, u *pacta.User) error {
-	var lang *string
+	var lang pgtype.Text
 	if u.PreferredLanguage != "" {
-		s := string(u.PreferredLanguage)
-		lang = &s
+		lang.Valid = true
+		lang.String = string(u.PreferredLanguage)
 	}
 	err := d.exec(tx, `
 		UPDATE pacta_user SET
@@ -201,6 +206,7 @@ func rowToUser(row rowScanner) (*pacta.User, error) {
 		}
 		u.PreferredLanguage = l
 	}
+	fmt.Printf("LANG = %s\n", lang.String)
 	return u, nil
 }
 
