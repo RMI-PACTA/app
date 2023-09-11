@@ -11,8 +11,7 @@ const menuHidden = useState<boolean>(`${prefix}.menuHidden`, () => false)
 const menuStyles = computed(() => {
   return {
     transition: menuHidden.value ? 'max-height .1s ease' : 'max-height .5s ease',
-    'overflow-y': 'hidden',
-    'overflow-x': 'visible',
+    overflow: 'hidden',
     'max-height': menuHidden.value ? '0px' : '100vh',
     border: menuHidden.value ? undefined : '2px solid',
     'margin-top': menuHidden.value ? '0' : '-2px'
@@ -27,7 +26,7 @@ const menuItems = computed(() => {
       label: 'Home'
     },
     {
-      to: 'https://github.com/RMI-pacta/issues/new',
+      to: 'https://github.com/RMI-PACTA/app/issues/new',
       label: 'File a Bug'
     }
   ]

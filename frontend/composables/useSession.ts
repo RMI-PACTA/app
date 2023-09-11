@@ -28,7 +28,7 @@ export const useSession = () => {
     // We're the first to request a user, kick of the request and hop in line at the front of the queue.
     return new Promise((resolve) => {
       resolvers.value.push(resolve)
-      pactaClient.findUserByMe()
+      void pactaClient.findUserByMe()
         .then((m) => {
           console.log(m)
           return m
