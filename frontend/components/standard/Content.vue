@@ -36,5 +36,8 @@
   & > .p-button {
     margin: 0.5rem 0;
   }
+
+  min-height: calc(100vh - 9rem - 4px);
+  justify-content: center;
 }
 </style>
