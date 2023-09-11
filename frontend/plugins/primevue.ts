@@ -12,6 +12,7 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import FileUpload from 'primevue/fileupload'
 import Textarea from 'primevue/textarea'
+import Tooltip from 'primevue/tooltip'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 
@@ -34,4 +35,6 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVMessage', Message)
   vueApp.component('PVProgressSpinner', ProgressSpinner)
   vueApp.component('PVTextarea', Textarea)
+
+  vueApp.directive('tooltip', Tooltip)
 })

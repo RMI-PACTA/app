@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PactaversionEditor from '@/components/pactaversion/Editor.vue'
 import { type PactaVersion, type PactaVersionChanges } from '@/openapi/generated/pacta'
 
 const router = useRouter()
@@ -11,6 +12,7 @@ const id = presentOrCheckURL(fromParams('id'))
 const prefix = 'admin/pacta-version/[id]'
 const persistedPactaVersion = useState<PactaVersion>(`${prefix}.persistedPactaVersion`)
 const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`)
+const editor = useState<typeof PactaversionEditor>(`${prefix}.editor`)
 
 const changes = computed<PactaVersionChanges>(() => {
   const a = persistedPactaVersion.value
@@ -23,6 +25,14 @@ const changes = computed<PactaVersionChanges>(() => {
   }
 })
 const hasChanges = computed<boolean>(() => Object.keys(changes.value).length > 0)
+const incompleteFields = computed<string[]>(() => editor.value?.incompleteFields ?? [])
+const isIncomplete = computed(() => incompleteFields.value.length > 0)
+const saveTooltip = computed<string | undefined>(() => {
+  if (!hasChanges.value) { return 'All changes saved' }
+  if (isIncomplete.value) { return `Cannot save with incomplete fields: ${incompleteFields.value.join(', ')}` }
+  return undefined
+})
+const saveDisabled = computed<boolean>(() => saveTooltip.value !== undefined)
 
 const markDefault = () => withLoadingAndErrorHandling(
   () => pactaClient.markPactaVersionAsDefault(id)
@@ -78,21 +88,24 @@ onMounted(async () => {
       />
     </div>
     <PactaversionEditor
+      ref="editor"
       v-model:pactaVersion="pactaVersion"
     />
-    <div class="flex gap-3">
+    <div class="flex gap-3 align-items-center">
       <LinkButton
         label="Discard Changes"
         icon="pi pi-arrow-left"
         class="p-button-secondary p-button-outlined"
       />
-      <PVButton
-        :disabled="!hasChanges"
-        label="Save Changes"
-        icon="pi pi-arrow-right"
-        icon-pos="right"
-        @click="saveChanges"
-      />
+      <div v-tooltip.bottom="saveTooltip">
+        <PVButton
+          :disabled="saveDisabled"
+          label="Save Changes"
+          icon="pi pi-arrow-right"
+          icon-pos="right"
+          @click="saveChanges"
+        />
+      </div>
     </div>
     <StandardDebug
       :value="persistedPactaVersion"

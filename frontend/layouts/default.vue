@@ -25,7 +25,7 @@ onMounted(() => {
       :aria-hidden="anyBlockingModalOpen"
     >
       <main
-        class="px-3 md:px-4 w-full lg:w-10 xl:w-8 mx-auto"
+        class="px-3 md:px-6 w-full lg:w-10 xl:w-8 mx-auto"
         style="min-height: calc(100vh - 9rem - 4px);"
       >
         <NuxtErrorBoundary>

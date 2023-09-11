@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import { type PactaVersion } from '@/openapi/generated/pacta'
+import FormField from '@/components/form/Field.vue'
 
 const props = defineProps<{
   pactaVersion: PactaVersion
 }>()
-
 const emit = defineEmits<(e: 'update:pactaVersion', pactaVersion: PactaVersion) => void>()
-
 const model = computed({
   get: () => props.pactaVersion,
   set: (pactaVersion: PactaVersion) => { emit('update:pactaVersion', pactaVersion) }
 })
+
+const nameCompleted = computed(() => model.value.name.length > 0)
+const digestCompleted = computed(() => model.value.digest.length > 0)
+const incompleteFields = computed<string[]>(() => {
+  const result: string[] = []
+  if (!nameCompleted.value) { result.push('Version Name') }
+  if (!digestCompleted.value) { result.push('Docker Image Digest') }
+  return result
+})
+
+defineExpose({ incompleteFields })
 </script>
 
 <template>
@@ -19,7 +29,7 @@ const model = computed({
       label="Version Name"
       help-text="The name of the version of the PACTA algorithm."
       required
-      :completed="model.name.length > 0"
+      :completed="nameCompleted"
     >
       <PVInputText
         v-model="model.name"
