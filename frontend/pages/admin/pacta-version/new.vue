@@ -17,7 +17,7 @@ const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`, () => ({
 
 const discard = () => router.push('/admin/pacta-version')
 const save = () => withLoadingAndErrorHandling(
-  () => pactaClient.createPactaVersion(pactaVersion.value).then(handleOAPIError),
+  () => pactaClient.createPactaVersion(pactaVersion.value).then(handleOAPIError).then(() => router.push('/admin/pacta-version')),
   `${prefix}.save`
 )
 </script>

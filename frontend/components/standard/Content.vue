@@ -28,7 +28,7 @@
     color: rgb(0 0 0 / 85%);
   }
 
-  a {
+  a & :not(.p-button) {
     font-weight: 600;
     color: rgb(0 0 0 / 85%);
   }

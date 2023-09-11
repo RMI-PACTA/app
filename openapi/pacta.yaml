@@ -58,12 +58,13 @@ paths:
           required: true
           schema:
             type: string
-        - name: body
-          in: query
-          description: PACTA Version object properties to update
-          required: true
-          schema:
-            $ref: '#/components/schemas/PactaVersionChanges'
+      requestBody:
+        description: PACTA Version object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PactaVersionChanges'
       responses:
         '200':
           description: pacta version updated successfully 
@@ -71,14 +72,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EmptySuccess'
-
-        '403':
-          description: caller does not have access or PACTA version does not exist 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
         default:
           description: unexpected error
           content:
@@ -104,19 +97,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EmptySuccess'  
-        '403':
-          description: caller does not have access or pacta version does not exist 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'  
         default:
           description: unexpected error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
+  
+  /pacta-version/{id}/set-default:
+    post:
+      summary: Marks this version of the PACTA model as the default
+      operationId: markPactaVersionAsDefault 
+      parameters:
+        - name: id
+          in: path
+          description: ID of pacta version to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: updated successfully 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
   /pacta-versions:
     get:
       summary: Returns all versions of the PACTA model 
@@ -154,12 +166,130 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EmptySuccess'
-        '403':
-          description: caller does not have access to create PACTA versions 
+        default:
+          description: unexpected error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /initiative/{id}:
+    get:
+      summary: Returns an initiative by ID 
+      operationId: findInitiativeById
+      parameters:
+        - name: id
+          in: path
+          description: ID of the initiative to fetch 
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: the initiative requested 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Initiative'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      summary: Updates an initiative
+      description: Updates an initiative's settable properties 
+      operationId: updateInitiative
+      parameters:
+        - name: id
+          in: path
+          description: ID of the initiative to update
+          required: true
+          schema:
+            type: string
+        - name: body
+          in: query
+          description: initiative object properties to update
+          required: true
+          schema:
+            $ref: '#/components/schemas/InitiativeChanges'
+      responses:
+        '200':
+          description: initiative updated successfully 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Deletes an initiative by id
+      description: deletes an initiative based on the ID supplied
+      operationId: deleteInitiative
+      parameters:
+        - name: id
+          in: path
+          description: ID of initiative to delete
+          required: true
+          schema:
+            type: string 
+      responses:
+        '200':
+          description: initiative deleted successfully 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'  
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /initiatives:
+    get:
+      summary: Returns all initiatives 
+      operationId: listInitiatives
+      responses:
+        '200':
+          description: gets all initiatives 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Initiative'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Creates a initiative
+      description: Creates a new initiative 
+      operationId: createInitiative
+      requestBody:
+        description: Initiative object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiativeCreate'
+      responses:
+        '200':
+          description: initiative created successfully 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
         default:
           description: unexpected error
           content:
@@ -186,12 +316,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '403':
-          description: caller does not have access or user does not exist 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
         default:
           description: unexpected error
           content:
@@ -222,15 +346,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-
-        '403':
-          description: caller does not have access or user does not exist 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
+                $ref: '#/components/schemas/EmptySuccess'
         default:
           description: unexpected error
           content:
@@ -256,12 +372,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EmptySuccess'  
-        '403':
-          description: caller does not have access or user does not exist 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'  
         default:
           description: unexpected error
           content:
@@ -334,9 +444,128 @@ components:
         digest:
           type: string 
           description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model. 
-        isDefault:
+
+    InitiativeCreate:
+      type: object
+      required:
+        - id
+        - name
+        - language
+      properties:
+        id:
+          type: string
+          description: the human readable identifier for the initiative, can only include alphanumeric characters, dashes and underscores
+        name:
+          type: string
+          description: the human meaningful name of the version of the initiative
+        affiliation:
+          type: string
+          description: the group that sponsors/created/owns this initiative 
+        publicDescription:
+          type: string
+          description: Additional information about the initiative 
+        internalDescription:
+          type: string
+          description: Additional information about the initiative, for participants only 
+        requiresInvitationToJoin:
           type: boolean 
-          description: Whether this version of the PACTA model is the default version 
+          description: If set, only users who have been invited to join this initiative can join it, otherwise, anyone can join it. Defaults to false.
+        isAcceptingNewMembers:
+          type: boolean 
+          description: If set, new users can join the initiative. Defaults to false.
+        isAcceptingNewPortfolios:
+          type: boolean 
+          description: If set, users that are members of this initiative can add portfolios to it.
+        language:
+          description: The language this initiative should be conducted in. 
+          type: string
+          enum: *LANGUAGES
+        pactaVersion:
+          type: string
+          description: The id of the PACTA model that this initiative should use, if not specified, the default PACTA model will be used. 
+
+    Initiative:
+      type: object
+      required:
+        - id
+        - name
+        - affiliation
+        - publicDescription
+        - internalDescription
+        - requiresInvitationToJoin
+        - isAcceptingNewMembers
+        - isAcceptingNewPortfolios
+        - pactaVersionId
+        - language
+        - createdAt 
+      properties:
+        id:
+          type: string
+          description: the human readable identifier for the initiative, can only include alphanumeric characters, dashes and underscores
+        name:
+          type: string
+          description: the human meaningful name of the version of the initiative
+        affiliation:
+          type: string
+          description: the group that sponsors/created/owns this initiative 
+        publicDescription:
+          type: string
+          description: Additional information about the initiative 
+        internalDescription:
+          type: string
+          description: Additional information about the initiative, for participants only 
+        requiresInvitationToJoin:
+          type: boolean 
+          description: If set, only users who have been invited to join this initiative can join it, otherwise, anyone can join it. Defaults to false.
+        isAcceptingNewMembers:
+          type: boolean 
+          description: If set, new users can join the initiative. Defaults to false.
+        isAcceptingNewPortfolios:
+          type: boolean 
+          description: If set, users that are members of this initiative can add portfolios to it.
+        language:
+          description: The language this initiative should be conducted in. 
+          type: string
+          enum: *LANGUAGES
+        pactaVersion:
+          type: string
+          description: The pacta model that this initiative should use, if not specified, the default pacta model will be used. 
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this initiative was created. 
+
+    InitiativeChanges:
+      type: object
+      properties:
+        name:
+          type: string
+          description: the human meaningful name of the version of the initiative
+        affiliation:
+          type: string
+          description: the group that sponsors/created/owns this initiative 
+        publicDescription:
+          type: string
+          description: Additional information about the initiative 
+        internalDescription:
+          type: string
+          description: Additional information about the initiative, for participants only 
+        requiresInvitationToJoin:
+          type: boolean 
+          description: If set, only users who have been invited to join this initiative can join it, otherwise, anyone can join it. Defaults to false.
+        isAcceptingNewMembers:
+          type: boolean 
+          description: If set, new users can join the initiative. Defaults to false.
+        isAcceptingNewPortfolios:
+          type: boolean 
+          description: If set, users that are members of this initiative can add portfolios to it.
+        language:
+          description: The language this initiative should be conducted in. 
+          type: string
+          enum: *LANGUAGES
+        pactaVersion:
+          type: string
+          description: The pacta model that this initiative should use, if not specified, the default pacta model will be used. 
 
     User:
       type: object
