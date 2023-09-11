@@ -67,6 +67,14 @@ export const useModal = () => {
     })
   }
 
+  // permissionDenied
+  const permissionDeniedVisible = newModalVisibilityState('permissionDeniedVisibile')
+  const permissionDeniedError = useState<Error | null>(`${prefix}.permissionDeniedError`, () => null)
+  const setPermissionDenied = (e: Error) => {
+    permissionDeniedError.value = e
+    permissionDeniedVisible.value = true
+  }
+
   const anyBlockingModalOpen = computed(() => anyModalVisible.value || loading.value)
 
   const handleOAPIError = async <T>(t: OPAIError | T): Promise<T> => {
@@ -100,6 +108,11 @@ export const useModal = () => {
       errorModalVisible,
       withLoadingAndErrorHandling,
       handleOAPIError
+    },
+    permissionDenied: {
+      permissionDeniedVisible,
+      permissionDeniedError,
+      setPermissionDenied
     }
   }
 }

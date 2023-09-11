@@ -28,7 +28,7 @@
     color: rgb(0 0 0 / 85%);
   }
 
-  a {
+  a & :not(.p-button) {
     font-weight: 600;
     color: rgb(0 0 0 / 85%);
   }
@@ -36,5 +36,8 @@
   & > .p-button {
     margin: 0.5rem 0;
   }
+
+  min-height: calc(100vh - 9rem - 4px);
+  justify-content: center;
 }
 </style>

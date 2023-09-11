@@ -5,6 +5,7 @@ import PrimeVue from 'primevue/config'
 import Accordion from 'primevue/accordion'
 import AccordionTab from 'primevue/accordiontab'
 import Button from 'primevue/button'
+import Card from 'primevue/card'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import Dialog from 'primevue/dialog'
@@ -24,6 +25,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVAccordion', Accordion)
   vueApp.component('PVAccordionTab', AccordionTab)
   vueApp.component('PVButton', Button)
+  vueApp.component('PVCard', Card)
   vueApp.component('PVColumn', Column)
   vueApp.component('PVDataTable', DataTable)
   vueApp.component('PVDialog', Dialog)

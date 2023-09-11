@@ -4,5 +4,6 @@
   <div>
     <ModalError />
     <ModalLoading />
+    <ModalPermissionDenied />
   </div>
 </template>

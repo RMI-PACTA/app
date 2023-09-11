@@ -4,6 +4,9 @@
 /* eslint-disable */
 import type { EmptySuccess } from '../models/EmptySuccess';
 import type { Error } from '../models/Error';
+import type { Initiative } from '../models/Initiative';
+import type { InitiativeChanges } from '../models/InitiativeChanges';
+import type { InitiativeCreate } from '../models/InitiativeCreate';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
@@ -33,6 +36,10 @@ export class DefaultService {
             path: {
                 'id': id,
             },
+            errors: {
+                401: `the user is not authorized to access this resource - if logged out, try logging in`,
+                403: `the user is not authorized to access this resource`,
+            },
         });
     }
 
@@ -40,14 +47,14 @@ export class DefaultService {
      * Updates a PACTA version
      * Updates a PACTA version's settable properties
      * @param id ID of PACTA version to update
-     * @param body PACTA Version object properties to update
+     * @param requestBody PACTA Version object properties to update
      * @returns EmptySuccess pacta version updated successfully
      * @returns Error unexpected error
      * @throws ApiError
      */
     public updatePactaVersion(
         id: string,
-        body: PactaVersionChanges,
+        requestBody: PactaVersionChanges,
     ): CancelablePromise<EmptySuccess | Error> {
         return this.httpRequest.request({
             method: 'PATCH',
@@ -55,12 +62,8 @@ export class DefaultService {
             path: {
                 'id': id,
             },
-            query: {
-                'body': body,
-            },
-            errors: {
-                403: `caller does not have access or PACTA version does not exist`,
-            },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 
@@ -81,8 +84,24 @@ export class DefaultService {
             path: {
                 'id': id,
             },
-            errors: {
-                403: `caller does not have access or pacta version does not exist`,
+        });
+    }
+
+    /**
+     * Marks this version of the PACTA model as the default
+     * @param id ID of pacta version to fetch
+     * @returns EmptySuccess updated successfully
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public markPactaVersionAsDefault(
+        id: string,
+    ): CancelablePromise<EmptySuccess | Error> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/pacta-version/{id}/set-default',
+            path: {
+                'id': id,
             },
         });
     }
@@ -116,9 +135,102 @@ export class DefaultService {
             url: '/pacta-versions',
             body: requestBody,
             mediaType: 'application/json',
-            errors: {
-                403: `caller does not have access to create PACTA versions`,
+        });
+    }
+
+    /**
+     * Returns an initiative by ID
+     * @param id ID of the initiative to fetch
+     * @returns Initiative the initiative requested
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public findInitiativeById(
+        id: string,
+    ): CancelablePromise<Initiative | Error> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiative/{id}',
+            path: {
+                'id': id,
             },
+        });
+    }
+
+    /**
+     * Updates an initiative
+     * Updates an initiative's settable properties
+     * @param id ID of the initiative to update
+     * @param body initiative object properties to update
+     * @returns EmptySuccess initiative updated successfully
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public updateInitiative(
+        id: string,
+        body: InitiativeChanges,
+    ): CancelablePromise<EmptySuccess | Error> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/initiative/{id}',
+            path: {
+                'id': id,
+            },
+            query: {
+                'body': body,
+            },
+        });
+    }
+
+    /**
+     * Deletes an initiative by id
+     * deletes an initiative based on the ID supplied
+     * @param id ID of initiative to delete
+     * @returns EmptySuccess initiative deleted successfully
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public deleteInitiative(
+        id: string,
+    ): CancelablePromise<EmptySuccess | Error> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/initiative/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Returns all initiatives
+     * @returns Initiative gets all initiatives
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public listInitiatives(): CancelablePromise<Array<Initiative> | Error> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiatives',
+        });
+    }
+
+    /**
+     * Creates a initiative
+     * Creates a new initiative
+     * @param requestBody Initiative object properties to update
+     * @returns EmptySuccess initiative created successfully
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public createInitiative(
+        requestBody: InitiativeCreate,
+    ): CancelablePromise<EmptySuccess | Error> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/initiatives',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 
@@ -156,9 +268,6 @@ export class DefaultService {
             path: {
                 'id': id,
             },
-            errors: {
-                403: `caller does not have access or user does not exist`,
-            },
         });
     }
 
@@ -167,14 +276,14 @@ export class DefaultService {
      * Updates a user's settable properties
      * @param id ID of user to update
      * @param requestBody User object properties to update
-     * @returns User the new user object
+     * @returns EmptySuccess the new user object
      * @returns Error unexpected error
      * @throws ApiError
      */
     public updateUser(
         id: string,
         requestBody: UserChanges,
-    ): CancelablePromise<User | Error> {
+    ): CancelablePromise<EmptySuccess | Error> {
         return this.httpRequest.request({
             method: 'PATCH',
             url: '/user/{id}',
@@ -183,9 +292,6 @@ export class DefaultService {
             },
             body: requestBody,
             mediaType: 'application/json',
-            errors: {
-                403: `caller does not have access or user does not exist`,
-            },
         });
     }
 
@@ -205,9 +311,6 @@ export class DefaultService {
             url: '/user/{id}',
             path: {
                 'id': id,
-            },
-            errors: {
-                403: `caller does not have access or user does not exist`,
             },
         });
     }

@@ -2,9 +2,10 @@ package pactasrv
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/RMI/pacta/db"
-
+	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
 )
 
@@ -60,4 +61,32 @@ type DB interface {
 
 type Server struct {
 	DB DB
+}
+
+var emptySuccess api.EmptySuccess = api.EmptySuccess{}
+
+func mapAll[I any, O any](is []I, f func(I) (O, error)) ([]O, error) {
+	os := make([]O, len(is))
+	for i, v := range is {
+		o, err := f(v)
+		if err != nil {
+			return nil, err
+		}
+		os[i] = o
+	}
+	return os, nil
+}
+
+func dereference[T any](ts []*T, e error) ([]T, error) {
+	if e != nil {
+		return nil, e
+	}
+	result := make([]T, len(ts))
+	for i, t := range ts {
+		if t == nil {
+			return nil, errorInternal(fmt.Errorf("dereference: nil pointer for %T at index %d", t, i))
+		}
+		result[i] = *t
+	}
+	return result, nil
 }
