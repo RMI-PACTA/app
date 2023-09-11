@@ -16,9 +16,5 @@ export type PactaVersionChanges = {
      * The hash (typically SHA256) that uniquely identifies this version of the PACTA model.
      */
     digest?: string;
-    /**
-     * Whether this version of the PACTA model is the default version
-     */
-    isDefault?: boolean;
 };
 

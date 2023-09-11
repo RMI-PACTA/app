@@ -33,7 +33,7 @@ onMounted(() => {
             {{ setError(error) }}
             {{ clearError() }}
           </template>
-          <slot />
+          <NuxtPage />
         </NuxtErrorBoundary>
       </main>
     </div>

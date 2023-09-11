@@ -3,6 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "pactasrv",
     srcs = [
+        "conv_oapi_to_pacta.go",
+        "conv_pacta_to_oapi.go",
+        "error.go",
+        "initiative.go",
         "pacta_version.go",
         "pactasrv.go",
         "user.go",

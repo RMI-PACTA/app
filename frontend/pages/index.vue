@@ -1,20 +1,5 @@
 <script setup lang="ts">
-import { type PactaVersion } from 'openapi/generated/pacta'
-
 const { isAuthenticated, signIn, signOut } = await useMSAL()
-
-const { pactaClient } = useAPI()
-
-const pactaVersions = useState<PactaVersion[]>('index.pactaVersions', () => [])
-
-const testAPI = async (): Promise<void> => {
-  const resp = await pactaClient.listPactaVersions()
-  if ('message' in resp) {
-    console.error('error response from server', resp)
-    return
-  }
-  pactaVersions.value = resp
-}
 </script>
 
 <template>
@@ -32,19 +17,12 @@ const testAPI = async (): Promise<void> => {
       label="Sign In"
       @click="signIn"
     />
-    <div v-else>
-      <PVButton
-        class="inline-block"
-        label="Test the API"
-        @click="testAPI"
-      />
-
-      <PVButton
-        class="inline-block m-2"
-        label="Sign Out"
-        icon="pi pi-sign-out"
-        @click="signOut"
-      />
-    </div>
+    <PVButton
+      v-else
+      class="inline-block"
+      label="Sign Out"
+      icon="pi pi-sign-out"
+      @click="signOut"
+    />
   </StandardContent>
 </template>

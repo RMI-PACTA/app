@@ -2,8 +2,8 @@ package pactasrv
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/RMI/pacta/db"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
 )
@@ -11,38 +11,131 @@ import (
 // Returns a version of the PACTA model by ID
 // (GET /pacta-version/{id})
 func (s *Server) FindPactaVersionById(ctx context.Context, request api.FindPactaVersionByIdRequestObject) (api.FindPactaVersionByIdResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	pv, err := s.findPactaVersionById(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.FindPactaVersionById200JSONResponse(*pv), nil
+}
+
+func (s *Server) findPactaVersionById(ctx context.Context, request api.FindPactaVersionByIdRequestObject) (*api.PactaVersion, error) {
+	// TODO(#12) Implement Authorization
+	pv, err := s.DB.PACTAVersion(s.DB.NoTxn(ctx), pacta.PACTAVersionID(request.Id))
+	if err != nil {
+		return nil, errorInternal(err)
+	}
+	return pactaVersionToOAPI(pv)
 }
 
 // Returns all versions of the PACTA model
 // (GET /pacta-versions)
 func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVersionsRequestObject) (api.ListPactaVersionsResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	pvs, err := s.listPactaVersions(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.ListPactaVersions200JSONResponse(pvs), nil
+}
+
+func (s *Server) listPactaVersions(ctx context.Context, _request api.ListPactaVersionsRequestObject) ([]api.PactaVersion, error) {
+	// TODO(#12) Implement Authorization
+	pvs, err := s.DB.PACTAVersions(s.DB.NoTxn(ctx))
+	if err != nil {
+		return nil, errorInternal(err)
+	}
+	return dereference(mapAll(pvs, pactaVersionToOAPI))
 }
 
 // Creates a PACTA version
 // (POST /pacta-versions)
 func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) (api.CreatePactaVersionResponseObject, error) {
-	// TODO(grady) Authz
-	_, err := s.DB.CreatePACTAVersion(s.DB.NoTxn(ctx), &pacta.PACTAVersion{
-		Name:        request.Body.Name,
-		Description: request.Body.Description,
-		Digest:      request.Body.Digest,
-	})
+	err := s.createPactaVersion(ctx, request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create PACTA version: %w", err) 
+		return errToAPIError(err)
 	}
-	return nil, nil
+	return api.CreatePactaVersion200JSONResponse{}, nil
+}
+
+func (s *Server) createPactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) error {
+	// TODO(#12) Implement Authorization
+	pv, err := pactaVersionCreateFromOAPI(request.Body)
+	if err != nil {
+		return errorBadRequest("body", err.Error())
+	}
+	if _, err := s.DB.CreatePACTAVersion(s.DB.NoTxn(ctx), pv); err != nil {
+		return errorInternal(err)
+	}
+	return nil
 }
 
 // Updates a PACTA version
 // (PATCH /pacta-version/{id})
 func (s *Server) UpdatePactaVersion(ctx context.Context, request api.UpdatePactaVersionRequestObject) (api.UpdatePactaVersionResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	err := s.updatePactaVersion(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.UpdatePactaVersion200JSONResponse{}, nil
+}
+
+func (s *Server) updatePactaVersion(ctx context.Context, request api.UpdatePactaVersionRequestObject) error {
+	// TODO(#12) Implement Authorization
+	id := pacta.PACTAVersionID(request.Id)
+	mutations := []db.UpdatePACTAVersionFn{}
+	b := request.Body
+	if b.Description != nil {
+		mutations = append(mutations, db.SetPACTAVersionDescription(*b.Description))
+	}
+	if b.Digest != nil {
+		mutations = append(mutations, db.SetPACTAVersionDigest(*b.Digest))
+	}
+	if b.Name != nil {
+		mutations = append(mutations, db.SetPACTAVersionName(*b.Name))
+	}
+	err := s.DB.UpdatePACTAVersion(s.DB.NoTxn(ctx), id, mutations...)
+	if err != nil {
+		return errorInternal(err)
+	}
+	return nil
+
 }
 
 // Deletes a pacta version by ID
 // (DELETE /pacta-version/{id})
 func (s *Server) DeletePactaVersion(ctx context.Context, request api.DeletePactaVersionRequestObject) (api.DeletePactaVersionResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	err := s.deletePactaVersion(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.DeletePactaVersion200JSONResponse{}, nil
+}
+
+func (s *Server) deletePactaVersion(ctx context.Context, request api.DeletePactaVersionRequestObject) error {
+	// TODO(#12) Implement Authorization
+	id := pacta.PACTAVersionID(request.Id)
+	err := s.DB.DeletePACTAVersion(s.DB.NoTxn(ctx), id)
+	if err != nil {
+		return errorInternal(err)
+	}
+	return nil
+}
+
+// Marks this version of the PACTA model as the default
+// (POST /pacta-version/{id}/set-default)
+func (s *Server) MarkPactaVersionAsDefault(ctx context.Context, request api.MarkPactaVersionAsDefaultRequestObject) (api.MarkPactaVersionAsDefaultResponseObject, error) {
+	err := s.markPactaVersionAsDefault(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.MarkPactaVersionAsDefault200JSONResponse{}, nil
+}
+
+func (s *Server) markPactaVersionAsDefault(ctx context.Context, request api.MarkPactaVersionAsDefaultRequestObject) error {
+	// TODO(#12) Implement Authorization
+	id := pacta.PACTAVersionID(request.Id)
+	err := s.DB.SetDefaultPACTAVersion(s.DB.NoTxn(ctx), id)
+	if err != nil {
+		return errorInternal(err)
+	}
+	return nil
 }

@@ -12,6 +12,9 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { EmptySuccess } from './models/EmptySuccess';
 export type { Error } from './models/Error';
+export { Initiative } from './models/Initiative';
+export { InitiativeChanges } from './models/InitiativeChanges';
+export { InitiativeCreate } from './models/InitiativeCreate';
 export { Language } from './models/Language';
 export type { PactaVersion } from './models/PactaVersion';
 export type { PactaVersionChanges } from './models/PactaVersionChanges';

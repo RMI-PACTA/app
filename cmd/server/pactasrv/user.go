@@ -2,7 +2,6 @@ package pactasrv
 
 import (
 	"context"
-	"fmt"
 
 	api "github.com/RMI/pacta/openapi/pacta"
 )
@@ -10,17 +9,44 @@ import (
 // Returns a user by ID
 // (GET /user/{id})
 func (s *Server) FindUserById(ctx context.Context, request api.FindUserByIdRequestObject) (api.FindUserByIdResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	u, err := s.findUserById(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.FindUserById200JSONResponse(*u), nil
+}
+
+func (s *Server) findUserById(ctx context.Context, request api.FindUserByIdRequestObject) (*api.User, error) {
+	// TODO(#12) Implement Authorization
+	return nil, errorNotImplemented("findUserById")
 }
 
 // Updates user properties
 // (PATCH /user/{id})
 func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestObject) (api.UpdateUserResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	err := s.updateUser(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.UpdateUser200JSONResponse{}, nil
+}
+
+func (s *Server) updateUser(ctx context.Context, request api.UpdateUserRequestObject) error {
+	// TODO(#12) Implement Authorization
+	return errorNotImplemented("updateUser")
 }
 
 // Deletes a user by ID
 // (DELETE /user/{id})
 func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestObject) (api.DeleteUserResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	err := s.deleteUser(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.DeleteUser200JSONResponse{}, nil
+}
+
+func (s *Server) deleteUser(ctx context.Context, request api.DeleteUserRequestObject) error {
+	// TODO(#12) Implement Authorization
+	return errorNotImplemented("deleteUser")
 }

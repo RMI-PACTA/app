@@ -35,13 +35,14 @@ watch(() => loading.value, refreshZIndex)
     ref="loadingModalEl"
     data-anchor-id="loadingModal"
     class="loading-modal"
-    @click="toggleDebug"
   >
-    <!-- TODO(#8) Swap out this reference -->
-    <img
-      src="@/assets/img/logo_loading_animation_v1.gif"
-      class="gif shadow-3"
-    >
+    <div @click="() => { toggleDebug() } ">
+      <!-- TODO(#8) Swap out this reference -->
+      <img
+        src="@/assets/img/logo_loading_animation_v1.gif"
+        class="gif shadow-3"
+      >
+    </div>
     <ul
       v-if="debug"
       class="demo-mode border-1 pr-3 py-2"
