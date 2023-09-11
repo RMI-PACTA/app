@@ -69,7 +69,7 @@ const menuItems = computed(() => {
       />
     </div>
     <div
-      class="flex gap-2 sm:py-1 flex-1 flex-column sm:flex-row border-primary sm:border-none sm:max-h-full border-round justify-content-end"
+      class="flex gap-2 sm:p-1 flex-1 flex-column sm:flex-row border-primary sm:border-none sm:max-h-full border-round justify-content-end"
       :style="menuStyles"
     >
       <template
