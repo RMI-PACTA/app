@@ -6,13 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/RMI/pacta/db"
+	"github.com/RMI/pacta/pacta"
 	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/idgen"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type DB struct {
@@ -218,20 +221,19 @@ func (db *DB) randomID(ns idNamespace) string {
 	return fmt.Sprintf("%s%s%s", ns, idNamespaceIDSeparator, db.idGenerator.NewID())
 }
 
-func allRows[T any](name string, rows pgx.Rows, fn func(rowScanner) (T, error)) ([]T, error) {
-	defer rows.Close()
-	var ts []T
-	for rows.Next() {
-		t, err := fn(rows)
-		if err != nil {
-			return nil, fmt.Errorf("converting row to %s: %w", name, err)
-		}
-		ts = append(ts, t)
+func timeToNilable(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("while processing %s rows: %w", name, err)
+	return &t
+}
+
+func strToNilable[T ~string](id T) *string {
+	if id == "" {
+		return nil
 	}
-	return ts, nil
+	s := string(id)
+	return &s
 }
 
 func exactlyOne[T any, I ~string](name string, id I, ts []T) (T, error) {
@@ -243,6 +245,18 @@ func exactlyOne[T any, I ~string](name string, id I, ts []T) (T, error) {
 	} else {
 		return zeroValue, fmt.Errorf("expected exactly one %s in result but got %d", name, len(ts))
 	}
+}
+
+func exactlyOneFromMap[V any, K ~string](name string, id K, m map[K]V) (V, error) {
+	var zeroValue V
+	if len(m) > 1 {
+		return zeroValue, fmt.Errorf("expected exactly one %s in result but got %d", name, len(m))
+	}
+	v, ok := m[id]
+	if !ok {
+		return zeroValue, db.NotFound(id, name)
+	}
+	return v, nil
 }
 
 func createWhereInFmt(n int) string {
@@ -259,6 +273,35 @@ func idsToInterface[T ~string](in []T) []interface{} {
 		out[i] = e
 	}
 	return out
+}
+
+func dedupeIDs[T ~string](in []T) []T {
+	if len(in) < 2 {
+		return in
+	}
+	result := []T{}
+	seen := make(map[T]bool)
+	for _, t := range in {
+		if seen[t] {
+			continue
+		}
+		result = append(result, t)
+		seen[t] = true
+	}
+	return result
+}
+
+func encodeHoldingsDate(hd *pacta.HoldingsDate) (*time.Time, error) {
+	// TODO: validate the properties of the holdings date (i.e. aligned to window)
+	return timeToNilable(hd.Time), nil
+}
+
+func decodeHoldingsDate(t pgtype.Timestamptz) (*pacta.HoldingsDate, error) {
+	// TODO: validate the properties of the holdings date (i.e. aligned to window)
+	if !t.Valid {
+		return &pacta.HoldingsDate{}, nil
+	}
+	return &pacta.HoldingsDate{Time: t.Time}, nil
 }
 
 type queryArgs struct {
@@ -279,4 +322,62 @@ func eqOrIn[T any](col string, values []T, args *queryArgs) string {
 		result = append(result, args.add(v))
 	}
 	return fmt.Sprintf("%s IN (%s)", col, strings.Join(result, ", "))
+}
+
+func stringsToIDs[T ~string](strs []string) []T {
+	ts := make([]T, len(strs))
+	for i, s := range strs {
+		ts[i] = T(s)
+	}
+	return ts
+}
+
+func asMap[K ~string, V any](vs []V, idFn func(v V) K) map[K]V {
+	result := make(map[K]V, len(vs))
+	for _, v := range vs {
+		result[idFn(v)] = v
+	}
+	return result
+}
+
+func forEachRow(name string, rows pgx.Rows, fn func(rowScanner) error) error {
+	defer rows.Close()
+	for rows.Next() {
+		err := fn(rows)
+		if err != nil {
+			return fmt.Errorf("converting row to %s: %w", name, err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("while processing %s rows: %w", name, err)
+	}
+	return nil
+
+}
+
+func mapRows[T any](name string, rows pgx.Rows, fn func(rowScanner) (T, error)) ([]T, error) {
+	result := []T{}
+	fn2 := func(row rowScanner) error {
+		t, err := fn(row)
+		if err != nil {
+			return err
+		}
+		result = append(result, t)
+		return nil
+	}
+	if err := forEachRow(name, rows, fn2); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func mapRowsToIDs[T ~string](name string, rows pgx.Rows) ([]T, error) {
+	fn := func(row rowScanner) (T, error) {
+		var t T
+		if err := row.Scan(&t); err != nil {
+			return t, fmt.Errorf("scanning into id for %s: %w", name, err)
+		}
+		return t, nil
+	}
+	return mapRows(name, rows, fn)
 }

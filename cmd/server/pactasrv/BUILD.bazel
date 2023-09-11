@@ -17,5 +17,6 @@ go_library(
         "//db",
         "//openapi:pacta_generated",
         "//pacta",
+        "@org_uber_go_zap//:zap",
     ],
 )

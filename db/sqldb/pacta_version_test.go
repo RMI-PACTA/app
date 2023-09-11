@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -215,4 +216,25 @@ func pactaVersionCmpOpts() cmp.Option {
 		cmpopts.EquateEmpty(),
 		cmpopts.EquateApproxTime(time.Second),
 	}
+}
+
+func pactaVersionForTesting(t *testing.T, tdb *DB) *pacta.PACTAVersion {
+	t.Helper()
+	return pactaVersionForTestingWithKey(t, tdb, "only")
+}
+
+func pactaVersionForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.PACTAVersion {
+	t.Helper()
+	pv := &pacta.PACTAVersion{
+		Name:        "pacta version",
+		Description: "pacta description",
+		Digest:      fmt.Sprintf("pacta digest %s", key),
+	}
+	tx := tdb.NoTxn(context.Background())
+	pvID, err := tdb.CreatePACTAVersion(tx, pv)
+	if err != nil {
+		t.Fatalf("creating pacta_version: %v", err)
+	}
+	pv.ID = pvID
+	return pv
 }

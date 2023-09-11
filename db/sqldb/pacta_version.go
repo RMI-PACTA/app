@@ -54,7 +54,7 @@ func (d *DB) PACTAVersions(tx db.Tx) ([]*pacta.PACTAVersion, error) {
 	if err != nil {
 		return nil, fmt.Errorf("querying pacta_version: %w", err)
 	}
-	pvs, err := allRows("pacta_version", rows, rowToPACTAVersion)
+	pvs, err := mapRows("pacta_version", rows, rowToPACTAVersion)
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to pacta versions: %w", err)
 	}
@@ -152,7 +152,7 @@ func rowToPACTAVersion(row rowScanner) (*pacta.PACTAVersion, error) {
 }
 
 func rowsToPACTAVersions(rows pgx.Rows) ([]*pacta.PACTAVersion, error) {
-	return allRows("pacta_version", rows, rowToPACTAVersion)
+	return mapRows("pacta_version", rows, rowToPACTAVersion)
 }
 
 func (d *DB) putPACTAVersion(tx db.Tx, pv *pacta.PACTAVersion) error {

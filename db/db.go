@@ -192,3 +192,202 @@ func SetBlobFileName(v string) UpdateBlobFn {
 		return nil
 	}
 }
+
+type UpdatePortfolioFn func(*pacta.Portfolio) error
+
+func SetPortfolioName(value string) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Name = value
+		return nil
+	}
+}
+
+func SetPortfolioDescription(value string) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Description = value
+		return nil
+	}
+}
+
+func SetPortfolioHoldingsDate(value *pacta.HoldingsDate) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.HoldingsDate = value
+		return nil
+	}
+}
+
+func SetPortfolioOwner(value pacta.OwnerID) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Owner = &pacta.Owner{ID: value}
+		return nil
+	}
+}
+
+func SetPortfolioAdminDebugEnabled(value bool) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.AdminDebugEnabled = value
+		return nil
+	}
+}
+
+func SetPortfolioNumberOfRows(value int) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.NumberOfRows = value
+		return nil
+	}
+}
+
+type UpdatePortfolioGroupFn func(*pacta.PortfolioGroup) error
+
+func SetPortfolioGroupName(value string) UpdatePortfolioGroupFn {
+	return func(v *pacta.PortfolioGroup) error {
+		v.Name = value
+		return nil
+	}
+}
+
+func SetPortfolioGroupDescription(value string) UpdatePortfolioGroupFn {
+	return func(v *pacta.PortfolioGroup) error {
+		v.Description = value
+		return nil
+	}
+}
+
+func SetPortfolioGroupOwner(value pacta.OwnerID) UpdatePortfolioGroupFn {
+	return func(v *pacta.PortfolioGroup) error {
+		v.Owner = &pacta.Owner{ID: value}
+		return nil
+	}
+}
+
+type UpdateAnalysisFn func(*pacta.Analysis) error
+
+func SetAnalysisOwner(value pacta.OwnerID) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.Owner = &pacta.Owner{ID: value}
+		return nil
+	}
+}
+
+func SetAnalysisName(value string) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.Name = value
+		return nil
+	}
+}
+
+func SetAnalysisDescription(value string) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.Description = value
+		return nil
+	}
+}
+
+func SetAnalysisRanAt(value time.Time) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.RanAt = value
+		return nil
+	}
+}
+
+func SetAnalysisCompletedAt(value time.Time) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.CompletedAt = value
+		return nil
+	}
+}
+
+func SetAnalysisFailureCode(value pacta.FailureCode) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.FailureCode = value
+		return nil
+	}
+}
+
+func SetAnalysisFailureMessage(value string) UpdateAnalysisFn {
+	return func(v *pacta.Analysis) error {
+		v.FailureMessage = value
+		return nil
+	}
+}
+
+type UpdateAnalysisArtifactFn func(*pacta.AnalysisArtifact) error
+
+func SetAnalysisArtifactAdminDebugEnabled(value bool) UpdateAnalysisArtifactFn {
+	return func(v *pacta.AnalysisArtifact) error {
+		v.AdminDebugEnabled = value
+		return nil
+	}
+}
+
+func SetAnalysisArtifactSharedToPublic(value bool) UpdateAnalysisArtifactFn {
+	return func(v *pacta.AnalysisArtifact) error {
+		v.SharedToPublic = value
+		return nil
+	}
+}
+
+type UpdateIncompleteUploadFn func(*pacta.IncompleteUpload) error
+
+func SetIncompleteUploadOwner(value pacta.OwnerID) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Owner = &pacta.Owner{ID: value}
+		return nil
+	}
+}
+
+func SetIncompleteUploadAdminDebugEnabled(value bool) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.AdminDebugEnabled = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadName(value string) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Name = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadDescription(value string) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Description = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadRanAt(value time.Time) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.RanAt = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadCompletedAt(value time.Time) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.CompletedAt = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadFailureCode(value pacta.FailureCode) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.FailureCode = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadFailureMessage(value string) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.FailureMessage = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadHoldingsDate(value *pacta.HoldingsDate) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.HoldingsDate = value
+		return nil
+	}
+}

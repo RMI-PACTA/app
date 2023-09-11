@@ -32,6 +32,7 @@ func (d *DB) Blob(tx db.Tx, id pacta.BlobID) (*pacta.Blob, error) {
 }
 
 func (d *DB) Blobs(tx db.Tx, ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+blobSelectColumns+`
 		FROM blob 
@@ -114,7 +115,7 @@ func (db *DB) putBlob(tx db.Tx, b *pacta.Blob) error {
 }
 
 func rowsToBlobs(rows pgx.Rows) ([]*pacta.Blob, error) {
-	return allRows("blob", rows, rowToBlob)
+	return mapRows("blob", rows, rowToBlob)
 }
 
 func rowToBlob(row rowScanner) (*pacta.Blob, error) {

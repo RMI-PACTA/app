@@ -89,7 +89,7 @@ func (d *DB) CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, erro
 }
 
 func rowsToAuditLogs(rows pgx.Rows) ([]*pacta.AuditLog, error) {
-	return allRows("auditLog", rows, rowToAuditLog)
+	return mapRows("auditLog", rows, rowToAuditLog)
 }
 
 func rowToAuditLog(row rowScanner) (*pacta.AuditLog, error) {
