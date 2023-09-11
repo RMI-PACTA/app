@@ -13,18 +13,14 @@ import (
 func (s *Server) CreateInitiative(ctx context.Context, request api.CreateInitiativeRequestObject) (api.CreateInitiativeResponseObject, error) {
 	err := s.createInitiative(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.CreateInitiativedefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.CreateInitiative200JSONResponse(emptySuccess), nil
+	return api.CreateInitiative200JSONResponse{}, nil
 }
 
 func (s *Server) createInitiative(ctx context.Context, request api.CreateInitiativeRequestObject) error {
 	// TODO(#12) Implement Authorization
-	i, err := initiativeCreateToPACTA(request.Body)
+	i, err := initiativeCreateFromOAPI(request.Body)
 	if err != nil {
 		return err
 	}
@@ -40,13 +36,9 @@ func (s *Server) createInitiative(ctx context.Context, request api.CreateInitiat
 func (s *Server) UpdateInitiative(ctx context.Context, request api.UpdateInitiativeRequestObject) (api.UpdateInitiativeResponseObject, error) {
 	err := s.updateInitiative(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.UpdateInitiativedefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.UpdateInitiative200JSONResponse(emptySuccess), nil
+	return api.UpdateInitiative200JSONResponse{}, nil
 }
 
 func (s *Server) updateInitiative(ctx context.Context, request api.UpdateInitiativeRequestObject) error {
@@ -97,13 +89,9 @@ func (s *Server) updateInitiative(ctx context.Context, request api.UpdateInitiat
 func (s *Server) DeleteInitiative(ctx context.Context, request api.DeleteInitiativeRequestObject) (api.DeleteInitiativeResponseObject, error) {
 	err := s.deleteInitiative(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.DeleteInitiativedefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.DeleteInitiative200JSONResponse(emptySuccess), nil
+	return api.DeleteInitiative200JSONResponse{}, nil
 }
 
 func (s *Server) deleteInitiative(ctx context.Context, request api.DeleteInitiativeRequestObject) error {
@@ -120,11 +108,7 @@ func (s *Server) deleteInitiative(ctx context.Context, request api.DeleteInitiat
 func (s *Server) FindInitiativeById(ctx context.Context, request api.FindInitiativeByIdRequestObject) (api.FindInitiativeByIdResponseObject, error) {
 	result, err := s.findInitiativeById(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.FindInitiativeByIddefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
 	return api.FindInitiativeById200JSONResponse(*result), nil
 }
@@ -146,11 +130,7 @@ func (s *Server) findInitiativeById(ctx context.Context, request api.FindInitiat
 func (s *Server) ListInitiatives(ctx context.Context, request api.ListInitiativesRequestObject) (api.ListInitiativesResponseObject, error) {
 	result, err := s.listInitiatives(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.ListInitiativesdefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
 	return api.ListInitiatives200JSONResponse(result), nil
 }

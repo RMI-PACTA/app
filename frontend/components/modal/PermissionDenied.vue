@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { permissionDenied: { permissionDeniedVisible, permissionDeniedError }, error: { error } } = useModal()
+const { permissionDenied: { permissionDeniedVisible, permissionDeniedError } } = useModal()
 const router = useRouter()
 
 const navigateBack = () => {
@@ -26,7 +26,8 @@ const navigateBack = () => {
     </p>
     <p>
       If you think this is a bug (something that you should have access
-      to), or if you want to let us know how you got here, please file a bug.
+      to), or if you want to let us know how you got here, please email us at
+      <a href="mailto:pacta-help@siliconally.org">pacta-help@siliconally.org</a>.
     </p>
     <StandardDebug
       label="Technical Error"

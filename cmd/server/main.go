@@ -170,7 +170,7 @@ func run(args []string) error {
 			AllowedHeaders:   []string{"Authorization", "Content-Type"},
 			// Enable Debugging for testing, consider disabling in production
 			Debug:          true,
-			AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+			AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 		}).Handler(r)
 	} else {
 		handler = r

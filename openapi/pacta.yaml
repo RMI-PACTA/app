@@ -41,6 +41,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PactaVersion'
+        '401':
+          description: the user is not authorized to access this resource - if logged out, try logging in 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: the user is not authorized to access this resource 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        
         default:
           description: unexpected error
           content:

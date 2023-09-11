@@ -9,7 +9,7 @@ const { fromParams } = useURLParams()
 const id = presentOrCheckURL(fromParams('id'))
 
 const prefix = 'admin/pacta-version/[id]'
-const persistedPactaVersion = useState<PactaVersion>('totally different???')
+const persistedPactaVersion = useState<PactaVersion>(`${prefix}.persistedPactaVersion`)
 const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`)
 
 const changes = computed<PactaVersionChanges>(() => {

@@ -11,11 +11,7 @@ import (
 func (s *Server) FindUserById(ctx context.Context, request api.FindUserByIdRequestObject) (api.FindUserByIdResponseObject, error) {
 	u, err := s.findUserById(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.FindUserByIddefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
 	return api.FindUserById200JSONResponse(*u), nil
 }
@@ -30,13 +26,9 @@ func (s *Server) findUserById(ctx context.Context, request api.FindUserByIdReque
 func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestObject) (api.UpdateUserResponseObject, error) {
 	err := s.updateUser(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.UpdateUserdefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.UpdateUser200JSONResponse(emptySuccess), nil
+	return api.UpdateUser200JSONResponse{}, nil
 }
 
 func (s *Server) updateUser(ctx context.Context, request api.UpdateUserRequestObject) error {
@@ -49,13 +41,9 @@ func (s *Server) updateUser(ctx context.Context, request api.UpdateUserRequestOb
 func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestObject) (api.DeleteUserResponseObject, error) {
 	err := s.deleteUser(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.DeleteUserdefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.DeleteUser200JSONResponse(emptySuccess), nil
+	return api.DeleteUser200JSONResponse{}, nil
 }
 
 func (s *Server) deleteUser(ctx context.Context, request api.DeleteUserRequestObject) error {

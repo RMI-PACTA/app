@@ -1,7 +1,9 @@
 package pactasrv
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	api "github.com/RMI/pacta/openapi/pacta"
 )
@@ -136,28 +138,75 @@ func errorNotImplemented(what string) error {
 	return &errNotImplemented{What: what}
 }
 
-func errToAPIError(err error) api.Error {
+func errToAPIError(err error) (apiError, error) {
 	if e, ok := err.(*errBadRequest); ok {
-		return api.Error{Code: e.Code(), Message: e.Error()}
+		return apiError{Code: e.Code(), Message: e.Error()}, nil
 	}
 	if e, ok := err.(*errUnauthorized); ok {
-		return api.Error{Code: e.Code(), Message: e.Error()}
+		return apiError{Code: e.Code(), Message: e.Error()}, nil
 	}
 	if e, ok := err.(*errForbidden); ok {
-		return api.Error{Code: e.Code(), Message: e.Error()}
+		return apiError{Code: e.Code(), Message: e.Error()}, nil
 	}
 	if e, ok := err.(*errNotFound); ok {
-		return api.Error{Code: e.Code(), Message: e.Error()}
+		return apiError{Code: e.Code(), Message: e.Error()}, nil
 	}
 	if e, ok := err.(*errInternal); ok {
-		return api.Error{Code: e.Code(), Message: e.Error()}
+		return apiError{Code: e.Code(), Message: e.Error()}, nil
 	}
 	if e, ok := err.(*errNotImplemented); ok {
-		return api.Error{Code: e.Code(), Message: e.Error()}
+		return apiError{Code: e.Code(), Message: e.Error()}, nil
 	}
-	// TODO: log here for an unexpected error condition.
-	return api.Error{
-		Code:    500,
-		Message: "an unexpected error occurred",
-	}
+	return apiError{}, fmt.Errorf("unknown error: %s", err.Error())
+}
+
+type apiError api.Error
+
+func (response apiError) visit(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(int(response.Code))
+	return json.NewEncoder(w).Encode(response)
+}
+
+func (response apiError) VisitCreateInitiativeResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitUpdateInitiativeResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitFindInitiativeByIdResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitListInitiativesResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitDeleteInitiativeResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitMarkPactaVersionAsDefaultResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitDeletePactaVersionResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitCreatePactaVersionResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitUpdatePactaVersionResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitListPactaVersionsResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitFindPactaVersionByIdResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitDeleteUserResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitFindUserByIdResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
+func (response apiError) VisitUpdateUserResponse(w http.ResponseWriter) error {
+	return response.visit(w)
 }

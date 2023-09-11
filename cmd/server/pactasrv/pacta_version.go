@@ -13,11 +13,7 @@ import (
 func (s *Server) FindPactaVersionById(ctx context.Context, request api.FindPactaVersionByIdRequestObject) (api.FindPactaVersionByIdResponseObject, error) {
 	pv, err := s.findPactaVersionById(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.FindPactaVersionByIddefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
 	return api.FindPactaVersionById200JSONResponse(*pv), nil
 }
@@ -36,11 +32,7 @@ func (s *Server) findPactaVersionById(ctx context.Context, request api.FindPacta
 func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVersionsRequestObject) (api.ListPactaVersionsResponseObject, error) {
 	pvs, err := s.listPactaVersions(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.ListPactaVersionsdefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
 	return api.ListPactaVersions200JSONResponse(pvs), nil
 }
@@ -59,18 +51,14 @@ func (s *Server) listPactaVersions(ctx context.Context, _request api.ListPactaVe
 func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) (api.CreatePactaVersionResponseObject, error) {
 	err := s.createPactaVersion(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.CreatePactaVersiondefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.CreatePactaVersion200JSONResponse(emptySuccess), nil
+	return api.CreatePactaVersion200JSONResponse{}, nil
 }
 
 func (s *Server) createPactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) error {
 	// TODO(#12) Implement Authorization
-	pv, err := pactaVersionCreateToPACTA(request.Body)
+	pv, err := pactaVersionCreateFromOAPI(request.Body)
 	if err != nil {
 		return errorBadRequest("body", err.Error())
 	}
@@ -85,13 +73,9 @@ func (s *Server) createPactaVersion(ctx context.Context, request api.CreatePacta
 func (s *Server) UpdatePactaVersion(ctx context.Context, request api.UpdatePactaVersionRequestObject) (api.UpdatePactaVersionResponseObject, error) {
 	err := s.updatePactaVersion(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.UpdatePactaVersiondefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.UpdatePactaVersion200JSONResponse(emptySuccess), nil
+	return api.UpdatePactaVersion200JSONResponse{}, nil
 }
 
 func (s *Server) updatePactaVersion(ctx context.Context, request api.UpdatePactaVersionRequestObject) error {
@@ -121,13 +105,9 @@ func (s *Server) updatePactaVersion(ctx context.Context, request api.UpdatePacta
 func (s *Server) DeletePactaVersion(ctx context.Context, request api.DeletePactaVersionRequestObject) (api.DeletePactaVersionResponseObject, error) {
 	err := s.deletePactaVersion(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.DeletePactaVersiondefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.DeletePactaVersion200JSONResponse(emptySuccess), nil
+	return api.DeletePactaVersion200JSONResponse{}, nil
 }
 
 func (s *Server) deletePactaVersion(ctx context.Context, request api.DeletePactaVersionRequestObject) error {
@@ -145,13 +125,9 @@ func (s *Server) deletePactaVersion(ctx context.Context, request api.DeletePacta
 func (s *Server) MarkPactaVersionAsDefault(ctx context.Context, request api.MarkPactaVersionAsDefaultRequestObject) (api.MarkPactaVersionAsDefaultResponseObject, error) {
 	err := s.markPactaVersionAsDefault(ctx, request)
 	if err != nil {
-		e := errToAPIError(err)
-		return api.MarkPactaVersionAsDefaultdefaultJSONResponse{
-			Body:       e,
-			StatusCode: int(e.Code),
-		}, nil
+		return errToAPIError(err)
 	}
-	return api.MarkPactaVersionAsDefault200JSONResponse(emptySuccess), nil
+	return api.MarkPactaVersionAsDefault200JSONResponse{}, nil
 }
 
 func (s *Server) markPactaVersionAsDefault(ctx context.Context, request api.MarkPactaVersionAsDefaultRequestObject) error {

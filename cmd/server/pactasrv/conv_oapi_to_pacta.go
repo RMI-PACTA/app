@@ -10,7 +10,7 @@ import (
 
 var initiativeIDRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
-func initiativeCreateToPACTA(i *api.InitiativeCreate) (*pacta.Initiative, error) {
+func initiativeCreateFromOAPI(i *api.InitiativeCreate) (*pacta.Initiative, error) {
 	if i == nil {
 		return nil, errorBadRequest("InitiativeCreate", "cannot be nil")
 	}
@@ -39,7 +39,7 @@ func initiativeCreateToPACTA(i *api.InitiativeCreate) (*pacta.Initiative, error)
 	}, nil
 }
 
-func pactaVersionCreateToPACTA(p *api.PactaVersionCreate) (*pacta.PACTAVersion, error) {
+func pactaVersionCreateFromOAPI(p *api.PactaVersionCreate) (*pacta.PACTAVersion, error) {
 	if p == nil {
 		return nil, fmt.Errorf("pactaVersionCreateToPACTA: nil pointer")
 	}
@@ -50,9 +50,9 @@ func pactaVersionCreateToPACTA(p *api.PactaVersionCreate) (*pacta.PACTAVersion, 
 	}, nil
 }
 
-func ifNil[T any](t *T, or T) T {
+func ifNil[T any](t *T, fallback T) T {
 	if t == nil {
-		return or
+		return fallback
 	}
 	return *t
 }
