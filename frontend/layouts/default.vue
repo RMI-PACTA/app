@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 
-const { loading: { onMountedWithLoading, loadingSet }, anyBlockingModalOpen, error: { setError } } = useModal()
+const {
+  loading: { onMountedWithLoading, loadingSet },
+  anyBlockingModalOpen,
+  error: { setError }
+} = useModal()
 
 const handleError = (event: Event & { reason: Error }) => {
   event.preventDefault()
@@ -12,9 +16,10 @@ const handleError = (event: Event & { reason: Error }) => {
 
 onMountedWithLoading(() => { /* nothing to do */ }, 'defaultLayout.onMountedWithLoading')
 onMounted(() => {
-  window.addEventListener('unhandledrejection', handleError)
+  window.addEventListener('unhandledrejection', (event) => {
+    handleError(event)
+  })
 })
-
 </script>
 
 <template>
@@ -28,13 +33,8 @@ onMounted(() => {
         class="px-3 md:px-4 w-full lg:w-10 xl:w-8 mx-auto"
         style="min-height: calc(100vh - 9rem - 4px);"
       >
-        <NuxtErrorBoundary>
-          <template #error="{ error, clearError }">
-            {{ setError(error) }}
-            {{ clearError() }}
-          </template>
-          <slot />
-        </NuxtErrorBoundary>
+        <!-- TODO(#16) Consider adding back in NuxtErrorBoundary once fixed -->
+        <NuxtPage />
       </main>
     </div>
     <ModalGroup />

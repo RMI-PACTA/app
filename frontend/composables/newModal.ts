@@ -35,6 +35,10 @@ export const useModal = () => {
       // setError is 'handling' the error, we don't re-throw.
     }
   }
+  const setAndClearError = (err?: Error, fn: () => void) => {
+    setError('setAndClearError')(err)
+    fn()
+  }
   const withErrorHandling = async (fn: () => Promise<unknown>, opKey: string): Promise<unknown> => {
     return await fn().catch(setError(opKey))
   }
@@ -90,6 +94,7 @@ export const useModal = () => {
     },
     error: {
       setError,
+      setAndClearError,
       error,
       withErrorHandling,
       errorModalVisible,

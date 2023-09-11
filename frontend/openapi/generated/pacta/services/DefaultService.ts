@@ -123,6 +123,23 @@ export class DefaultService {
     }
 
     /**
+     * gets info about the logged in user
+     * Returns the logged in user, if the user is logged in, otherwise returns empty
+     * @returns User user response
+     * @returns Error unexpected error
+     * @throws ApiError
+     */
+    public findUserByMe(): CancelablePromise<User | Error> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/user/me',
+            errors: {
+                401: `caller is not logged in - log in to continue`,
+            },
+        });
+    }
+
+    /**
      * Returns a user by ID
      * Returns a user based on a single ID
      * @param id ID of user to fetch

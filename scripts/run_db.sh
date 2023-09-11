@@ -95,6 +95,14 @@ if [ "$SKIP_MIGRATE" = false ]; then
   migrate_db "$DSN"
 fi
 
-echo "DB is up!"
+echo "
+.__ .  .._.
+[__)|\/| | 
+|  \|  |_|_
+           
+.__ .__    
+|  \[__)   
+|__/[__)   
+"
 
 docker wait local-postgres

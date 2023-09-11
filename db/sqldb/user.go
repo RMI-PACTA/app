@@ -37,7 +37,7 @@ func (d *DB) User(tx db.Tx, id pacta.UserID) (*pacta.User, error) {
 	return exactlyOne("user", id, us)
 }
 
-func (d *DB) UserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string) (*pacta.User, error) {
+func (d *DB) userByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string) (*pacta.User, error) {
 	rows, err := d.query(tx, `
 		SELECT `+userSelectColumns+`
 		FROM pacta_user 
@@ -50,6 +50,43 @@ func (d *DB) UserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID 
 		return nil, fmt.Errorf("translating rows to users: %w", err)
 	}
 	return exactlyOne("user", fmt.Sprintf("%s:%s", authnMechanism, authnID), us)
+}
+
+func (d *DB) GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string, email string) (*pacta.User, error) {
+	var user *pacta.User
+	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		u, err := d.userByAuthn(tx, authnMechanism, authnID)
+		if err == nil {
+			user = u
+			return nil
+		}
+		if !db.IsNotFound(err) {
+			return fmt.Errorf("looking up user by authn: %w", err)
+		}
+		canonizedEmail, err := pacta.CanonizeEmail(email)
+		if err != nil {
+			return fmt.Errorf("canonizing email: %w", err)
+		}
+		uID, err := d.CreateUser(tx, &pacta.User{
+			CanonicalEmail: canonizedEmail,
+			EnteredEmail:   email,
+			AuthnMechanism: authnMechanism,
+			AuthnID:        authnID,
+		})
+		if err != nil {
+			return fmt.Errorf("creating user: %w", err)
+		}
+		u, err = d.User(tx, uID)
+		if err != nil {
+			return fmt.Errorf("reading back created user: %w", err)
+		}
+		user = u
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("running getOrCreateUser txn: %w", err)
+	}
+	return user, nil
 }
 
 func (d *DB) Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error) {

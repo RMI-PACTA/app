@@ -13,6 +13,6 @@ go_library(
         "//db",
         "//openapi:pacta_generated",
         "//pacta",
-        "@org_uber_go_zap//:zap",
+        "@com_github_go_chi_jwtauth_v5//:jwtauth",
     ],
 )
