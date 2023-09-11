@@ -2,6 +2,7 @@ package pactasrv
 
 import (
 	"context"
+	"fmt"
 
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
@@ -56,38 +57,41 @@ func (s *Server) deleteUser(ctx context.Context, request api.DeleteUserRequestOb
 // Returns the logged in user
 // (GET /user/me)
 func (s *Server) FindUserByMe(ctx context.Context, request api.FindUserByMeRequestObject) (api.FindUserByMeResponseObject, error) {
-	unauth := api.FindUserByMe401JSONResponse(map[string]interface{}{})
+	user, err := s.findUserByMe(ctx, request)
+	if err != nil {
+		return errToAPIError(err)
+	}
+	return api.FindUserByMe200JSONResponse(*user), nil
+}
+
+func (s *Server) findUserByMe(ctx context.Context, request api.FindUserByMeRequestObject) (*api.User, error) {
 	token, _, err := jwtauth.FromContext(ctx)
 	if err != nil {
 		// TODO(grady) upgrade this to the new error handling strategy after #12
-		return nil, fmt.Errorf("failed to get token from context: %w", err)
+		return nil, errorUnauthorized("lookup self", "without authorization token")
 	}
 	if token == nil {
-		return unauth, nil
+		return nil, errorUnauthorized("lookup self ", "without authorization token")
 	}
-	email, ok := token.PrivateClaims()["email"]
+	email, ok := token.PrivateClaims()["emails"]
 	if !ok {
-		return nil, fmt.Errorf("failed to load email claim")
+		return nil, errorUnauthorized("lookup self", "without email claim in token")
 	}
-	emailStr, ok := email.(string)
-	if !ok || emailStr == "" {
-		return nil, fmt.Errorf("email claim was of unexpected type %T, wanted a non-empty string", email)
+	emails, ok := email.([]string)
+	if !ok || len(emails) == 0 {
+		return nil, errorInternal(fmt.Errorf("couldn't parse email claim in token"))
+	}
+	// TODO(#18) Handle Multiple Emails in the Token Claims gracefully
+	if len(emails) > 1 {
+		return nil, errorBadRequest("jwt token", "multiple emails in token")
 	}
 	authnID := token.Subject()
 	if authnID == "" {
 		return nil, fmt.Errorf("couldn't find authn id in jwt")
 	}
-	user, err := s.DB.GetOrCreateUserByAuthn(s.DB.NoTxn(ctx), pacta.AuthnMechanism_EmailAndPass, authnID, emailStr)
+	user, err := s.DB.GetOrCreateUserByAuthn(s.DB.NoTxn(ctx), pacta.AuthnMechanism_EmailAndPass, authnID, emails[0])
 	if err != nil {
 		return nil, fmt.Errorf("getting user by authn: %w", err)
 	}
-	return api.FindUserByMe200JSONResponse{
-		Admin:             user.Admin,
-		CanonicalEmail:    &user.CanonicalEmail,
-		EnteredEmail:      user.EnteredEmail,
-		Id:                string(user.ID),
-		Name:              user.Name,
-		PreferredLanguage: api.UserPreferredLanguage(user.PreferredLanguage),
-		SuperAdmin:        user.SuperAdmin,
-	}, nil
+	return userToOAPI(user)
 }

@@ -31,7 +31,7 @@ onMounted(() => {
     >
       <main
         class="px-3 md:px-4 w-full lg:w-10 xl:w-8 mx-auto"
-        style="min-height: calc(100vh - 9rem - 4px);"
+        style="min-height: calc(100vh - 9.25rem - 4px);"
       >
         <!-- TODO(#16) Consider adding back in NuxtErrorBoundary once fixed -->
         <NuxtPage />

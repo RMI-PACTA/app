@@ -26,17 +26,32 @@ func initiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 	}, nil
 }
 
+func userToOAPI(user *pacta.User) (*api.User, error) {
+	if user == nil {
+		return nil, errorInternal(fmt.Errorf("userToOAPI: can't convert nil pointer"))
+	}
+	return &api.User{
+		Admin:             user.Admin,
+		CanonicalEmail:    &user.CanonicalEmail,
+		EnteredEmail:      user.EnteredEmail,
+		Id:                string(user.ID),
+		Name:              user.Name,
+		PreferredLanguage: api.UserPreferredLanguage(user.PreferredLanguage),
+		SuperAdmin:        user.SuperAdmin,
+	}, nil
+}
+
 func pactaVersionToOAPI(pv *pacta.PACTAVersion) (*api.PactaVersion, error) {
 	if pv == nil {
 		return nil, errorInternal(fmt.Errorf("pactaVersionToOAPI: can't convert nil pointer"))
 	}
 	return &api.PactaVersion{
-		Id:          string(pv.ID),
-		Name:        pv.Name,
-		IsDefault:   pv.IsDefault,
-		Digest:      pv.Digest,
-		Description: pv.Description,
 		CreatedAt:   pv.CreatedAt,
+		Description: pv.Description,
+		Digest:      pv.Digest,
+		Id:          string(pv.ID),
+		IsDefault:   pv.IsDefault,
+		Name:        pv.Name,
 	}, nil
 }
 
