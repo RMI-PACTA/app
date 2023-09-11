@@ -139,7 +139,7 @@ func (db *DB) putAnalysisArtifact(tx db.Tx, a *pacta.AnalysisArtifact) error {
 }
 
 func rowsToAnalysisArtifacts(rows pgx.Rows) ([]*pacta.AnalysisArtifact, error) {
-	return allRows("analysis_artifact", rows, rowToAnalysisArtifact)
+	return mapRows("analysis_artifact", rows, rowToAnalysisArtifact)
 }
 
 func rowToAnalysisArtifact(row rowScanner) (*pacta.AnalysisArtifact, error) {

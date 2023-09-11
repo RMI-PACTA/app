@@ -163,7 +163,7 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 }
 
 func rowsToPortfolios(rows pgx.Rows) ([]*pacta.Portfolio, error) {
-	return allRows("portfolio", rows, rowToPortfolio)
+	return mapRows("portfolio", rows, rowToPortfolio)
 }
 
 func (db *DB) putPortfolio(tx db.Tx, p *pacta.Portfolio) error {

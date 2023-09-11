@@ -89,7 +89,7 @@ func (d *DB) createSnapshot(tx db.Tx, pID pacta.PortfolioID, pgID pacta.Portfoli
 }
 
 func rowsToPortfolioSnapshots(rows pgx.Rows) ([]*pacta.PortfolioSnapshot, error) {
-	return allRows("portfolio_snapshot", rows, rowToPortfolioSnapshot)
+	return mapRows("portfolio_snapshot", rows, rowToPortfolioSnapshot)
 }
 
 func rowToPortfolioSnapshot(row rowScanner) (*pacta.PortfolioSnapshot, error) {

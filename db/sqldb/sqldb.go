@@ -236,22 +236,6 @@ func strToNilable[T ~string](id T) *string {
 	return &s
 }
 
-func allRows[T any](name string, rows pgx.Rows, fn func(rowScanner) (T, error)) ([]T, error) {
-	defer rows.Close()
-	var ts []T
-	for rows.Next() {
-		t, err := fn(rows)
-		if err != nil {
-			return nil, fmt.Errorf("converting row to %s: %w", name, err)
-		}
-		ts = append(ts, t)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("while processing %s rows: %w", name, err)
-	}
-	return ts, nil
-}
-
 func exactlyOne[T any, I ~string](name string, id I, ts []T) (T, error) {
 	var zeroValue T
 	if len(ts) == 0 {
@@ -354,4 +338,46 @@ func asMap[K ~string, V any](vs []V, idFn func(v V) K) map[K]V {
 		result[idFn(v)] = v
 	}
 	return result
+}
+
+func forEachRow(name string, rows pgx.Rows, fn func(rowScanner) error) error {
+	defer rows.Close()
+	for rows.Next() {
+		err := fn(rows)
+		if err != nil {
+			return fmt.Errorf("converting row to %s: %w", name, err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("while processing %s rows: %w", name, err)
+	}
+	return nil
+
+}
+
+func mapRows[T any](name string, rows pgx.Rows, fn func(rowScanner) (T, error)) ([]T, error) {
+	result := []T{}
+	fn2 := func(row rowScanner) error {
+		t, err := fn(row)
+		if err != nil {
+			return err
+		}
+		result = append(result, t)
+		return nil
+	}
+	if err := forEachRow(name, rows, fn2); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func mapRowsToIDs[T ~string](name string, rows pgx.Rows) ([]T, error) {
+	fn := func(row rowScanner) (T, error) {
+		var t T
+		if err := row.Scan(&t); err != nil {
+			return t, fmt.Errorf("scanning into id for %s: %w", name, err)
+		}
+		return t, nil
+	}
+	return mapRows(name, rows, fn)
 }

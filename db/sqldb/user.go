@@ -210,5 +210,5 @@ func rowToUser(row rowScanner) (*pacta.User, error) {
 }
 
 func rowsToUsers(rows pgx.Rows) ([]*pacta.User, error) {
-	return allRows("user", rows, rowToUser)
+	return mapRows("user", rows, rowToUser)
 }

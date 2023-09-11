@@ -71,25 +71,49 @@ func (d *DB) ownerByInitiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Owner, e
 }
 
 func (d *DB) GetOrCreateOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error) {
-	owner, err := d.ownerByUser(tx, uID)
-	if err == nil {
-		return owner.ID, nil
+	var ownerID pacta.OwnerID
+	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		owner, err := d.ownerByUser(tx, uID)
+		if err == nil {
+			ownerID = owner.ID
+			return nil
+		}
+		if !db.IsNotFound(err) {
+			return fmt.Errorf("querying owner by user: %w", err)
+		}
+		ownerID, err = d.createOwner(tx, &pacta.Owner{User: &pacta.User{ID: uID}})
+		if err != nil {
+			return fmt.Errorf("creating owner: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("getting or creating owner for initiative: %w", err)
 	}
-	if !db.IsNotFound(err) {
-		return "", fmt.Errorf("querying owner by user: %w", err)
-	}
-	return d.createOwner(tx, &pacta.Owner{User: &pacta.User{ID: uID}})
+	return ownerID, nil
 }
 
 func (d *DB) GetOrCreateOwnerForInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta.OwnerID, error) {
-	owner, err := d.ownerByInitiative(tx, iID)
-	if err == nil {
-		return owner.ID, nil
+	var ownerID pacta.OwnerID
+	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		owner, err := d.ownerByInitiative(tx, iID)
+		if err == nil {
+			ownerID = owner.ID
+			return nil
+		}
+		if !db.IsNotFound(err) {
+			return fmt.Errorf("querying owner by user: %w", err)
+		}
+		ownerID, err = d.createOwner(tx, &pacta.Owner{Initiative: &pacta.Initiative{ID: iID}})
+		if err != nil {
+			return fmt.Errorf("creating owner: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("getting or creating owner for initiative: %w", err)
 	}
-	if !db.IsNotFound(err) {
-		return "", fmt.Errorf("querying owner by user: %w", err)
-	}
-	return d.createOwner(tx, &pacta.Owner{Initiative: &pacta.Initiative{ID: iID}})
+	return ownerID, nil
 }
 
 func (d *DB) createOwner(tx db.Tx, o *pacta.Owner) (pacta.OwnerID, error) {
@@ -118,7 +142,7 @@ func (d *DB) createOwner(tx db.Tx, o *pacta.Owner) (pacta.OwnerID, error) {
 }
 
 func rowsToOwners(rows pgx.Rows) (map[pacta.OwnerID]*pacta.Owner, error) {
-	owners, err := allRows("owner", rows, rowToOwner)
+	owners, err := mapRows("owner", rows, rowToOwner)
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to owners: %w", err)
 	}

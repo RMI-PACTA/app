@@ -14,7 +14,6 @@ go_library(
         "initiative_user.go",
         "owner.go",
         "pacta_version.go",
-        "populate.go",
         "portfolio.go",
         "portfolio_group.go",
         "portfolio_initiative.go",

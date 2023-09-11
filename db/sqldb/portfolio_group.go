@@ -129,7 +129,7 @@ func rowToPortfolioGroupRow(row rowScanner) (*portfolioGroupRow, error) {
 }
 
 func rowsToPortfolioGroups(rows pgx.Rows) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error) {
-	pgrs, err := allRows("portfolioGroup", rows, rowToPortfolioGroupRow)
+	pgrs, err := mapRows("portfolioGroup", rows, rowToPortfolioGroupRow)
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to portfolio_groups: %w", err)
 	}

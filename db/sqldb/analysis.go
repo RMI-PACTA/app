@@ -106,16 +106,22 @@ func (d *DB) DeleteAnalysis(tx db.Tx, id pacta.AnalysisID) ([]pacta.BlobURI, err
 		if err != nil {
 			return fmt.Errorf("reading analysis: %w", err)
 		}
-		aas, err := d.AnalysisArtifactsForAnalysis(tx, id)
+		rows, err := d.query(tx, `
+			WITH deleted_analysis_artifacts AS (
+				DELETE FROM analysis_artifact
+				WHERE analysis_id = $1 
+				RETURNING blob_id
+			)
+			DELETE FROM blob
+			WHERE id IN (SELECT blob_id FROM deleted_analysis_artifacts)
+			RETURNING blob_uri;
+		`, id)
 		if err != nil {
-			return fmt.Errorf("reading analysis artifacts: %w", err)
+			return fmt.Errorf("reading analysis_artifacts: %w", err)
 		}
-		for _, aa := range aas {
-			buri, err := d.DeleteAnalysisArtifact(tx, aa.ID)
-			if err != nil {
-				return fmt.Errorf("deleting analysis artifact %q: %w", aa.ID, err)
-			}
-			buris = append(buris, buri)
+		buris, err = mapRowsToIDs[pacta.BlobURI]("blob_id", rows)
+		if err != nil {
+			return fmt.Errorf("retrieving analysis_artifacts blob_uris: %w", err)
 		}
 		err = d.exec(tx, `DELETE FROM analysis WHERE id = $1;`, id)
 		if err != nil {
@@ -184,7 +190,7 @@ func rowToAnalysis(row rowScanner) (*pacta.Analysis, error) {
 }
 
 func rowsToAnalyses(rows pgx.Rows) ([]*pacta.Analysis, error) {
-	return allRows("analysis", rows, rowToAnalysis)
+	return mapRows("analysis", rows, rowToAnalysis)
 }
 
 func (db *DB) putAnalysis(tx db.Tx, a *pacta.Analysis) error {

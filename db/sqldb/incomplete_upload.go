@@ -174,7 +174,7 @@ func rowToIncompleteUpload(row rowScanner) (*pacta.IncompleteUpload, error) {
 }
 
 func rowsToIncompleteUploads(rows pgx.Rows) ([]*pacta.IncompleteUpload, error) {
-	return allRows("incomplete_upload", rows, rowToIncompleteUpload)
+	return mapRows("incomplete_upload", rows, rowToIncompleteUpload)
 }
 
 func (db *DB) putIncompleteUpload(tx db.Tx, iu *pacta.IncompleteUpload) error {

@@ -95,7 +95,7 @@ func rowToPortfolioInitiativeMembership(row rowScanner) (*pacta.PortfolioInitiat
 }
 
 func rowsToPortfolioInitiativeMemberships(rows pgx.Rows) ([]*pacta.PortfolioInitiativeMembership, error) {
-	return allRows("portfolio_initiaitve_membership", rows, rowToPortfolioInitiativeMembership)
+	return mapRows("portfolio_initiaitve_membership", rows, rowToPortfolioInitiativeMembership)
 }
 
 func validatePortfolioInitiativeMembershipForCreate(pim *pacta.PortfolioInitiativeMembership) error {

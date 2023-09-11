@@ -174,7 +174,7 @@ func rowToInitiative(row rowScanner) (*pacta.Initiative, error) {
 }
 
 func rowsToInitiatives(rows pgx.Rows) ([]*pacta.Initiative, error) {
-	return allRows("initiative", rows, rowToInitiative)
+	return mapRows("initiative", rows, rowToInitiative)
 }
 
 func (db *DB) putInitiative(tx db.Tx, i *pacta.Initiative) error {

@@ -73,14 +73,13 @@ func TestSchemaHistory(t *testing.T) {
 		Version int
 	}
 
-	var got []versionHistory
-	for rows.Next() {
+	got, err := mapRows("version_history", rows, func(row rowScanner) (versionHistory, error) {
 		var vh versionHistory
-		if err := rows.Scan(&vh.ID, &vh.Version); err != nil {
-			t.Fatalf("failed to load version history entry: %v", err)
+		if err := row.Scan(&vh.ID, &vh.Version); err != nil {
+			return versionHistory{}, fmt.Errorf("failed to load version history entry: %w", err)
 		}
-		got = append(got, vh)
-	}
+		return vh, nil
+	})
 
 	want := []versionHistory{
 		{ID: 1, Version: 1}, // 0001_create_schema_migrations_history

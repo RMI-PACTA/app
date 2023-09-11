@@ -8,7 +8,7 @@ import (
 )
 
 func offsetToCursor(i int) db.Cursor {
-	return db.Cursor(fmt.Sprintf("%d", i))
+	return db.Cursor(strconv.Itoa(i))
 }
 
 func offsetFromCursor(c db.Cursor) (int, error) {
