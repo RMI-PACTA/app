@@ -390,8 +390,8 @@ ALTER TABLE public.portfolio_group OWNER TO postgres;
 --
 
 CREATE TABLE public.portfolio_group_membership (
-    portfolio_id text,
-    portfolio_group_id text,
+    portfolio_id text NOT NULL,
+    portfolio_group_id text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
@@ -616,6 +616,14 @@ ALTER TABLE ONLY public.pacta_version
 
 ALTER TABLE ONLY public.pacta_version
     ADD CONSTRAINT pacta_version_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: portfolio_group_membership portfolio_group_membership_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.portfolio_group_membership
+    ADD CONSTRAINT portfolio_group_membership_pkey PRIMARY KEY (portfolio_id, portfolio_group_id);
 
 
 --

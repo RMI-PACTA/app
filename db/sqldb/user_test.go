@@ -316,3 +316,26 @@ func userCmpOpts() cmp.Option {
 		cmpopts.SortMaps(userIDLessFn),
 	}
 }
+
+func userForTesting(t *testing.T, tdb *DB) *pacta.User {
+	t.Helper()
+	return userForTestingWithKey(t, tdb, "only")
+}
+
+func userForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.User {
+	t.Helper()
+	u := &pacta.User{
+		CanonicalEmail: fmt.Sprintf("canoncal-email-%s@example.com", key),
+		EnteredEmail:   fmt.Sprintf("entered-email-%s+helloworld@example.com", key),
+		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
+		AuthnID:        fmt.Sprintf("authn-id-%s", key),
+	}
+	ctx := context.Background()
+	tx := tdb.NoTxn(ctx)
+	uid, err := tdb.CreateUser(tx, u)
+	if err != nil {
+		t.Fatalf("creating user: %v", err)
+	}
+	u.ID = uid
+	return u
+}

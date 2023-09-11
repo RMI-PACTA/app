@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,23 +12,16 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestCRUDInvitation(t *testing.T) {
+func TestInitiativeCRUD(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
-	pv := &pacta.PACTAVersion{
-		Name:        "pacta version",
-		Description: "pacta description",
-		Digest:      "pacta digest",
-	}
-	pvID, err0 := tdb.CreatePACTAVersion(tx, pv)
-	noErrDuringSetup(t, err0)
-
+	pv := pactaVersionForTesting(t, tdb)
 	i := &pacta.Initiative{
 		ID:           "initiative-id",
 		Language:     pacta.Language_DE,
 		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pvID},
+		PACTAVersion: &pacta.PACTAVersion{ID: pv.ID},
 	}
 	err := tdb.CreateInitiative(tx, i)
 	if err != nil {
@@ -103,35 +97,17 @@ func TestDeleteInitiative(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
-	pv := &pacta.PACTAVersion{
-		Name:        "pacta version",
-		Description: "pacta description",
-		Digest:      "pacta digest",
-	}
-	pvID, err0 := tdb.CreatePACTAVersion(tx, pv)
-	i := &pacta.Initiative{
-		ID:           "initiative-id",
-		Language:     pacta.Language_DE,
-		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pvID},
-	}
-	err1 := tdb.CreateInitiative(tx, i)
-	_, err2 := tdb.CreateInitiativeInvitation(tx, &pacta.InitiativeInvitation{
+	i := initiativeForTesting(t, tdb)
+	u := userForTesting(t, tdb)
+	_, err0 := tdb.CreateInitiativeInvitation(tx, &pacta.InitiativeInvitation{
 		Initiative: &pacta.Initiative{ID: i.ID},
-	})
-	uid, err3 := tdb.CreateUser(tx, &pacta.User{
-		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
-		AuthnID:        "authn-id",
-		EnteredEmail:   "entered-email",
-		CanonicalEmail: "canonical-email",
-		Name:           "User's Name",
 	})
 	iur := &pacta.InitiativeUserRelationship{
-		User:       &pacta.User{ID: uid},
+		User:       &pacta.User{ID: u.ID},
 		Initiative: &pacta.Initiative{ID: i.ID},
 	}
-	err4 := tdb.PutInitiativeUserRelationship(tx, iur)
-	noErrDuringSetup(t, err0, err1, err2, err3, err4)
+	err1 := tdb.PutInitiativeUserRelationship(tx, iur)
+	noErrDuringSetup(t, err0, err1)
 
 	err := tdb.DeleteInitiative(tx, i.ID)
 	if err != nil {
@@ -157,4 +133,28 @@ func initiativeCmpOpts() cmp.Option {
 		cmpopts.EquateEmpty(),
 		cmpopts.EquateApproxTime(time.Second),
 	}
+}
+
+func initiativeForTesting(t *testing.T, tdb *DB) *pacta.Initiative {
+	t.Helper()
+	return initiativeForTestingWithKey(t, tdb, "only")
+}
+
+func initiativeForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.Initiative {
+	t.Helper()
+	pv := pactaVersionForTestingWithKey(t, tdb, key)
+	i := &pacta.Initiative{
+		ID:           pacta.InitiativeID(fmt.Sprintf("initiative-id-%s", key)),
+		Language:     pacta.Language_DE,
+		Name:         "initiative-name",
+		PACTAVersion: &pacta.PACTAVersion{ID: pv.ID},
+	}
+	ctx := context.Background()
+	tx := tdb.NoTxn(ctx)
+	err := tdb.CreateInitiative(tx, i)
+	if err != nil {
+		t.Fatalf("creating initiative: %v", err)
+	}
+	i.CreatedAt = time.Now()
+	return i
 }

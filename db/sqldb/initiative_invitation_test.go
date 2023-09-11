@@ -15,20 +15,7 @@ func TestCreateInitiativeInvitation(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
-	pv := &pacta.PACTAVersion{
-		Name:        "pacta version",
-		Description: "pacta description",
-		Digest:      "pacta digest",
-	}
-	pvID, err0 := tdb.CreatePACTAVersion(tx, pv)
-	i := &pacta.Initiative{
-		ID:           "initiative-id",
-		Language:     pacta.Language_DE,
-		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pvID},
-	}
-	err1 := tdb.CreateInitiative(tx, i)
-	noErrDuringSetup(t, err0, err1)
+	i := initiativeForTesting(t, tdb)
 
 	var presetID pacta.InitiativeInvitationID = "PresetID"
 	ii := &pacta.InitiativeInvitation{
@@ -86,31 +73,16 @@ func TestUpdateInitiativeInvitation(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
-	pv := &pacta.PACTAVersion{
-		Name:        "pacta version",
-		Description: "pacta description",
-		Digest:      "pacta digest",
-	}
-	pvID, err0 := tdb.CreatePACTAVersion(tx, pv)
-	i := &pacta.Initiative{
-		ID:           "initiative-id",
-		Language:     pacta.Language_DE,
-		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pvID},
-	}
-	err1 := tdb.CreateInitiative(tx, i)
-	iiid, err2 := tdb.CreateInitiativeInvitation(tx, &pacta.InitiativeInvitation{
+	i := initiativeForTesting(t, tdb)
+	u := userForTesting(t, tdb)
+	iiid, err0 := tdb.CreateInitiativeInvitation(tx, &pacta.InitiativeInvitation{
 		Initiative: &pacta.Initiative{ID: i.ID},
 	})
-	uid, err3 := tdb.CreateUser(tx, &pacta.User{
-		CanonicalEmail: "canon",
-		EnteredEmail:   "entered",
-		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
-		AuthnID:        "A",
-	})
-	noErrDuringSetup(t, err0, err1, err2, err3)
+	noErrDuringSetup(t, err0)
 
-	err := tdb.UpdateInitiativeInvitation(tx, iiid, db.SetInitiativeInvitationUsedBy(uid), db.SetInitiativeInvitationUsedAt(time.Now()))
+	err := tdb.UpdateInitiativeInvitation(tx, iiid,
+		db.SetInitiativeInvitationUsedBy(u.ID),
+		db.SetInitiativeInvitationUsedAt(time.Now()))
 	if err != nil {
 		t.Fatalf("update initiative invitation: %v", err)
 	}
@@ -124,7 +96,7 @@ func TestUpdateInitiativeInvitation(t *testing.T) {
 		Initiative: &pacta.Initiative{ID: i.ID},
 		CreatedAt:  time.Now(),
 		UsedAt:     time.Now(),
-		UsedBy:     &pacta.User{ID: uid},
+		UsedBy:     &pacta.User{ID: u.ID},
 	}
 	if diff := cmp.Diff(expected, actual, initiativeInvitationCmpOpts()); diff != "" {
 		t.Fatalf("unexpected diff (-want +got)\n%s", diff)
@@ -135,23 +107,11 @@ func TestDeleteInitiativeInvitation(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
-	pv := &pacta.PACTAVersion{
-		Name:        "pacta version",
-		Description: "pacta description",
-		Digest:      "pacta digest",
-	}
-	pvID, err0 := tdb.CreatePACTAVersion(tx, pv)
-	i := &pacta.Initiative{
-		ID:           "initiative-id",
-		Language:     pacta.Language_DE,
-		Name:         "initiative-name",
-		PACTAVersion: &pacta.PACTAVersion{ID: pvID},
-	}
-	err1 := tdb.CreateInitiative(tx, i)
-	iiid, err2 := tdb.CreateInitiativeInvitation(tx, &pacta.InitiativeInvitation{
+	i := initiativeForTesting(t, tdb)
+	iiid, err0 := tdb.CreateInitiativeInvitation(tx, &pacta.InitiativeInvitation{
 		Initiative: &pacta.Initiative{ID: i.ID},
 	})
-	noErrDuringSetup(t, err0, err1, err2)
+	noErrDuringSetup(t, err0)
 
 	err := tdb.DeleteInitiativeInvitation(tx, iiid)
 	if err != nil {

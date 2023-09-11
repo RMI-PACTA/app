@@ -177,3 +177,26 @@ func blobCmpOpts() cmp.Option {
 		cmpopts.EquateApproxTime(time.Second),
 	}
 }
+
+func blobForTesting(t *testing.T, tdb *DB) *pacta.Blob {
+	t.Helper()
+	return blobForTestingWithKey(t, tdb, "only")
+}
+
+func blobForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.Blob {
+	t.Helper()
+	b := &pacta.Blob{
+		FileType: pacta.FileType_CSV,
+		BlobURI:  pacta.BlobURI(fmt.Sprintf("blob-uri-%s", key)),
+		FileName: fmt.Sprintf("example-spreadsheet-%s", key),
+	}
+	ctx := context.Background()
+	tx := tdb.NoTxn(ctx)
+	bid, err := tdb.CreateBlob(tx, b)
+	if err != nil {
+		t.Fatalf("creating blob: %v", err)
+	}
+	b.ID = bid
+	b.CreatedAt = time.Now()
+	return b
+}

@@ -112,5 +112,5 @@ func rowToInitiativeUserRelationship(row rowScanner) (*pacta.InitiativeUserRelat
 }
 
 func rowsToInitiativeUserRelationships(rows pgx.Rows) ([]*pacta.InitiativeUserRelationship, error) {
-	return allRows("initiative_user_relationship", rows, rowToInitiativeUserRelationship)
+	return mapRows("initiative_user_relationship", rows, rowToInitiativeUserRelationship)
 }

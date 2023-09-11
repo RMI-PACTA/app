@@ -286,13 +286,26 @@ func ParseFailureCode(s string) (FailureCode, error) {
 	return "", fmt.Errorf("unknown FailureCode: %q", s)
 }
 
+type HoldingsDate struct {
+	Time time.Time
+}
+
+func (o *HoldingsDate) Clone() *HoldingsDate {
+	if o == nil {
+		return nil
+	}
+	return &HoldingsDate{
+		Time: o.Time,
+	}
+}
+
 type IncompleteUploadID string
 type IncompleteUpload struct {
 	ID                IncompleteUploadID
 	Name              string
 	Description       string
 	CreatedAt         time.Time
-	HoldingsDate      time.Time
+	HoldingsDate      *HoldingsDate
 	RanAt             time.Time
 	CompletedAt       time.Time
 	FailureCode       FailureCode
@@ -311,7 +324,7 @@ func (o *IncompleteUpload) Clone() *IncompleteUpload {
 		Name:              o.Name,
 		Description:       o.Description,
 		CreatedAt:         o.CreatedAt,
-		HoldingsDate:      o.HoldingsDate,
+		HoldingsDate:      o.HoldingsDate.Clone(),
 		RanAt:             o.RanAt,
 		CompletedAt:       o.CompletedAt,
 		FailureCode:       o.FailureCode,
@@ -328,7 +341,7 @@ type Portfolio struct {
 	Name              string
 	Description       string
 	CreatedAt         time.Time
-	HoldingsDate      time.Time
+	HoldingsDate      *HoldingsDate
 	Owner             *Owner
 	Blob              *Blob
 	AdminDebugEnabled bool
@@ -344,7 +357,7 @@ func (o *Portfolio) Clone() *Portfolio {
 		Name:              o.Name,
 		Description:       o.Description,
 		CreatedAt:         o.CreatedAt,
-		HoldingsDate:      o.HoldingsDate,
+		HoldingsDate:      o.HoldingsDate.Clone(),
 		Owner:             o.Owner.Clone(),
 		Blob:              o.Blob.Clone(),
 		AdminDebugEnabled: o.AdminDebugEnabled,
@@ -359,6 +372,7 @@ type PortfolioGroup struct {
 	Name        string
 	Description string
 	CreatedAt   time.Time
+	Members     []*PortfolioGroupMembership
 }
 
 func (o *PortfolioGroup) Clone() *PortfolioGroup {
@@ -371,13 +385,14 @@ func (o *PortfolioGroup) Clone() *PortfolioGroup {
 		Name:        o.Name,
 		Description: o.Description,
 		CreatedAt:   o.CreatedAt,
+		Members:     cloneAll(o.Members),
 	}
 }
 
 type PortfolioGroupMembership struct {
-	PortfolioGroupID PortfolioGroupID
-	PortfolioID      PortfolioID
-	CreatedAt        time.Time
+	PortfolioGroup *PortfolioGroup
+	Portfolio      *Portfolio
+	CreatedAt      time.Time
 }
 
 func (o *PortfolioGroupMembership) Clone() *PortfolioGroupMembership {
@@ -385,9 +400,9 @@ func (o *PortfolioGroupMembership) Clone() *PortfolioGroupMembership {
 		return nil
 	}
 	return &PortfolioGroupMembership{
-		PortfolioGroupID: o.PortfolioGroupID,
-		PortfolioID:      o.PortfolioID,
-		CreatedAt:        o.CreatedAt,
+		PortfolioGroup: o.PortfolioGroup.Clone(),
+		Portfolio:      o.Portfolio.Clone(),
+		CreatedAt:      o.CreatedAt,
 	}
 }
 
@@ -437,8 +452,8 @@ func (o *PortfolioSnapshot) Clone() *PortfolioSnapshot {
 type AnalysisType string
 
 const (
-	AnalysisType_Audit  AnalysisType = "AUDIT"
-	AnalysisType_Report AnalysisType = "REPORT"
+	AnalysisType_Audit  AnalysisType = "audit"
+	AnalysisType_Report AnalysisType = "report"
 )
 
 var AnalysisTypeValues = []AnalysisType{
@@ -448,9 +463,9 @@ var AnalysisTypeValues = []AnalysisType{
 
 func ParseAnalysisType(s string) (AnalysisType, error) {
 	switch s {
-	case "AUDIT":
+	case "audit":
 		return AnalysisType_Audit, nil
-	case "REPORT":
+	case "report":
 		return AnalysisType_Report, nil
 	}
 	return "", fmt.Errorf("unknown AnalysisType: %q", s)
@@ -470,6 +485,7 @@ type Analysis struct {
 	CompletedAt       time.Time
 	FailureCode       FailureCode
 	FailureMessage    string
+	Artifacts         []*AnalysisArtifact
 }
 
 func (o *Analysis) Clone() *Analysis {
@@ -489,6 +505,7 @@ func (o *Analysis) Clone() *Analysis {
 		CompletedAt:       o.CompletedAt,
 		FailureCode:       o.FailureCode,
 		FailureMessage:    o.FailureMessage,
+		Artifacts:         cloneAll(o.Artifacts),
 	}
 }
 

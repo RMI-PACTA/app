@@ -38,6 +38,7 @@ func (d *DB) Initiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Initiative, err
 }
 
 func (d *DB) Initiatives(tx db.Tx, ids []pacta.InitiativeID) (map[pacta.InitiativeID]*pacta.Initiative, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+initiativeSelectColumns+`
 		FROM initiative 
@@ -159,7 +160,7 @@ func rowToInitiative(row rowScanner) (*pacta.Initiative, error) {
 		&i.CreatedAt,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("scanning into pacta_version: %w", err)
+		return nil, fmt.Errorf("scanning into initiative: %w", err)
 	}
 	if pvid != "" {
 		i.PACTAVersion = &pacta.PACTAVersion{ID: pvid}
@@ -173,7 +174,7 @@ func rowToInitiative(row rowScanner) (*pacta.Initiative, error) {
 }
 
 func rowsToInitiatives(rows pgx.Rows) ([]*pacta.Initiative, error) {
-	return allRows("initiative", rows, rowToInitiative)
+	return mapRows("initiative", rows, rowToInitiative)
 }
 
 func (db *DB) putInitiative(tx db.Tx, i *pacta.Initiative) error {

@@ -121,7 +121,7 @@ func rowToInitiativeInvitation(row rowScanner) (*pacta.InitiativeInvitation, err
 }
 
 func rowsToInitiativeInvitations(rows pgx.Rows) ([]*pacta.InitiativeInvitation, error) {
-	return allRows("pacta_version", rows, rowToInitiativeInvitation)
+	return mapRows("pacta_version", rows, rowToInitiativeInvitation)
 }
 
 func validateInitiativeInvitationForCreation(ii *pacta.InitiativeInvitation) error {

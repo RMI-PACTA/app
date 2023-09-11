@@ -7,7 +7,9 @@ import (
 	"math/rand"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/RMI/pacta/pacta"
 	"github.com/Silicon-Ally/idgen"
 	"github.com/Silicon-Ally/testpgx"
 	"github.com/Silicon-Ally/testpgx/migrate"
@@ -71,14 +73,13 @@ func TestSchemaHistory(t *testing.T) {
 		Version int
 	}
 
-	var got []versionHistory
-	for rows.Next() {
+	got, err := mapRows("version_history", rows, func(row rowScanner) (versionHistory, error) {
 		var vh versionHistory
-		if err := rows.Scan(&vh.ID, &vh.Version); err != nil {
-			t.Fatalf("failed to load version history entry: %v", err)
+		if err := row.Scan(&vh.ID, &vh.Version); err != nil {
+			return versionHistory{}, fmt.Errorf("failed to load version history entry: %w", err)
 		}
-		got = append(got, vh)
-	}
+		return vh, nil
+	})
 
 	want := []versionHistory{
 		{ID: 1, Version: 1}, // 0001_create_schema_migrations_history
@@ -104,6 +105,32 @@ func createDBForTesting(t *testing.T) *DB {
 		db:          pool,
 		idGenerator: idg,
 	}
+}
+
+var exampleHoldingsDate = &pacta.HoldingsDate{
+	Time: time.Date(
+		2010,
+		4,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	),
+}
+
+var exampleHoldingsDate2 = &pacta.HoldingsDate{
+	Time: time.Date(
+		2012,
+		10,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	),
 }
 
 // This utility function helps us test that the set of enums in the `pacta` package are persistable to the DB.

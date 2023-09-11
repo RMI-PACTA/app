@@ -14,22 +14,27 @@ func TestParseFileType(t *testing.T) {
 	testParseEnum(t, FileTypeValues, ParseFileType)
 }
 
+// need
 func TestParseFailureCode(t *testing.T) {
 	testParseEnum(t, FailureCodeValues, ParseFailureCode)
 }
 
+// need
 func TestParseAnalysisType(t *testing.T) {
 	testParseEnum(t, AnalysisTypeValues, ParseAnalysisType)
 }
 
+// need
 func TestParseAuditLogAction(t *testing.T) {
 	testParseEnum(t, AuditLogActionValues, ParseAuditLogAction)
 }
 
+// need
 func TestParseAuditLogActorType(t *testing.T) {
 	testParseEnum(t, AuditLogActorTypeValues, ParseAuditLogActorType)
 }
 
+// need
 func TestParseAuditLogTargetType(t *testing.T) {
 	testParseEnum(t, AuditLogTargetTypeValues, ParseAuditLogTargetType)
 }

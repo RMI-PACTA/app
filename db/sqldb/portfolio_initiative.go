@@ -2,7 +2,6 @@ package sqldb
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
@@ -10,9 +9,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const portfolioInitiativeMembershipSelectColumns = `
+	portfolio_initiative_membership.portfolio_id,
+	portfolio_initiative_membership.initiative_id,
+	portfolio_initiative_membership.created_at,
+	portfolio_initiative_membership.added_by_user_id
+`
+
 func (d *DB) PortfolioInitiativeMembershipsByPortfolio(tx db.Tx, pid pacta.PortfolioID) ([]*pacta.PortfolioInitiativeMembership, error) {
 	rows, err := d.query(tx, `
-		SELECT portfolio_id, initiative_id, created_at
+		SELECT `+portfolioInitiativeMembershipSelectColumns+` 
 		FROM portfolio_initiative_membership 
 		WHERE portfolio_id = $1;`, pid)
 	if err != nil {
@@ -27,7 +33,7 @@ func (d *DB) PortfolioInitiativeMembershipsByPortfolio(tx db.Tx, pid pacta.Portf
 
 func (d *DB) PortfolioInitiativeMembershipsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.PortfolioInitiativeMembership, error) {
 	rows, err := d.query(tx, `
-		SELECT portfolio_id, initiative_id, created_at
+		SELECT `+portfolioInitiativeMembershipSelectColumns+` 
 		FROM portfolio_initiative_membership 
 		WHERE initiative_id = $1;`, iid)
 	if err != nil {
@@ -44,14 +50,13 @@ func (d *DB) CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioI
 	if err := validatePortfolioInitiativeMembershipForCreate(pim); err != nil {
 		return fmt.Errorf("validating portfolio_initiative_membership for creation: %w", err)
 	}
-	createdAt := time.Now()
 	err := d.exec(tx, `
 		INSERT INTO portfolio_initiative_membership	
 			(portfolio_id, initiative_id, added_by_user_id)
 			VALUES
 			($1, $2, $3)
 		ON CONFLICT DO NOTHING;`,
-		pim.Portfolio.ID, pim.Initiative.ID, createdAt, pim.AddedBy.ID)
+		pim.Portfolio.ID, pim.Initiative.ID, pim.AddedBy.ID)
 	if err != nil {
 		return fmt.Errorf("creating portfolio_initiative_membership: %w", err)
 	}
@@ -90,7 +95,7 @@ func rowToPortfolioInitiativeMembership(row rowScanner) (*pacta.PortfolioInitiat
 }
 
 func rowsToPortfolioInitiativeMemberships(rows pgx.Rows) ([]*pacta.PortfolioInitiativeMembership, error) {
-	return allRows("portfolio_initiaitve_membership", rows, rowToPortfolioInitiativeMembership)
+	return mapRows("portfolio_initiaitve_membership", rows, rowToPortfolioInitiativeMembership)
 }
 
 func validatePortfolioInitiativeMembershipForCreate(pim *pacta.PortfolioInitiativeMembership) error {

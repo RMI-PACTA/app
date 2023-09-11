@@ -53,6 +53,7 @@ func (d *DB) UserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID 
 }
 
 func (d *DB) Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error) {
+	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+userSelectColumns+`
 		FROM pacta_user 
@@ -205,10 +206,9 @@ func rowToUser(row rowScanner) (*pacta.User, error) {
 		}
 		u.PreferredLanguage = l
 	}
-	fmt.Printf("LANG = %s\n", lang.String)
 	return u, nil
 }
 
 func rowsToUsers(rows pgx.Rows) ([]*pacta.User, error) {
-	return allRows("user", rows, rowToUser)
+	return mapRows("user", rows, rowToUser)
 }
