@@ -1,36 +1,28 @@
 <script setup lang="ts">
-import { type PactaVersion } from '@/openapi/generated/pacta'
-
 const router = useRouter()
 const { pactaClient } = useAPI()
 const { error: { withLoadingAndErrorHandling, handleOAPIError } } = useModal()
 
 const prefix = 'admin/pacta-version'
-const pactaVersions = useState<PactaVersion[]>(`${prefix}.pactaVersions`, () => [])
+const { data: pactaVersions, refresh } = await useAsyncData(`${prefix}.getPactaVersions`, () => {
+  return withLoadingAndErrorHandling(() => {
+    return pactaClient.listPactaVersions().then(handleOAPIError)
+  }, `${prefix}.getPactaVersions`)
+})
 
 const newPV = () => router.push('/admin/pacta-version/new')
 const markDefault = (id: string) => withLoadingAndErrorHandling(
   () => pactaClient.markPactaVersionAsDefault(id)
     .then(handleOAPIError)
-    .then(() => { pactaVersions.value = pactaVersions.value.map(pv => ({ ...pv, isDefault: id === pv.id })) }),
+    .then(refresh),
   `${prefix}.markPactaVersionAsDefault`
 )
 const deletePV = (id: string) => withLoadingAndErrorHandling(
   () => pactaClient.deletePactaVersion(id)
     .then(handleOAPIError)
-    .then(() => { pactaVersions.value = pactaVersions.value.filter(pv => pv.id !== id) }),
+    .then(refresh),
   `${prefix}.deletePactaVersion`
 )
-
-// TODO(#13) Remove this from the on-mounted hook
-onMounted(async () => {
-  await withLoadingAndErrorHandling(
-    () => pactaClient.listPactaVersions()
-      .then(handleOAPIError)
-      .then(pvs => { pactaVersions.value = pvs }),
-    `${prefix}.getPactaVersions`
-  )
-})
 </script>
 
 <template>

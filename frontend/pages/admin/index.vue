@@ -55,5 +55,5 @@ const adminItems: AdminItem[] = [
         </PVCard>
       </div>
     </div>
-  </standardcontent>
+  </StandardContent>
 </template>

@@ -13,6 +13,14 @@ export const useAPI = (): API => {
     CREDENTIALS: 'include' as const, // To satisfy typing of 'include' | 'same-origin' | etc
     WITH_CREDENTIALS: true
   }
+
+  let headers: Record<string, string> = {}
+  if (process.server) {
+    headers = Object.entries(useRequestHeaders(['cookie']))
+      .filter((ent) => !!ent[1])
+      .reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {})
+  }
+
   const userCfg = {
     ...baseCfg,
     BASE: authServerURL
@@ -21,7 +29,8 @@ export const useAPI = (): API => {
 
   const pactaClient = new PACTAClient({
     ...baseCfg,
-    BASE: apiServerURL
+    BASE: apiServerURL,
+    HEADERS: headers
   })
 
   return {
