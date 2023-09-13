@@ -14,6 +14,9 @@ export const useAPI = (): API => {
     WITH_CREDENTIALS: true
   }
 
+  // If we're on the server, forward our cookie header along to the backend
+  // API for auth. We don't do this for the UserClient because it uses separate
+  // auth.
   let headers: Record<string, string> = {}
   if (process.server) {
     headers = Object.entries(useRequestHeaders(['cookie']))

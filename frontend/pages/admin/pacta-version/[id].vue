@@ -20,7 +20,7 @@ if (error.value) {
   throw createError(error.value)
 }
 if (!persistedPactaVersion.value) {
-  throw new Error('PACTA version not found')
+  throw createError({ message: 'PACTA version not found' })
 }
 pactaVersion.value = { ...persistedPactaVersion.value }
 const refreshPACTA = async () => {
