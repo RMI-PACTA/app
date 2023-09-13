@@ -23,21 +23,7 @@ export const useModal = () => {
 
   // error
   const errorModalVisible = newModalVisibilityState('errorModalVisible')
-  const error = useState<Error | null>(`${prefix}.error`, () => null)
-  const setError = (opKey: string) => {
-    return (err?: Error) => {
-      error.value = err ?? new Error('an unknown error occurred')
-      errorModalVisible.value = true
-      clearLoading()
-
-      // We used to re-throw here, but that just breaks the page (e.g. no more
-      // navigation), since it ends up propagating to the top-level. Since
-      // setError is 'handling' the error, we don't re-throw.
-    }
-  }
-  const withErrorHandling = async (fn: () => Promise<unknown>, opKey: string): Promise<unknown> => {
-    return await fn().catch(setError(opKey))
-  }
+  const error = useState<Error>('errorModal.error')
 
   // loading
   const loadingSet = useState<Set<string>>(`${prefix}.loadingSet`, () => new Set<string>())
@@ -49,10 +35,10 @@ export const useModal = () => {
     return () => loadingSet.value.delete(loadKey)
   }
   const clearLoading = () => { loadingSet.value.clear() }
-  const withLoadingAndErrorHandling = async <T> (fn: () => Promise<T>, opKey: string): (Promise<T>) => {
+  const withLoading = async <T> (fn: () => Promise<T>, opKey: string): (Promise<T>) => {
     startLoading(opKey)
     const p = fn()
-    p.catch(setError(opKey)).finally(stopLoading(opKey))
+    void p.finally(stopLoading(opKey))
     return await p
   }
   const onMountedWithLoading = (fn: () => void, opKey: string) => {
@@ -74,10 +60,13 @@ export const useModal = () => {
   const anyBlockingModalOpen = computed(() => anyModalVisible.value || loading.value)
 
   const handleOAPIError = async <T>(t: OPAIError | T): Promise<T> => {
-    return await new Promise<T>((resolve, reject) => {
+    return await new Promise<T>((resolve) => {
       // TODO(#10) Rephrase this once we use 300+ for all errors
       if (t instanceof Object && Object.prototype.hasOwnProperty.call(t, 'message')) {
-        reject(new Error(JSON.stringify(t)))
+        throw createError({
+          message: 'error from API',
+          cause: t
+        })
       } else {
         resolve(t as T)
       }
@@ -88,7 +77,7 @@ export const useModal = () => {
     anyBlockingModalOpen,
     newModalVisibilityState,
     loading: {
-      withLoadingAndErrorHandling,
+      withLoading,
       onMountedWithLoading,
       startLoading,
       stopLoading,
@@ -97,11 +86,8 @@ export const useModal = () => {
       loadingSet
     },
     error: {
-      setError,
       error,
-      withErrorHandling,
       errorModalVisible,
-      withLoadingAndErrorHandling,
       handleOAPIError
     },
     permissionDenied: {

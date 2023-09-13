@@ -10,25 +10,22 @@ const props = withDefaults(defineProps<Props>(), { always: false, label: 'Techni
 </script>
 
 <template>
-  <!-- TODO(#9) Remove this ClientOnly once the ULS is fixed. -->
-  <ClientOnly>
-    <PVAccordion
-      v-if="showStandardDebug || props.always"
-      class="standard-debug"
+  <PVAccordion
+    v-if="showStandardDebug || props.always"
+    class="standard-debug"
+  >
+    <PVAccordionTab
+      :header="props.label || 'Debug'"
+      content-class="surface-100"
+      header-class="surface-800"
     >
-      <PVAccordionTab
-        :header="props.label || 'Debug'"
-        content-class="surface-100"
-        header-class="surface-800"
+      <div
+        class="code surface-50"
       >
-        <div
-          class="code surface-50"
-        >
-          {{ JSON.stringify(props.value, null, 2) }}
-        </div>
-      </PVAccordionTab>
-    </PVAccordion>
-  </ClientOnly>
+        {{ JSON.stringify(props.value, null, 2) }}
+      </div>
+    </PVAccordionTab>
+  </PVAccordion>
 </template>
 
 <style lang="scss">

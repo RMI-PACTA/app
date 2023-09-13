@@ -1,14 +1,41 @@
 <script setup lang="ts">
-const { error: { errorModalVisible, error } } = useModal()
+interface Props {
+  routeBackOnClose?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  routeBackOnClose: false
+})
+
+const { error: { errorModalVisible, error: modalError } } = useModal()
+const error = useError()
+const router = useRouter()
+
+const maybeGoBack = async () => {
+  if (!props.routeBackOnClose) {
+    return
+  }
+
+  if (window.history.length > 1) {
+    await clearError().then(router.back)
+  } else {
+    await clearError({ redirect: '/' })
+  }
+}
 
 const fullError = computed(() => {
-  return error.value
-    ? {
-        name: error.value.name,
-        message: error.value.message,
-        stack: error.value.stack?.split('\n')
-      }
-    : ''
+  const err = error.value ?? modalError.value
+  if (err instanceof Error) {
+    return {
+      name: err.name ?? '',
+      message: err.message,
+      stack: err.stack?.split('\n')
+    }
+  } else if (err) {
+    return err
+  } else {
+    return ''
+  }
 })
 </script>
 
@@ -17,9 +44,10 @@ const fullError = computed(() => {
     v-model:visible="errorModalVisible"
     header="An error ocurred"
     sub-header="Sorry about that, our team take bug reports seriously, and will try to make it right!"
+    @closed="maybeGoBack"
   >
     <StandardDebug
-      label="Error Trace"
+      label="Error Details"
       :value="fullError"
       always
     />
