@@ -1,6 +1,7 @@
 <script setup lang="ts">
+const { loading: { onMountedWithLoading }, anyBlockingModalOpen } = useModal()
 
-const { anyBlockingModalOpen } = useModal()
+onMountedWithLoading(() => { /* nothing to do */ }, 'defaultLayout.onMountedWithLoading')
 </script>
 
 <template>

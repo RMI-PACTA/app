@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { loading: { onMountedWithLoading, clearLoading }, error: { errorModalVisible, error } } = useModal()
+const { loading: { clearLoading }, error: { errorModalVisible, error } } = useModal()
 
 const handleError = (err: Error) => {
   error.value = err
@@ -19,8 +19,6 @@ onErrorCaptured((err: unknown, _instance: ComponentPublicInstance | null, _info:
   handleError(error)
   return false // Don't propagate
 })
-
-onMountedWithLoading(() => { /* nothing to do */ }, 'defaultLayout.onMountedWithLoading')
 </script>
 
 <template>

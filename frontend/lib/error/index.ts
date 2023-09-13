@@ -1,3 +1,5 @@
+import { type NuxtError } from 'nuxt/app'
+
 export enum Remediation {
   None = 'none',
   Reload = 'reload',
@@ -5,8 +7,26 @@ export enum Remediation {
   CheckUrl = 'check-url',
 }
 
-export class ErrorWithRemediation extends Error {
-  constructor (msg: string, public readonly remediation: Remediation) {
-    super(msg)
+interface RemediationData {
+  type: 'remediation'
+  remediation: Remediation
+}
+
+type PACTAErrorData = RemediationData
+
+interface PACTAError extends NuxtError {
+  data: PACTAErrorData
+}
+
+export const createErrorWithRemediation = (err: string | Partial<NuxtError>, r: Remediation): PACTAError => {
+  const nuxtErr = createError(err)
+  if (!nuxtErr.data || typeof (nuxtErr.data) !== 'object') {
+    nuxtErr.data = {}
   }
+  nuxtErr.data.type = 'remediation'
+  nuxtErr.data.remediation = r
+
+  // TypeScript doesn't automatically pick up that `data` is always set, so we
+  // give it a nudge.
+  return nuxtErr as PACTAError
 }

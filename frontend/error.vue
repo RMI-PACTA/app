@@ -9,5 +9,5 @@ errorModalVisible.value = true
 </script>
 
 <template>
-  <ModalError :is-full-page="true" />
+  <ModalError :route-back-on-close="true" />
 </template>

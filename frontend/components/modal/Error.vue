@@ -1,32 +1,27 @@
 <script setup lang="ts">
-import { watch } from 'vue'
-
 interface Props {
-  isFullPage?: boolean
+  routeBackOnClose?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isFullPage: false
+  routeBackOnClose: false
 })
 
 const { error: { errorModalVisible, error: modalError } } = useModal()
 const error = useError()
 const router = useRouter()
 
-watch(errorModalVisible, async (newV, oldV) => {
-  if (!props.isFullPage) {
+const maybeGoBack = async () => {
+  if (!props.routeBackOnClose) {
     return
   }
-  // We only care about the case where the modal was just closed (i.e. has gone from visible -> not visible).
-  if (newV || !oldV) {
-    return
-  }
+
   if (window.history.length > 1) {
     await clearError().then(router.back)
   } else {
     await clearError({ redirect: '/' })
   }
-})
+}
 
 const fullError = computed(() => {
   const err = error.value ?? modalError.value
@@ -49,6 +44,7 @@ const fullError = computed(() => {
     v-model:visible="errorModalVisible"
     header="An error ocurred"
     sub-header="Sorry about that, our team take bug reports seriously, and will try to make it right!"
+    @closed="maybeGoBack"
   >
     <StandardDebug
       label="Error Details"

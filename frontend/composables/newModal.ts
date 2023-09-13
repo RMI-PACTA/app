@@ -35,7 +35,7 @@ export const useModal = () => {
     return () => loadingSet.value.delete(loadKey)
   }
   const clearLoading = () => { loadingSet.value.clear() }
-  const withLoadingAndErrorHandling = async <T> (fn: () => Promise<T>, opKey: string): (Promise<T>) => {
+  const withLoading = async <T> (fn: () => Promise<T>, opKey: string): (Promise<T>) => {
     startLoading(opKey)
     const p = fn()
     void p.finally(stopLoading(opKey))
@@ -77,7 +77,7 @@ export const useModal = () => {
     anyBlockingModalOpen,
     newModalVisibilityState,
     loading: {
-      withLoadingAndErrorHandling,
+      withLoading,
       onMountedWithLoading,
       startLoading,
       stopLoading,
@@ -88,7 +88,6 @@ export const useModal = () => {
     error: {
       error,
       errorModalVisible,
-      withLoadingAndErrorHandling,
       handleOAPIError
     },
     permissionDenied: {

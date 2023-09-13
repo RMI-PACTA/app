@@ -1,23 +1,23 @@
 <script setup lang="ts">
 const router = useRouter()
 const { pactaClient } = useAPI()
-const { error: { withLoadingAndErrorHandling, handleOAPIError } } = useModal()
+const { loading: { withLoading }, error: { handleOAPIError } } = useModal()
 
 const prefix = 'admin/pacta-version'
 const { data: pactaVersions, refresh } = await useAsyncData(`${prefix}.getPactaVersions`, () => {
-  return withLoadingAndErrorHandling(() => {
+  return withLoading(() => {
     return pactaClient.listPactaVersions().then(handleOAPIError)
   }, `${prefix}.getPactaVersions`)
 })
 
 const newPV = () => router.push('/admin/pacta-version/new')
-const markDefault = (id: string) => withLoadingAndErrorHandling(
+const markDefault = (id: string) => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
     .then(handleOAPIError)
     .then(refresh),
   `${prefix}.markPactaVersionAsDefault`
 )
-const deletePV = (id: string) => withLoadingAndErrorHandling(
+const deletePV = (id: string) => withLoading(
   () => pactaClient.deletePactaVersion(id)
     .then(handleOAPIError)
     .then(refresh),

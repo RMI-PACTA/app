@@ -19,9 +19,7 @@ export const useAPI = (): API => {
   // auth.
   let headers: Record<string, string> = {}
   if (process.server) {
-    headers = Object.entries(useRequestHeaders(['cookie']))
-      .filter((ent) => !!ent[1])
-      .reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {})
+    headers = useRequestHeaders(['cookie'])
   }
 
   const userCfg = {
