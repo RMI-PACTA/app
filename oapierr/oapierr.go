@@ -1,3 +1,5 @@
+// Package oapierr defines a standardized interface for handling errors (logging
+// and responses) in an OpenAPI server.
 package oapierr
 
 import (
@@ -56,18 +58,17 @@ type ErrorID string
 
 type Error struct {
 	// These must be set for all errors
-	statusCode int
-	msg        string
+	statusCode int    // HTTP status code
+	msg        string // Internal message for logging
 
-	// A default log level will be chosen based on
-	// code if none is provided.
+	// A default log level will be chosen based on the status code if none is
+	// provided.
 	level logLevel
-	// A default client message will be chosen based
-	// on the code if none is provided.
+	// A default client message will be chosen based on the code if none is
+	// provided.
 	clientMsg string
 
-	// These are additional metadata that do not need
-	// to be set.
+	// These are additional metadata that do not need to be set.
 	fields  []zap.Field
 	errorID ErrorID
 }
@@ -120,13 +121,17 @@ func (e *Error) ErrorID() ErrorID {
 	return e.errorID
 }
 
+// ClientMessage returns the message that should be shown to the client
+// receiving the error. The second parameter is false if this is a generic
+// default based on the status code, and true if the error specifies a bespoke
+// client-facing message.
 func (e *Error) ClientMessage() (string, bool) {
 	// Return the client message if one was explicitly set.
 	if e.clientMsg != "" {
 		return e.clientMsg, true
 	}
 
-	// Otherwise, return whatever the default is for that code.
+	// Otherwise, return whatever the default is for that status code.
 	return defaultMessageForCode[e.statusCode], false
 }
 
@@ -138,9 +143,8 @@ func (e *Error) WithMessage(msg string) *Error {
 }
 
 // WithErrorID adds an error intended for client apps to use, and returns
-// the error for chaining purposes. It'll appear in the GraphQL response
-// "extensions" field, see:
-// https://spec.graphql.org/October2021/#sec-Response-Format
+// the error for chaining purposes. The ErrorID can be accessed in a
+// ResponseConverter and included in the response body.
 func (e *Error) WithErrorID(errID ErrorID) *Error {
 	e.errorID = errID
 	return e
