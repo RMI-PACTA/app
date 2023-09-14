@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type MenuItem } from 'primevue/menuitem'
 
+const { showStandardDebug } = useLocalStorage()
 const { isAuthenticated, signIn, signOut } = await useMSAL()
 const router = useRouter()
 
@@ -10,11 +11,10 @@ const menuHidden = useState<boolean>(`${prefix}.menuHidden`, () => false)
 const menuStyles = computed(() => {
   return {
     transition: menuHidden.value ? 'max-height .1s ease' : 'max-height .5s ease',
-    overflow: menuHidden.value ? 'hidden' : undefined,
+    overflow: 'hidden',
     'max-height': menuHidden.value ? '0px' : '100vh',
     border: menuHidden.value ? undefined : '2px solid',
-    'margin-top': menuHidden.value ? '0' : '-2px',
-    padding: menuHidden.value ? '0' : '.25rem 0'
+    'margin-top': menuHidden.value ? '0' : '-2px'
   }
 })
 
@@ -25,10 +25,16 @@ const menuItems = computed(() => {
       label: 'Home'
     },
     {
-      to: 'https://github.com/RMI/pacta/issues/new',
+      to: 'https://github.com/RMI-PACTA/app/issues/new',
       label: 'File a Bug'
     }
   ]
+  if (showStandardDebug) {
+    result.push({
+      label: 'Admin',
+      to: '/admin'
+    })
+  }
   if (isAuthenticated.value) {
     result.push({
       label: 'Sign Out',
@@ -61,7 +67,7 @@ const menuItems = computed(() => {
       />
     </div>
     <div
-      class="flex gap-2 sm:pt-1 flex-1 flex-column sm:flex-row border-primary sm:border-none sm:max-h-full border-round justify-content-end"
+      class="flex gap-2 sm:p-1 flex-1 flex-column sm:flex-row border-primary sm:border-none sm:max-h-full border-round justify-content-end"
       :style="menuStyles"
     >
       <template
@@ -70,8 +76,7 @@ const menuItems = computed(() => {
         <LinkButton
           v-if="mi.to"
           :key="index"
-          class="p-button-text"
-          :class="mi.to === router.currentRoute"
+          :class="mi.to === router.currentRoute.value.fullPath ? 'border-noround sm:border-round' : 'p-button-text'"
           :to="mi.to"
           :label="`${mi.label}`"
         />

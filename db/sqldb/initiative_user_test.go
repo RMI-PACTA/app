@@ -27,7 +27,7 @@ func TestCreateInitiativeUserRelationship(t *testing.T) {
 		PACTAVersion: &pacta.PACTAVersion{ID: pvID},
 	}
 	err1 := tdb.CreateInitiative(tx, i)
-	uid, err2 := tdb.CreateUser(tx, &pacta.User{
+	uid, err2 := tdb.createUser(tx, &pacta.User{
 		CanonicalEmail: "canon",
 		EnteredEmail:   "entered",
 		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
@@ -74,7 +74,7 @@ func TestUpdateInitiativeUserRelationship(t *testing.T) {
 		PACTAVersion: &pacta.PACTAVersion{ID: pvID},
 	}
 	err1 := tdb.CreateInitiative(tx, i)
-	uid, err2 := tdb.CreateUser(tx, &pacta.User{
+	uid, err2 := tdb.createUser(tx, &pacta.User{
 		CanonicalEmail: "canon",
 		EnteredEmail:   "entered",
 		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
@@ -141,13 +141,13 @@ func TestListInitiativeUserRelationships(t *testing.T) {
 		PACTAVersion: &pacta.PACTAVersion{ID: pvID},
 	}
 	err2 := tdb.CreateInitiative(tx, i2)
-	u1, err3 := tdb.CreateUser(tx, &pacta.User{
+	u1, err3 := tdb.createUser(tx, &pacta.User{
 		CanonicalEmail: "canon",
 		EnteredEmail:   "entered",
 		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
 		AuthnID:        "A",
 	})
-	u2, err4 := tdb.CreateUser(tx, &pacta.User{
+	u2, err4 := tdb.createUser(tx, &pacta.User{
 		CanonicalEmail: "canon2",
 		EnteredEmail:   "entered2",
 		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,

@@ -543,6 +543,13 @@ def go_dependencies():
         sum = "h1:vV6w1AhK4VMnhBno/TPVCoK9U/LP0PkLCS9tbxHdi/U=",
         version = "v1.1.1",
     )
+    # Re-review this package if upgraded.
+    go_repository(
+        name = "com_github_dimuska139_go_email_normalizer",
+        importpath = "github.com/dimuska139/go-email-normalizer",
+        sum = "h1:pJNZnU7uS9MRoYqpoir05B+bCYXrS9sPGE4G1o9EDA8=",
+        version = "v1.2.1",
+    )
 
     go_repository(
         name = "com_github_docker_distribution",

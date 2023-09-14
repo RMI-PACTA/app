@@ -2,15 +2,21 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "pacta",
-    srcs = ["pacta.go"],
+    srcs = [
+        "email.go",
+        "pacta.go",
+        "populate.go",
+    ],
     importpath = "github.com/RMI/pacta/pacta",
     visibility = ["//visibility:public"],
+    deps = ["@com_github_dimuska139_go_email_normalizer//:go_default_library"],
 )
 
 go_test(
     name = "pacta_test",
     srcs = [
         "clone_test.go",
+        "email_test.go",
         "enum_test.go",
     ],
     embed = [":pacta"],

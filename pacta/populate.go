@@ -1,4 +1,4 @@
-package sqldb
+package pacta
 
 func (a *AnalysisArtifact) Blobs() []*Blob {
 	if a == nil {
