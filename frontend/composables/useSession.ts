@@ -29,10 +29,6 @@ export const useSession = () => {
     return new Promise((resolve) => {
       resolvers.value.push(resolve)
       void pactaClient.findUserByMe()
-        .then((m) => {
-          console.log(m)
-          return m
-        })
         .then(handleOAPIError)
         .then(m => {
           currentUser.value = m

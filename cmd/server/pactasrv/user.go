@@ -73,11 +73,11 @@ func (s *Server) findUserByMe(ctx context.Context, request api.FindUserByMeReque
 	if token == nil {
 		return nil, errorUnauthorized("lookup self ", "without authorization token")
 	}
-	email, ok := token.PrivateClaims()["emails"]
+	emailsClaim, ok := token.PrivateClaims()["emails"]
 	if !ok {
 		return nil, errorUnauthorized("lookup self", "without email claim in token")
 	}
-	emails, ok := email.([]string)
+	emails, ok := emailsClaim.([]string)
 	if !ok || len(emails) == 0 {
 		return nil, errorInternal(fmt.Errorf("couldn't parse email claim in token"))
 	}
@@ -85,11 +85,16 @@ func (s *Server) findUserByMe(ctx context.Context, request api.FindUserByMeReque
 	if len(emails) > 1 {
 		return nil, errorBadRequest("jwt token", "multiple emails in token")
 	}
+	email := emails[0]
+	canonical, err := pacta.CanonicalizeEmail(email)
+	if err != nil {
+		return nil, errorBadRequest("email", "invalid email on token")
+	}
 	authnID := token.Subject()
 	if authnID == "" {
 		return nil, fmt.Errorf("couldn't find authn id in jwt")
 	}
-	user, err := s.DB.GetOrCreateUserByAuthn(s.DB.NoTxn(ctx), pacta.AuthnMechanism_EmailAndPass, authnID, emails[0])
+	user, err := s.DB.GetOrCreateUserByAuthn(s.DB.NoTxn(ctx), pacta.AuthnMechanism_EmailAndPass, authnID, email, canonical)
 	if err != nil {
 		return nil, fmt.Errorf("getting user by authn: %w", err)
 	}

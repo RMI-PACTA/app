@@ -15,7 +15,6 @@ const menuStyles = computed(() => {
     'max-height': menuHidden.value ? '0px' : '100vh',
     border: menuHidden.value ? undefined : '2px solid',
     'margin-top': menuHidden.value ? '0' : '-2px'
-    // padding: menuHidden.value ? '0' : '.25rem 0'
   }
 })
 

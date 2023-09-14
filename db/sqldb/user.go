@@ -52,7 +52,7 @@ func (d *DB) userByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID 
 	return exactlyOne("user", fmt.Sprintf("%s:%s", authnMechanism, authnID), us)
 }
 
-func (d *DB) GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string, email string) (*pacta.User, error) {
+func (d *DB) GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID, enteredEmail, canonicalEmail string) (*pacta.User, error) {
 	var user *pacta.User
 	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
 		u, err := d.userByAuthn(tx, authnMechanism, authnID)
@@ -63,13 +63,9 @@ func (d *DB) GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanis
 		if !db.IsNotFound(err) {
 			return fmt.Errorf("looking up user by authn: %w", err)
 		}
-		canonizedEmail, err := pacta.CanonizeEmail(email)
-		if err != nil {
-			return fmt.Errorf("canonizing email: %w", err)
-		}
-		uID, err := d.CreateUser(tx, &pacta.User{
-			CanonicalEmail: canonizedEmail,
-			EnteredEmail:   email,
+		uID, err := d.createUser(tx, &pacta.User{
+			CanonicalEmail: canonicalEmail,
+			EnteredEmail:   enteredEmail,
 			AuthnMechanism: authnMechanism,
 			AuthnID:        authnID,
 		})
@@ -84,7 +80,7 @@ func (d *DB) GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanis
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("running getOrCreateUser txn: %w", err)
+		return nil, fmt.Errorf("running get_or_create_user txn: %w", err)
 	}
 	return user, nil
 }
@@ -109,7 +105,7 @@ func (d *DB) Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, 
 	return result, nil
 }
 
-func (d *DB) CreateUser(tx db.Tx, u *pacta.User) (pacta.UserID, error) {
+func (d *DB) createUser(tx db.Tx, u *pacta.User) (pacta.UserID, error) {
 	if err := validateUserForCreation(u); err != nil {
 		return "", fmt.Errorf("validating user for creation: %w", err)
 	}

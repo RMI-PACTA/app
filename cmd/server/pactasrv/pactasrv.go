@@ -52,7 +52,7 @@ type DB interface {
 	CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioInitiativeMembership) error
 	DeletePortfolioInitiativeMembership(tx db.Tx, pid pacta.PortfolioID, iid pacta.InitiativeID) error
 
-	GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string, email string) (*pacta.User, error)
+	GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID, enteredEmail, canonicalEmail string) (*pacta.User, error)
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
