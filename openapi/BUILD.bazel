@@ -3,7 +3,7 @@ load("@com_siliconally_rules_oapi_codegen//oapi_codegen:def.bzl", "oapi_codegen_
 oapi_codegen_go(
     name = "pacta",
     importpath = "github.com/RMI/pacta/openapi/pacta",
+    skip_prune = True,
     spec = "pacta.yaml",
     visibility = ["//visibility:public"],
-    skip_prune = True,
 )

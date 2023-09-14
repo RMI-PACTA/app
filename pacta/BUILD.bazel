@@ -4,6 +4,7 @@ go_library(
     name = "pacta",
     srcs = [
         "email.go",
+        "email_is_domain.go",
         "pacta.go",
         "populate.go",
     ],
