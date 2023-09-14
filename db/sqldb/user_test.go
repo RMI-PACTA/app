@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestCreateUser(t *testing.T) {
+func TestcreateUser(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
@@ -23,7 +23,7 @@ func TestCreateUser(t *testing.T) {
 		CanonicalEmail: "canonical-email",
 		Name:           "User's Name",
 	}
-	userID, err := tdb.CreateUser(tx, u)
+	userID, err := tdb.createUser(tx, u)
 	if err != nil {
 		t.Fatalf("creating user: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	// Read by Authn
-	actual, err = tdb.UserByAuthn(tx, u.AuthnMechanism, u.AuthnID)
+	actual, err = tdb.userByAuthn(tx, u.AuthnMechanism, u.AuthnID)
 	if err != nil {
 		t.Fatalf("getting user by authn: %w", err)
 	}
@@ -63,7 +63,7 @@ func TestCreateUser(t *testing.T) {
 	u2 := u.Clone()
 	u2.EnteredEmail = "entered email 2"
 	u2.CanonicalEmail = "canonical email 2"
-	_, err = tdb.CreateUser(tx, u2)
+	_, err = tdb.createUser(tx, u2)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
@@ -72,7 +72,7 @@ func TestCreateUser(t *testing.T) {
 	u3 := u.Clone()
 	u3.EnteredEmail = "entered email 3"
 	u3.AuthnID = "AUthn id 3"
-	_, err = tdb.CreateUser(tx, u3)
+	_, err = tdb.createUser(tx, u3)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
@@ -81,7 +81,7 @@ func TestCreateUser(t *testing.T) {
 	u4 := u.Clone()
 	u4.AuthnID = "authn id 3"
 	u4.CanonicalEmail = "canonical email 4"
-	_, err = tdb.CreateUser(tx, u4)
+	_, err = tdb.createUser(tx, u4)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
@@ -91,7 +91,7 @@ func TestCreateUser(t *testing.T) {
 	u5.EnteredEmail = "entered email 5"
 	u5.AuthnID = "AUthn id 5"
 	u5.CanonicalEmail = "canonical email 5"
-	_, err = tdb.CreateUser(tx, u5)
+	_, err = tdb.createUser(tx, u5)
 	if err != nil {
 		t.Fatal("expected success but got: %w", err)
 	}
@@ -108,7 +108,7 @@ func TestUpdateUser(t *testing.T) {
 		CanonicalEmail: "canonical-email",
 		Name:           "User's Name",
 	}
-	userID, err0 := tdb.CreateUser(tx, u)
+	userID, err0 := tdb.createUser(tx, u)
 	noErrDuringSetup(t, err0)
 	u.CreatedAt = time.Now()
 	u.ID = userID
@@ -175,13 +175,13 @@ func TestListUsers(t *testing.T) {
 		CanonicalEmail: "cannnnon",
 		EnteredEmail:   "enter3",
 	}
-	userIDA, err0 := tdb.CreateUser(tx, userA)
+	userIDA, err0 := tdb.createUser(tx, userA)
 	userA.ID = userIDA
 	userA.CreatedAt = time.Now()
-	userIDB, err1 := tdb.CreateUser(tx, userB)
+	userIDB, err1 := tdb.createUser(tx, userB)
 	userB.ID = userIDB
 	userB.CreatedAt = time.Now()
-	userIDC, err2 := tdb.CreateUser(tx, userC)
+	userIDC, err2 := tdb.createUser(tx, userC)
 	userC.ID = userIDC
 	userC.CreatedAt = time.Now()
 	err3 := tdb.UpdateUser(tx, userIDA, db.SetUserName(nameA))
@@ -215,7 +215,7 @@ func TestDeleteUser(t *testing.T) {
 		CanonicalEmail: "canonical-email",
 		Name:           "User's Name",
 	}
-	userID, err0 := tdb.CreateUser(tx, u)
+	userID, err0 := tdb.createUser(tx, u)
 	noErrDuringSetup(t, err0)
 
 	err := tdb.DeleteUser(tx, userID)
@@ -230,7 +230,7 @@ func TestDeleteUser(t *testing.T) {
 	}
 
 	// Read by Authn
-	_, err = tdb.UserByAuthn(tx, u.AuthnMechanism, u.AuthnID)
+	_, err = tdb.userByAuthn(tx, u.AuthnMechanism, u.AuthnID)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
@@ -286,7 +286,7 @@ func testUserEnumConvertability[E comparable](t *testing.T, writeE func(E, *pact
 		u.CanonicalEmail = fmt.Sprintf("canonical-email-%d", iteration)
 		writeE(e, u)
 		iteration++
-		id2, err := tdb.CreateUser(tx, u)
+		id2, err := tdb.createUser(tx, u)
 		id = id2
 		return err
 	}
@@ -332,7 +332,7 @@ func userForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.User {
 	}
 	ctx := context.Background()
 	tx := tdb.NoTxn(ctx)
-	uid, err := tdb.CreateUser(tx, u)
+	uid, err := tdb.createUser(tx, u)
 	if err != nil {
 		t.Fatalf("creating user: %v", err)
 	}

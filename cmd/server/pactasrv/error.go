@@ -210,3 +210,6 @@ func (response apiError) VisitFindUserByIdResponse(w http.ResponseWriter) error 
 func (response apiError) VisitUpdateUserResponse(w http.ResponseWriter) error {
 	return response.visit(w)
 }
+func (response apiError) VisitFindUserByMeResponse(w http.ResponseWriter) error {
+	return response.visit(w)
+}
