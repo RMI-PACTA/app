@@ -23,29 +23,14 @@ bazel run //scripts:run_genjwt
 # Token: <header>.<payload>.<sig>
 ```
 
-You can use this token to query the PACTA (currently just the Petstore example) API:
+You can use this token to query the PACTA API:
 
 ```bash
 APIKEY='<the token from genjwt>'
-# Get pets
+# Get PACTA versions
 curl -H "Authorization: BEARER $APIKEY" -X GET localhost:8081/pacta-versions
 
-# []
-
-# Add a pet
-curl \
-  -H "Authorization: BEARER $APIKEY" \
-  -X POST \
-  --data '{"name": "Scruffles", "tag": "good dog"}' \
-  -H 'Content-Type: application/json' \
-  localhost:8081/pets
-
-# {"id":1,"name":"Scruffles","tag":"good dog"}
-
-# Get pets again
-curl -H "Authorization: BEARER $APIKEY" -X GET localhost:8081/pets
-
-# [{"id":1,"name":"Scruffles","tag":"good dog"}]
+# TODO: Add more examples
 ```
 
 ## Building and running the Docker container locally
