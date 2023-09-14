@@ -1,15 +1,23 @@
-import { ErrorWithRemediation, Remediation } from '@/lib/error'
+import { createErrorWithRemediation, Remediation } from '@/lib/error'
 
-export const present = <T>(t: T | undefined | null, r: Remediation): T => {
+export const present = <T>(t: T | undefined | null, r: Remediation, cause?: string): T => {
   if (t === undefined) {
-    throw new ErrorWithRemediation(`expected to be present but was undefined: ${typeof t}.`, r)
+    throw createErrorWithRemediation({
+      name: 'present error',
+      message: 'expected to be present but was undefined',
+      cause
+    }, r)
   }
   if (t === null) {
-    throw new ErrorWithRemediation(`expected to be present but was null: ${typeof t}.`, r)
+    throw createErrorWithRemediation({
+      name: 'present error',
+      message: 'expected to be present but was null',
+      cause
+    }, r)
   }
   return t
 }
 
-export const presentOrSuggestReload = <T>(t: T | undefined | null): T => present(t, Remediation.Reload)
-export const presentOrFileBug = <T>(t: T | undefined | null): T => present(t, Remediation.FileBug)
-export const presentOrCheckURL = <T>(t: T | undefined | null): T => present(t, Remediation.CheckUrl)
+export const presentOrSuggestReload = <T>(t: T | undefined | null, cause?: string): T => present(t, Remediation.Reload, cause)
+export const presentOrFileBug = <T>(t: T | undefined | null, cause?: string): T => present(t, Remediation.FileBug, cause)
+export const presentOrCheckURL = <T>(t: T | undefined | null, cause?: string): T => present(t, Remediation.CheckUrl, cause)
