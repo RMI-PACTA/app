@@ -4,6 +4,11 @@ info:
   title: RMI PACTA
   description: |
     API for interacting with RMI's Paris Agreement Capital Transition Assessment (PACTA) infrastructure
+
+    Note that only endpoint-specific errors will be documented. Standard errors
+    (access denied, not found, internal server errors) may be thrown by any
+    endpoint, see #/components/responses and #/components/schemas/Error for
+    more information.
   termsOfService: TODO
   contact:
     name: Silicon Ally
@@ -41,25 +46,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PactaVersion'
-        '401':
-          description: the user is not authorized to access this resource - if logged out, try logging in 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: the user is not authorized to access this resource 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     patch:
       summary: Updates a PACTA version 
       description: Updates a PACTA version's settable properties 
@@ -81,17 +67,6 @@ paths:
       responses:
         '200':
           description: pacta version updated successfully 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    
     delete:
       summary: Deletes a pacta version by ID
       description: deletes a single pacta version based on the ID supplied
@@ -106,16 +81,6 @@ paths:
       responses:
         '200':
           description: pacta version deleted successfully 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'  
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   
   /pacta-version/{id}/set-default:
     post:
@@ -131,16 +96,6 @@ paths:
       responses:
         '200':
           description: updated successfully 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     
   /pacta-versions:
     get:
@@ -155,12 +110,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/PactaVersion'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     post:
       summary: Creates a PACTA version 
       description: Creates a PACTA version
@@ -175,16 +124,6 @@ paths:
       responses:
         '200':
           description: pacta version created successfully 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /initiative/{id}:
     get:
@@ -204,12 +143,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Initiative'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     patch:
       summary: Updates an initiative
       description: Updates an initiative's settable properties 
@@ -230,16 +163,6 @@ paths:
       responses:
         '200':
           description: initiative updated successfully 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     
     delete:
       summary: Deletes an initiative by id
@@ -255,16 +178,6 @@ paths:
       responses:
         '200':
           description: initiative deleted successfully 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'  
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /initiatives:
     get:
@@ -279,12 +192,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Initiative'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     post:
       summary: Creates a initiative
       description: Creates a new initiative 
@@ -299,16 +206,6 @@ paths:
       responses:
         '200':
           description: initiative created successfully 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /user/me:
     get:
@@ -322,18 +219,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '401':
-          description: caller is not logged in - log in to continue 
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /user/{id}:
     get:
@@ -354,12 +239,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     patch:
       summary: Updates user properties
       description: Updates a user's settable properties 
@@ -381,16 +260,6 @@ paths:
       responses:
         '200':
           description: the new user object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     
     delete:
       summary: Deletes a user by ID
@@ -406,18 +275,27 @@ paths:
       responses:
         '200':
           description: user deleted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmptySuccess'  
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
               
 components:
+  responses:
+    Unauthorized:
+      description: the user is not authorized to access this resource - if logged out, try logging in 
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: the user is not authorized to access this resource 
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Internal:
+      description: the server encountered an error while processing the request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
     Language:
       type: string
@@ -656,19 +534,18 @@ components:
           type: boolean
           description: Whether the given user is a super admin
 
-    EmptySuccess:
-      type: object
-
     Error:
       type: object
       required:
-        - code
         - message
+        - error_id
       properties:
-        code:
-          type: integer
-          format: int32
-          description: Error code
         message:
           type: string
-          description: Error message
+          description: Human readable error message (in English)
+        error_id:
+          type: string
+          description: |
+            An enum-like type indicating a more specific type of error.
+
+            TODO: Add an example

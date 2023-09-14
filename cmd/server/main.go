@@ -13,6 +13,7 @@ import (
 	"github.com/RMI/pacta/cmd/server/pactasrv"
 	"github.com/RMI/pacta/db/sqldb"
 	"github.com/RMI/pacta/keyutil"
+	"github.com/RMI/pacta/oapierr"
 	oapipacta "github.com/RMI/pacta/openapi/pacta"
 	"github.com/Silicon-Ally/zaphttplog"
 	"github.com/go-chi/chi/v5"
@@ -122,8 +123,15 @@ func run(args []string) error {
 	}
 
 	pactaStrictHandler := oapipacta.NewStrictHandlerWithOptions(srv, nil /* middleware */, oapipacta.StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  requestErrorHandlerFuncForService(logger, "pacta"),
-		ResponseErrorHandlerFunc: responseErrorHandlerFuncForService(logger, "pacta"),
+		RequestErrorHandlerFunc: requestErrorHandlerFuncForService(logger, "pacta"),
+		ResponseErrorHandlerFunc: oapierr.ErrorHandlerFunc(logger, func(err *oapierr.Error) *oapipacta.Error {
+			// We don't care if it's the default message or not.
+			cm, _ := err.ClientMessage()
+			return &oapipacta.Error{
+				ErrorId: string(err.ErrorID()),
+				Message: cm,
+			}
+		}),
 	})
 
 	r := chi.NewRouter()
@@ -147,7 +155,6 @@ func run(args []string) error {
 
 			rateLimitMiddleware(*rateLimitMaxRequests, *rateLimitUnitTime),
 		),
-		ErrorHandlerFunc: errorHandlerFuncForService(logger, "pacta"),
 	})
 
 	// Created with https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Pagga&text=%20%20RMI%0APACTA

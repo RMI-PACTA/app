@@ -5,4 +5,5 @@ oapi_codegen_go(
     importpath = "github.com/RMI/pacta/openapi/pacta",
     spec = "pacta.yaml",
     visibility = ["//visibility:public"],
+    skip_prune = True,
 )

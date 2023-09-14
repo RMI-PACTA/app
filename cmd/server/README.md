@@ -28,7 +28,7 @@ You can use this token to query the PACTA (currently just the Petstore example) 
 ```bash
 APIKEY='<the token from genjwt>'
 # Get pets
-curl -H "Authorization: BEARER $APIKEY" -X GET localhost:8080/pets
+curl -H "Authorization: BEARER $APIKEY" -X GET localhost:8081/pacta-versions
 
 # []
 
@@ -38,12 +38,12 @@ curl \
   -X POST \
   --data '{"name": "Scruffles", "tag": "good dog"}' \
   -H 'Content-Type: application/json' \
-  localhost:8080/pets
+  localhost:8081/pets
 
 # {"id":1,"name":"Scruffles","tag":"good dog"}
 
 # Get pets again
-curl -H "Authorization: BEARER $APIKEY" -X GET localhost:8080/pets
+curl -H "Authorization: BEARER $APIKEY" -X GET localhost:8081/pets
 
 # [{"id":1,"name":"Scruffles","tag":"good dog"}]
 ```

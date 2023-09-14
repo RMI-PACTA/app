@@ -2,7 +2,6 @@ import { type User } from '@/openapi/generated/pacta'
 
 export const useSession = () => {
   const { pactaClient } = useAPI()
-  const { error: { handleOAPIError } } = useModal()
 
   const prefix = 'useSession'
   const signedIn = useState<boolean>(`${prefix}.signedIn`, () => true)
@@ -29,7 +28,6 @@ export const useSession = () => {
     return new Promise((resolve) => {
       resolvers.value.push(resolve)
       void pactaClient.findUserByMe()
-        .then(handleOAPIError)
         .then(m => {
           currentUser.value = m
 

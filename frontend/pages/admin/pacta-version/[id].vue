@@ -3,7 +3,7 @@ import { type PactaVersion, type PactaVersionChanges } from '@/openapi/generated
 
 const router = useRouter()
 const { pactaClient } = useAPI()
-const { loading: { withLoading }, error: { handleOAPIError } } = useModal()
+const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 
 const id = presentOrCheckURL(fromParams('id'))
@@ -13,7 +13,6 @@ const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`)
 const { data: persistedPactaVersion, error, refresh } = await useAsyncData(`${prefix}.getPactaVersion`, () => {
   return withLoading(() => {
     return pactaClient.findPactaVersionById(id)
-      .then(handleOAPIError)
   }, `${prefix}.getPactaVersion`)
 })
 if (error.value) {
@@ -40,19 +39,16 @@ const hasChanges = computed<boolean>(() => Object.keys(changes.value).length > 0
 
 const markDefault = () => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
-    .then(handleOAPIError)
     .then(refreshPACTA),
   `${prefix}.markPactaVersionAsDefault`
 )
 const deletePV = () => withLoading(
   () => pactaClient.deletePactaVersion(id)
-    .then(handleOAPIError)
     .then(() => router.push('/admin/pacta-version')),
   `${prefix}.deletePactaVersion`
 )
 const saveChanges = () => withLoading(
   () => pactaClient.updatePactaVersion(id, changes.value)
-    .then(handleOAPIError)
     .then(refreshPACTA)
     .then(() => router.push('/admin/pacta-version')),
   `${prefix}.saveChanges`

@@ -5,12 +5,15 @@
 
 export type Error = {
     /**
-     * Error code
-     */
-    code: number;
-    /**
-     * Error message
+     * Human readable error message (in English)
      */
     message: string;
+    /**
+     * An enum-like type indicating a more specific type of error.
+     *
+     * TODO: Add an example
+     *
+     */
+    error_id: string;
 };
 

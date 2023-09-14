@@ -9,7 +9,7 @@ go_library(
     ],
     importpath = "github.com/RMI/pacta/pacta",
     visibility = ["//visibility:public"],
-    deps = ["@com_github_dimuska139_go_email_normalizer//:go_default_library"],
+    deps = ["@com_github_dimuska139_go_email_normalizer//:go-email-normalizer"],
 )
 
 go_test(
