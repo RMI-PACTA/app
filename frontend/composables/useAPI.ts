@@ -13,6 +13,15 @@ export const useAPI = (): API => {
     CREDENTIALS: 'include' as const, // To satisfy typing of 'include' | 'same-origin' | etc
     WITH_CREDENTIALS: true
   }
+
+  // If we're on the server, forward our cookie header along to the backend
+  // API for auth. We don't do this for the UserClient because it uses separate
+  // auth.
+  let headers: Record<string, string> = {}
+  if (process.server) {
+    headers = useRequestHeaders(['cookie'])
+  }
+
   const userCfg = {
     ...baseCfg,
     BASE: authServerURL
@@ -21,7 +30,8 @@ export const useAPI = (): API => {
 
   const pactaClient = new PACTAClient({
     ...baseCfg,
-    BASE: apiServerURL
+    BASE: apiServerURL,
+    HEADERS: headers
   })
 
   return {

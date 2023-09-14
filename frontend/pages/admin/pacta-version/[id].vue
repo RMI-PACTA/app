@@ -4,15 +4,29 @@ import { type PactaVersion, type PactaVersionChanges } from '@/openapi/generated
 
 const router = useRouter()
 const { pactaClient } = useAPI()
-const { error: { withLoadingAndErrorHandling, handleOAPIError } } = useModal()
+const { loading: { withLoading }, error: { handleOAPIError } } = useModal()
 const { fromParams } = useURLParams()
 
 const id = presentOrCheckURL(fromParams('id'))
 
-const prefix = 'admin/pacta-version/[id]'
-const persistedPactaVersion = useState<PactaVersion>(`${prefix}.persistedPactaVersion`)
+const prefix = `admin/pacta-version/${id}`
 const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`)
 const editor = useState<typeof PactaversionEditor>(`${prefix}.editor`)
+const { data: persistedPactaVersion, error, refresh } = await useAsyncData(`${prefix}.getPactaVersion`, () => {
+  return withLoading(() => {
+    return pactaClient.findPactaVersionById(id)
+      .then(handleOAPIError)
+  }, `${prefix}.getPactaVersion`)
+})
+if (error.value) {
+  throw createError(error.value)
+}
+
+pactaVersion.value = { ...presentOrCheckURL(persistedPactaVersion.value, 'no PACTA version in response') }
+const refreshPACTA = async () => {
+  await refresh()
+  pactaVersion.value = { ...presentOrCheckURL(persistedPactaVersion.value, 'no PACTA version in response after refresh') }
+}
 
 const changes = computed<PactaVersionChanges>(() => {
   const a = persistedPactaVersion.value
@@ -34,38 +48,25 @@ const saveTooltip = computed<string | undefined>(() => {
 })
 const saveDisabled = computed<boolean>(() => saveTooltip.value !== undefined)
 
-const markDefault = () => withLoadingAndErrorHandling(
+const markDefault = () => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
     .then(handleOAPIError)
-    .then(() => { pactaVersion.value.isDefault = true }),
+    .then(refreshPACTA),
   `${prefix}.markPactaVersionAsDefault`
 )
-const deletePV = () => withLoadingAndErrorHandling(
+const deletePV = () => withLoading(
   () => pactaClient.deletePactaVersion(id)
     .then(handleOAPIError)
     .then(() => router.push('/admin/pacta-version')),
   `${prefix}.deletePactaVersion`
 )
-const saveChanges = () => withLoadingAndErrorHandling(
+const saveChanges = () => withLoading(
   () => pactaClient.updatePactaVersion(id, changes.value)
     .then(handleOAPIError)
-    .then(() => { persistedPactaVersion.value = pactaVersion.value })
+    .then(refreshPACTA)
     .then(() => router.push('/admin/pacta-version')),
   `${prefix}.saveChanges`
 )
-
-// TODO(#13) Remove this from the on-mounted hook
-onMounted(async () => {
-  await withLoadingAndErrorHandling(
-    () => pactaClient.findPactaVersionById(id)
-      .then(handleOAPIError)
-      .then(pv => {
-        pactaVersion.value = { ...pv }
-        persistedPactaVersion.value = { ...pv }
-      }),
-    `${prefix}.getPactaVersion`
-  )
-})
 </script>
 
 <template>
@@ -96,6 +97,7 @@ onMounted(async () => {
         label="Discard Changes"
         icon="pi pi-arrow-left"
         class="p-button-secondary p-button-outlined"
+        to="/admin/pacta-version"
       />
       <div v-tooltip.bottom="saveTooltip">
         <PVButton

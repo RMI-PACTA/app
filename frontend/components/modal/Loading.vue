@@ -37,11 +37,22 @@ watch(() => loading.value, refreshZIndex)
     class="loading-modal"
   >
     <div @click="() => { toggleDebug() } ">
-      <!-- TODO(#8) Swap out this reference -->
-      <img
-        src="@/assets/img/logo_loading_animation_v1.gif"
-        class="gif shadow-3"
+      <video
+        class="loading-animation shadow-3"
+        autoplay
+        loop
+        muted
+        playsinline
       >
+        <source
+          src="@/assets/img/logo_loading_animation_v1.webm"
+          type="video/webm"
+        >
+        <source
+          src="@/assets/img/logo_loading_animation_v1.mp4"
+          type="video/mp4"
+        >
+      </video>
     </div>
     <ul
       v-if="debug"
@@ -72,7 +83,7 @@ watch(() => loading.value, refreshZIndex)
   align-items: center;
   background: rgb(255 255 255 / 60%);
 
-  .gif {
+  .loading-animation {
     width: 50vw;
     max-width: 10rem;
   }

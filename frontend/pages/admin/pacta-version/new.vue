@@ -3,7 +3,7 @@ import { type PactaVersion } from '@/openapi/generated/pacta'
 
 const router = useRouter()
 const { pactaClient } = useAPI()
-const { error: { withLoadingAndErrorHandling, handleOAPIError } } = useModal()
+const { loading: { withLoading }, error: { handleOAPIError } } = useModal()
 
 const prefix = 'admin/pacta-version/new'
 const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`, () => ({
@@ -16,7 +16,7 @@ const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`, () => ({
 }))
 
 const discard = () => router.push('/admin/pacta-version')
-const save = () => withLoadingAndErrorHandling(
+const save = () => withLoading(
   () => pactaClient.createPactaVersion(pactaVersion.value).then(handleOAPIError).then(() => router.push('/admin/pacta-version')),
   `${prefix}.save`
 )
