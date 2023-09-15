@@ -10,7 +10,6 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
-export type { EmptySuccess } from './models/EmptySuccess';
 export type { Error } from './models/Error';
 export { Initiative } from './models/Initiative';
 export { InitiativeChanges } from './models/InitiativeChanges';

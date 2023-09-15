@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-func TestEmailCanonization(t *testing.T) {
-	cases := []struct {
-		input       string
-		ouptut      string
-		errExpected bool
+func TestEmailCanonicalization(t *testing.T) {
+	tests := []struct {
+		in      string
+		want    string
+		wantErr bool
 	}{
 		// Testing valid Gmail addresses with different variations
 		{"john.doe@gmail.com", "johndoe@gmail.com", false},
@@ -22,33 +22,39 @@ func TestEmailCanonization(t *testing.T) {
 		{"johndoe@protonmail.ch", "johndoe@protonmail.ch", false},
 		{"john+doe@protonmail.ch", "johndoe@protonmail.ch", false},
 		{"john.doe+test@outlook.com", "john.doetest@outlook.com", false},
-		{"john@🙂.com", "john@🙂.com", false},
+		{"john@xn--938h.com", "john@xn--938h.com", false},
+
+		// Testing spacing + unicode
+		{"john doe@gmail.com", "john doe@gmail.com", false},
+		{"john🙂doe@gmail.com", "john🙂doe@gmail.com", false},
 
 		// Testing invalid email addresses
-		{"john.doe", "", true},
-		{"john.doe@", "", true},
-		{"john doe@gmail.com", "", true},
-		{"johndoe@gmail	.com", "", true},
-		{"@gmail.com", "", true},
-		{"@gmail.com", "", true},
-		{"john🙂doe@gmail.com", "", true},
+		{in: "john.doe", wantErr: true},
+		{in: "john.doe@", wantErr: true},
+		{in: "@gmail.com", wantErr: true},
+		{in: "@gmail.com", wantErr: true},
+		{in: "johndoe@gmail	.com", wantErr: true},
+		{in: "john@🙂.com", wantErr: true},
 
 		// Testing valid email addresses with different domains
 		{"john.doe@hotmail.com", "john.doe@hotmail.com", false},
 		{"j.o.h.n.doe+test@domain.com", "j.o.h.n.doe+test@domain.com", false},
 	}
 
-	for i, c := range cases {
+	for i, test := range tests {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			output, err := CanonizeEmail(c.input)
-			if c.errExpected && err == nil {
-				t.Errorf("expected error, got nil")
+			got, err := CanonicalizeEmail(test.in)
+			if test.wantErr {
+				if err == nil {
+					t.Fatalf("CanonicalizeEmail(%q) returned no error, but one was expected", test.in)
+				}
+				return
 			}
-			if !c.errExpected && err != nil {
-				t.Errorf("unexpected error: %v", err)
+			if err != nil {
+				t.Errorf("CanonicalizeEmail: %v", err)
 			}
-			if output != c.ouptut {
-				t.Errorf("expected %q, got %q", c.ouptut, output)
+			if got != test.want {
+				t.Errorf("CanonicalizeEmail(%q) = %q, want %q", test.in, got, test.want)
 			}
 		})
 	}

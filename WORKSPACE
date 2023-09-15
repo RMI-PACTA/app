@@ -21,9 +21,9 @@ http_archive(
 
 http_archive(
     name = "com_siliconally_rules_oapi_codegen",
-    sha256 = "2e4f696fad21126f584a457e91740f84d14e3d1e980871ffa1f490b58ff96908",
+    sha256 = "0c3eac7e4d4ec4b694e06035cf69ad25cddade49c8d51c9fa23c22fccf6f0199",
     urls = [
-        "https://github.com/Silicon-Ally/rules_oapi_codegen/releases/download/v0.0.1/rules_oapi_codegen-v0.0.1.zip",
+        "https://github.com/Silicon-Ally/rules_oapi_codegen/releases/download/v0.0.2/rules_oapi_codegen-v0.0.2.zip",
     ],
 )
 

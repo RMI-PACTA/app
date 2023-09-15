@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "conv",
+    srcs = [
+        "oapi_to_pacta.go",
+        "pacta_to_oapi.go",
+    ],
+    importpath = "github.com/RMI/pacta/cmd/server/pactasrv/conv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//oapierr",
+        "//openapi:pacta_generated",
+        "//pacta",
+        "@org_uber_go_zap//:zap",
+    ],
+)

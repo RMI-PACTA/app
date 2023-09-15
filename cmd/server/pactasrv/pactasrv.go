@@ -5,8 +5,14 @@ import (
 	"fmt"
 
 	"github.com/RMI/pacta/db"
-	api "github.com/RMI/pacta/openapi/pacta"
+	"github.com/RMI/pacta/oapierr"
 	"github.com/RMI/pacta/pacta"
+	"go.uber.org/zap"
+)
+
+var (
+	// Means we failed to canonicalize someone's email
+	invalidEmail = oapierr.ErrorID("invalid_email")
 )
 
 type DB interface {
@@ -63,8 +69,6 @@ type Server struct {
 	DB DB
 }
 
-var emptySuccess api.EmptySuccess = api.EmptySuccess{}
-
 func mapAll[I any, O any](is []I, f func(I) (O, error)) ([]O, error) {
 	os := make([]O, len(is))
 	for i, v := range is {
@@ -84,7 +88,7 @@ func dereference[T any](ts []*T, e error) ([]T, error) {
 	result := make([]T, len(ts))
 	for i, t := range ts {
 		if t == nil {
-			return nil, errorInternal(fmt.Errorf("dereference: nil pointer for %T at index %d", t, i))
+			return nil, oapierr.Internal("nil pointer found in derference", zap.String("type", fmt.Sprintf("%T", t)), zap.Int("index", i))
 		}
 		result[i] = *t
 	}

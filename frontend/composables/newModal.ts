@@ -1,4 +1,3 @@
-import { type Error as OPAIError } from 'openapi/generated/pacta'
 import { type Ref } from 'vue'
 
 export const useModal = () => {
@@ -59,20 +58,6 @@ export const useModal = () => {
 
   const anyBlockingModalOpen = computed(() => anyModalVisible.value || loading.value)
 
-  const handleOAPIError = async <T>(t: OPAIError | T): Promise<T> => {
-    return await new Promise<T>((resolve) => {
-      // TODO(#10) Rephrase this once we use 300+ for all errors
-      if (t instanceof Object && Object.prototype.hasOwnProperty.call(t, 'message')) {
-        throw createError({
-          message: 'error from API',
-          cause: t
-        })
-      } else {
-        resolve(t as T)
-      }
-    })
-  }
-
   return {
     anyBlockingModalOpen,
     newModalVisibilityState,
@@ -87,8 +72,7 @@ export const useModal = () => {
     },
     error: {
       error,
-      errorModalVisible,
-      handleOAPIError
+      errorModalVisible
     },
     permissionDenied: {
       permissionDeniedVisible,

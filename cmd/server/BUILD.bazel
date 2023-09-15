@@ -11,6 +11,7 @@ go_library(
         "//cmd/server/pactasrv",
         "//db/sqldb",
         "//keyutil",
+        "//oapierr",
         "//openapi:pacta_generated",
         "@com_github_deepmap_oapi_codegen//pkg/chi-middleware",
         "@com_github_go_chi_chi_v5//:chi",

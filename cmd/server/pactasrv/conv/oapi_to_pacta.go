@@ -1,25 +1,26 @@
-package pactasrv
+package conv
 
 import (
-	"fmt"
 	"regexp"
 
+	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
+	"go.uber.org/zap"
 )
 
 var initiativeIDRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
-func initiativeCreateFromOAPI(i *api.InitiativeCreate) (*pacta.Initiative, error) {
+func InitiativeCreateFromOAPI(i *api.InitiativeCreate) (*pacta.Initiative, error) {
 	if i == nil {
-		return nil, errorBadRequest("InitiativeCreate", "cannot be nil")
+		return nil, oapierr.BadRequest("InitiativeCreate cannot be nil")
 	}
 	if !initiativeIDRegex.MatchString(i.Id) {
-		return nil, errorBadRequest("id", "must contain only alphanumeric characters, underscores, and dashes")
+		return nil, oapierr.BadRequest("id must contain only alphanumeric characters, underscores, and dashes")
 	}
 	lang, err := pacta.ParseLanguage(string(i.Language))
 	if err != nil {
-		return nil, errorBadRequest("language", err.Error())
+		return nil, oapierr.BadRequest("failed to parse language", zap.Error(err))
 	}
 	var pv *pacta.PACTAVersion
 	if i.PactaVersion != nil {
@@ -39,9 +40,9 @@ func initiativeCreateFromOAPI(i *api.InitiativeCreate) (*pacta.Initiative, error
 	}, nil
 }
 
-func pactaVersionCreateFromOAPI(p *api.PactaVersionCreate) (*pacta.PACTAVersion, error) {
+func PactaVersionCreateFromOAPI(p *api.PactaVersionCreate) (*pacta.PACTAVersion, error) {
 	if p == nil {
-		return nil, fmt.Errorf("pactaVersionCreateToPACTA: nil pointer")
+		return nil, oapierr.BadRequest("PactaVersionCreate cannot be nil")
 	}
 	return &pacta.PACTAVersion{
 		Name:        p.Name,
