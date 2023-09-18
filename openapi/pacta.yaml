@@ -296,6 +296,30 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: the request contained one or more invalid parameters, or the request is otherwise invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: the requested entity doesn't exist, or the user doesn't have access
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: the request couldn't be completed because it conflicts with the current state of the entity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: the given caller has exceeded their rate limit
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
     Language:
       type: string
@@ -548,4 +572,4 @@ components:
           description: |
             An enum-like type indicating a more specific type of error.
 
-            TODO: Add an example
+            An example might be getting a 401 Unauthorized because you're logged in with multiple emails and haven't selected one, the error_id could be 'multiple_emails'.
