@@ -13,12 +13,12 @@ const { data: pactaVersions, refresh } = await useAsyncData(`${prefix}.getPactaV
 const newPV = () => router.push('/admin/pacta-version/new')
 const markDefault = (id: string) => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
-    .then(refresh),
+    .then(() => refresh()),
   `${prefix}.markPactaVersionAsDefault`
 )
 const deletePV = (id: string) => withLoading(
   () => pactaClient.deletePactaVersion(id)
-    .then(refresh),
+    .then(() => refresh()),
   `${prefix}.deletePactaVersion`
 )
 </script>

@@ -41,13 +41,13 @@ export class DefaultService {
      * Updates a PACTA version's settable properties
      * @param id ID of PACTA version to update
      * @param requestBody PACTA Version object properties to update
-     * @returns any pacta version updated successfully
+     * @returns void
      * @throws ApiError
      */
     public updatePactaVersion(
         id: string,
         requestBody: PactaVersionChanges,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'PATCH',
             url: '/pacta-version/{id}',
@@ -63,12 +63,12 @@ export class DefaultService {
      * Deletes a pacta version by ID
      * deletes a single pacta version based on the ID supplied
      * @param id ID of pacta version to delete
-     * @returns any pacta version deleted successfully
+     * @returns void
      * @throws ApiError
      */
     public deletePactaVersion(
         id: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
             url: '/pacta-version/{id}',
@@ -81,12 +81,12 @@ export class DefaultService {
     /**
      * Marks this version of the PACTA model as the default
      * @param id ID of pacta version to fetch
-     * @returns any updated successfully
+     * @returns void
      * @throws ApiError
      */
     public markPactaVersionAsDefault(
         id: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/pacta-version/{id}/set-default',
@@ -112,12 +112,12 @@ export class DefaultService {
      * Creates a PACTA version
      * Creates a PACTA version
      * @param requestBody PACTA Version object properties to update
-     * @returns any pacta version created successfully
+     * @returns void
      * @throws ApiError
      */
     public createPactaVersion(
         requestBody: PactaVersionCreate,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/pacta-versions',
@@ -149,13 +149,13 @@ export class DefaultService {
      * Updates an initiative's settable properties
      * @param id ID of the initiative to update
      * @param body initiative object properties to update
-     * @returns any initiative updated successfully
+     * @returns void
      * @throws ApiError
      */
     public updateInitiative(
         id: string,
         body: InitiativeChanges,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'PATCH',
             url: '/initiative/{id}',
@@ -172,12 +172,12 @@ export class DefaultService {
      * Deletes an initiative by id
      * deletes an initiative based on the ID supplied
      * @param id ID of initiative to delete
-     * @returns any initiative deleted successfully
+     * @returns void
      * @throws ApiError
      */
     public deleteInitiative(
         id: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
             url: '/initiative/{id}',
@@ -203,12 +203,12 @@ export class DefaultService {
      * Creates a initiative
      * Creates a new initiative
      * @param requestBody Initiative object properties to update
-     * @returns any initiative created successfully
+     * @returns void
      * @throws ApiError
      */
     public createInitiative(
         requestBody: InitiativeCreate,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/initiatives',
@@ -254,13 +254,13 @@ export class DefaultService {
      * Updates a user's settable properties
      * @param id ID of user to update
      * @param requestBody User object properties to update
-     * @returns any the new user object
+     * @returns void
      * @throws ApiError
      */
     public updateUser(
         id: string,
         requestBody: UserChanges,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'PATCH',
             url: '/user/{id}',
@@ -276,12 +276,12 @@ export class DefaultService {
      * Deletes a user by ID
      * deletes a single user based on the ID supplied
      * @param id ID of user to delete
-     * @returns any user deleted
+     * @returns void
      * @throws ApiError
      */
     public deleteUser(
         id: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
             url: '/user/{id}',
