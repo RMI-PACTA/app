@@ -55,7 +55,7 @@ func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePacta
 	if _, err := s.DB.CreatePACTAVersion(s.DB.NoTxn(ctx), pv); err != nil {
 		return nil, oapierr.Internal("failed to create pacta version", zap.Error(err))
 	}
-	return api.CreatePactaVersion200Response{}, nil
+	return api.CreatePactaVersion204Response{}, nil
 }
 
 // Updates a PACTA version
@@ -78,7 +78,7 @@ func (s *Server) UpdatePactaVersion(ctx context.Context, request api.UpdatePacta
 	if err != nil {
 		return nil, oapierr.Internal("failed to update pacta version", zap.String("pacta_version_id", string(id)), zap.Error(err))
 	}
-	return api.UpdatePactaVersion200Response{}, nil
+	return api.UpdatePactaVersion204Response{}, nil
 
 }
 
@@ -91,7 +91,7 @@ func (s *Server) DeletePactaVersion(ctx context.Context, request api.DeletePacta
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete pacta version", zap.String("pacta_version_id", string(id)), zap.Error(err))
 	}
-	return api.DeletePactaVersion200Response{}, nil
+	return api.DeletePactaVersion204Response{}, nil
 }
 
 // Marks this version of the PACTA model as the default
@@ -103,5 +103,5 @@ func (s *Server) MarkPactaVersionAsDefault(ctx context.Context, request api.Mark
 	if err != nil {
 		return nil, oapierr.Internal("failed to set default pacta version", zap.String("pacta_version_id", string(id)), zap.Error(err))
 	}
-	return api.MarkPactaVersionAsDefault200Response{}, nil
+	return api.MarkPactaVersionAsDefault204Response{}, nil
 }

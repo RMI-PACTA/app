@@ -65,7 +65,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PactaVersionChanges'
       responses:
-        '200':
+        '204':
           description: pacta version updated successfully 
     delete:
       summary: Deletes a pacta version by ID
@@ -79,7 +79,7 @@ paths:
           schema:
             type: string 
       responses:
-        '200':
+        '204':
           description: pacta version deleted successfully 
   
   /pacta-version/{id}/set-default:
@@ -94,7 +94,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        '204':
           description: updated successfully 
     
   /pacta-versions:
@@ -122,7 +122,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PactaVersionCreate'
       responses:
-        '200':
+        '204':
           description: pacta version created successfully 
 
   /initiative/{id}:
@@ -161,7 +161,7 @@ paths:
           schema:
             $ref: '#/components/schemas/InitiativeChanges'
       responses:
-        '200':
+        '204':
           description: initiative updated successfully 
     
     delete:
@@ -176,7 +176,7 @@ paths:
           schema:
             type: string 
       responses:
-        '200':
+        '204':
           description: initiative deleted successfully 
 
   /initiatives:
@@ -204,7 +204,7 @@ paths:
             schema:
               $ref: '#/components/schemas/InitiativeCreate'
       responses:
-        '200':
+        '204':
           description: initiative created successfully 
 
   /user/me:
@@ -258,7 +258,7 @@ paths:
             schema:
               $ref: '#/components/schemas/UserChanges'
       responses:
-        '200':
+        '204':
           description: the new user object
     
     delete:
@@ -273,7 +273,7 @@ paths:
           schema:
             type: string 
       responses:
-        '200':
+        '204':
           description: user deleted
               
 components:

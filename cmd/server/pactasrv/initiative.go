@@ -23,7 +23,7 @@ func (s *Server) CreateInitiative(ctx context.Context, request api.CreateInitiat
 	if err != nil {
 		return nil, oapierr.Internal("failed to create initiative", zap.Error(err))
 	}
-	return api.CreateInitiative200Response{}, nil
+	return api.CreateInitiative204Response{}, nil
 }
 
 // Updates an initiative
@@ -68,7 +68,7 @@ func (s *Server) UpdateInitiative(ctx context.Context, request api.UpdateInitiat
 	if err != nil {
 		return nil, oapierr.Internal("failed to update initiative", zap.String("initiative_id", string(id)), zap.Error(err))
 	}
-	return api.UpdateInitiative200Response{}, nil
+	return api.UpdateInitiative204Response{}, nil
 }
 
 // Deletes an initiative by id
@@ -79,7 +79,7 @@ func (s *Server) DeleteInitiative(ctx context.Context, request api.DeleteInitiat
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete initiative", zap.Error(err))
 	}
-	return api.DeleteInitiative200Response{}, nil
+	return api.DeleteInitiative204Response{}, nil
 }
 
 // Returns an initiative by ID
