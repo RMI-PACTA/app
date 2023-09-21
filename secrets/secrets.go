@@ -4,15 +4,18 @@
 package secrets
 
 import (
+	"crypto/ed25519"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/RMI/pacta/keyutil"
+	"github.com/getsops/sops/v3/decrypt"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"go.mozilla.org/sops/v3/decrypt"
 )
 
 const (
@@ -22,14 +25,26 @@ const (
 )
 
 type PACTASecretsConfig struct {
-	Postgres *pgxpool.Config
+	AuthVerificationKey AuthVerificationKey
+	Postgres            *pgxpool.Config
+}
+
+type AuthVerificationKey struct {
+	ID        string
+	PublicKey ed25519.PublicKey
 }
 
 type pactaConfig struct {
-	PostgresConfig *postgresConfig `json:"postgres"`
+	PostgresConfig      *postgresConfig      `json:"postgres"`
+	AuthVerificationKey *authVerificationKey `json:"auth_public_key"`
 }
 
-func LoadPACTASecrets(name string) (*PACTASecretsConfig, error) {
+type authVerificationKey struct {
+	ID   string `json:"id"`
+	Data string `json:"data"`
+}
+
+func LoadPACTA(name string) (*PACTASecretsConfig, error) {
 	var cfg pactaConfig
 	if err := loadConfig(name, &cfg); err != nil {
 		return nil, err
@@ -40,8 +55,14 @@ func LoadPACTASecrets(name string) (*PACTASecretsConfig, error) {
 		return nil, fmt.Errorf("failed to load 'postgres' config: %w", err)
 	}
 
+	authVerificationKey, err := parseAuthVerificationKey(cfg.AuthVerificationKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse auth verification key config: %w", err)
+	}
+
 	return &PACTASecretsConfig{
-		Postgres: pgxCfg,
+		Postgres:            pgxCfg,
+		AuthVerificationKey: authVerificationKey,
 	}, nil
 }
 
@@ -139,4 +160,53 @@ func checkFilename(name string) error {
 		return fmt.Errorf("the given sops config %q does not have the expected extension %q", fn, sopsFileExtension)
 	}
 	return nil
+}
+
+func parseAuthVerificationKey(avk *authVerificationKey) (AuthVerificationKey, error) {
+	if avk == nil {
+		return AuthVerificationKey{}, errors.New("no auth_public_key was provided")
+	}
+
+	if avk.ID == "" {
+		return AuthVerificationKey{}, errors.New("no auth_public_key.id was provided")
+	}
+
+	if avk.Data == "" {
+		return AuthVerificationKey{}, errors.New("no auth_public_key.data was provided, should be PEM-encoded PKCS #8 ASN.1 DER-formatted ED25519 public key")
+	}
+
+	pub, err := loadPublicKey(avk.Data)
+	if err != nil {
+		return AuthVerificationKey{}, fmt.Errorf("failed to load auth verification key: %w", err)
+	}
+	return AuthVerificationKey{
+		ID:        avk.ID,
+		PublicKey: pub,
+	}, nil
+}
+
+func loadPublicKey(in string) (ed25519.PublicKey, error) {
+	pubDER, err := decodePEM("PUBLIC KEY", []byte(in))
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode PEM-encoded public key: %w", err)
+	}
+
+	pub, err := keyutil.DecodeED25519PublicKey(pubDER)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode public key: %w", err)
+	}
+
+	return pub, nil
+}
+
+func decodePEM(typ string, dat []byte) ([]byte, error) {
+	block, _ := pem.Decode(dat)
+	if block == nil {
+		return nil, errors.New("failed to decode PEM block")
+	}
+	if block.Type != typ {
+		return nil, fmt.Errorf("block type was %q, expected %q", block.Type, typ)
+	}
+
+	return block.Bytes, nil
 }

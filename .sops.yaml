@@ -1,0 +1,7 @@
+# creation rules are evaluated sequentially, the first match wins
+creation_rules:
+        - path_regex: local\.enc\.json$
+          azure_keyvault: https://rmipactalocalsops.vault.azure.net/keys/sops/d670bcbc510f456d821306913b4c55c6
+        - path_regex: dev\.enc\.json$
+          azure_keyvault: https://rmipactadevsops.vault.azure.net/keys/sops/8e4170b4ef324258a51f02ada7dca42b
+

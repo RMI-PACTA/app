@@ -1,8 +1,15 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "keyutil",
     srcs = ["keyutil.go"],
     importpath = "github.com/RMI/pacta/keyutil",
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "keyutil_test",
+    srcs = ["keyutil_test.go"],
+    embed = [":keyutil"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )
