@@ -84,7 +84,6 @@ func run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to decrypt secrets: %w", err)
 	}
-	pub := sec.AuthVerificationKey.PublicKey
 
 	if *localDSN != "" && *env != "local" {
 		return errors.New("--local_dsn set outside of local environment")
@@ -142,7 +141,7 @@ func run(args []string) error {
 
 	r := chi.NewRouter()
 
-	jwKey, err := jwk.FromRaw(pub)
+	jwKey, err := jwk.FromRaw(sec.AuthVerificationKey.PublicKey)
 	if err != nil {
 		return fmt.Errorf("failed to make JWK key: %w", err)
 	}
