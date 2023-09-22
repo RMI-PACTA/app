@@ -1,5 +1,5 @@
 // Package keyutil provides some simple wrappers for serializing + deserializing
-// cryptographic keys.
+// cryptographic keys. Currently, only Ed25519 keypair utilities are supported.
 package keyutil
 
 import (
@@ -12,8 +12,16 @@ import (
 	"os"
 )
 
+var (
+	// We do this so that we can mock out the source of randomness in testing for
+	// determinism, but all real callers should be using crypto/rand.Reader.
+	randReader = rand.Reader
+)
+
+// GenerateED25519ToFiles generates an Ed25519 keypair and writes the public and
+// private keys to the given files, in PEM-encoded ASN.1 DER format.
 func GenerateED25519ToFiles(pubFile, privFile string) error {
-	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	pub, priv, err := ed25519.GenerateKey(randReader)
 	if err != nil {
 		return fmt.Errorf("failed to generate ED25519 key: %w", err)
 	}
@@ -34,7 +42,7 @@ func EncodeED25519PublicKeyToFile(pub ed25519.PublicKey, out string) error {
 		return fmt.Errorf("failed to marshal public key: %w", err)
 	}
 
-	if err := EncodeToFile(out, "PUBLIC KEY", pubDER); err != nil {
+	if err := encodeToFile(out, "PUBLIC KEY", pubDER); err != nil {
 		return fmt.Errorf("failed to encode and write public key: %w", err)
 	}
 
@@ -47,14 +55,14 @@ func EncodeED25519PrivateKeyToFile(priv ed25519.PrivateKey, out string) error {
 		return fmt.Errorf("failed to marshal private key: %w", err)
 	}
 
-	if err := EncodeToFile(out, "PRIVATE KEY", privDER); err != nil {
+	if err := encodeToFile(out, "PRIVATE KEY", privDER); err != nil {
 		return fmt.Errorf("failed to encode and write private key: %w", err)
 	}
 
 	return nil
 }
 
-func EncodeToFile(name, typ string, dat []byte) error {
+func encodeToFile(name, typ string, dat []byte) error {
 	block := &pem.Block{
 		Type:  typ,
 		Bytes: dat,
@@ -78,11 +86,15 @@ func EncodeToFile(name, typ string, dat []byte) error {
 }
 
 func DecodeED25519PublicKeyFromFile(in string) (ed25519.PublicKey, error) {
-	pubDER, err := DecodeFromFile(in, "PUBLIC KEY")
+	pubDER, err := decodeFromFile(in, "PUBLIC KEY")
 	if err != nil {
 		return nil, fmt.Errorf("failed to PEM decode public key file: %w", err)
 	}
 
+	return DecodeED25519PublicKey(pubDER)
+}
+
+func DecodeED25519PublicKey(pubDER []byte) (ed25519.PublicKey, error) {
 	pub, err := x509.ParsePKIXPublicKey(pubDER)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse data as PKIX ASN.1 DER-formatted public key: %w", err)
@@ -97,11 +109,14 @@ func DecodeED25519PublicKeyFromFile(in string) (ed25519.PublicKey, error) {
 }
 
 func DecodeED25519PrivateKeyFromFile(in string) (ed25519.PrivateKey, error) {
-	privDER, err := DecodeFromFile(in, "PRIVATE KEY")
+	privDER, err := decodeFromFile(in, "PRIVATE KEY")
 	if err != nil {
 		return nil, fmt.Errorf("failed to PEM decode private key file: %w", err)
 	}
+	return DecodeED25519PrivateKey(privDER)
+}
 
+func DecodeED25519PrivateKey(privDER []byte) (ed25519.PrivateKey, error) {
 	priv, err := x509.ParsePKCS8PrivateKey(privDER)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse data as PKIX ASN.1 DER-formatted private key: %w", err)
@@ -115,7 +130,7 @@ func DecodeED25519PrivateKeyFromFile(in string) (ed25519.PrivateKey, error) {
 	return privED, nil
 }
 
-func DecodeFromFile(name, typ string) ([]byte, error) {
+func decodeFromFile(name, typ string) ([]byte, error) {
 	dat, err := os.ReadFile(name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read PEM-encoded file: %w", err)

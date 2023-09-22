@@ -10,15 +10,16 @@ go_library(
     deps = [
         "//cmd/server/pactasrv",
         "//db/sqldb",
-        "//keyutil",
         "//oapierr",
         "//openapi:pacta_generated",
+        "//secrets",
         "@com_github_deepmap_oapi_codegen//pkg/chi-middleware",
         "@com_github_go_chi_chi_v5//:chi",
         "@com_github_go_chi_chi_v5//middleware",
         "@com_github_go_chi_httprate//:httprate",
         "@com_github_go_chi_jwtauth_v5//:jwtauth",
         "@com_github_jackc_pgx_v5//pgxpool",
+        "@com_github_lestrrat_go_jwx_v2//jwk",
         "@com_github_namsral_flag//:flag",
         "@com_github_rs_cors//:cors",
         "@com_github_silicon_ally_zaphttplog//:zaphttplog",
@@ -64,7 +65,7 @@ oci_push(
     name = "push_image",
     image = ":image",
     remote_tags = ["latest"],
-    repository = "TODO",
+    repository = "rmipacta.azurecr.io/pacta",
 )
 
 # Note: This tarball is provided for local testing of the Docker image, see the README.md for details on usage.

@@ -12,14 +12,15 @@ import (
 
 	"github.com/RMI/pacta/cmd/server/pactasrv"
 	"github.com/RMI/pacta/db/sqldb"
-	"github.com/RMI/pacta/keyutil"
 	"github.com/RMI/pacta/oapierr"
 	oapipacta "github.com/RMI/pacta/openapi/pacta"
+	"github.com/RMI/pacta/secrets"
 	"github.com/Silicon-Ally/zaphttplog"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/namsral/flag"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
@@ -51,7 +52,7 @@ func run(args []string) error {
 		env      = fs.String("env", "", "The environment that we're running in.")
 		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the sops configuration. Can only be used when running locally.")
 
-		authPubKeyFile = fs.String("auth_public_key_file", "", "The PEM-encoded PKIX ASN.1 DER-formatted ED25519 public key to verify JWTs with")
+		sopsPath = fs.String("sops_path", "", "Path to the sops-formatted file containing sensitive credentials to be decrypted at runtime.")
 	)
 	// Allows for passing in configuration via a -config path/to/env-file.conf
 	// flag, see https://pkg.go.dev/github.com/namsral/flag#readme-usage
@@ -63,13 +64,10 @@ func run(args []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Pub is the key we use to authenticate signatures on user auth tokens.
-	pub, err := keyutil.DecodeED25519PublicKeyFromFile(*authPubKeyFile)
-	if err != nil {
-		return fmt.Errorf("failed to load public key: %w", err)
-	}
-
-	var logger *zap.Logger
+	var (
+		logger *zap.Logger
+		err    error
+	)
 	if *env == "local" {
 		if logger, err = zap.NewDevelopment(); err != nil {
 			return fmt.Errorf("failed to init logger: %w", err)
@@ -78,6 +76,13 @@ func run(args []string) error {
 		if logger, err = zap.NewProduction(); err != nil {
 			return fmt.Errorf("failed to init logger: %w", err)
 		}
+	}
+
+	// Pub is the key we use to authenticate signatures on user auth tokens.
+	logger.Info("Loading sops secrets", zap.String("sops_path", *sopsPath))
+	sec, err := secrets.LoadPACTA(*sopsPath)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt secrets: %w", err)
 	}
 
 	if *localDSN != "" && *env != "local" {
@@ -90,7 +95,7 @@ func run(args []string) error {
 			return fmt.Errorf("failed to parse local DSN: %w", err)
 		}
 	} else {
-		// TODO: Add support for sops-encrypted credentials.
+		postgresCfg = sec.Postgres
 	}
 
 	logger.Info("Connecting to database", zap.String("db_host", postgresCfg.ConnConfig.Host))
@@ -136,6 +141,12 @@ func run(args []string) error {
 
 	r := chi.NewRouter()
 
+	jwKey, err := jwk.FromRaw(sec.AuthVerificationKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("failed to make JWK key: %w", err)
+	}
+	jwKey.Set(jwk.KeyIDKey, sec.AuthVerificationKey.ID)
+
 	// We now register our PACTA above as the handler for the interface
 	oapipacta.HandlerWithOptions(pactaStrictHandler, oapipacta.ChiServerOptions{
 		BaseRouter: r.With(
@@ -148,7 +159,7 @@ func run(args []string) error {
 			zaphttplog.NewMiddleware(logger),
 			chimiddleware.Recoverer,
 
-			jwtauth.Verifier(jwtauth.New("EdDSA", nil, pub)),
+			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
 			jwtauth.Authenticator,
 
 			oapimiddleware.OapiRequestValidator(pactaSwagger),
