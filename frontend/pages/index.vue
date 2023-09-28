@@ -9,7 +9,7 @@ const { isAuthenticated, signIn, signOut } = await useMSAL()
       This will eventually be the site for RMI's PACTA, but now it's mostly just a placeholder.
     </p>
     <p>
-      This project is open source. You can view the code at <a href="https://github.com/RMI/pacta">github.com/RMI/pacta</a>.
+      This project is open source. You can view the code at <a href="https://github.com/RMI-PACTA/app">github.com/RMI-PACTA/app</a>.
     </p>
 
     <PVButton
