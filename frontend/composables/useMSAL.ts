@@ -43,7 +43,6 @@ export const useMSAL = async (): Promise<MSAL> => {
   const selectAccount = async (): Promise<void> => {
     if (accounts.value.length < 1) {
       // TODO: Figure out how to handle this scenario
-      console.log('multiple accounts found', accounts.value)
     } else if (accounts.value.length > 1) {
       /**
          * Due to the way MSAL caches account objects, the auth response from initiating a user-flow
@@ -66,6 +65,7 @@ export const useMSAL = async (): Promise<MSAL> => {
           setAccount(filteredAccounts[0])
         } else {
           // Multiple users detected. Logout all to be safe.
+          console.log('multiple accounts found, logging out', accounts.value)
           await signOut()
         }
       } else if (filteredAccounts.length === 1) {

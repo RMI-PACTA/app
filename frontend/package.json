@@ -2,8 +2,10 @@
   "name": "nuxt-app",
   "private": true,
   "scripts": {
-    "build:local": "nuxt build --dotenv=envs/env.local",
     "local": "nuxt dev --dotenv=envs/env.local",
+    "build:local": "nuxt build --dotenv=envs/env.local",
+    "build:dev": "NITRO_PRESET=azure nuxi build --dotenv=envs/env.dev",
+    "deploy:dev": "npm run build:dev && swa deploy pacta-frontend-dev --no-use-keychain --app-name pacta-frontend-dev --resource-group rmi-pacta-dev --env Production",
     "typecheck": "nuxi typecheck",
     "lint": "eslint --cache --ext .js,.vue,.ts ./; stylelint --cache '**/*.{vue,css,scss}' ;",
     "lint:fix": "eslint --fix --ext .js,.vue,.ts ./; stylelint '**/*.{vue,css,scss}' --fix",
@@ -12,6 +14,7 @@
     "generate:openapi": "npm run generate:openapi:pacta && npm run generate:openapi:user"
   },
   "devDependencies": {
+    "@azure/static-web-apps-cli": "^1.1.4",
     "@nuxt/devtools": "latest",
     "@types/node": "^18.17.3",
     "@types/uuid": "^9.0.3",
