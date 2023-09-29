@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/RMI/pacta/secrets"
 	"github.com/Silicon-Ally/testpgx/migrate"
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,8 +26,7 @@ var (
 
 // Flags
 var (
-	sopsConfigPath string // --sops_encrypted_config
-	dsn            string // --dsn
+	dsn string // --dsn
 )
 
 // Commands
@@ -37,22 +35,13 @@ var (
 		Use:   "migratesqldb",
 		Short: "A simple tool for applying our migration set, using golang-migrate",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			var pgCfg *pgxpool.Config
-			switch {
-			case sopsConfigPath != "":
-				cfg, err := secrets.LoadMigratorConfig(sopsConfigPath)
-				if err != nil {
-					return fmt.Errorf("failed to load migrator config: %w", err)
-				}
-				pgCfg = cfg.Postgres
-			case dsn != "":
-				cfg, err := pgxpool.ParseConfig(dsn)
-				if err != nil {
-					return fmt.Errorf("failed to parse DSN: %w", err)
-				}
-				pgCfg = cfg
-			default:
-				return errors.New("no --sops_encrypted_config or --dsn was specified")
+			if dsn == "" {
+				return errors.New("no --dsn was specified")
+			}
+
+			pgCfg, err := pgxpool.ParseConfig(dsn)
+			if err != nil {
+				return fmt.Errorf("failed to parse DSN: %w", err)
 			}
 
 			db, err := sql.Open("pgx", pgCfg.ConnString())
@@ -91,7 +80,6 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&sopsConfigPath, "sops_encrypted_config", "", "A JSON-formatted configuration file for the migrator, parseable by the SOPS tool (https://github.com/mozilla/sops).")
 	rootCmd.PersistentFlags().StringVar(&dsn, "dsn", "", "A Postgres DSN, parsable by pgx.ParseConfig")
 	rootCmd.AddCommand(applyCmd)
 }
