@@ -50,9 +50,17 @@ func run(args []string) error {
 		allowedCORSOrigin = fs.String("allowed_cors_origin", "", "If specified, enables CORS handling and allows the given domain, e.g. 'http://localhost:3000'. This is used for the example web client in frontend/")
 
 		env      = fs.String("env", "", "The environment that we're running in.")
-		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the sops configuration. Can only be used when running locally.")
+		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the secret configuration. Can only be used when running locally.")
 
-		sopsPath = fs.String("sops_path", "", "Path to the sops-formatted file containing sensitive credentials to be decrypted at runtime.")
+		// Secrets
+		pgHost     = fs.String("secret_postgres_host", "", "Host of the Postgres server, like db.example.com")
+		pgPort     = fs.Int("secret_postgres_port", 5432, "Port to connect to the Postgres server on")
+		pgDatabase = fs.String("secret_postgres_database", "", "Name of the postgres database, like pactasrv")
+		pgUser     = fs.String("secret_postgres_user", "", "Name of the Postgres user to connect as")
+		pgPassword = fs.String("secret_postgres_password", "", "Password of the Postgres user to connect as")
+
+		authKeyID   = fs.String("secret_auth_public_key_id", "", "Key ID (kid) of the JWT tokens to allow")
+		authKeyData = fs.String("secret_auth_public_key_data", "", "PEM-encoded Ed25519 public key to verify JWT tokens with, contains literal \\n characters that will need to be replaced before parsing")
 	)
 	// Allows for passing in configuration via a -config path/to/env-file.conf
 	// flag, see https://pkg.go.dev/github.com/namsral/flag#readme-usage
@@ -78,11 +86,21 @@ func run(args []string) error {
 		}
 	}
 
-	// Pub is the key we use to authenticate signatures on user auth tokens.
-	logger.Info("Loading sops secrets", zap.String("sops_path", *sopsPath))
-	sec, err := secrets.LoadPACTA(*sopsPath)
+	sec, err := secrets.LoadPACTA(&secrets.RawPACTAConfig{
+		PostgresConfig: &secrets.RawPostgresConfig{
+			Host:     *pgHost,
+			Port:     *pgPort,
+			Database: *pgDatabase,
+			User:     *pgUser,
+			Password: *pgPassword,
+		},
+		AuthVerificationKey: &secrets.RawAuthVerificationKey{
+			ID:   *authKeyID,
+			Data: *authKeyData,
+		},
+	})
 	if err != nil {
-		return fmt.Errorf("failed to decrypt secrets: %w", err)
+		return fmt.Errorf("failed to parse secrets: %w", err)
 	}
 
 	if *localDSN != "" && *env != "local" {

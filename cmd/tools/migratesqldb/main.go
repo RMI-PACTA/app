@@ -1,6 +1,5 @@
 // Command migrate provides functionality for managing migration sets applied
-// to a database, using the golang-migrate library. It currently takes
-// configuration via a sops-encrypted file.
+// to a database, using the golang-migrate library.
 package main
 
 import (

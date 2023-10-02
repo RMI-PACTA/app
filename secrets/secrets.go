@@ -1,30 +1,19 @@
-// Package secrets implements a wrapper around sops
-// (https://github.com/mozilla/sops) that decrypts encrypted secret files on
-// disk.
+// Package secrets validates and parses all sensitive configuration.
 package secrets
 
 import (
 	"crypto/ed25519"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/RMI/pacta/keyutil"
-	"github.com/getsops/sops/v3/decrypt"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const (
-	// sopsFileExtension is the suffix we expect all
-	// sops-encrypted configurations to have.
-	sopsFileExtension = ".enc.json"
-)
-
-type PACTASecretsConfig struct {
+type PACTAConfig struct {
 	AuthVerificationKey AuthVerificationKey
 	Postgres            *pgxpool.Config
 }
@@ -34,74 +23,53 @@ type AuthVerificationKey struct {
 	PublicKey ed25519.PublicKey
 }
 
-type pactaConfig struct {
-	PostgresConfig      *postgresConfig      `json:"postgres"`
-	AuthVerificationKey *authVerificationKey `json:"auth_public_key"`
+type RawPACTAConfig struct {
+	PostgresConfig      *RawPostgresConfig
+	AuthVerificationKey *RawAuthVerificationKey
 }
 
-type authVerificationKey struct {
-	ID   string `json:"id"`
-	Data string `json:"data"`
+type RawAuthVerificationKey struct {
+	ID   string
+	Data string
 }
 
-func LoadPACTA(name string) (*PACTASecretsConfig, error) {
-	var cfg pactaConfig
-	if err := loadConfig(name, &cfg); err != nil {
-		return nil, err
+func LoadPACTA(rawCfg *RawPACTAConfig) (*PACTAConfig, error) {
+	if rawCfg == nil {
+		return nil, errors.New("no raw config provided")
 	}
 
-	pgxCfg, err := loadPGXConfig(cfg.PostgresConfig)
+	pgxCfg, err := loadPGXConfig(rawCfg.PostgresConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load 'postgres' config: %w", err)
 	}
 
-	authVerificationKey, err := parseAuthVerificationKey(cfg.AuthVerificationKey)
+	authVerificationKey, err := parseAuthVerificationKey(rawCfg.AuthVerificationKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse auth verification key config: %w", err)
 	}
 
-	return &PACTASecretsConfig{
+	return &PACTAConfig{
 		Postgres:            pgxCfg,
 		AuthVerificationKey: authVerificationKey,
 	}, nil
 }
 
-type MigratorConfig struct {
-	Postgres *pgxpool.Config
+type RawPostgresConfig struct {
+	Host     string
+	Port     int
+	Database string
+
+	User     string
+	Password string
 }
 
-type migratorConfig struct {
-	PostgresConfig *postgresConfig `json:"postgres"`
-}
-
-type postgresConfig struct {
-	Host     string `json:"host"`
-	Port     uint16 `json:"port"`
-	Database string `json:"database"`
-
-	User     string `json:"user"`
-	Password string `json:"password"`
-}
-
-func LoadMigratorConfig(name string) (*MigratorConfig, error) {
-	var cfg migratorConfig
-	if err := loadConfig(name, &cfg); err != nil {
-		return nil, err
-	}
-
-	pgxCfg, err := loadPGXConfig(cfg.PostgresConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load 'postgres' config: %w", err)
-	}
-
-	return &MigratorConfig{
-		Postgres: pgxCfg,
-	}, nil
-}
-
-func loadPGXConfig(pgCfg *postgresConfig) (*pgxpool.Config, error) {
+func loadPGXConfig(pgCfg *RawPostgresConfig) (*pgxpool.Config, error) {
 	if pgCfg == nil {
 		return nil, errors.New("config contained no 'postgres' configuration")
+	}
+
+	if pgCfg.Port < 0 {
+		return nil, fmt.Errorf("invalid port %d given", pgCfg.Port)
 	}
 
 	var kvs strings.Builder
@@ -137,32 +105,7 @@ func loadPGXConfig(pgCfg *postgresConfig) (*pgxpool.Config, error) {
 	return pgxCfg, nil
 }
 
-func loadConfig(name string, v interface{}) error {
-	if err := checkFilename(name); err != nil {
-		return err
-	}
-
-	dat, err := decrypt.File(name, "json")
-	if err != nil {
-		return fmt.Errorf("failed to decrypt file: %w", err)
-	}
-
-	if err := json.Unmarshal(dat, v); err != nil {
-		return fmt.Errorf("failed to unmarshal config: %w", err)
-	}
-
-	return nil
-}
-
-func checkFilename(name string) error {
-	fn := filepath.Base(name)
-	if !strings.HasSuffix(fn, sopsFileExtension) {
-		return fmt.Errorf("the given sops config %q does not have the expected extension %q", fn, sopsFileExtension)
-	}
-	return nil
-}
-
-func parseAuthVerificationKey(avk *authVerificationKey) (AuthVerificationKey, error) {
+func parseAuthVerificationKey(avk *RawAuthVerificationKey) (AuthVerificationKey, error) {
 	if avk == nil {
 		return AuthVerificationKey{}, errors.New("no auth_public_key was provided")
 	}
@@ -186,6 +129,7 @@ func parseAuthVerificationKey(avk *authVerificationKey) (AuthVerificationKey, er
 }
 
 func loadPublicKey(in string) (ed25519.PublicKey, error) {
+	in = strings.ReplaceAll(in, `\n`, "\n")
 	pubDER, err := decodePEM("PUBLIC KEY", []byte(in))
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode PEM-encoded public key: %w", err)
