@@ -51,7 +51,7 @@ jobs:
 
       - name: Run all builds and tests
         run: |
-        run: bazelisk query 'tests(//... except kind(oci_*, //...))' | xargs bazelisk test
+          bazelisk query 'tests(//... except kind(oci_*, //...))' | xargs bazelisk test
 
       - name: Push docker images
         run: |
