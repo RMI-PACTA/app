@@ -52,7 +52,7 @@ jobs:
       - name: Run all builds and tests
         run: |
         run: bazelisk query 'tests(//... except kind(oci_*, //...))' | xargs bazelisk test
-      
+
       - name: Push docker images
         run: |
           bazel run --@io_bazel_rules_go//go/config:pure //cmd/server:push_image -- --tag=dev
