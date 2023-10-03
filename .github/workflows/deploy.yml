@@ -1,0 +1,80 @@
+name: Deploy Dev
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - name: Cache Bazel
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+
+      - uses: actions/checkout@v3
+
+      - name: Azure CLI login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.DEV_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: false
+
+      - name: Login to ACR via OIDC
+        run: az acr login --name rmipacta
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      # We build the frontend first just because it's faster, so if it fails, we spent
+      # less time to fail. We don't deploy anything until all builds + tests pass.
+      - name: Build the frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm run build:dev
+
+      - name: Run all builds and tests
+        run: |
+        run: bazelisk query 'tests(//... except kind(oci_*, //...))' | xargs bazelisk test
+      
+      - name: Push docker images
+        run: |
+          bazel run --@io_bazel_rules_go//go/config:pure //cmd/server:push_image -- --tag=dev
+
+      - name: Deploy backend on Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          disableTelemetry: true
+          containerAppName: pactasrv-dev
+          containerAppEnvironment: pactasrv-dev
+          resourceGroup: rmi-pacta-dev
+          imageToDeploy: rmipacta.azurecr.io/pacta:dev
+          location: centalus
+
+      - name: Deploy frontend
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          action: 'upload'
+          config_file_location: 'frontend/'
+          app_location: 'frontend/.output/public'
+          api_location: 'frontend/.output/server'
+          output_location: ''
+          skip_app_build: true
+          skip_api_build: true
+          azure_static_web_apps_api_token: ${{ secrets.DEV_AZURE_STATIC_WEB_APPS_API_TOKEN }}

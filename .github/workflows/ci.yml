@@ -1,9 +1,9 @@
-name: Test + Lint
+name: CI Build/Test/Lint
 
 on: push
 
 jobs:
-  backend-build-test:
+  backend:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Bazel
@@ -20,7 +20,7 @@ jobs:
       - name: Run all tests
         run: bazelisk query 'tests(//... except kind(oci_*, //...))' | xargs bazelisk test
 
-  frontend-build-lint-test:
+  frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
