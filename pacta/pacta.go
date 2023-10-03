@@ -705,3 +705,9 @@ func cloneAll[T cloneable[T]](in []T) []T {
 	}
 	return out
 }
+
+// TODO: Populate with relevant output from portfolio analysis
+type PortfolioResult struct {
+	Stdout string
+	Stderr string
+}

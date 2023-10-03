@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "aztask",
+    srcs = ["aztask.go"],
+    importpath = "github.com/RMI/pacta/azure/aztask",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//task",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//to",
+        "@com_github_azure_azure_sdk_for_go_sdk_resourcemanager_appcontainers_armappcontainers_v2//:armappcontainers",
+        "@com_github_silicon_ally_idgen//:idgen",
+    ],
+)

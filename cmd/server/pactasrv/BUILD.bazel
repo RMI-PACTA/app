@@ -16,6 +16,7 @@ go_library(
         "//oapierr",
         "//openapi:pacta_generated",
         "//pacta",
+        "//task",
         "@com_github_go_chi_jwtauth_v5//:jwtauth",
         "@org_uber_go_zap//:zap",
     ],

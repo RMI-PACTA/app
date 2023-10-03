@@ -6,16 +6,26 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/RMI/pacta/azure/aztask"
+	"github.com/RMI/pacta/cmd/runner/taskrunner"
 	"github.com/RMI/pacta/cmd/server/pactasrv"
 	"github.com/RMI/pacta/db/sqldb"
+	"github.com/RMI/pacta/executors/docker"
 	"github.com/RMI/pacta/oapierr"
 	oapipacta "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/secrets"
+	"github.com/RMI/pacta/task"
+	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/zaphttplog"
+	"github.com/docker/docker/client"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
@@ -52,6 +62,9 @@ func run(args []string) error {
 		env      = fs.String("env", "", "The environment that we're running in.")
 		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the secret configuration. Can only be used when running locally.")
 
+		// PACTA Execution
+		useAZRunner = fs.Bool("use_azure_runner", false, "If true, execute PACTA on Azure Container Apps Jobs instead of a local instance.")
+
 		// Secrets
 		pgHost     = fs.String("secret_postgres_host", "", "Host of the Postgres server, like db.example.com")
 		pgPort     = fs.Int("secret_postgres_port", 5432, "Port to connect to the Postgres server on")
@@ -61,6 +74,18 @@ func run(args []string) error {
 
 		authKeyID   = fs.String("secret_auth_public_key_id", "", "Key ID (kid) of the JWT tokens to allow")
 		authKeyData = fs.String("secret_auth_public_key_data", "", "PEM-encoded Ed25519 public key to verify JWT tokens with, contains literal \\n characters that will need to be replaced before parsing")
+
+		runnerConfigLocation   = fs.String("secret_runner_config_location", "", "Location (like 'centralus') where the runner jobs should be executed")
+		runnerConfigConfigPath = fs.String("secret_runner_config_config_path", "", "Config path (like '/configs/dev.conf') where the runner jobs should read their base config from")
+
+		runnerConfigIdentityName               = fs.String("secret_runner_config_identity_name", "", "Name of the Azure identity to run runner jobs with")
+		runnerConfigIdentitySubscriptionID     = fs.String("secret_runner_config_identity_subscription_id", "", "Subscription ID of the identity to run runner jobs with")
+		runnerConfigIdentityResourceGroup      = fs.String("secret_runner_config_identity_resource_group", "", "Resource group of the identity to run runner jobs with")
+		runnerConfigIdentityClientID           = fs.String("secret_runner_config_identity_client_id", "", "Client ID of the identity to run runner jobs with")
+		runnerConfigIdentityManagedEnvironment = fs.String("secret_runner_config_identity_managed_environment", "", "Name of the Container Apps Environment where runner jobs should run")
+
+		runnerConfigImageRegistry = fs.String("secret_runner_config_image_registry", "", "Registry where PACTA runner images live, like 'rmipacta.azurecr.io'")
+		runnerConfigImageName     = fs.String("secret_runner_config_image_name", "", "Name of the Docker image of the PACTA runner, like 'runner'")
 	)
 	// Allows for passing in configuration via a -config path/to/env-file.conf
 	// flag, see https://pkg.go.dev/github.com/namsral/flag#readme-usage
@@ -98,10 +123,26 @@ func run(args []string) error {
 			ID:   *authKeyID,
 			Data: *authKeyData,
 		},
+		RunnerConfig: &secrets.RawRunnerConfig{
+			Location:   *runnerConfigLocation,
+			ConfigPath: *runnerConfigConfigPath,
+			Identity: &secrets.RawRunnerIdentity{
+				Name:               *runnerConfigIdentityName,
+				SubscriptionID:     *runnerConfigIdentitySubscriptionID,
+				ResourceGroup:      *runnerConfigIdentityResourceGroup,
+				ClientID:           *runnerConfigIdentityClientID,
+				ManagedEnvironment: *runnerConfigIdentityManagedEnvironment,
+			},
+			Image: &secrets.RawRunnerImage{
+				Registry: *runnerConfigImageRegistry,
+				Name:     *runnerConfigImageName,
+			},
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to parse secrets: %w", err)
 	}
+	runCfg := sec.RunnerConfig
 
 	if *localDSN != "" && *env != "local" {
 		return errors.New("--local_dsn set outside of local environment")
@@ -140,9 +181,62 @@ func run(args []string) error {
 	// that server names match. We don't know how this thing will be run.
 	pactaSwagger.Servers = nil
 
+	var creds azcore.TokenCredential
+	// This is necessary because the default timeout is too low in
+	// azidentity.NewDefaultAzureCredentials, so it times out and fails to run.
+	if azClientID := os.Getenv("AZURE_CLIENT_ID"); azClientID != "" {
+		logger.Info("Loading user managed credentials", zap.String("client_id", azClientID))
+		if creds, err = azidentity.NewManagedIdentityCredential(&azidentity.ManagedIdentityCredentialOptions{
+			ID: azidentity.ClientID(azClientID),
+		}); err != nil {
+			return fmt.Errorf("failed to load Azure credentials: %w", err)
+		}
+	} else {
+		logger.Info("Loading default credentials")
+		if creds, err = azidentity.NewDefaultAzureCredential(nil); err != nil {
+			return fmt.Errorf("failed to load Azure credentials: %w", err)
+		}
+	}
+
+	var taskRunner pactasrv.TaskRunner
+	if *useAZRunner {
+		logger.Info("initializing Azure task runner client")
+		tmp, err := aztask.NewTaskRunner(creds, &aztask.Config{
+			Location:   runCfg.Location,
+			ConfigPath: runCfg.ConfigPath,
+			Rand:       rand.New(cryptorand.New()),
+			Identity: &aztask.RunnerIdentity{
+				Name:               runCfg.Identity.Name,
+				SubscriptionID:     runCfg.Identity.SubscriptionID,
+				ResourceGroup:      runCfg.Identity.ResourceGroup,
+				ClientID:           runCfg.Identity.ClientID,
+				ManagedEnvironment: runCfg.Identity.ManagedEnvironment,
+			},
+			Image: &aztask.RunnerImage{
+				Registry: runCfg.Image.Registry,
+				Name:     runCfg.Image.Name,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to init task runner: %w", err)
+		}
+		taskRunner = tmp
+	} else {
+		cli, err := client.NewEnvClient()
+		if err != nil {
+			return fmt.Errorf("failed to initialize Docker client: %w", err)
+		}
+
+		dockerExec := docker.NewExecutor(cli, logger)
+		taskRunner = &localRunner{
+			handler: taskrunner.New(dockerExec, logger),
+		}
+	}
+
 	// Create an instance of our handler which satisfies each generated interface
 	srv := &pactasrv.Server{
-		DB: db,
+		DB:         db,
+		TaskRunner: taskRunner,
 	}
 
 	pactaStrictHandler := oapipacta.NewStrictHandlerWithOptions(srv, nil /* middleware */, oapipacta.StrictHTTPServerOptions{
@@ -275,4 +369,22 @@ func responseErrorHandlerFuncForService(logger *zap.Logger, svc string) func(w h
 		logger.Error("error while handling request", zap.String("service", svc), zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+}
+
+// localRunner is a thin shim around *taskrunner.Handler that satisfies the
+// task runner interface, allowing us to run the handler in-process, usually for
+// local development.
+type localRunner struct {
+	handler *taskrunner.Handler
+
+	taskID int
+}
+
+func (l *localRunner) StartRun(ctx context.Context, req *task.StartRunRequest) (task.ID, error) {
+	if err := l.handler.Execute(ctx, req); err != nil {
+		return "", fmt.Errorf("error from handler: %w", err)
+	}
+
+	l.taskID++
+	return task.ID("task:" + strconv.Itoa(l.taskID)), nil
 }

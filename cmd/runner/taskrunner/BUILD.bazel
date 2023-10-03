@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "taskrunner",
+    srcs = ["taskrunner.go"],
+    importpath = "github.com/RMI/pacta/cmd/runner/taskrunner",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pacta",
+        "//task",
+        "@org_uber_go_zap//:zap",
+    ],
+)
