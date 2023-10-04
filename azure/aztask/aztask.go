@@ -208,6 +208,7 @@ func (r *Runner) StartRun(ctx context.Context, req *task.StartRunRequest) (task.
 								Value: to.Ptr(string(req.PortfolioID)),
 							},
 						},
+						// TODO: Take in the image digest as part of the task definition, as this can change per request.
 						Image:  to.Ptr(r.cfg.Image.WithTag("latest")),
 						Name:   to.Ptr(name),
 						Probes: []*armappcontainers.ContainerAppProbe{},
