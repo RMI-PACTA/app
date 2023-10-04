@@ -23,7 +23,8 @@ export default defineNuxtConfig({
         userFlowAuthority: process.env.MSAL_USER_FLOW_AUTHORITY ?? '',
         authorityDomain: process.env.MSAL_AUTHORITY_DOMAIN ?? '',
         clientID: process.env.MSAL_CLIENT_ID ?? '',
-        redirectURI: process.env.MSAL_REDIRECT_URI ?? ''
+        redirectURI: process.env.MSAL_REDIRECT_URI ?? '',
+        logoutURI: process.env.MSAL_LOGOUT_URI ?? '',
       }
     }
   },

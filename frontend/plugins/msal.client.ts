@@ -10,7 +10,8 @@ export default defineNuxtPlugin((_nuxtApp) => {
         userFlowAuthority,
         authorityDomain,
         clientID,
-        redirectURI
+        redirectURI,
+        logoutURI,
       }
     }
   } = useRuntimeConfig()
@@ -31,7 +32,8 @@ export default defineNuxtPlugin((_nuxtApp) => {
       clientId: clientID,
       authority: b2cPolicies.authorities.signUpSignIn.authority, // Choose sign-up/sign-in user-flow as your default.
       knownAuthorities: [b2cPolicies.authorityDomain], // You must identify your tenant's domain as a known authority.
-      redirectUri: redirectURI // Must be registered as a SPA redirectURI on your app registration
+      redirectUri: redirectURI, // Must be registered as a SPA redirectURI on your app registration
+      logoutUri: logoutURI,
     },
     cache: {
       cacheLocation: 'localStorage',

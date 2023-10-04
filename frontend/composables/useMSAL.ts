@@ -161,7 +161,7 @@ export const useMSAL = async (): Promise<MSAL> => {
   const signOut = async (): Promise<void> => {
     const logoutRequest = {
       postLogoutRedirectUri: msalConfig.auth.redirectUri,
-      mainWindowRedirectUri: msalConfig.auth.redirectUri
+      mainWindowRedirectUri: msalConfig.auth.logoutUri
     }
     const userClient = userClientWithCustomToken('') // Logging out doesn't require auth.
     try {
