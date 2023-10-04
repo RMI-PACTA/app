@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+
+go_library(
+    name = "runner_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/RMI/pacta/cmd/runner",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//azure/azlog",
+        "//cmd/runner/taskrunner",
+        "//executors/local",
+        "//pacta",
+        "//task",
+        "@com_github_namsral_flag//:flag",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+go_binary(
+    name = "runner",
+    embed = [":runner_lib"],
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "runner_tar",
+    srcs = [":runner"],
+)
+
+filegroup(
+    name = "configs",
+    srcs = glob(["configs/**"]),
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "configs_tar",
+    srcs = [":configs"],
+    package_dir = "/configs",
+    strip_prefix = "/cmd/runner/configs",
+)
+
+oci_image(
+    name = "image",
+    base = "@runner_base",
+    entrypoint = ["/runner"],
+    tars = [
+        ":runner_tar",
+        ":configs_tar",
+    ],
+)
+
+oci_push(
+    name = "push_image",
+    image = ":image",
+    remote_tags = ["latest"],
+    repository = "rmipacta.azurecr.io/runner",
+)
+
+# Note: This tarball is provided for local testing of the Docker image, see the README.md for details on usage.
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = [],
+)

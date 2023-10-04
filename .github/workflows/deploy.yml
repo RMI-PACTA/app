@@ -62,7 +62,7 @@ jobs:
         with:
           disableTelemetry: true
           containerAppName: pactasrv-dev
-          containerAppEnvironment: pactasrv-dev
+          containerAppEnvironment: pacta-dev
           resourceGroup: rmi-pacta-dev
           imageToDeploy: rmipacta.azurecr.io/pacta:dev
           location: centalus

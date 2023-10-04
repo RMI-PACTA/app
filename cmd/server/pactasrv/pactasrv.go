@@ -7,6 +7,7 @@ import (
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	"github.com/RMI/pacta/pacta"
+	"github.com/RMI/pacta/task"
 	"go.uber.org/zap"
 )
 
@@ -14,6 +15,10 @@ var (
 	// Means we failed to canonicalize someone's email
 	invalidEmail = oapierr.ErrorID("invalid_email")
 )
+
+type TaskRunner interface {
+	StartRun(context.Context, *task.StartRunRequest) (task.ID, error)
+}
 
 type DB interface {
 	Begin(context.Context) (db.Tx, error)
@@ -66,7 +71,8 @@ type DB interface {
 }
 
 type Server struct {
-	DB DB
+	DB         DB
+	TaskRunner TaskRunner
 }
 
 func mapAll[I any, O any](is []I, f func(I) (O, error)) ([]O, error) {

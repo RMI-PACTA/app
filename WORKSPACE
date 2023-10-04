@@ -94,7 +94,15 @@ load("@rules_oci//oci:pull.bzl", "oci_pull")
 
 oci_pull(
     name = "distroless_base",
-    digest = "sha256:73deaaf6a207c1a33850257ba74e0f196bc418636cada9943a03d7abea980d6d",
+    digest = "sha256:46c5b9bd3e3efff512e28350766b54355fce6337a0b44ba3f822ab918eca4520",
+    image = "gcr.io/distroless/base",
+    platforms = ["linux/amd64"],
+)
+
+# TODO: Replace this with the base image provided by RMI
+oci_pull(
+    name = "runner_base",
+    digest = "sha256:46c5b9bd3e3efff512e28350766b54355fce6337a0b44ba3f822ab918eca4520",
     image = "gcr.io/distroless/base",
     platforms = ["linux/amd64"],
 )
