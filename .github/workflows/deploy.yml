@@ -55,7 +55,8 @@ jobs:
 
       - name: Push docker images
         run: |
-          bazel run --@io_bazel_rules_go//go/config:pure //cmd/server:push_image -- --tag=dev
+          bazelisk run --@io_bazel_rules_go//go/config:pure //cmd/server:push_image -- --tag=dev
+          bazelisk run --@io_bazel_rules_go//go/config:pure //cmd/runner:push_image -- --tag=dev
 
       - name: Deploy backend on Container Apps
         uses: azure/container-apps-deploy-action@v1
