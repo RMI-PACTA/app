@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<Props>(), {
   buttonClass: undefined,
   buttonStyle: undefined,
   tooltipClass: undefined,
-  offlineSafe: undefined
+  offlineSafe: undefined,
 })
 const tt = computed(() => {
   const result = { value: props.alt, class: props.tooltipClass }

@@ -12,13 +12,13 @@ const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`, () => ({
   description: '',
   digest: '',
   createdAt: '',
-  isDefault: false
+  isDefault: false,
 }))
 
 const discard = () => router.push('/admin/pacta-version')
 const save = () => withLoading(
   () => pactaClient.createPactaVersion(pactaVersion.value).then(() => router.push('/admin/pacta-version')),
-  `${prefix}.save`
+  `${prefix}.save`,
 )
 </script>
 

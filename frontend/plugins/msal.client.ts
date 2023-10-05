@@ -12,20 +12,20 @@ export default defineNuxtPlugin((_nuxtApp) => {
         clientID,
         redirectURI,
         logoutURI,
-      }
-    }
+      },
+    },
   } = useRuntimeConfig()
 
   const b2cPolicies = {
     names: {
-      signUpSignIn: userFlowName
+      signUpSignIn: userFlowName,
     },
     authorities: {
       signUpSignIn: {
-        authority: userFlowAuthority
-      }
+        authority: userFlowAuthority,
+      },
     },
-    authorityDomain
+    authorityDomain,
   }
   const msalConfig = {
     auth: {
@@ -37,7 +37,7 @@ export default defineNuxtPlugin((_nuxtApp) => {
     },
     cache: {
       cacheLocation: 'localStorage',
-      storeAuthStateInCookie: true
+      storeAuthStateInCookie: true,
     },
     system: {
       loggerOptions: {
@@ -59,9 +59,9 @@ export default defineNuxtPlugin((_nuxtApp) => {
               console.warn(message)
           }
         },
-        logLevel: LogLevel.Verbose
-      }
-    }
+        logLevel: LogLevel.Verbose,
+      },
+    },
   }
   const msalInstance = new PublicClientApplication(msalConfig)
 
@@ -115,9 +115,9 @@ export default defineNuxtPlugin((_nuxtApp) => {
         instance: msalInstance,
         accounts: stateAccounts,
         b2cPolicies,
-        msalConfig
-      }
-    }
+        msalConfig,
+      },
+    },
   }
 })
 

@@ -8,7 +8,7 @@ const props = withDefaults(defineProps<{
   subHeader?: string
 }>(), {
   small: false,
-  subHeader: ''
+  subHeader: '',
 })
 
 const emit = defineEmits<{
@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const visible = computed<boolean>({
   get: () => props.visible,
-  set: (value) => { emit('update:visible', value) }
+  set: (value) => { emit('update:visible', value) },
 })
 const breakpoints = computed(() => props.small ? smallDialogBreakpoints : dialogBreakpoints)
 

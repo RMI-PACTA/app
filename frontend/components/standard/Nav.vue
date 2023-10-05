@@ -14,7 +14,7 @@ const menuStyles = computed(() => {
     overflow: 'hidden',
     'max-height': menuHidden.value ? '0px' : '100vh',
     border: menuHidden.value ? undefined : '2px solid',
-    'margin-top': menuHidden.value ? '0' : '-2px'
+    'margin-top': menuHidden.value ? '0' : '-2px',
   }
 })
 
@@ -22,28 +22,28 @@ const menuItems = computed(() => {
   const result: MenuItem[] = [
     {
       to: '/',
-      label: 'Home'
+      label: 'Home',
     },
     {
       to: 'https://github.com/RMI-PACTA/app/issues/new',
-      label: 'File a Bug'
-    }
+      label: 'File a Bug',
+    },
   ]
   if (showStandardDebug) {
     result.push({
       label: 'Admin',
-      to: '/admin'
+      to: '/admin',
     })
   }
   if (isAuthenticated.value) {
     result.push({
       label: 'Sign Out',
-      command: () => { void signOut() }
+      command: () => { void signOut() },
     })
   } else {
     result.push({
       label: 'Sign In',
-      command: () => { void signIn() }
+      command: () => { void signIn() },
     })
   }
   return result

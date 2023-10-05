@@ -44,7 +44,7 @@ export const useSession = () => {
       // the single-lookup behavior above. This cast is safe.
       me: currentUser as Ref<User>,
       isAdmin,
-      isSuperAdmin
+      isSuperAdmin,
     }
   }
   const getMaybeMe = async () => {
@@ -55,7 +55,7 @@ export const useSession = () => {
       // Will be a Ref with a value of undefined if the user isn't logged in.
       maybeMe: currentUser,
       isAdmin,
-      isSuperAdmin
+      isSuperAdmin,
     }
   }
 
@@ -63,6 +63,6 @@ export const useSession = () => {
     signedIn,
     getMe,
     getMaybeMe,
-    currentUser
+    currentUser,
   }
 }

@@ -32,7 +32,7 @@ const changes = computed<PactaVersionChanges>(() => {
   return {
     ...(a.name !== b.name ? { name: b.name } : {}),
     ...(a.description !== b.description ? { description: b.description } : {}),
-    ...(a.digest !== b.digest ? { digest: b.digest } : {})
+    ...(a.digest !== b.digest ? { digest: b.digest } : {}),
   }
 })
 const hasChanges = computed<boolean>(() => Object.keys(changes.value).length > 0)
@@ -40,18 +40,18 @@ const hasChanges = computed<boolean>(() => Object.keys(changes.value).length > 0
 const markDefault = () => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
     .then(refreshPACTA),
-  `${prefix}.markPactaVersionAsDefault`
+  `${prefix}.markPactaVersionAsDefault`,
 )
 const deletePV = () => withLoading(
   () => pactaClient.deletePactaVersion(id)
     .then(() => router.push('/admin/pacta-version')),
-  `${prefix}.deletePactaVersion`
+  `${prefix}.deletePactaVersion`,
 )
 const saveChanges = () => withLoading(
   () => pactaClient.updatePactaVersion(id, changes.value)
     .then(refreshPACTA)
     .then(() => router.push('/admin/pacta-version')),
-  `${prefix}.saveChanges`
+  `${prefix}.saveChanges`,
 )
 </script>
 

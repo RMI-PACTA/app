@@ -4,7 +4,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  routeBackOnClose: false
+  routeBackOnClose: false,
 })
 
 const { error: { errorModalVisible, error: modalError } } = useModal()
@@ -29,7 +29,7 @@ const fullError = computed(() => {
     return {
       name: err.name ?? '',
       message: err.message,
-      stack: err.stack?.split('\n')
+      stack: err.stack?.split('\n'),
     }
   } else if (err) {
     return err

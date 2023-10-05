@@ -14,12 +14,12 @@ const newPV = () => router.push('/admin/pacta-version/new')
 const markDefault = (id: string) => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
     .then(() => refresh()),
-  `${prefix}.markPactaVersionAsDefault`
+  `${prefix}.markPactaVersionAsDefault`,
 )
 const deletePV = (id: string) => withLoading(
   () => pactaClient.deletePactaVersion(id)
     .then(() => refresh()),
-  `${prefix}.deletePactaVersion`
+  `${prefix}.deletePactaVersion`,
 )
 </script>
 

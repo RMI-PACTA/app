@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
   completed: false,
   requiredLabel: 'Required',
   loadingLabel: 'Loading...',
-  completedLabel: ''
+  completedLabel: '',
 })
 const slots = useSlots()
 

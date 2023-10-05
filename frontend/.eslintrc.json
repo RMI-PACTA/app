@@ -37,8 +37,8 @@
     "@typescript-eslint/explicit-function-return-type": 0,
     "@typescript-eslint/strict-boolean-expressions": 0,
     "@typescript-eslint/promise-function-async": 0,
-    "comma-dangle": 0,
-    "@typescript-eslint/comma-dangle": 0
+    "comma-dangle": "off",
+    "@typescript-eslint/comma-dangle": ["error", "always-multiline" ]
   },
   "overrides": [
     {

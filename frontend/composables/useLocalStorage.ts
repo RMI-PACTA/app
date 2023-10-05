@@ -28,7 +28,7 @@ export const useLocalStorage = () => {
           localStorage.setItem(key, value)
         }
         state.value = value
-      }
+      },
     })
   }
 
@@ -38,7 +38,7 @@ export const useLocalStorage = () => {
     const stringState = computedStringLocalStorageValue('bool:' + key, `${defaultValue}`)
     return computed({
       get: () => stringState.value === 'true',
-      set: (value: boolean) => { stringState.value = `${value}` }
+      set: (value: boolean) => { stringState.value = `${value}` },
     })
   }
 
@@ -49,7 +49,7 @@ export const useLocalStorage = () => {
         const s = stringState.value
         return s ? new Date(s) : defaultValue
       },
-      set: (d: Date) => { stringState.value = d.toString() }
+      set: (d: Date) => { stringState.value = d.toString() },
     })
   }
 
@@ -62,7 +62,7 @@ export const useLocalStorage = () => {
       },
       set: (s: Set<string>) => {
         stringState.value = JSON.stringify([...s])
-      }
+      },
     })
   }
 
@@ -89,6 +89,6 @@ export const useLocalStorage = () => {
     helpTextExpanded,
     showStandardDebug,
     deviceId,
-    getDeviceId
+    getDeviceId,
   }
 }

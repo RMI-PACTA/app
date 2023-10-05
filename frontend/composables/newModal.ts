@@ -68,16 +68,16 @@ export const useModal = () => {
       stopLoading,
       clearLoading,
       loading,
-      loadingSet
+      loadingSet,
     },
     error: {
       error,
-      errorModalVisible
+      errorModalVisible,
     },
     permissionDenied: {
       permissionDeniedVisible,
       permissionDeniedError,
-      setPermissionDenied
-    }
+      setPermissionDenied,
+    },
   }
 }

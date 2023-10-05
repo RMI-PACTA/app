@@ -24,7 +24,7 @@ export const useMSAL = async (): Promise<MSAL> => {
       signIn: async () => { await Promise.reject(new Error('cannot call signIn on server')) },
       signOut: async () => { await Promise.reject(new Error('cannot call signOut on server')) },
       createAPIKey: async () => await Promise.reject(new Error('cannot call createAPIKey on server')),
-      isAuthenticated: computed(() => isAuthenticated.value)
+      isAuthenticated: computed(() => isAuthenticated.value),
     }
   }
 
@@ -106,7 +106,7 @@ export const useMSAL = async (): Promise<MSAL> => {
     const request: SilentRequest = {
       scopes: [],
       forceRefresh: false, // Set this to "true" to skip a cached token and go to the server to get a new token
-      account: instance.getAccountByHomeId(account.value.homeAccountId) ?? undefined
+      account: instance.getAccountByHomeId(account.value.homeAccountId) ?? undefined,
     }
 
     const response = await instance.acquireTokenSilent(request)
@@ -127,7 +127,7 @@ export const useMSAL = async (): Promise<MSAL> => {
     const request: SilentRequest = {
       scopes: [],
       forceRefresh: false, // Set this to "true" to skip a cached token and go to the server to get a new token
-      account: instance.getAccountByHomeId(account.value.homeAccountId) ?? undefined
+      account: instance.getAccountByHomeId(account.value.homeAccountId) ?? undefined,
     }
 
     try {
@@ -161,13 +161,13 @@ export const useMSAL = async (): Promise<MSAL> => {
   const signOut = async (): Promise<void> => {
     const logoutRequest = {
       postLogoutRedirectUri: msalConfig.auth.redirectUri,
-      mainWindowRedirectUri: msalConfig.auth.logoutUri
+      mainWindowRedirectUri: msalConfig.auth.logoutUri,
     }
     const userClient = userClientWithCustomToken('') // Logging out doesn't require auth.
     try {
       await Promise.all([
         userClient.logout(),
-        instance.logoutPopup(logoutRequest)
+        instance.logoutPopup(logoutRequest),
       ])
     } catch (e) {
       console.log('failed to log out', e)
@@ -218,6 +218,6 @@ export const useMSAL = async (): Promise<MSAL> => {
     signIn,
     signOut,
     createAPIKey,
-    isAuthenticated: computed(() => isAuthenticated.value)
+    isAuthenticated: computed(() => isAuthenticated.value),
   }
 }

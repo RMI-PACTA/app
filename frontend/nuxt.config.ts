@@ -2,17 +2,17 @@
 export default defineNuxtConfig({
   build: {
     // https://primevue.org/installation/#nuxtintegration
-    transpile: ['primevue']
+    transpile: ['primevue'],
   },
   css: [
     '@/assets/css/overrides.css',
     '@/assets/css/theme.css',
     'primevue/resources/primevue.css',
     'primeicons/primeicons.css',
-    'primeflex/primeflex.css'
+    'primeflex/primeflex.css',
   ],
   devtools: {
-    enabled: true
+    enabled: true,
   },
   runtimeConfig: {
     public: {
@@ -25,19 +25,19 @@ export default defineNuxtConfig({
         clientID: process.env.MSAL_CLIENT_ID ?? '',
         redirectURI: process.env.MSAL_REDIRECT_URI ?? '',
         logoutURI: process.env.MSAL_LOGOUT_URI ?? '',
-      }
-    }
+      },
+    },
   },
   typescript: {
-    strict: true
+    strict: true,
   },
   imports: {
     presets: [
       {
         from: 'vue',
-        imports: ['computed', 'onMounted']
-      }
+        imports: ['computed', 'onMounted'],
+      },
     ],
-    dirs: ['globalimports']
-  }
+    dirs: ['globalimports'],
+  },
 })

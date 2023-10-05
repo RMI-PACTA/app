@@ -8,7 +8,7 @@ interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   layout: 'horizontal',
-  background: 'blue'
+  background: 'blue',
 })
 </script>
 
