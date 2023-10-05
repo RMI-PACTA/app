@@ -46,11 +46,11 @@ export const useURLParams = () => {
     fromQueryReactive: (key: string): WritableComputedRef<string | undefined> => {
       return computed({
         get: () => getVal(router.currentRoute.value.query, key),
-        set: (val: string | undefined) => { setVal(key, val) }
+        set: (val: string | undefined) => { setVal(key, val) },
       })
     },
     fromParams: (key: string): string | undefined => {
       return getVal(route.params, key)
-    }
+    },
   }
 }

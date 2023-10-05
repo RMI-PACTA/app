@@ -9,7 +9,7 @@ const emit = defineEmits<(e: 'update:pactaVersion', pactaVersion: PactaVersion) 
 
 const model = computed({
   get: () => props.pactaVersion,
-  set: (pactaVersion: PactaVersion) => { emit('update:pactaVersion', pactaVersion) }
+  set: (pactaVersion: PactaVersion) => { emit('update:pactaVersion', pactaVersion) },
 })
 </script>
 

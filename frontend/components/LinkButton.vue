@@ -44,7 +44,7 @@ const props = withDefaults(defineProps<Props>(), {
   badge: undefined,
   badgeClass: undefined,
   loading: undefined,
-  loadingIcon: 'pi pi-spinner pi-spin'
+  loadingIcon: 'pi pi-spinner pi-spin',
 })
 
 const attrs = useAttrs()
@@ -58,8 +58,8 @@ const iconStyleClass = computed(() => {
       'p-button-icon-left': props.iconPos === 'left' && props.label,
       'p-button-icon-right': props.iconPos === 'right' && props.label,
       'p-button-icon-top': props.iconPos === 'top' && props.label,
-      'p-button-icon-bottom': props.iconPos === 'bottom' && props.label
-    }
+      'p-button-icon-bottom': props.iconPos === 'bottom' && props.label,
+    },
   ]
 })
 
@@ -68,8 +68,8 @@ const badgeStyleClass = computed(() => {
     'p-badge p-component',
     props.badgeClass,
     {
-      'p-badge-no-gutter': props.badge !== undefined && props.badge.length === 1
-    }
+      'p-badge-no-gutter': props.badge !== undefined && props.badge.length === 1,
+    },
   ]
 })
 
@@ -96,7 +96,7 @@ const buttonClass = computed(() => {
     'p-button-loading': props.loading,
     'p-button-loading-label-only': props.loading !== undefined && props.icon === undefined && props.label !== undefined,
     'no-underline': true,
-    'click-does-nothing': disabled.value
+    'click-does-nothing': disabled.value,
   }
 })
 

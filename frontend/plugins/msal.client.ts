@@ -10,32 +10,34 @@ export default defineNuxtPlugin((_nuxtApp) => {
         userFlowAuthority,
         authorityDomain,
         clientID,
-        redirectURI
-      }
-    }
+        redirectURI,
+        logoutURI,
+      },
+    },
   } = useRuntimeConfig()
 
   const b2cPolicies = {
     names: {
-      signUpSignIn: userFlowName
+      signUpSignIn: userFlowName,
     },
     authorities: {
       signUpSignIn: {
-        authority: userFlowAuthority
-      }
+        authority: userFlowAuthority,
+      },
     },
-    authorityDomain
+    authorityDomain,
   }
   const msalConfig = {
     auth: {
       clientId: clientID,
       authority: b2cPolicies.authorities.signUpSignIn.authority, // Choose sign-up/sign-in user-flow as your default.
       knownAuthorities: [b2cPolicies.authorityDomain], // You must identify your tenant's domain as a known authority.
-      redirectUri: redirectURI // Must be registered as a SPA redirectURI on your app registration
+      redirectUri: redirectURI, // Must be registered as a SPA redirectURI on your app registration
+      logoutUri: logoutURI,
     },
     cache: {
       cacheLocation: 'localStorage',
-      storeAuthStateInCookie: true
+      storeAuthStateInCookie: true,
     },
     system: {
       loggerOptions: {
@@ -57,9 +59,9 @@ export default defineNuxtPlugin((_nuxtApp) => {
               console.warn(message)
           }
         },
-        logLevel: LogLevel.Verbose
-      }
-    }
+        logLevel: LogLevel.Verbose,
+      },
+    },
   }
   const msalInstance = new PublicClientApplication(msalConfig)
 
@@ -113,9 +115,9 @@ export default defineNuxtPlugin((_nuxtApp) => {
         instance: msalInstance,
         accounts: stateAccounts,
         b2cPolicies,
-        msalConfig
-      }
-    }
+        msalConfig,
+      },
+    },
   }
 })
 

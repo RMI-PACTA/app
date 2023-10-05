@@ -5,14 +5,14 @@ export const present = <T>(t: T | undefined | null, r: Remediation, cause?: stri
     throw createErrorWithRemediation({
       name: 'present error',
       message: 'expected to be present but was undefined',
-      cause
+      cause,
     }, r)
   }
   if (t === null) {
     throw createErrorWithRemediation({
       name: 'present error',
       message: 'expected to be present but was null',
-      cause
+      cause,
     }, r)
   }
   return t

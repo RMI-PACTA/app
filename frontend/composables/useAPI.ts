@@ -11,7 +11,7 @@ export const useAPI = (): API => {
   const { public: { apiServerURL, authServerURL } } = useRuntimeConfig()
   const baseCfg = {
     CREDENTIALS: 'include' as const, // To satisfy typing of 'include' | 'same-origin' | etc
-    WITH_CREDENTIALS: true
+    WITH_CREDENTIALS: true,
   }
 
   // If we're on the server, forward our cookie header along to the backend
@@ -24,14 +24,14 @@ export const useAPI = (): API => {
 
   const userCfg = {
     ...baseCfg,
-    BASE: authServerURL
+    BASE: authServerURL,
   }
   const userClient = new UserClient(userCfg)
 
   const pactaClient = new PACTAClient({
     ...baseCfg,
     BASE: apiServerURL,
-    HEADERS: headers
+    HEADERS: headers,
   })
 
   return {
@@ -40,9 +40,9 @@ export const useAPI = (): API => {
     userClientWithCustomToken: (tkn: string) => {
       const newCfg = {
         ...userCfg,
-        TOKEN: tkn
+        TOKEN: tkn,
       }
       return new UserClient(newCfg).default
-    }
+    },
   }
 }

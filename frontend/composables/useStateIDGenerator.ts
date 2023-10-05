@@ -4,6 +4,6 @@ export const useStateIDGenerator = () => {
     id: (): string => {
       nextId.value = nextId.value + 1
       return `${nextId.value}`
-    }
+    },
   }
 }

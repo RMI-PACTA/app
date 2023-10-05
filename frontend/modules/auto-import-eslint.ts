@@ -13,8 +13,8 @@ const autoImportEslint = defineNuxtModule({
         'useCloneDeep',
         'defineNuxtConfig',
         'definePageMeta',
-        'defineI18nConfig'
-      ]
+        'defineI18nConfig',
+      ],
     }
 
     nuxt.hook('imports:context', async (context: Unimport) => {
@@ -60,12 +60,12 @@ const autoImportEslint = defineNuxtModule({
       addTemplate({
         filename,
         getContents,
-        write: true
+        write: true,
       })
 
       // console.log(`globals file is generated at ${fullPath}`)
     })
-  }
+  },
 })
 
 export default autoImportEslint
