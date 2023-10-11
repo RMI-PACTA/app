@@ -25,6 +25,7 @@ export default defineNuxtConfig({
         clientID: process.env.MSAL_CLIENT_ID ?? '',
         redirectURI: process.env.MSAL_REDIRECT_URI ?? '',
         logoutURI: process.env.MSAL_LOGOUT_URI ?? '',
+        minLogLevel: process.env.MSAL_MIN_LOG_LEVEL ?? 'VERBOSE',
       },
     },
   },
