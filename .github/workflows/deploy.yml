@@ -66,7 +66,7 @@ jobs:
           containerAppEnvironment: pacta-dev
           resourceGroup: rmi-pacta-dev
           imageToDeploy: rmipacta.azurecr.io/pacta:dev
-          location: centalus
+          location: centralus
 
       - name: Deploy frontend
         uses: Azure/static-web-apps-deploy@v1
