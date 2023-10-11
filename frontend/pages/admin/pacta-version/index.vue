@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const router = useRouter()
-const { pactaClient } = useAPI()
+const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 
 const prefix = 'admin/pacta-version'

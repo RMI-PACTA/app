@@ -2,7 +2,7 @@
 import { type PactaVersion, type PactaVersionChanges } from '@/openapi/generated/pacta'
 
 const router = useRouter()
-const { pactaClient } = useAPI()
+const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 

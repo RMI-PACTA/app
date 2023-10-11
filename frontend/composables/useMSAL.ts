@@ -3,221 +3,295 @@
 // complicated than we need.
 // [1] https://github.com/Azure-Samples/ms-identity-b2c-javascript-spa
 // [2] https://github.com/AzureAD/microsoft-authentication-library-for-js/tree/dev/samples/msal-browser-samples/vue3-sample-app
-import { type AccountInfo, type AuthenticationResult, InteractionRequiredAuthError, type SilentRequest } from '@azure/msal-browser'
-import type { ComputedRef } from 'vue'
+import {
+  type AccountInfo,
+  type EventMessage,
+  EventMessageUtils,
+  EventType,
+  InteractionRequiredAuthError,
+  type InteractionStatus,
+  type SilentRequest,
+  PublicClientApplication,
+} from '@azure/msal-browser'
+import { type AuthenticationResult } from '@azure/msal-common'
+
+import { computed } from 'vue'
 import { type APIKey } from '~/openapi/generated/user'
 
-interface MSAL {
-  signIn: () => Promise<void>
-  signOut: () => Promise<void>
-  createAPIKey: () => Promise<APIKey>
-  isAuthenticated: ComputedRef<boolean>
-}
-
-export const useMSAL = async (): Promise<MSAL> => {
-  const router = useRouter()
+export const useMSAL = async () => {
   const isAuthenticated = useState('useMSAL.isAuthenticated', () => false)
+
+  // Don't initialize the MSAL client if we're not in the browser.
   if (process.server) {
-    const sessionCookie = useCookie('jwt')
-    isAuthenticated.value = sessionCookie.value !== null && sessionCookie.value !== undefined
+    const jwt = useCookie('jwt')
+    isAuthenticated.value = !!jwt.value
     return {
-      signIn: async () => { await Promise.reject(new Error('cannot call signIn on server')) },
-      signOut: async () => { await Promise.reject(new Error('cannot call signOut on server')) },
-      createAPIKey: async () => await Promise.reject(new Error('cannot call createAPIKey on server')),
-      isAuthenticated: computed(() => isAuthenticated.value),
+      signIn: () => Promise.reject(new Error('cannot call signIn on server')),
+      signOut: () => Promise.reject(new Error('cannot call signOut on server')),
+      createAPIKey: () => Promise.reject(new Error('cannot call createAPIKey on server')),
+      getToken: () => Promise.reject(new Error('cannot call getToken on server')),
+      isAuthenticated: computed(() => !!jwt.value),
     }
   }
 
-  const { $msal: { /* inProgress, */ instance, accounts, msalConfig, b2cPolicies } } = useNuxtApp()
-  const { userClientWithCustomToken } = useAPI()
+  const router = useRouter()
+  const { userClientWithAuth } = useAPI()
 
-  const clientInitialized = useState('useMSAL.clientInitialized', () => false)
+  const { $msal: { msalConfig, b2cPolicies } } = useNuxtApp()
+  const scopes: string[] = ['openid', 'profile', 'offline_access', msalConfig.auth.clientId]
 
-  const account = useState<AccountInfo | undefined>('useMSALAuthentication.account')
+  const accounts = useState<AccountInfo[] | undefined>('useMSAL.accounts')
+  const interactionStatus = useState<InteractionStatus | undefined>('useMSAL.interactionStatus')
+  const instance = useState<PublicClientApplication | undefined>('useMSAL.instance')
 
-  const setAccount = (acctInfo: AccountInfo): void => {
-    account.value = acctInfo
-    // TODO: maybe welcome new user?
-  }
-
-  const selectAccount = async (): Promise<void> => {
-    if (accounts.value.length < 1) {
-      // TODO: Figure out how to handle this scenario
-    } else if (accounts.value.length > 1) {
-      /**
-         * Due to the way MSAL caches account objects, the auth response from initiating a user-flow
-         * is cached as a new account, which results in more than one account in the cache. Here we make
-         * sure we are selecting the account with homeAccountId that contains the sign-up/sign-in user-flow,
-         * as this is the default flow the user initially signed-in with.
-         */
-      const filteredAccounts = accounts.value.filter((account): boolean => {
-        return account.idTokenClaims?.iss !== undefined &&
-          account.idTokenClaims.aud !== undefined &&
-          account.homeAccountId.toUpperCase().includes(b2cPolicies.names.signUpSignIn.toUpperCase()) &&
-          account.idTokenClaims.iss.toUpperCase().includes(b2cPolicies.authorityDomain.toUpperCase()) &&
-          account.idTokenClaims.aud === msalConfig.auth.clientId
-      })
-
-      if (filteredAccounts.length > 1) {
-        // localAccountId identifies the entity for which the token asserts information.
-        if (filteredAccounts.every((account) => account.localAccountId === filteredAccounts[0].localAccountId)) {
-          // All filteredAccounts belong to the same user
-          setAccount(filteredAccounts[0])
-        } else {
-          // Multiple users detected. Logout all to be safe.
-          console.log('multiple accounts found, logging out', accounts.value)
-          await signOut()
-        }
-      } else if (filteredAccounts.length === 1) {
-        setAccount(filteredAccounts[0])
-      }
-    } else if (accounts.value.length === 1) {
-      setAccount(accounts.value[0])
+  const handleResponse = async (response: AuthenticationResult, force = false): Promise<AuthenticationResult> => {
+    if (!instance.value) {
+      return await Promise.reject(new Error('MSAL instance was not yet initialized'))
     }
-  }
 
-  const handleResponse = async (response: AuthenticationResult): Promise<void> => {
-    setAccount(response.account)
-    const userClient = userClientWithCustomToken(response.idToken)
+    if (!response?.account) {
+      return await Promise.resolve(response)
+    }
+
+    // If this came from the cache, we don't need to refresh our token.
+    if (response.fromCache && !force) {
+      return response
+    }
+
+    accounts.value = [response.account]
+    instance.value.setActiveAccount(response.account)
+    const userClient = userClientWithAuth(response.idToken)
     try {
       await userClient.login()
       isAuthenticated.value = true
-    } catch {
+    } catch (error) {
+      console.log('error at log in, signing out user', error)
       await signOut()
-    }
-  }
-
-  const signIn = async (): Promise<void> => {
-    const req = { scopes: ['openid'] }
-    try {
-      const response = await instance.loginPopup(req)
-      await handleResponse(response)
-    } catch (err) {
-      console.log('useMSAL.loginPopup', err)
-    }
-  }
-
-  const getToken = async (): Promise<AuthenticationResult> => {
-    if (account.value === undefined) {
-      // TODO: Figure out if this is a legitimate usecase.
-      return await Promise.reject(new Error('tried to get a token, but no account was found'))
-    }
-
-    const request: SilentRequest = {
-      scopes: [],
-      forceRefresh: false, // Set this to "true" to skip a cached token and go to the server to get a new token
-      account: instance.getAccountByHomeId(account.value.homeAccountId) ?? undefined,
-    }
-
-    const response = await instance.acquireTokenSilent(request)
-    // In case the response from B2C server has an empty accessToken field
-    // throw an error to initiate token acquisition
-    if (response.idToken === '') {
-      throw new InteractionRequiredAuthError()
     }
     return response
   }
 
-  const getTokenPopup = async (): Promise<AuthenticationResult> => {
+  const initializeAndAttemptLogin = async () => {
+    if (instance.value) {
+      console.log('instance is already initialized, returning')
+      return
+    }
+
+    const inst = new PublicClientApplication(msalConfig)
+
+    inst.addEventCallback((message: EventMessage) => {
+      switch (message.eventType) {
+        case EventType.ACCOUNT_ADDED:
+        case EventType.ACCOUNT_REMOVED:
+        case EventType.LOGIN_SUCCESS:
+        case EventType.SSO_SILENT_SUCCESS:
+        case EventType.HANDLE_REDIRECT_END:
+        case EventType.LOGIN_FAILURE:
+        case EventType.SSO_SILENT_FAILURE:
+        case EventType.LOGOUT_END:
+        case EventType.ACQUIRE_TOKEN_SUCCESS:
+        case EventType.ACQUIRE_TOKEN_FAILURE:
+          accounts.value = inst.getAllAccounts()
+          break
+      }
+
+      const status = EventMessageUtils.getInteractionStatusFromEvent(message, interactionStatus.value)
+      if (status !== null) {
+        interactionStatus.value = status
+      }
+    })
+
+    try {
+      console.log('initializing MSAL client')
+      await inst.initialize()
+      instance.value = inst
+    } catch (error) {
+      console.log('failed to init instance', error)
+      return
+    }
+
+    // See https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-browser/docs/initialization.md#handling-app-launch-with-0-or-more-available-accounts
+    const accts = instance.value.getAllAccounts()
+    if (accts.length === 0) {
+      try {
+        const authRes = await instance.value.ssoSilent({})
+        await handleResponse(authRes)
+        isAuthenticated.value = true
+      } catch (error) {
+        console.log('failed to init SSO silently', error)
+      }
+    } else if (accts.length === 1) {
+      try {
+        const authRes = await instance.value.acquireTokenSilent({
+          scopes,
+          account: accts[0],
+        })
+        await handleResponse(authRes)
+        isAuthenticated.value = true
+      } catch (error) {
+        console.log('failed to acquire token silently', error)
+      }
+    } else {
+      // When we handle this, use instance.setActiveAccount
+      console.log('multiple accounts found, user needs to select one')
+    }
+  }
+
+  const resolvers = useState<Array<() => void>>('useMSAL.resolvers', () => [])
+  const loadMSAL = (): Promise<void> => {
+    // We're already initialized
+    if (instance.value) {
+      return Promise.resolve()
+    }
+
+    // We're already initializing MSAL, wait with everyone else
+    if (resolvers.value.length > 0) {
+      return new Promise<void>((resolve) => {
+        resolvers.value.push(resolve)
+      })
+    }
+
+    // We're the first to request initializing MSAL, kick of the request and hop in line at the front of the queue.
+    return new Promise<void>((resolve, reject) => {
+      resolvers.value.push(resolve)
+      initializeAndAttemptLogin()
+        .then(() => {
+          // Let everyone else know we've loaded the user and clear the queue.
+          resolvers.value.forEach((fn) => { fn() })
+          resolvers.value = []
+        })
+        .catch(reject)
+    })
+  }
+
+  await loadMSAL()
+
+  const account = computed(() => {
+    if (!accounts.value) {
+      return undefined
+    }
+    if (accounts.value.length < 1) {
+      return undefined
+    }
+    if (accounts.value.length === 1) {
+      return accounts.value[0]
+    }
+    /**
+       * Due to the way MSAL caches account objects, the auth response from initiating a user-flow
+       * is cached as a new account, which results in more than one account in the cache. Here we make
+       * sure we are selecting the account with homeAccountId that contains the sign-up/sign-in user-flow,
+       * as this is the default flow the user initially signed-in with.
+       */
+    const filteredAccounts = accounts.value.filter((account) => {
+      return account.idTokenClaims && account.idTokenClaims.iss && account.idTokenClaims.aud &&
+          account.homeAccountId.toUpperCase().includes(b2cPolicies.names.signUpSignIn.toUpperCase()) &&
+          account.idTokenClaims.iss.toUpperCase().includes(b2cPolicies.authorityDomain.toUpperCase()) &&
+          account.idTokenClaims.aud === msalConfig.auth.clientId
+    })
+
+    if (filteredAccounts.length === 0) {
+      console.log('no accounts left after filtering', accounts.value, filteredAccounts, b2cPolicies)
+      return undefined
+    }
+
+    if (filteredAccounts.length === 1) {
+      return filteredAccounts[0]
+    }
+
+    // localAccountId identifies the entity for which the token asserts information.
+    if (filteredAccounts.every((account) => account.localAccountId === filteredAccounts[0].localAccountId)) {
+      // All filteredAccounts belong to the same user
+      return filteredAccounts[0]
+    }
+
+    // Multiple users detected. Currently, we just return the first, but we should handle this more explicitly elsewhere.
+    console.log('multiple users detected', filteredAccounts)
+    return filteredAccounts[0]
+  })
+
+  const signIn = () => {
+    if (!instance.value) {
+      return Promise.reject(new Error('MSAL instance was not yet initialized'))
+    }
+
+    const req = { scopes }
+    return instance.value.loginPopup(req)
+      .then(handleResponse)
+      .catch((err) => {
+        console.log('useMSAL.loginPopup', err)
+      })
+  }
+
+  const getToken = () => {
+    if (!instance.value) {
+      return Promise.reject(new Error('MSAL instance was not yet initialized'))
+    }
+    const inst = instance.value
+
     if (account.value === undefined) {
       // TODO: Figure out if this is a legitimate usecase.
-      throw new Error('tried to get a token, but no account was found')
+      return Promise.reject(new Error('tried to get a token, but no account was found'))
     }
 
     const request: SilentRequest = {
-      scopes: [],
+      scopes,
       forceRefresh: false, // Set this to "true" to skip a cached token and go to the server to get a new token
-      account: instance.getAccountByHomeId(account.value.homeAccountId) ?? undefined,
+      account: inst.getAccount({ homeAccountId: account.value.homeAccountId }) ?? undefined,
     }
 
-    try {
-      return await getToken()
-    } catch (error) {
-      console.log('Silent token acquisition failed. Acquiring token using popup. \n', error)
-      if (!(error instanceof InteractionRequiredAuthError)) {
-        throw new Error('unexpected error while getting token', { cause: error })
-      }
-      // Fallback to interaction when silent call fails
-      try {
-        const response = await instance.acquireTokenPopup(request)
-        console.log('acquireTokenPopup', response)
+    return inst.acquireTokenSilent(request)
+      .then((response) => {
+        // In case the response from B2C server has an empty idToken field
+        // throw an error to initiate token acquisition
+        if (response.idToken === '') {
+          throw new InteractionRequiredAuthError()
+        }
         return response
-      } catch (error) {
-        throw new Error('catch.acquireTokenPopup', { cause: error })
-      }
-    }
+      })
+      .then(handleResponse)
   }
 
-  const createAPIKey = async (): Promise<APIKey> => {
-    const response = await getTokenPopup()
-    const userClient = userClientWithCustomToken(response.idToken)
-    const apiResp = await userClient.createApiKey()
-    if ('message' in apiResp) {
-      throw new Error(`error creating a new API key ${apiResp.message}`)
-    }
-    return apiResp
+  const createAPIKey = (): Promise<APIKey> => {
+    return getToken()
+      .then((response) => {
+        const userClient = userClientWithAuth(response.idToken)
+        return userClient.createApiKey()
+      })
+      .then((resp) => {
+        if ('message' in resp) {
+          throw new Error(`error creating a new API key ${resp.message}`)
+        }
+        return resp
+      })
   }
 
-  const signOut = async (): Promise<void> => {
+  const signOut = (): Promise<void> => {
+    if (!instance.value) {
+      return Promise.reject(new Error('MSAL instance was not yet initialized'))
+    }
+
     const logoutRequest = {
       postLogoutRedirectUri: msalConfig.auth.redirectUri,
       mainWindowRedirectUri: msalConfig.auth.logoutUri,
     }
-    const userClient = userClientWithCustomToken('') // Logging out doesn't require auth.
-    try {
-      await Promise.all([
-        userClient.logout(),
-        instance.logoutPopup(logoutRequest),
-      ])
-    } catch (e) {
-      console.log('failed to log out', e)
-    }
-    isAuthenticated.value = false
-    await router.push('/')
+    const userClient = userClientWithAuth('') // Logging out doesn't require auth.
+    return Promise.all([
+      userClient.logout(),
+      instance.value.logoutPopup(logoutRequest),
+    ])
+      .catch((e) => { console.log('failed to log out', e) })
+      .then(() => { /* cast to void */ })
+      .finally(() => {
+        isAuthenticated.value = false
+        void router.push('/')
+      })
   }
-
-  // Initialize the MSAL client if we're in the browser.
-  if (process.client && !clientInitialized.value) {
-    clientInitialized.value = true
-    try {
-      await instance.initialize()
-      if (accounts.value.length === 0) {
-        try {
-          await instance.ssoSilent({})
-        } catch (e) {
-          console.log('failed to init SSO silently', e)
-        }
-      }
-      const response = await instance.handleRedirectPromise()
-      if (response !== null) {
-        const claims = response.idTokenClaims
-        if (!('tfp' in claims) || typeof claims.tfp !== 'string') {
-          throw new Error('failed to find \'tfp\' claim')
-        }
-        const tfp = claims.tfp
-        /**
-             * For the purpose of setting an active account for UI update, we want to consider only the auth response resulting
-             * from SUSI flow. "tfp" claim in the id token tells us the policy (NOTE: legacy policies may use "acr" instead of "tfp").
-             * To learn more about B2C tokens, visit https://docs.microsoft.com/en-us/azure/active-directory-b2c/tokens-overview
-             */
-        if (tfp.toUpperCase() !== b2cPolicies.names.signUpSignIn.toUpperCase()) {
-          throw new Error(`unexpected 'tfp' claim '${tfp.toUpperCase()}' does not match '${b2cPolicies.names.signUpSignIn.toUpperCase()}'`)
-        }
-        await handleResponse(response)
-      } else {
-        console.log('not coming from a redirect')
-      }
-    } catch (e) {
-      console.log(e)
-    }
-  }
-
-  await selectAccount()
 
   return {
     signIn,
     signOut,
     createAPIKey,
+    getToken,
     isAuthenticated: computed(() => isAuthenticated.value),
   }
 }

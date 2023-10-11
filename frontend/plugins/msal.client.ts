@@ -1,6 +1,4 @@
-import { type EventMessage, EventMessageUtils, EventType, InteractionStatus, PublicClientApplication, type AccountInfo, LogLevel } from '@azure/msal-browser'
-
-type AccountIdentifiers = Partial<Pick<AccountInfo, 'homeAccountId' | 'localAccountId' | 'username'>>
+import { BrowserCacheLocation, LogLevel } from '@azure/msal-browser'
 
 export default defineNuxtPlugin((_nuxtApp) => {
   const {
@@ -12,10 +10,10 @@ export default defineNuxtPlugin((_nuxtApp) => {
         clientID,
         redirectURI,
         logoutURI,
+        minLogLevel,
       },
     },
   } = useRuntimeConfig()
-
   const b2cPolicies = {
     names: {
       signUpSignIn: userFlowName,
@@ -36,8 +34,9 @@ export default defineNuxtPlugin((_nuxtApp) => {
       logoutUri: logoutURI,
     },
     cache: {
-      cacheLocation: 'localStorage',
-      storeAuthStateInCookie: true,
+      cacheLocation: BrowserCacheLocation.LocalStorage,
+      claimsBasedCachingEnabled: true,
+      storeAuthStateInCookie: false,
     },
     system: {
       loggerOptions: {
@@ -57,63 +56,20 @@ export default defineNuxtPlugin((_nuxtApp) => {
               return
             case LogLevel.Warning:
               console.warn(message)
+              return
+            case LogLevel.Trace:
+              console.trace(message)
+              return
           }
         },
-        logLevel: LogLevel.Verbose,
+        logLevel: toLogLevel(minLogLevel),
       },
     },
   }
-  const msalInstance = new PublicClientApplication(msalConfig)
-
-  const inProgress = InteractionStatus.Startup
-  const accounts = msalInstance.getAllAccounts()
-
-  const stateInProgress = useState<InteractionStatus>('msal.inProgress', () => inProgress)
-  const stateAccounts = useState('msal.accounts', () => accounts)
-
-  msalInstance.addEventCallback((message: EventMessage) => {
-    const maybeUpdateAccounts = (): void => {
-      const currentAccounts = msalInstance.getAllAccounts()
-      if (!accountArraysAreEqual(currentAccounts, stateAccounts.value)) {
-        stateAccounts.value = currentAccounts
-      }
-    }
-    switch (message.eventType) {
-      case EventType.ACCOUNT_ADDED:
-        // fallthrough
-      case EventType.ACCOUNT_REMOVED:
-        // fallthrough
-      case EventType.LOGIN_SUCCESS:
-        // fallthrough
-      case EventType.SSO_SILENT_SUCCESS:
-        // fallthrough
-      case EventType.HANDLE_REDIRECT_END:
-        // fallthrough
-      case EventType.LOGIN_FAILURE:
-        // fallthrough
-      case EventType.SSO_SILENT_FAILURE:
-        // fallthrough
-      case EventType.LOGOUT_END:
-        // fallthrough
-      case EventType.ACQUIRE_TOKEN_SUCCESS:
-        // fallthrough
-      case EventType.ACQUIRE_TOKEN_FAILURE:
-        maybeUpdateAccounts()
-        break
-    }
-
-    const status = EventMessageUtils.getInteractionStatusFromEvent(message, stateInProgress.value)
-    if (status !== null) {
-      stateInProgress.value = status
-    }
-  })
 
   return {
     provide: {
       msal: {
-        inProgress: stateInProgress,
-        instance: msalInstance,
-        accounts: stateAccounts,
         b2cPolicies,
         msalConfig,
       },
@@ -121,27 +77,19 @@ export default defineNuxtPlugin((_nuxtApp) => {
   }
 })
 
-/**
- * Helper function to determine whether 2 arrays are equal
- * Used to avoid unnecessary state updates
- * @param arrayA
- * @param arrayB
- */
-function accountArraysAreEqual (arrayA: AccountIdentifiers[], arrayB: AccountIdentifiers[]): boolean {
-  if (arrayA.length !== arrayB.length) {
-    return false
+function toLogLevel (lvl: string): LogLevel {
+  switch (lvl) {
+    case 'ERROR':
+      return LogLevel.Error
+    case 'WARNING':
+      return LogLevel.Warning
+    case 'INFO':
+      return LogLevel.Info
+    case 'VERBOSE':
+      return LogLevel.Verbose
+    case 'TRACE':
+      return LogLevel.Trace
+    default:
+      return LogLevel.Verbose
   }
-
-  const comparisonArray = [...arrayB]
-
-  return arrayA.every((elementA) => {
-    const elementB = comparisonArray.shift()
-    if (elementA === undefined || elementB === undefined) {
-      return false
-    }
-
-    return (elementA.homeAccountId === elementB.homeAccountId) &&
-               (elementA.localAccountId === elementB.localAccountId) &&
-               (elementA.username === elementB.username)
-  })
 }
