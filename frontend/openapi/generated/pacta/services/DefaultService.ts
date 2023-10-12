@@ -148,13 +148,13 @@ export class DefaultService {
      * Updates an initiative
      * Updates an initiative's settable properties
      * @param id ID of the initiative to update
-     * @param body initiative object properties to update
+     * @param requestBody initiative object properties to update
      * @returns void
      * @throws ApiError
      */
     public updateInitiative(
         id: string,
-        body: InitiativeChanges,
+        requestBody: InitiativeChanges,
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'PATCH',
@@ -162,9 +162,8 @@ export class DefaultService {
             path: {
                 'id': id,
             },
-            query: {
-                'body': body,
-            },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 

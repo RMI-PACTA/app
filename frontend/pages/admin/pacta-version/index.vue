@@ -4,11 +4,10 @@ const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 
 const prefix = 'admin/pacta-version'
-const { data: pactaVersions, refresh } = await useAsyncData(`${prefix}.getPactaVersions`, () => {
-  return withLoading(() => {
-    return pactaClient.listPactaVersions()
-  }, `${prefix}.getPactaVersions`)
-})
+const { data: pactaVersions, refresh } = await useSimpleAsyncData(
+  `${prefix}.getPactaVersions`,
+  () => pactaClient.listPactaVersions(),
+)
 
 const newPV = () => router.push('/admin/pacta-version/new')
 const markDefault = (id: string) => withLoading(

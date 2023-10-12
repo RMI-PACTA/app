@@ -32,7 +32,7 @@ func (s *Server) UpdateInitiative(ctx context.Context, request api.UpdateInitiat
 	// TODO(#12) Implement Authorization
 	id := pacta.InitiativeID(request.Id)
 	mutations := []db.UpdateInitiativeFn{}
-	b := request.Params.Body
+	b := request.Body
 	if b.Affiliation != nil {
 		mutations = append(mutations, db.SetInitiativeAffiliation(*b.Affiliation))
 	}

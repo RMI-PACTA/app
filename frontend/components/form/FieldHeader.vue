@@ -21,7 +21,7 @@ const helpTextTextClass = computed(() => helpTextExpanded.value ? 'mb-2' : 'h-0'
 </script>
 
 <template>
-  <div class="flex flex-column">
+  <div class="flex flex-column mb-1">
     <div class="flex align-items-center mb-1 gap-2">
       <label
         class="inline-block text-lg ml-1"

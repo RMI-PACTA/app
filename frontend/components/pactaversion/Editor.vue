@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { type PactaVersion } from '@/openapi/generated/pacta'
+import { type EditorPactaVersion, isComplete } from '@/lib/editor'
 
 const props = defineProps<{
-  pactaVersion: PactaVersion
+  editorPactaVersion: EditorPactaVersion
 }>()
-
-const emit = defineEmits<(e: 'update:pactaVersion', pactaVersion: PactaVersion) => void>()
-
-const model = computed({
-  get: () => props.pactaVersion,
-  set: (pactaVersion: PactaVersion) => { emit('update:pactaVersion', pactaVersion) },
+const emit = defineEmits<(e: 'update:editorPactaVersion', epv: EditorPactaVersion) => void>()
+const epv = computed({
+  get: () => props.editorPactaVersion,
+  set: (epv) => { emit('update:editorPactaVersion', epv) },
 })
 </script>
 
@@ -18,30 +16,32 @@ const model = computed({
     <FormField
       label="Version Name"
       help-text="The name of the version of the PACTA algorithm."
-      required
-      :completed="model.name.length > 0"
+      :required="epv.name.isRequired"
+      :completed="isComplete(epv.name)"
     >
       <PVInputText
-        v-model="model.name"
+        v-model="epv.name.currentValue"
       />
     </FormField>
     <FormField
       label="Version Description"
       help-text="An optional description of this version of the PACTA algorithm."
+      :required="epv.description.isRequired"
+      :completed="isComplete(epv.description)"
     >
       <PVTextarea
-        v-model="model.description"
+        v-model="epv.description.currentValue"
         auto-resize
       />
     </FormField>
     <FormField
       label="Docker Image Digest"
       help-text="The SHA hash of the docker image that should correspond to this version of the PACTA version."
-      required
-      :completed="model.digest.length > 0"
+      :required="epv.digest.isRequired"
+      :completed="isComplete(epv.digest)"
     >
       <PVInputText
-        v-model="model.digest"
+        v-model="epv.digest.currentValue"
       />
     </FormField>
   </div>

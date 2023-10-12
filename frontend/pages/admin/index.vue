@@ -13,6 +13,12 @@ const adminItems: AdminItem[] = [
     desc: 'Create, update + manage versions of the PACTA algorithm + docker image',
     href: '/admin/pacta-version',
   },
+  {
+    title: 'Initiatives',
+    icon: 'pi pi-map',
+    desc: 'Create, update + manage Initiatives',
+    href: '/admin/initiative',
+  },
 ]
 </script>
 

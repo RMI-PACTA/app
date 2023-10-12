@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type PactaVersion, type PactaVersionChanges } from '@/openapi/generated/pacta'
+import { pactaVersionEditor } from '@/lib/editor'
 
 const router = useRouter()
 const pactaClient = await usePACTA()
@@ -9,33 +9,31 @@ const { fromParams } = useURLParams()
 const id = presentOrCheckURL(fromParams('id'))
 
 const prefix = `admin/pacta-version/${id}`
-const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`)
-const { data: persistedPactaVersion, error, refresh } = await useAsyncData(`${prefix}.getPactaVersion`, () => {
-  return withLoading(() => {
-    return pactaClient.findPactaVersionById(id)
-  }, `${prefix}.getPactaVersion`)
-})
-if (error.value) {
-  throw createError(error.value)
-}
+const { data, refresh } = await useSimpleAsyncData(
+  `${prefix}.getPactaVersion`,
+  () => pactaClient.findPactaVersionById(id),
+)
 
-pactaVersion.value = { ...presentOrCheckURL(persistedPactaVersion.value, 'no PACTA version in response') }
+const {
+  setPactaVersion,
+  incompleteFields,
+  changes,
+  hasChanges,
+  isIncomplete,
+  editorPactaVersion,
+} = pactaVersionEditor(presentOrCheckURL(data.value, 'no PACTA version in response'))
+const isDefault = computed(() => editorPactaVersion.value.isDefault.currentValue)
+
 const refreshPACTA = async () => {
   await refresh()
-  pactaVersion.value = { ...presentOrCheckURL(persistedPactaVersion.value, 'no PACTA version in response after refresh') }
+  setPactaVersion(presentOrCheckURL(data.value, 'no PACTA version in response after refresh'))
 }
-
-const changes = computed<PactaVersionChanges>(() => {
-  const a = persistedPactaVersion.value
-  const b = pactaVersion.value
-  if (!a || !b) { return {} }
-  return {
-    ...(a.name !== b.name ? { name: b.name } : {}),
-    ...(a.description !== b.description ? { description: b.description } : {}),
-    ...(a.digest !== b.digest ? { digest: b.digest } : {}),
-  }
+const saveTooltip = computed<string | undefined>(() => {
+  if (isIncomplete.value) { return `Cannot save with incomplete fields: ${incompleteFields.value.join(', ')}` }
+  if (!hasChanges.value) { return 'All changes saved' }
+  return undefined
 })
-const hasChanges = computed<boolean>(() => Object.keys(changes.value).length > 0)
+const saveDisabled = computed<boolean>(() => saveTooltip.value !== undefined)
 
 const markDefault = () => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
@@ -56,18 +54,18 @@ const saveChanges = () => withLoading(
 </script>
 
 <template>
-  <StandardContent v-if="pactaVersion">
-    <TitleBar :title="`Editing PACTA Version: ${pactaVersion.name}`" />
+  <StandardContent v-if="editorPactaVersion">
+    <TitleBar :title="`Editing PACTA Version: ${editorPactaVersion.name.currentValue}`" />
     <div class="flex gap-3">
       <PVButton
-        :disabled="pactaVersion.isDefault"
+        :disabled="isDefault"
         class="p-button-success"
-        :label="pactaVersion.isDefault ? 'Default Version' : 'Make Default Version'"
-        :icon="pactaVersion.isDefault ? 'pi pi-check-circle' : 'pi pi-circle'"
+        :label="isDefault ? 'Default Version' : 'Make Default Version'"
+        :icon="isDefault ? 'pi pi-check-circle' : 'pi pi-circle'"
         @click="markDefault"
       />
       <PVButton
-        :disabled="pactaVersion.isDefault"
+        :disabled="isDefault"
         icon="pi pi-trash"
         class="p-button-danger"
         label="Delete"
@@ -75,29 +73,27 @@ const saveChanges = () => withLoading(
       />
     </div>
     <PactaversionEditor
-      v-model:pactaVersion="pactaVersion"
+      v-model:editorPactaVersion="editorPactaVersion"
     />
-    <div class="flex gap-3">
+    <div class="flex gap-3 align-items-center">
       <LinkButton
         label="Discard Changes"
         icon="pi pi-arrow-left"
         class="p-button-secondary p-button-outlined"
         to="/admin/pacta-version"
       />
-      <PVButton
-        :disabled="!hasChanges"
-        label="Save Changes"
-        icon="pi pi-arrow-right"
-        icon-pos="right"
-        @click="saveChanges"
-      />
+      <div v-tooltip.bottom="saveTooltip">
+        <PVButton
+          :disabled="saveDisabled"
+          label="Save Changes"
+          icon="pi pi-arrow-right"
+          icon-pos="right"
+          @click="saveChanges"
+        />
+      </div>
     </div>
     <StandardDebug
-      :value="persistedPactaVersion"
-      label="Persisted PACTA Version"
-    />
-    <StandardDebug
-      :value="pactaVersion"
+      :value="editorPactaVersion"
       label="PACTA Version"
     />
     <StandardDebug

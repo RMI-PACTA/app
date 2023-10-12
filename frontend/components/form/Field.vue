@@ -17,13 +17,18 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   loading: false,
   completed: false,
-  requiredLabel: 'Required',
+  requiredLabel: 'Needs Attention',
   loadingLabel: 'Loading...',
   completedLabel: '',
 })
 const slots = useSlots()
 
 const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'] !== undefined)
+const invalidFieldName = computed(() => {
+  if (props.required && !props.completed) { return props.requiredLabel }
+  return undefined
+})
+defineExpose({ invalidFieldName })
 </script>
 
 <template>

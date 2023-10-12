@@ -1,19 +1,32 @@
 <script setup lang="ts">
-import { type PactaVersion } from '@/openapi/generated/pacta'
+import { pactaVersionEditor } from '@/lib/editor'
 
+const prefix = 'admin/pacta-version/new'
 const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 
-const prefix = 'admin/pacta-version/new'
-const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`, () => ({
+const {
+  incompleteFields,
+  hasChanges,
+  isIncomplete,
+  editorPactaVersion,
+  pactaVersion,
+} = pactaVersionEditor({
   id: '',
   name: '',
   description: '',
   digest: '',
   createdAt: '',
   isDefault: false,
-}))
+})
+
+const saveTooltip = computed<string | undefined>(() => {
+  if (!hasChanges.value) { return 'All changes saved' }
+  if (isIncomplete.value) { return `Cannot save with incomplete fields: ${incompleteFields.value.join(', ')}` }
+  return undefined
+})
+const saveDisabled = computed<boolean>(() => saveTooltip.value !== undefined)
 
 const discard = () => router.push('/admin/pacta-version')
 const save = () => withLoading(
@@ -29,7 +42,7 @@ const save = () => withLoading(
       Pacta version info goes here
     </p>
     <PactaversionEditor
-      v-model:pactaVersion="pactaVersion"
+      v-model:editorPactaVersion="editorPactaVersion"
     />
     <div class="flex gap-3">
       <PVButton
@@ -39,6 +52,7 @@ const save = () => withLoading(
         @click="discard"
       />
       <PVButton
+        :disabled="saveDisabled"
         label="Save"
         icon="pi pi-arrow-right"
         icon-pos="right"
@@ -47,7 +61,7 @@ const save = () => withLoading(
     </div>
     <StandardDebug
       label="PACTA Version"
-      :value="pactaVersion"
+      :value="editorPactaVersion"
     />
   </StandardContent>
 </template>
