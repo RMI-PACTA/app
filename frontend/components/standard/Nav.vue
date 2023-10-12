@@ -60,7 +60,7 @@ const menuItems = computed(() => {
         background="white"
         layout="horizontal"
         class="h-3rem pb-2"
-        @click="() => router.push('/')"
+        @click="() => router.push(localePath('/'))"
       />
       <PVButton
         :icon="menuHidden ? 'pi pi-bars' : 'pi pi-times'"

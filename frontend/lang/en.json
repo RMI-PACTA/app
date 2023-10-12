@@ -10,8 +10,8 @@
     "ModalError": {
         "Heading": "An error occurred",
         "Subheading": "Sorry about that, our team take bug reports seriously, and will try to make it right!",
-        "Error Details": "Error Details", 
-        "Common Steps": "",
+        "Error Details": "Error Details",
+        "Common Steps": "Some common troubleshooting steps that might be helpful:",
         "Refresh": "Refresh this page",
         "Refresh Explanation": "most of our pages save your progress as you go, so it's almost always fine to reload the page.",
         "Connection": "Check your internet connection",

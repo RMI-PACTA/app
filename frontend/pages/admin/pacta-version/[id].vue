@@ -5,6 +5,7 @@ const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
+const localePath = useLocalePath()
 
 const id = presentOrCheckURL(fromParams('id'))
 
@@ -35,13 +36,13 @@ const markDefault = () => withLoading(
 )
 const deletePV = () => withLoading(
   () => pactaClient.deletePactaVersion(id)
-    .then(() => router.push('/admin/pacta-version')),
+    .then(() => router.push(localePath('/admin/pacta-version'))),
   `${prefix}.deletePactaVersion`,
 )
 const saveChanges = () => withLoading(
   () => pactaClient.updatePactaVersion(id, changes.value)
     .then(refreshPACTA)
-    .then(() => router.push('/admin/pacta-version')),
+    .then(() => router.push(localePath('/admin/pacta-version'))),
   `${prefix}.saveChanges`,
 )
 </script>
@@ -73,7 +74,7 @@ const saveChanges = () => withLoading(
         label="Discard Changes"
         icon="pi pi-arrow-left"
         class="p-button-secondary p-button-outlined"
-        to="/admin/pacta-version"
+        :to="localePath('/admin/pacta-version')"
       />
       <div v-tooltip.bottom="saveTooltip">
         <PVButton

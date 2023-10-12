@@ -4,8 +4,10 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
   ],
   build: {
-    // https://primevue.org/installation/#nuxtintegration
-    transpile: ['primevue', 'vue-i18n'],
+    transpile: [
+      'primevue', // https://primevue.org/installation/#nuxtintegration
+      'vue-i18n',
+    ],
   },
   css: [
     '@/assets/css/overrides.css',
@@ -45,9 +47,8 @@ export default defineNuxtConfig({
     dirs: ['globalimports'],
   },
   i18n: {
-    // TODO(grady) Set a Base URL once we have it for SEO https://i18n.nuxtjs.org/guide/seo#:~:text=You%20must%20also%20set%20the%20baseUrl%20option%20to%20your%20production%20domain%20in%20order%20to%20make%20alternate%20URLs%20fully%2Dqualified%3A
-    // baseUrl: 'https://my-nuxt-app.com'
-    strategy: 'prefix_and_default',
+    baseUrl: process.env.BASE_URL,
+    strategy: process.env.I18N_STRATEGY, // When we have a prod env, this should be 'prefix_except_default'
     vueI18n: './i18n.config.ts',
     locales: [
       { code: 'en', iso: 'en-US', file: { path: 'en.json', cache: false }, flag: '🇬🇧', name: 'English' },

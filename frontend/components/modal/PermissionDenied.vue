@@ -2,6 +2,7 @@
 const { permissionDenied: { permissionDeniedVisible, permissionDeniedError } } = useModal()
 const router = useRouter()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const prefix = 'ModalPermissionDenied'
 const tt = (s: string) => t(`${prefix}.${s}`)
@@ -13,7 +14,7 @@ const navigateBack = () => {
     return
   }
   // Otherwise, just take them home.
-  return router.push('/')
+  return router.push(localePath('/'))
 }
 </script>
 

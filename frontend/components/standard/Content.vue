@@ -37,7 +37,10 @@
     margin: 0.5rem 0;
   }
 
-  min-height: calc(100vh - 10.5rem - 4px);
   justify-content: center;
+}
+
+.full-height-minus-header-footer {
+  min-height: calc(100vh - 10.5rem - 4px);
 }
 </style>
