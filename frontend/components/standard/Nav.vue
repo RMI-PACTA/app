@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { type MenuItem } from 'primevue/menuitem'
 
+const { t } = useI18n()
+const localePath = useLocalePath()
 const { showStandardDebug } = useLocalStorage()
 const { isAuthenticated, signIn, signOut } = await useMSAL()
 const router = useRouter()
 
 const prefix = 'StandardNav'
+const tt = (s: string) => t(`${prefix}.${s}`)
 const menuHidden = useState<boolean>(`${prefix}.menuHidden`, () => false)
 
 const menuStyles = computed(() => {
@@ -21,28 +24,28 @@ const menuStyles = computed(() => {
 const menuItems = computed(() => {
   const result: MenuItem[] = [
     {
-      to: '/',
-      label: 'Home',
+      to: localePath('/'),
+      label: tt('Home'),
     },
     {
       to: 'https://github.com/RMI-PACTA/app/issues/new',
-      label: 'File a Bug',
+      label: tt('File a Bug'),
     },
   ]
   if (showStandardDebug) {
     result.push({
-      label: 'Admin',
-      to: '/admin',
+      label: tt('Admin'),
+      to: localePath('/admin'),
     })
   }
   if (isAuthenticated.value) {
     result.push({
-      label: 'Sign Out',
+      label: tt('Sign Out'),
       command: () => { void signOut() },
     })
   } else {
     result.push({
-      label: 'Sign In',
+      label: tt('Sign In'),
       command: () => { void signIn() },
     })
   }

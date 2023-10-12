@@ -1,0 +1,22 @@
+{
+    "StandardNav": {
+        "Home": "Home",
+        "File a Bug": "File a Bug",
+        "Admin": "Admin",
+        "Sign Out": "Sign Out",
+        "Sign In": "Sign In"
+    },
+    "LocaleSelector": {
+        "Availabile In": "This site is available in:",
+        "Bottom Right": "You can change the language at any time in the bottom right corner of the page. ↘️"
+    },
+    "StandardDebug": {
+        "Debugging Information": "Debugging Information"
+    },
+    "StandardFooter": {
+        "A project of": "A project of",
+        "Terms of Use": "Terms of Use",
+        "Privacy": "Privacy",
+        "About": "About"
+    }
+}

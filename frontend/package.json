@@ -15,7 +15,9 @@
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "^1.1.4",
+    "@intlify/unplugin-vue-i18n": "^1.4.0",
     "@nuxt/devtools": "latest",
+    "@nuxtjs/i18n": "^8.0.0-rc.5",
     "@types/node": "^18.17.3",
     "@types/uuid": "^9.0.3",
     "@typescript-eslint/eslint-plugin": "^6.4.1",
@@ -42,6 +44,7 @@
     "primeflex": "^3.3.1",
     "primeicons": "^6.0.1",
     "primevue": "^3.32.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "vue-i18n": "^9.5.0"
   }
 }

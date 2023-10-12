@@ -5,3 +5,7 @@
 .text-success {
     color: #4a7747;
 }
+
+div.p-toast {
+    opacity: 1;
+}

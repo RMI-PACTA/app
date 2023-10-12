@@ -1,8 +1,15 @@
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'url'
+import VueI18nVitePlugin from '@intlify/unplugin-vue-i18n/vite'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  modules: [
+    '@nuxtjs/i18n',
+  ],
   build: {
     // https://primevue.org/installation/#nuxtintegration
-    transpile: ['primevue'],
+    transpile: ['primevue', 'vue-i18n'],
   },
   css: [
     '@/assets/css/overrides.css',
@@ -40,5 +47,34 @@ export default defineNuxtConfig({
       },
     ],
     dirs: ['globalimports'],
+  },
+  i18n: {
+    // TODO(grady) Set a Base URL once we have it for SEO https://i18n.nuxtjs.org/guide/seo#:~:text=You%20must%20also%20set%20the%20baseUrl%20option%20to%20your%20production%20domain%20in%20order%20to%20make%20alternate%20URLs%20fully%2Dqualified%3A
+    // baseUrl: 'https://my-nuxt-app.com'
+    strategy: 'prefix_and_default',
+    vueI18n: './i18n.config.ts',
+    locales: [
+      { code: 'en', iso: 'en-US', file: { path: 'en.json', cache: false }, flag: '🇬🇧', name: 'English' },
+      { code: 'fr', iso: 'fr-FR', file: { path: 'fr.json', cache: false }, flag: '🇫🇷', name: 'Français' },
+      { code: 'es', iso: 'es-ES', file: { path: 'es.json', cache: false }, flag: '🇩🇪', name: 'Deutsch' },
+      { code: 'de', iso: 'de-DE', file: { path: 'de.json', cache: false }, flag: '🇪🇸', name: 'Español' },
+    ],
+    lazy: true,
+    langDir: 'lang',
+    defaultLocale: 'en',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_redirected',
+      redirectOn: 'root',
+    },
+  },
+  vite: {
+    plugins: [
+      VueI18nVitePlugin({
+        include: [
+          resolve(dirname(fileURLToPath(import.meta.url)), './locales/*.json'),
+        ],
+      }),
+    ],
   },
 })

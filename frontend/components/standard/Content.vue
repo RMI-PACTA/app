@@ -37,7 +37,7 @@
     margin: 0.5rem 0;
   }
 
-  min-height: calc(100vh - 9.25rem - 4px);
+  min-height: calc(100vh - 10.5rem - 4px);
   justify-content: center;
 }
 </style>
