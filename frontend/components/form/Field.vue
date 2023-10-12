@@ -11,25 +11,25 @@ interface Props {
   label: string
   helpText?: string
   startHelpTextExpanded?: boolean
-  required?: boolean
-  loading?: boolean
-  completed?: boolean
-  requiredLabel?: string | undefined
-  loadingLabel?: string | undefined
-  completedLabel?: string
+  isLoading?: boolean
+  loadingLabel?: string
+  hasValidation?: boolean
+  isValid?: boolean
+  invalidLabel?: string
+  validLabel?: string
 }
 const props = withDefaults(defineProps<Props>(), {
   helpText: '',
   startHelpTextExpanded: true,
-  required: false,
-  loading: false,
-  completed: false,
-  requiredLabel: undefined,
-  loadingLabel: undefined,
-  completedLabel: '',
+  isLoading: false,
+  loadingLabel: 'Loading...',
+  hasValidation: false,
+  isValid: false,
+  invalidLabel: 'Needs Attention',
+  validLabel: '',
 })
 
-const requiredLabel = computed(() => props.loadingLabel ?? tt('Required'))
+const invalidLabel = computed(() => props.invalidLabel ?? tt('Needs Attention'))
 const loadingLabel = computed(() => props.loadingLabel ?? tt('Loading'))
 
 const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'] !== undefined)
@@ -42,12 +42,12 @@ const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'
       :help-text="props.helpText"
       :help-text-exists="helpTextExists"
       :start-help-text-expanded="props.startHelpTextExpanded"
-      :required="props.required"
-      :loading="props.loading"
-      :completed="props.completed"
-      :required-label="requiredLabel"
+      :is-loading="props.isLoading"
       :loading-label="loadingLabel"
-      :completed-label="props.completedLabel"
+      :has-validation="props.hasValidation"
+      :is-valid="props.isValid"
+      :invalid-label="invalidLabel"
+      :valid-label="props.validLabel"
     >
       <template #help-text>
         <slot name="help-text" />
