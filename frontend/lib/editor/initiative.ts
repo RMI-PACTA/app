@@ -84,12 +84,3 @@ export const initiativeEditor = (i: Initiative): EditorComputedValues<Initiative
   return getEditorComputedValues(
     'lib/editor/initiative', i, createEditorInitiative)
 }
-
-interface Example {
-  a: string
-  b: string | undefined
-  c?: string
-  d?: string | undefined
-}
-
-export type ExampleEditor = EditorFieldsFor<Example>
