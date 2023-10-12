@@ -10,6 +10,6 @@ export const useSimpleAsyncData = async <T>(key: string, fn: () => Promise<T>): 
   if (error.value) {
     throw createError(error.value)
   }
-  const data = dataRef as unknown as Ref<T>
+  const data = dataRef as Ref<T>
   return { data, refresh }
 }

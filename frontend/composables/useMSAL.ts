@@ -236,7 +236,7 @@ export const useMSAL = async () => {
     const request: SilentRequest = {
       scopes,
       forceRefresh: false, // Set this to "true" to skip a cached token and go to the server to get a new token
-      account: inst.getAccountByHomeId(account.value.homeAccountId) ?? undefined,
+      account: inst.getAccount({ homeAccountId: account.value.homeAccountId }) ?? undefined,
     }
 
     return inst.acquireTokenSilent(request)

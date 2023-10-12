@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { type EditorInitiative, isComplete } from '@/lib/editor'
+import { type EditorInitiative } from '@/lib/editor'
 
-const props = defineProps<{
+interface Props {
   editorInitiative: EditorInitiative
-}>()
-
-const emit = defineEmits<(e: 'update:editorInitiative', ei: EditorInitiative) => void>()
+}
+interface Emits {
+  (e: 'update:editorInitiative', ei: EditorInitiative): void
+}
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 
 const model = computed({
   get: () => props.editorInitiative,
@@ -15,67 +18,61 @@ const model = computed({
 
 <template>
   <div>
-    <FormField
-      label="Initiative Name"
+    <FormEditorField
       help-text="The name of the PACTA initiative."
-      :required="model.name.isRequired"
-      :completed="isComplete(model.name)"
+      :editor-field="model.name"
     >
       <PVInputText
         v-model="model.name.currentValue"
       />
-    </FormField>
-    <FormField
-      label="Initiative ID"
+    </FormEditorField>
+    <FormEditorField
       help-text="This is the immutable unique identifier for the initiative. It can only contain alphanumeric characters, underscores, and dashes. This value will be shown in URLs, but will typically not be user visible."
-      :required="model.id.isRequired"
-      :completed="isComplete(model.id)"
+      :editor-field="model.id"
     >
       <PVInputText
         v-model="model.id.currentValue"
         :disabled="!!model.id.originalValue"
       />
-    </FormField>
-    <FormField
-      label="Affiliation"
+    </FormEditorField>
+    <FormEditorField
       help-text="An optional description of the organization or entity that is hosting this initiative."
+      :editor-field="model.affiliation"
     >
       <PVInputText
         v-model="model.affiliation.currentValue"
       />
-    </FormField>
-    <FormField
-      label="Public Description"
+    </FormEditorField>
+    <FormEditorField
       help-text="The description of the initiative that will be shown to the public. Newlines will be respected."
-      :required="model.publicDescription.isRequired"
-      :completed="isComplete(model.publicDescription)"
+      :editor-field="model.publicDescription"
     >
       <PVTextarea
         v-model="model.publicDescription.currentValue"
         auto-resize
       />
-    </FormField>
-    <FormField
-      label="Internal Description"
+    </FormEditorField>
+    <FormEditorField
       help-text="The description of the initiative that will be shown to members of the inititiative. Newlines will be respected."
+      :editor-field="model.internalDescription"
     >
       <PVTextarea
         v-model="model.internalDescription.currentValue"
         auto-resize
       />
-    </FormField>
-    <FormField
-      label="Participation Mechanism"
+    </FormEditorField>
+    <FormEditorField
       help-text="When disabled, anyone can join this initiative. When enabled, initiative administrators can mint invitation codes that they can share with folks to allow them to join the project."
+      :editor-field="model.requiresInvitationToJoin"
     >
       <ExplicitInputSwitch
         v-model:value="model.requiresInvitationToJoin.currentValue"
         on-label="Requires Invitation To Join"
         off-label="Anyone Can Join"
       />
-    </FormField>
-    <FormField
-      label="Open To New Members"
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="model.isAcceptingNewMembers"
       help-text="When enabled, new members can join the project through the joining mechanism selected above."
     >
       <ExplicitInputSwitch
@@ -83,9 +80,9 @@ const model = computed({
         on-label="Accepting New Members"
         off-label="Closed To New Members"
       />
-    </FormField>
-    <FormField
-      label="Open To New Portfolios"
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="model.isAcceptingNewPortfolios"
       help-text="When enabled, initiative members can add new portfolios to the initiative."
     >
       <ExplicitInputSwitch
@@ -93,27 +90,22 @@ const model = computed({
         on-label="Accepting New Portfolios"
         off-label="Closed To New Portfolios"
       />
-    </FormField>
-    <FormField
-      ref="fields"
-      label="Language"
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="model.language"
       help-text="What language should reports have when they are generated for this initiative?"
-      :required="model.language.isRequired"
-      :completed="isComplete(model.language)"
     >
       <LanguageSelector
         v-model:value="model.language.currentValue"
       />
-    </FormField>
-    <FormField
-      label="PACTA Version"
+    </FormEditorField>
+    <FormEditorField
       help-text="What version of the PACTA algorithm should this initiative use to generate reports?"
-      :required="model.pactaVersion.isRequired"
-      :completed="isComplete(model.pactaVersion)"
+      :editor-field="model.pactaVersion"
     >
       <PactaversionSelector
         v-model:value="model.pactaVersion.currentValue"
       />
-    </FormField>
+    </FormEditorField>
   </div>
 </template>

@@ -1,36 +1,22 @@
-import { type Initiative, type InitiativeChanges } from '@/openapi/generated/pacta'
-import { type EditorField, asChange, asValue, asIncompleteField, Validation } from './common'
-import { type Ref } from 'vue'
+import { type Initiative } from '@/openapi/generated/pacta'
+import { Validation, type EditorFieldsFor, type EditorComputedValues } from './common'
+import { getEditorComputedValues } from './utils'
 
-export interface EditorInitiative {
-  id: EditorField<Initiative, 'id'>
-  name: EditorField<Initiative, 'name'>
-  affiliation: EditorField<Initiative, 'affiliation'>
-  publicDescription: EditorField<Initiative, 'publicDescription'>
-  internalDescription: EditorField<Initiative, 'internalDescription'>
-  requiresInvitationToJoin: EditorField<Initiative, 'requiresInvitationToJoin'>
-  isAcceptingNewMembers: EditorField<Initiative, 'isAcceptingNewMembers'>
-  isAcceptingNewPortfolios: EditorField<Initiative, 'isAcceptingNewPortfolios'>
-  language: EditorField<Initiative, 'language'>
-  pactaVersion: EditorField<Initiative, 'pactaVersion'>
-  createdAt: EditorField<Initiative, 'createdAt'>
-}
+export type EditorInitiative = EditorFieldsFor<Initiative>
 
 const createEditorInitiative = (initiative: Initiative): EditorInitiative => {
   return {
     id: {
       name: 'id',
       label: 'ID',
-      isRequired: true,
-      validation: Validation.AlphanumericAndDashesAndUnderscores,
+      validation: [Validation.AlphanumericAndDashesAndUnderscores],
       originalValue: initiative.id,
       currentValue: initiative.id,
     },
     name: {
       name: 'name',
       label: 'Name',
-      isRequired: true,
-      validation: Validation.NotEmpty,
+      validation: [Validation.NotEmpty],
       originalValue: initiative.name,
       currentValue: initiative.name,
     },
@@ -43,8 +29,7 @@ const createEditorInitiative = (initiative: Initiative): EditorInitiative => {
     publicDescription: {
       name: 'publicDescription',
       label: 'Public Description',
-      isRequired: true,
-      validation: Validation.NotEmpty,
+      validation: [Validation.NotEmpty],
       originalValue: initiative.publicDescription,
       currentValue: initiative.publicDescription,
     },
@@ -75,16 +60,14 @@ const createEditorInitiative = (initiative: Initiative): EditorInitiative => {
     language: {
       name: 'language',
       label: 'Language',
-      isRequired: true,
-      validation: Validation.NotEmpty,
+      validation: [Validation.NotEmpty],
       originalValue: initiative.language,
       currentValue: initiative.language,
     },
     pactaVersion: {
       name: 'pactaVersion',
       label: 'PACTA Version',
-      isRequired: true,
-      validation: Validation.NotEmpty,
+      validation: [Validation.NotEmpty],
       originalValue: initiative.pactaVersion,
       currentValue: initiative.pactaVersion,
     },
@@ -97,78 +80,16 @@ const createEditorInitiative = (initiative: Initiative): EditorInitiative => {
   }
 }
 
-const computedInitiative = (ref: Ref<EditorInitiative>): ComputedRef<Initiative> => {
-  const v = ref.value
-  return computed(() => ({
-    ...asValue(v.id),
-    ...asValue(v.name),
-    ...asValue(v.affiliation),
-    ...asValue(v.publicDescription),
-    ...asValue(v.internalDescription),
-    ...asValue(v.requiresInvitationToJoin),
-    ...asValue(v.isAcceptingNewMembers),
-    ...asValue(v.isAcceptingNewPortfolios),
-    ...asValue(v.language),
-    ...asValue(v.pactaVersion),
-    ...asValue(v.createdAt),
-  }))
+export const initiativeEditor = (i: Initiative): EditorComputedValues<Initiative> => {
+  return getEditorComputedValues(
+    'lib/editor/initiative', i, createEditorInitiative)
 }
 
-const getComputedInitiativeChanges = (ref: Ref<EditorInitiative>): ComputedRef<InitiativeChanges> => {
-  return computed(() => {
-    const v = ref.value
-    return {
-      ...asChange(v.id),
-      ...asChange(v.name),
-      ...asChange(v.affiliation),
-      ...asChange(v.publicDescription),
-      ...asChange(v.internalDescription),
-      ...asChange(v.requiresInvitationToJoin),
-      ...asChange(v.isAcceptingNewMembers),
-      ...asChange(v.isAcceptingNewPortfolios),
-      ...asChange(v.language),
-      ...asChange(v.pactaVersion),
-      ...asChange(v.createdAt),
-    }
-  })
+interface Example {
+  a: string
+  b: string | undefined
+  c?: string
+  d?: string | undefined
 }
 
-const getComputedIncompleteFields = (ref: Ref<EditorInitiative>): ComputedRef<string[]> => {
-  return computed(() => {
-    const v = ref.value
-    return [
-      ...asIncompleteField(v.id),
-      ...asIncompleteField(v.name),
-      ...asIncompleteField(v.affiliation),
-      ...asIncompleteField(v.publicDescription),
-      ...asIncompleteField(v.internalDescription),
-      ...asIncompleteField(v.requiresInvitationToJoin),
-      ...asIncompleteField(v.isAcceptingNewMembers),
-      ...asIncompleteField(v.isAcceptingNewPortfolios),
-      ...asIncompleteField(v.language),
-      ...asIncompleteField(v.pactaVersion),
-      ...asIncompleteField(v.createdAt),
-    ]
-  })
-}
-
-export const initiativeEditor = (i: Initiative) => {
-  const ei = useState<EditorInitiative>('lib/editor/initiative')
-  ei.value = createEditorInitiative(i)
-  const incompleteFields = getComputedIncompleteFields(ei)
-  const changes = getComputedInitiativeChanges(ei)
-  const initiative = computedInitiative(ei)
-  const setInitiative = (pv: Initiative) => { ei.value = createEditorInitiative(pv) }
-  const hasChanges = computed(() => changes.value && Object.keys(changes.value).length > 0)
-  const isIncomplete = computed(() => incompleteFields.value.length > 0)
-
-  return {
-    editorInitiative: ei,
-    setInitiative,
-    incompleteFields,
-    changes,
-    hasChanges,
-    isIncomplete,
-    initiative,
-  }
-}
+export type ExampleEditor = EditorFieldsFor<Example>

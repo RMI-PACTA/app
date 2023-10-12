@@ -8,11 +8,10 @@ const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 
 const {
-  editorInitiative,
-  incompleteFields,
-  hasChanges,
-  isIncomplete,
-  initiative,
+  editorObject: editorInitiative,
+  currentValue: initiative,
+  saveTooltip,
+  canSave,
 } = initiativeEditor({
   id: '',
   name: '',
@@ -26,13 +25,6 @@ const {
   pactaVersion: undefined,
   createdAt: '',
 })
-const saveTooltip = computed<string | undefined>(() => {
-  if (!hasChanges.value) { return 'All changes saved' }
-  if (isIncomplete.value) { return `Cannot save with incomplete fields: ${incompleteFields.value.join(', ')}` }
-  return undefined
-})
-const saveDisabled = computed<boolean>(() => saveTooltip.value !== undefined)
-
 const discard = () => router.push('/admin/initiative')
 const save = () => withLoading(
   () => pactaClient.createInitiative(initiative.value).then(() => router.push('/admin/initiative')),
@@ -58,7 +50,7 @@ const save = () => withLoading(
       />
       <div v-tooltip.bottom="saveTooltip">
         <PVButton
-          :disabled="saveDisabled"
+          :disabled="!canSave"
           label="Save"
           icon="pi pi-arrow-right"
           icon-pos="right"

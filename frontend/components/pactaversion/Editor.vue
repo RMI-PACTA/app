@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { type EditorPactaVersion, isComplete } from '@/lib/editor'
+import { type EditorPactaVersion } from '@/lib/editor'
 
-const props = defineProps<{
+interface Props {
   editorPactaVersion: EditorPactaVersion
-}>()
-const emit = defineEmits<(e: 'update:editorPactaVersion', epv: EditorPactaVersion) => void>()
+}
+interface Emits {
+  (e: 'update:editorPactaVersion', epv: EditorPactaVersion): void
+}
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 const epv = computed({
   get: () => props.editorPactaVersion,
   set: (epv) => { emit('update:editorPactaVersion', epv) },
@@ -13,36 +17,30 @@ const epv = computed({
 
 <template>
   <div>
-    <FormField
-      label="Version Name"
+    <FormEditorField
+      :editor-field="epv.name"
       help-text="The name of the version of the PACTA algorithm."
-      :required="epv.name.isRequired"
-      :completed="isComplete(epv.name)"
     >
       <PVInputText
         v-model="epv.name.currentValue"
       />
-    </FormField>
-    <FormField
-      label="Version Description"
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="epv.description"
       help-text="An optional description of this version of the PACTA algorithm."
-      :required="epv.description.isRequired"
-      :completed="isComplete(epv.description)"
     >
       <PVTextarea
         v-model="epv.description.currentValue"
         auto-resize
       />
-    </FormField>
-    <FormField
-      label="Docker Image Digest"
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="epv.digest"
       help-text="The SHA hash of the docker image that should correspond to this version of the PACTA version."
-      :required="epv.digest.isRequired"
-      :completed="isComplete(epv.digest)"
     >
       <PVInputText
         v-model="epv.digest.currentValue"
       />
-    </FormField>
+    </FormEditorField>
   </div>
 </template>

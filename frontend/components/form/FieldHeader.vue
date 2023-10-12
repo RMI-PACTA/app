@@ -4,12 +4,12 @@ interface Props {
   helpText: string
   startHelpTextExpanded: boolean
   helpTextExists: boolean
-  required: boolean
-  loading: boolean
-  completed: boolean
-  requiredLabel: string
+  isLoading: boolean
   loadingLabel: string
-  completedLabel: string
+  hasValidation: boolean
+  isValid: boolean
+  validLabel: string
+  invalidLabel: string
 }
 const props = defineProps<Props>()
 const { helpTextExpanded: computedHTE } = useLocalStorage()
@@ -36,25 +36,25 @@ const helpTextTextClass = computed(() => helpTextExpanded.value ? 'mb-2' : 'h-0'
         @click="() => helpTextExpanded = !helpTextExpanded"
       />
       <div
-        v-if="props.required && !props.completed"
+        v-if="props.hasValidation && !props.isValid"
         class="flex align-items-center gap-1 p-error"
       >
         <i
           class="pi pi-circle"
         />
-        <span>{{ props.requiredLabel }}</span>
+        <span>{{ props.invalidLabel }}</span>
       </div>
       <div
-        v-if="props.required && props.completed"
+        v-if="props.hasValidation && props.isValid"
         class=" flex align-items-center gap-1 text-success"
       >
         <i
           class="pi pi-check-circle"
         />
-        <span>{{ props.completedLabel }}</span>
+        <span>{{ props.validLabel }}</span>
       </div>
       <div
-        v-if="props.loading"
+        v-if="props.isLoading"
         class="flex align-items-center gap-1 text-700"
       >
         <i

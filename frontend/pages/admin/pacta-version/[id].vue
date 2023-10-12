@@ -15,12 +15,11 @@ const { data, refresh } = await useSimpleAsyncData(
 )
 
 const {
-  setPactaVersion,
-  incompleteFields,
+  setEditorValue: setPactaVersion,
+  editorObject: editorPactaVersion,
   changes,
-  hasChanges,
-  isIncomplete,
-  editorPactaVersion,
+  saveTooltip,
+  canSave,
 } = pactaVersionEditor(presentOrCheckURL(data.value, 'no PACTA version in response'))
 const isDefault = computed(() => editorPactaVersion.value.isDefault.currentValue)
 
@@ -28,12 +27,6 @@ const refreshPACTA = async () => {
   await refresh()
   setPactaVersion(presentOrCheckURL(data.value, 'no PACTA version in response after refresh'))
 }
-const saveTooltip = computed<string | undefined>(() => {
-  if (isIncomplete.value) { return `Cannot save with incomplete fields: ${incompleteFields.value.join(', ')}` }
-  if (!hasChanges.value) { return 'All changes saved' }
-  return undefined
-})
-const saveDisabled = computed<boolean>(() => saveTooltip.value !== undefined)
 
 const markDefault = () => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
@@ -84,7 +77,7 @@ const saveChanges = () => withLoading(
       />
       <div v-tooltip.bottom="saveTooltip">
         <PVButton
-          :disabled="saveDisabled"
+          :disabled="!canSave"
           label="Save Changes"
           icon="pi pi-arrow-right"
           icon-pos="right"

@@ -19,8 +19,7 @@ onMounted(() => {
   <div class="relative flex flex-column gap-2 align-items-start">
     <PVButton
       icon="pi pi-angle-left"
-      class="p-button-secondary p-button-text md:hidden p-0 text-600 pr-2"
-      style="margin-left: -.25rem"
+      class="p-button-secondary p-button-text md:hidden p-0 text-600 pr-2 -ml-1"
       label="Back"
       @click="back"
     />

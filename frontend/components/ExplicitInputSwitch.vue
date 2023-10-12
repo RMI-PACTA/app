@@ -4,9 +4,11 @@ interface Props {
   offLabel: string
   value: boolean
 }
+interface Emits {
+  (e: 'update:value', value: boolean): void
+}
 const props = defineProps<Props>()
-
-const emit = defineEmits<(e: 'update:value', value: boolean) => void>()
+const emit = defineEmits<Emits>()
 
 const value = computed({
   get: () => props.value,

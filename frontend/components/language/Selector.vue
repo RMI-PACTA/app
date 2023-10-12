@@ -1,30 +1,32 @@
 <script setup lang="ts">
-type GenericLang = 'en' | 'de' | 'fr' | 'es'
-interface Option { label: string, value: GenericLang }
+import { type LanguageCode, LanguageOptions } from '@/lib/language'
 
 interface Props {
-  value: GenericLang
+  value: LanguageCode
+}
+interface Emits {
+  (e: 'update:value', value: LanguageCode): void
 }
 const props = defineProps<Props>()
-const emits = defineEmits<(e: 'update:value', value: GenericLang) => void>()
-const value = computed<GenericLang>({
+const emits = defineEmits<Emits>()
+const value = computed<LanguageCode>({
   get: () => props.value,
-  set: (v: GenericLang) => { emits('update:value', v) },
+  set: (v: LanguageCode) => { emits('update:value', v) },
 })
-
-const options: Option[] = [
-  { value: 'en', label: '🇬🇧 English' },
-  { value: 'fr', label: '🇫🇷 Français' },
-  { value: 'de', label: '🇩🇪 Deutsch' },
-  { value: 'es', label: '🇪🇸 Español' },
-]
 </script>
 
 <template>
   <PVDropdown
     v-model="value"
     option-label="label"
-    option-value="value"
-    :options="options"
-  />
+    option-value="code"
+    :options="LanguageOptions"
+  >
+    <template #value="slotProps">
+      <LanguageRepresentation :code="slotProps.value" />
+    </template>
+    <template #option="slotProps">
+      <LanguageRepresentation :code="slotProps.option.code" />
+    </template>
+  </PVDropdown>
 </template>

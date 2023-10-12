@@ -2,8 +2,11 @@
 interface Props {
   value: string | undefined
 }
+interface Emits {
+  (e: 'update:value', value: string | undefined): void
+}
 const props = defineProps<Props>()
-const emits = defineEmits<(e: 'update:value', value: string | undefined) => void>()
+const emits = defineEmits<Emits>()
 const value = computed({
   get: () => props.value,
   set: (v: string | undefined) => { emits('update:value', v) },

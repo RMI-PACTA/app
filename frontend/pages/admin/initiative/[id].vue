@@ -11,19 +11,11 @@ const id = presentOrCheckURL(fromParams('id'))
 const prefix = `admin/initiative/${id}`
 const { data } = await useSimpleAsyncData(`${prefix}.getInitiative`, () => pactaClient.findInitiativeById(id))
 const {
-  editorInitiative,
-  incompleteFields,
+  editorObject: editorInitiative,
   changes,
-  hasChanges,
-  isIncomplete,
+  saveTooltip,
+  canSave,
 } = initiativeEditor(presentOrCheckURL(data.value, 'no initiative in response'))
-
-const saveTooltip = computed<string | undefined>(() => {
-  if (!hasChanges.value) { return 'All changes saved' }
-  if (isIncomplete.value) { return `Cannot save with incomplete fields: ${incompleteFields.value.join(', ')}` }
-  return undefined
-})
-const saveDisabled = computed<boolean>(() => saveTooltip.value !== undefined)
 
 const deleteInitiative = () => withLoading(
   () => pactaClient.deleteInitiative(id)
@@ -58,7 +50,7 @@ const saveChanges = () => withLoading(
       />
       <div v-tooltip.bottom="saveTooltip">
         <PVButton
-          :disabled="saveDisabled"
+          :disabled="!canSave"
           label="Save Changes"
           icon="pi pi-arrow-right"
           icon-pos="right"
@@ -72,7 +64,7 @@ const saveChanges = () => withLoading(
     />
     <StandardDebug
       :value="changes"
-      label="PV Changes"
+      label="Initiative Changes"
     />
   </StandardContent>
 </template>

@@ -7,11 +7,10 @@ const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 
 const {
-  incompleteFields,
-  hasChanges,
-  isIncomplete,
-  editorPactaVersion,
-  pactaVersion,
+  editorObject: editorPactaVersion,
+  currentValue: pactaVersion,
+  canSave,
+  saveTooltip,
 } = pactaVersionEditor({
   id: '',
   name: '',
@@ -20,14 +19,6 @@ const {
   createdAt: '',
   isDefault: false,
 })
-
-const saveTooltip = computed<string | undefined>(() => {
-  if (!hasChanges.value) { return 'All changes saved' }
-  if (isIncomplete.value) { return `Cannot save with incomplete fields: ${incompleteFields.value.join(', ')}` }
-  return undefined
-})
-const saveDisabled = computed<boolean>(() => saveTooltip.value !== undefined)
-
 const discard = () => router.push('/admin/pacta-version')
 const save = () => withLoading(
   () => pactaClient.createPactaVersion(pactaVersion.value).then(() => router.push('/admin/pacta-version')),
@@ -51,13 +42,15 @@ const save = () => withLoading(
         class="p-button-secondary p-button-outlined"
         @click="discard"
       />
-      <PVButton
-        :disabled="saveDisabled"
-        label="Save"
-        icon="pi pi-arrow-right"
-        icon-pos="right"
-        @click="save"
-      />
+      <div v-tooltip="saveTooltip">
+        <PVButton
+          :disabled="!canSave"
+          label="Save"
+          icon="pi pi-arrow-right"
+          icon-pos="right"
+          @click="save"
+        />
+      </div>
     </div>
     <StandardDebug
       label="PACTA Version"

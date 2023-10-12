@@ -1,9 +1,25 @@
-import { type WritableComputedRef } from 'vue'
+export interface EditorField<R, Name extends keyof R> {
+  name: Name
+  label: string
+  validation?: Validation[]
+  originalValue: R[Name]
+  currentValue: R[Name]
+}
 
-export interface ForUse<T> {
-  isRequired: boolean
-  isCompleted: ComputedRef<boolean>
-  value: WritableComputedRef<T>
+export type EditorFieldsFor<R> = {
+  [K in keyof R]-?: EditorField<R, K>
+}
+
+export const isValid = (editorField: EditorField<any, any>): boolean => {
+  if (!editorField.validation === undefined) {
+    return true
+  }
+  for (const v of (editorField.validation ?? [])) {
+    if (!isValidFor(editorField, v)) {
+      return false
+    }
+  }
+  return true
 }
 
 export enum Validation {
@@ -11,51 +27,25 @@ export enum Validation {
   AlphanumericAndDashesAndUnderscores = 'AlphanumericAndDashesAndUnderscores',
 }
 
-export interface EditorField<R, Name extends keyof R> {
-  name: Name
-  label: string
-  isRequired?: boolean
-  validation?: Validation | undefined
-  originalValue: R[Name]
-  currentValue: R[Name]
-}
-
-export const asChange = <R, N extends keyof R>(field: EditorField<R, N>): Partial<R> => {
-  const result: Partial<R> = {}
-  if (field.originalValue === field.currentValue) {
-    return result
-  }
-  result[field.name] = field.currentValue
-  return result
-}
-
-export const asValue = <R, N extends keyof R>(field: EditorField<R, N>): Pick<R, N> => {
-  return { [field.name]: field.currentValue } as unknown as Pick<R, N>
-}
-
-export const asIncompleteField = <R, N extends keyof R>(field: EditorField<R, N>): string[] => {
-  if (field.isRequired && !isComplete(field)) {
-    return [field.label]
-  }
-  return []
-}
-
-export const asComputed = <R, N extends keyof R>(field: WritableComputedRef<EditorField<R, N>>): WritableComputedRef<R[N]> => {
-  return computed<R[N]>({
-    get: () => field.value.currentValue,
-    set: (v: R[N]) => { field.value.currentValue = v },
-  })
-}
-
 const alphanumericAndDashesAndUnderscores = /^[a-zA-Z0-9-_]+$/
-export const isComplete = (editorField: EditorField<any, any>): boolean => {
-  if (!editorField.isRequired || editorField.validation === undefined) {
-    return true
-  }
-  switch (editorField.validation) {
+const isValidFor = (editorField: EditorField<any, any>, validation: Validation): boolean => {
+  switch (validation) {
+    // TODO(gady PICKUP HERE)
     case Validation.NotEmpty:
       return !!editorField.currentValue
     case Validation.AlphanumericAndDashesAndUnderscores:
       return alphanumericAndDashesAndUnderscores.test(editorField.currentValue)
   }
+}
+
+export interface EditorComputedValues <R> {
+  setEditorValue: (r: R) => void
+  editorObject: Ref<EditorFieldsFor<R>>
+  invalidFields: ComputedRef<string[]>
+  changes: ComputedRef<Partial<R>>
+  currentValue: ComputedRef<R>
+  hasChanges: ComputedRef<boolean>
+  isInvalid: ComputedRef<boolean>
+  saveTooltip: ComputedRef<string | undefined>
+  canSave: ComputedRef<boolean>
 }

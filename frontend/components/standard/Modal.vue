@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { dialogBreakpoints, smallDialogBreakpoints } from '@/lib/breakpoints'
 
-const props = withDefaults(defineProps<{
+interface Props {
   small?: boolean
   visible: boolean
   header: string
   subHeader?: string
-}>(), {
+}
+interface Emits {
+  (e: 'update:visible', value: boolean): void
+  (e: 'closed'): void
+}
+const props = withDefaults(defineProps<Props>(), {
   small: false,
   subHeader: '',
 })
-
-const emit = defineEmits<{
-  (e: 'update:visible', value: boolean): void
-  (e: 'closed'): void
-}>()
+const emit = defineEmits<Emits>()
 
 const visible = computed<boolean>({
   get: () => props.visible,
