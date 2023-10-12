@@ -1,6 +1,10 @@
 <script setup lang="ts">
 const { permissionDenied: { permissionDeniedVisible, permissionDeniedError } } = useModal()
 const router = useRouter()
+const { t } = useI18n()
+
+const prefix = 'ModalPermissionDenied'
+const tt = (s: string) => t(`${prefix}.${s}`)
 
 const navigateBack = () => {
   // If the user didn't land here directly, go back to the previous page.
@@ -16,21 +20,19 @@ const navigateBack = () => {
 <template>
   <StandardModal
     v-model:visible="permissionDeniedVisible"
-    header="Permission Denied"
-    sub-header="You aren't authorized to view this page"
+    :header="tt('Heading')"
+    :sub-header="tt('Subheading')"
     @closed="navigateBack"
   >
     <p>
-      It is likely that you have gotten here either by entering in an invalid
-      URL, or by clicking on a link or button that is not set up correctly.
+      {{ tt('How You Got Here') }}
     </p>
     <p>
-      If you think this is a bug (something that you should have access
-      to), or if you want to let us know how you got here, please email us at
+      {{ tt('Email Us') }}
       <a href="mailto:pacta-help@siliconally.org">pacta-help@siliconally.org</a>.
     </p>
     <StandardDebug
-      label="Technical Error"
+      :label="tt('Technical Error')"
       :value="permissionDeniedError"
       always
     />

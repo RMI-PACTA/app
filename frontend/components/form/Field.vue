@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { useSlots } from 'vue'
+
+const slots = useSlots()
+const { t } = useI18n()
+
+const prefix = 'FormField'
+const tt = (s: string) => t(`${prefix}.${s}`)
+
 interface Props {
   label: string
   helpText?: string
@@ -7,8 +14,8 @@ interface Props {
   required?: boolean
   loading?: boolean
   completed?: boolean
-  requiredLabel?: string
-  loadingLabel?: string
+  requiredLabel?: string | undefined
+  loadingLabel?: string | undefined
   completedLabel?: string
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -17,11 +24,13 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   loading: false,
   completed: false,
-  requiredLabel: 'Required',
-  loadingLabel: 'Loading...',
+  requiredLabel: undefined,
+  loadingLabel: undefined,
   completedLabel: '',
 })
-const slots = useSlots()
+
+const requiredLabel = computed(() => props.loadingLabel ?? tt('Required'))
+const loadingLabel = computed(() => props.loadingLabel ?? tt('Loading'))
 
 const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'] !== undefined)
 </script>
@@ -36,8 +45,8 @@ const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'
       :required="props.required"
       :loading="props.loading"
       :completed="props.completed"
-      :required-label="props.requiredLabel"
-      :loading-label="props.loadingLabel"
+      :required-label="requiredLabel"
+      :loading-label="loadingLabel"
       :completed-label="props.completedLabel"
     >
       <template #help-text>

@@ -15,7 +15,6 @@
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "^1.1.4",
-    "@intlify/unplugin-vue-i18n": "^1.4.0",
     "@nuxt/devtools": "latest",
     "@nuxtjs/i18n": "^8.0.0-rc.5",
     "@types/node": "^18.17.3",
