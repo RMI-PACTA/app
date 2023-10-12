@@ -54,6 +54,27 @@ func PactaVersionToOAPI(pv *pacta.PACTAVersion) (*api.PactaVersion, error) {
 	}, nil
 }
 
+func InitiativeInvitationToOAPI(i *pacta.InitiativeInvitation) (*api.InitiativeInvitation, error) {
+	if i == nil {
+		return nil, oapierr.Internal("initiativeToOAPI: can't convert nil pointer")
+	}
+	var usedAt *string
+	if !i.UsedAt.IsZero() {
+		usedAt = ptr(i.UsedAt.String())
+	}
+	var usedBy *string
+	if i.UsedBy != nil {
+		usedBy = ptr(string(i.UsedBy.ID))
+	}
+	return &api.InitiativeInvitation{
+		CreatedAt:    i.CreatedAt,
+		Id:           string(i.ID),
+		InitiativeId: string(i.Initiative.ID),
+		UsedAt:       usedAt,
+		UsedByUserId: usedBy,
+	}, nil
+}
+
 func ptr[T any](t T) *T {
 	return &t
 }
