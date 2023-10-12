@@ -54,7 +54,7 @@ body {
 }
 
 h1 {
-  font-family: Interstate, Roboto;
+  font-family: Interstate, Roboto, sans-serif;
 }
 
 h2,
@@ -62,11 +62,11 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Source Sans Pro", Roboto;
+  font-family: "Source Sans Pro", Roboto, sans-serif;
 }
 
 * {
-  font-family: Roboto;
+  font-family: Roboto, sans-serif;
 }
 
 * {

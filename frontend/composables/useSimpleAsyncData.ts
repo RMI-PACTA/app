@@ -4,11 +4,10 @@ interface SimpleAsyncDataReturn<T> {
 }
 
 export const useSimpleAsyncData = async <T>(key: string, fn: () => Promise<T>): Promise<SimpleAsyncDataReturn<T>> => {
-  // const { loading: { withLoading } } = useModal()
-  // withLoading(fn, key)
-  const { data: dataRef, refresh, error } = await useAsyncData(key, fn)
+  const { loading: { withLoading } } = useModal()
+  const fnWithLoading = () => withLoading(fn, key)
+  const { data: dataRef, refresh, error } = await useAsyncData(key, fnWithLoading)
   if (error.value) {
-    console.log('error', error.value)
     throw createError(error.value)
   }
   const data = dataRef as unknown as Ref<T>

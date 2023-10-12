@@ -19,7 +19,6 @@ interface PACTAError extends NuxtError {
 }
 
 export const createErrorWithRemediation = (err: string | Partial<NuxtError>, r: Remediation): PACTAError => {
-  console.log(err)
   const nuxtErr = createError(err)
   if (!nuxtErr.data || typeof (nuxtErr.data) !== 'object') {
     nuxtErr.data = {}
