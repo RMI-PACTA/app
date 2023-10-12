@@ -11,7 +11,7 @@ export type Error = {
     /**
      * An enum-like type indicating a more specific type of error.
      *
-     * TODO: Add an example
+     * An example might be getting a 401 Unauthorized because you're logged in with multiple emails and haven't selected one, the error_id could be 'multiple_emails'.
      *
      */
     error_id: string;
