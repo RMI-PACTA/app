@@ -40,7 +40,6 @@ onMounted(() => {
     toast.add({
       severity: 'success',
       group: 'language-selector',
-      sticky: true,
     })
   }
 })
