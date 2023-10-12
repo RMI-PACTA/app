@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { useSlots } from 'vue'
+
+const slots = useSlots()
+const { t } = useI18n()
+
+const prefix = 'FormField'
+const tt = (s: string) => t(`${prefix}.${s}`)
+
 interface Props {
   label: string
   helpText?: string
@@ -21,7 +28,9 @@ const props = withDefaults(defineProps<Props>(), {
   invalidLabel: 'Needs Attention',
   validLabel: '',
 })
-const slots = useSlots()
+
+const invalidLabel = computed(() => props.invalidLabel ?? tt('Needs Attention'))
+const loadingLabel = computed(() => props.loadingLabel ?? tt('Loading'))
 
 const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'] !== undefined)
 </script>
@@ -34,10 +43,10 @@ const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'
       :help-text-exists="helpTextExists"
       :start-help-text-expanded="props.startHelpTextExpanded"
       :is-loading="props.isLoading"
-      :loading-label="props.loadingLabel"
+      :loading-label="loadingLabel"
       :has-validation="props.hasValidation"
       :is-valid="props.isValid"
-      :invalid-label="props.invalidLabel"
+      :invalid-label="invalidLabel"
       :valid-label="props.validLabel"
     >
       <template #help-text>

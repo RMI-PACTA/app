@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const localePath = useLocalePath()
+
 interface AdminItem {
   title: string
   icon: string
@@ -51,7 +53,7 @@ const adminItems: AdminItem[] = [
             <div class="flex justify-content-end w-full">
               <LinkButton
                 class="p-button-sm"
-                :to="item.href"
+                :to="localePath(item.href)"
                 icon="pi pi-arrow-right"
                 icon-pos="right"
                 label="Go"

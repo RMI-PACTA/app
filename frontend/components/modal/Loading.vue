@@ -70,6 +70,7 @@ watch(() => loading.value, refreshZIndex)
 
 <style lang="scss">
 .loading-modal {
+  z-index: 1;
   box-shadow: none;
   overflow: visible;
   position: fixed;

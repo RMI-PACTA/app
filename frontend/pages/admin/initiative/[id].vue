@@ -5,6 +5,7 @@ const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
+const localePath = useLocalePath()
 
 const id = presentOrCheckURL(fromParams('id'))
 
@@ -19,12 +20,12 @@ const {
 
 const deleteInitiative = () => withLoading(
   () => pactaClient.deleteInitiative(id)
-    .then(() => router.push('/admin/initiative')),
+    .then(() => router.push(localePath('/admin/initiative'))),
   `${prefix}.deleteInitiative`,
 )
 const saveChanges = () => withLoading(
   () => pactaClient.updateInitiative(id, changes.value)
-    .then(() => router.push('/admin/initiative')),
+    .then(() => router.push(localePath('/admin/initiative'))),
   `${prefix}.saveChanges`,
 )
 </script>
@@ -46,7 +47,7 @@ const saveChanges = () => withLoading(
         label="Discard Changes"
         icon="pi pi-arrow-left"
         class="p-button-secondary p-button-outlined"
-        to="/admin/initiative"
+        :to="localePath('/admin/initiative')"
       />
       <div v-tooltip.bottom="saveTooltip">
         <PVButton

@@ -2,6 +2,7 @@
 import { Initiative } from '@/openapi/generated/pacta'
 import { initiativeEditor } from '@/lib/editor'
 
+const localePath = useLocalePath()
 const prefix = 'admin/initiative/new'
 const router = useRouter()
 const pactaClient = await usePACTA()
@@ -25,9 +26,9 @@ const {
   pactaVersion: undefined,
   createdAt: '',
 })
-const discard = () => router.push('/admin/initiative')
+const discard = () => router.push(localePath('/admin/initiative'))
 const save = () => withLoading(
-  () => pactaClient.createInitiative(initiative.value).then(() => router.push('/admin/initiative')),
+  () => pactaClient.createInitiative(initiative.value).then(() => router.push(localePath('/admin/initiative'))),
   `${prefix}.save`,
 )
 </script>

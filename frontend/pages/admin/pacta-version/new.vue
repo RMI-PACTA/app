@@ -5,6 +5,7 @@ const prefix = 'admin/pacta-version/new'
 const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
+const localePath = useLocalePath()
 
 const {
   editorObject: editorPactaVersion,
@@ -19,9 +20,9 @@ const {
   createdAt: '',
   isDefault: false,
 })
-const discard = () => router.push('/admin/pacta-version')
+const discard = () => router.push(localePath('/admin/pacta-version'))
 const save = () => withLoading(
-  () => pactaClient.createPactaVersion(pactaVersion.value).then(() => router.push('/admin/pacta-version')),
+  () => pactaClient.createPactaVersion(pactaVersion.value).then(() => router.push(localePath('/admin/pacta-version'))),
   `${prefix}.save`,
 )
 </script>

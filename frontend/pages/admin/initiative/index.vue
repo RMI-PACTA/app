@@ -2,11 +2,12 @@
 const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
+const localePath = useLocalePath()
 
 const prefix = 'admin/initiative'
 const { data: initiatives, refresh } = await useSimpleAsyncData(`${prefix}.get`, () => pactaClient.listInitiatives())
 
-const newInitiative = () => router.push('/admin/initiative/new')
+const newInitiative = () => router.push(localePath('/admin/initiative/new'))
 const deleteInitiative = (id: string) => withLoading(
   () => pactaClient.deleteInitiative(id)
     .then(() => refresh()),
@@ -42,7 +43,7 @@ const deleteInitiative = (id: string) => withLoading(
         <template #body="slotProps">
           <LinkButton
             icon="pi pi-arrow-right"
-            :to="`/admin/initiative/${slotProps.data.id}`"
+            :to="localePath(`/admin/initiative/${slotProps.data.id}`)"
           />
         </template>
       </PVColumn>

@@ -36,6 +36,7 @@ export const useMSAL = async () => {
 
   const router = useRouter()
   const { userClientWithAuth } = useAPI()
+  const localePath = useLocalePath()
 
   const { $msal: { msalConfig, b2cPolicies } } = useNuxtApp()
   const scopes: string[] = ['openid', 'profile', 'offline_access', msalConfig.auth.clientId]
@@ -283,7 +284,7 @@ export const useMSAL = async () => {
       .then(() => { /* cast to void */ })
       .finally(() => {
         isAuthenticated.value = false
-        void router.push('/')
+        void router.push(localePath('/'))
       })
   }
 

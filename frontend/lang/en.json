@@ -1,0 +1,47 @@
+{
+    "FormField": {
+        "Required": "Required",
+        "Loading": "Loading..."
+    },
+    "LocaleSelector": {
+        "Availabile In": "This site is available in:",
+        "Bottom Right": "You can change the language at any time in the bottom right corner of the page. ↘️"
+    },
+    "ModalError": {
+        "Heading": "An error occurred",
+        "Subheading": "Sorry about that, our team take bug reports seriously, and will try to make it right!",
+        "Error Details": "Error Details",
+        "Common Steps": "Some common troubleshooting steps that might be helpful:",
+        "Refresh": "Refresh this page",
+        "Refresh Explanation": "most of our pages save your progress as you go, so it's almost always fine to reload the page.",
+        "Connection": "Check your internet connection",
+        "Connection Explanation": "this site requires connection to the internet for most functionality.",
+        "Desktop": "Visit this site on a desktop computer",
+        "Desktop Explanation": "this site works best on desktop web browsers.",
+        "If Persists": "If this issue persists, please report this issue by",
+        "File a Bug": "filing a bug in the PACTA repository"
+    },
+    "ModalPermissionDenied": {
+        "Heading": "Permission Denied",
+        "Subheading": "You aren't authorized to view this page",
+        "How You Got Here": "It is likely that you have gotten here either by entering in an invalid URL, or by clicking on a link or button that is not set up correctly.",
+        "Email Us": "If you think this is a bug (something that you should have access to), or if you want to let us know how you got here, please email us at",
+        "Technical Error": "Technical Error"
+    },
+    "StandardDebug": {
+        "Debugging Information": "Debugging Information"
+    },
+    "StandardFooter": {
+        "A project of": "A project of",
+        "Terms of Use": "Terms of Use",
+        "Privacy": "Privacy",
+        "About": "About"
+    },
+    "StandardNav": {
+        "Home": "Home",
+        "File a Bug": "File a Bug",
+        "Admin": "Admin",
+        "Sign Out": "Sign Out",
+        "Sign In": "Sign In"
+    }
+}

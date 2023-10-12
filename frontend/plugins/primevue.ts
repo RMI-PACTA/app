@@ -16,9 +16,10 @@ import FileUpload from 'primevue/fileupload'
 import Textarea from 'primevue/textarea'
 import Tooltip from 'primevue/tooltip'
 import Message from 'primevue/message'
+import OverlayPanel from 'primevue/overlaypanel'
 import ProgressSpinner from 'primevue/progressspinner'
-
 import ToastService from 'primevue/toastservice'
+import Toast from 'primevue/toast'
 
 export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.use(PrimeVue)
@@ -37,8 +38,10 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVInputText', InputText)
   vueApp.component('PVInputSwitch', InputSwitch)
   vueApp.component('PVMessage', Message)
+  vueApp.component('PVOverlayPanel', OverlayPanel)
   vueApp.component('PVProgressSpinner', ProgressSpinner)
   vueApp.component('PVTextarea', Textarea)
+  vueApp.component('PVToast', Toast)
 
   vueApp.directive('tooltip', Tooltip)
 })

@@ -2,6 +2,7 @@
 const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
+const localePath = useLocalePath()
 
 const prefix = 'admin/pacta-version'
 const { data: pactaVersions, refresh } = await useSimpleAsyncData(
@@ -9,7 +10,7 @@ const { data: pactaVersions, refresh } = await useSimpleAsyncData(
   () => pactaClient.listPactaVersions(),
 )
 
-const newPV = () => router.push('/admin/pacta-version/new')
+const newPV = () => router.push(localePath('/admin/pacta-version/new'))
 const markDefault = (id: string) => withLoading(
   () => pactaClient.markPactaVersionAsDefault(id)
     .then(() => refresh()),
@@ -49,7 +50,7 @@ const deletePV = (id: string) => withLoading(
         <template #body="slotProps">
           <LinkButton
             icon="pi pi-arrow-right"
-            :to="`/admin/pacta-version/${slotProps.data.id}`"
+            :to="localePath(`/admin/pacta-version/${slotProps.data.id}`)"
           />
         </template>
       </PVColumn>
