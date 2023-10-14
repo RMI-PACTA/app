@@ -1,12 +1,17 @@
 <script setup lang="ts">
 const { showStandardDebug } = useLocalStorage()
+const { t } = useI18n()
+
+const prefix = 'StandardDebug'
+const tt = (s: string) => t(`${prefix}.${s}`)
 
 interface Props {
   label?: string
   always?: boolean
   value: unknown
 }
-const props = withDefaults(defineProps<Props>(), { always: false, label: 'Technical Debugging' })
+const props = withDefaults(defineProps<Props>(), { always: false, label: undefined })
+const label = computed(() => props.label ?? tt('Debugging Information'))
 </script>
 
 <template>
@@ -15,7 +20,7 @@ const props = withDefaults(defineProps<Props>(), { always: false, label: 'Techni
     class="standard-debug"
   >
     <PVAccordionTab
-      :header="props.label || 'Debug'"
+      :header="label"
       content-class="surface-100"
       header-class="surface-800"
     >

@@ -1,48 +1,46 @@
 <script setup lang="ts">
-import { type PactaVersion } from '@/openapi/generated/pacta'
+import { type EditorPactaVersion } from '@/lib/editor'
 
-const props = defineProps<{
-  pactaVersion: PactaVersion
-}>()
-
-const emit = defineEmits<(e: 'update:pactaVersion', pactaVersion: PactaVersion) => void>()
-
-const model = computed({
-  get: () => props.pactaVersion,
-  set: (pactaVersion: PactaVersion) => { emit('update:pactaVersion', pactaVersion) },
+interface Props {
+  editorPactaVersion: EditorPactaVersion
+}
+interface Emits {
+  (e: 'update:editorPactaVersion', epv: EditorPactaVersion): void
+}
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
+const epv = computed({
+  get: () => props.editorPactaVersion,
+  set: (epv) => { emit('update:editorPactaVersion', epv) },
 })
 </script>
 
 <template>
   <div>
-    <FormField
-      label="Version Name"
+    <FormEditorField
+      :editor-field="epv.name"
       help-text="The name of the version of the PACTA algorithm."
-      required
-      :completed="model.name.length > 0"
     >
       <PVInputText
-        v-model="model.name"
+        v-model="epv.name.currentValue"
       />
-    </FormField>
-    <FormField
-      label="Version Description"
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="epv.description"
       help-text="An optional description of this version of the PACTA algorithm."
     >
       <PVTextarea
-        v-model="model.description"
+        v-model="epv.description.currentValue"
         auto-resize
       />
-    </FormField>
-    <FormField
-      label="Docker Image Digest"
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="epv.digest"
       help-text="The SHA hash of the docker image that should correspond to this version of the PACTA version."
-      required
-      :completed="model.digest.length > 0"
     >
       <PVInputText
-        v-model="model.digest"
+        v-model="epv.digest.currentValue"
       />
-    </FormField>
+    </FormEditorField>
   </div>
 </template>

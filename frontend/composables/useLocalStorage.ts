@@ -81,6 +81,8 @@ export const useLocalStorage = () => {
   const helpTextExpanded = (helpTextId: string) => computedBooleanLocalStorageValue(`helpTextExpanded-${helpTextId}`, true)
   const showStandardDebug = computedBooleanLocalStorageValue('showStandardDebug', false)
 
+  const languageWasSelectedOrDismissed = computedBooleanLocalStorageValue('languageWasSelectedOrDismissed', false)
+
   return {
     computedBooleanLocalStorageValue,
     computedStringLocalStorageValue,
@@ -90,5 +92,6 @@ export const useLocalStorage = () => {
     showStandardDebug,
     deviceId,
     getDeviceId,
+    languageWasSelectedOrDismissed,
   }
 }

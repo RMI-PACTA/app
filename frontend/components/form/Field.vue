@@ -1,27 +1,36 @@
 <script setup lang="ts">
 import { useSlots } from 'vue'
+
+const slots = useSlots()
+const { t } = useI18n()
+
+const prefix = 'FormField'
+const tt = (s: string) => t(`${prefix}.${s}`)
+
 interface Props {
   label: string
   helpText?: string
   startHelpTextExpanded?: boolean
-  required?: boolean
-  loading?: boolean
-  completed?: boolean
-  requiredLabel?: string
+  isLoading?: boolean
   loadingLabel?: string
-  completedLabel?: string
+  hasValidation?: boolean
+  isValid?: boolean
+  invalidLabel?: string
+  validLabel?: string
 }
 const props = withDefaults(defineProps<Props>(), {
   helpText: '',
   startHelpTextExpanded: true,
-  required: false,
-  loading: false,
-  completed: false,
-  requiredLabel: 'Required',
+  isLoading: false,
   loadingLabel: 'Loading...',
-  completedLabel: '',
+  hasValidation: false,
+  isValid: false,
+  invalidLabel: 'Needs Attention',
+  validLabel: '',
 })
-const slots = useSlots()
+
+const invalidLabel = computed(() => props.invalidLabel ?? tt('Needs Attention'))
+const loadingLabel = computed(() => props.loadingLabel ?? tt('Loading'))
 
 const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'] !== undefined)
 </script>
@@ -33,12 +42,12 @@ const helpTextExists = computed(() => props.helpText !== '' || slots['help-text'
       :help-text="props.helpText"
       :help-text-exists="helpTextExists"
       :start-help-text-expanded="props.startHelpTextExpanded"
-      :required="props.required"
-      :loading="props.loading"
-      :completed="props.completed"
-      :required-label="props.requiredLabel"
-      :loading-label="props.loadingLabel"
-      :completed-label="props.completedLabel"
+      :is-loading="props.isLoading"
+      :loading-label="loadingLabel"
+      :has-validation="props.hasValidation"
+      :is-valid="props.isValid"
+      :invalid-label="invalidLabel"
+      :valid-label="props.validLabel"
     >
       <template #help-text>
         <slot name="help-text" />

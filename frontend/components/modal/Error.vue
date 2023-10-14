@@ -1,21 +1,23 @@
 <script setup lang="ts">
-interface Props {
-  routeBackOnClose?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  routeBackOnClose: false,
-})
-
 const { error: { errorModalVisible, error: modalError } } = useModal()
 const error = useError()
 const router = useRouter()
+const { t } = useI18n()
+
+const prefix = 'ModalError'
+const tt = (s: string) => t(`${prefix}.${s}`)
+
+interface Props {
+  routeBackOnClose?: boolean
+}
+const props = withDefaults(defineProps<Props>(), {
+  routeBackOnClose: false,
+})
 
 const maybeGoBack = async () => {
   if (!props.routeBackOnClose) {
     return
   }
-
   if (window.history.length > 1) {
     await clearError().then(router.back)
   } else {
@@ -42,26 +44,26 @@ const fullError = computed(() => {
 <template>
   <StandardModal
     v-model:visible="errorModalVisible"
-    header="An error ocurred"
-    sub-header="Sorry about that, our team take bug reports seriously, and will try to make it right!"
+    :header="tt('Heading')"
+    :sub-header="tt('Subheading')"
     @closed="maybeGoBack"
   >
     <StandardDebug
-      label="Error Details"
+      :label="tt('Error Details')"
       :value="fullError"
       always
     />
     <div class="text-left text-sm">
       Some common troubleshooting steps that might be helpful:
       <ul>
-        <li><b>Refresh this page</b> - most of our pages save your progress as you go, so it's almost always fine to reload the page.</li>
-        <li><b>Check your internet connection</b> - this site requires connection to the internet for most functionality.</li>
-        <li><b>Visit this site on a desktop computer</b> - this site works best on desktop web browsers.</li>
+        <li><b>{{ tt('Refresh' ) }}</b> - {{ tt('Refresh Explanation') }}</li>
+        <li><b>{{ tt('Connection') }}</b> - {{ tt('Connection Explanation') }}</li>
+        <li><b>{{ tt('Desktop') }}</b> - {{ tt('Desktop Explanation') }}</li>
       </ul>
-      If this issue persists, please report this issue by <a
+      {{ tt('If Persists') }} <a
         href="https://github.com/RMI-pacta/app/issues/new"
         target="_blank"
-      >filing a bug in the PACTA repository</a>.
+      >{{ tt('File a Bug' ) }}</a>.
     </div>
   </StandardModal>
 </template>

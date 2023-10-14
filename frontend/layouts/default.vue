@@ -2,6 +2,8 @@
 const { loading: { onMountedWithLoading }, anyBlockingModalOpen } = useModal()
 
 onMountedWithLoading(() => { /* nothing to do */ }, 'defaultLayout.onMountedWithLoading')
+
+// TODO(grady) Do i18n setup for SEO here. https://i18n.nuxtjs.org/guide/seo#setup
 </script>
 
 <template>
@@ -12,8 +14,7 @@ onMountedWithLoading(() => { /* nothing to do */ }, 'defaultLayout.onMountedWith
       :aria-hidden="anyBlockingModalOpen"
     >
       <main
-        class="px-3 md:px-4 w-full lg:w-10 xl:w-8 mx-auto"
-        style="min-height: calc(100vh - 9.25rem - 4px);"
+        class="px-3 md:px-6 w-full lg:w-10 xl:w-8 mx-auto full-height-minus-header-footer"
       >
         <NuxtPage />
       </main>

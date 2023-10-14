@@ -154,12 +154,13 @@ paths:
           required: true
           schema:
             type: string
-        - name: body
-          in: query
+      requestBody:
           description: initiative object properties to update
           required: true
-          schema:
-            $ref: '#/components/schemas/InitiativeChanges'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiativeChanges'
       responses:
         '204':
           description: initiative updated successfully 

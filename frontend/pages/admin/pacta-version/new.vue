@@ -1,23 +1,28 @@
 <script setup lang="ts">
-import { type PactaVersion } from '@/openapi/generated/pacta'
+import { pactaVersionEditor } from '@/lib/editor'
 
+const prefix = 'admin/pacta-version/new'
 const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
+const localePath = useLocalePath()
 
-const prefix = 'admin/pacta-version/new'
-const pactaVersion = useState<PactaVersion>(`${prefix}.pactaVersion`, () => ({
+const {
+  editorObject: editorPactaVersion,
+  currentValue: pactaVersion,
+  canSave,
+  saveTooltip,
+} = pactaVersionEditor({
   id: '',
   name: '',
   description: '',
   digest: '',
   createdAt: '',
   isDefault: false,
-}))
-
-const discard = () => router.push('/admin/pacta-version')
+})
+const discard = () => router.push(localePath('/admin/pacta-version'))
 const save = () => withLoading(
-  () => pactaClient.createPactaVersion(pactaVersion.value).then(() => router.push('/admin/pacta-version')),
+  () => pactaClient.createPactaVersion(pactaVersion.value).then(() => router.push(localePath('/admin/pacta-version'))),
   `${prefix}.save`,
 )
 </script>
@@ -29,7 +34,7 @@ const save = () => withLoading(
       Pacta version info goes here
     </p>
     <PactaversionEditor
-      v-model:pactaVersion="pactaVersion"
+      v-model:editorPactaVersion="editorPactaVersion"
     />
     <div class="flex gap-3">
       <PVButton
@@ -38,16 +43,19 @@ const save = () => withLoading(
         class="p-button-secondary p-button-outlined"
         @click="discard"
       />
-      <PVButton
-        label="Save"
-        icon="pi pi-arrow-right"
-        icon-pos="right"
-        @click="save"
-      />
+      <div v-tooltip="saveTooltip">
+        <PVButton
+          :disabled="!canSave"
+          label="Save"
+          icon="pi pi-arrow-right"
+          icon-pos="right"
+          @click="save"
+        />
+      </div>
     </div>
     <StandardDebug
       label="PACTA Version"
-      :value="pactaVersion"
+      :value="editorPactaVersion"
     />
   </StandardContent>
 </template>
