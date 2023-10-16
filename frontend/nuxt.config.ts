@@ -32,6 +32,7 @@ export default defineNuxtConfig({
         logoutURI: process.env.MSAL_LOGOUT_URI ?? '',
         minLogLevel: process.env.MSAL_MIN_LOG_LEVEL ?? 'VERBOSE',
       },
+      baseURL: process.env.BASE_URL ?? '',
     },
   },
   typescript: {
@@ -51,10 +52,10 @@ export default defineNuxtConfig({
     strategy: process.env.I18N_STRATEGY, // When we have a prod env, this should be 'prefix_except_default'
     vueI18n: './i18n.config.ts',
     locales: [
-      { code: 'en', iso: 'en-US', file: { path: 'en.json', cache: false }, flag: '🇬🇧', name: 'English' },
-      { code: 'fr', iso: 'fr-FR', file: { path: 'fr.json', cache: false }, flag: '🇫🇷', name: 'Français' },
-      { code: 'es', iso: 'es-ES', file: { path: 'es.json', cache: false }, flag: '🇩🇪', name: 'Deutsch' },
-      { code: 'de', iso: 'de-DE', file: { path: 'de.json', cache: false }, flag: '🇪🇸', name: 'Español' },
+      { code: 'en', iso: 'en-US', file: { path: 'en.json', cache: false }, name: 'English' },
+      { code: 'fr', iso: 'fr-FR', file: { path: 'fr.json', cache: false }, name: 'Français' },
+      { code: 'es', iso: 'es-ES', file: { path: 'es.json', cache: false }, name: 'Deutsch' },
+      { code: 'de', iso: 'de-DE', file: { path: 'de.json', cache: false }, name: 'Español' },
     ],
     lazy: true,
     langDir: 'lang',

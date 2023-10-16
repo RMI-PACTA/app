@@ -75,6 +75,25 @@ func InitiativeInvitationToOAPI(i *pacta.InitiativeInvitation) (*api.InitiativeI
 	}, nil
 }
 
+func InitiativeUserRelationshipToOAPI(i *pacta.InitiativeUserRelationship) (*api.InitiativeUserRelationship, error) {
+	if i == nil {
+		return nil, oapierr.Internal("initiativeUserRelationshipToOAPI: can't convert nil pointer")
+	}
+	if i.User == nil {
+		return nil, oapierr.Internal("initiativeUserRelationshipToOAPI: can't convert nil user")
+	}
+	if i.Initiative == nil {
+		return nil, oapierr.Internal("initiativeUserRelationshipToOAPI: can't convert nil initiative")
+	}
+	return &api.InitiativeUserRelationship{
+		UpdatedAt:    i.UpdatedAt,
+		InitiativeId: string(i.Initiative.ID),
+		UserId:       string(i.User.ID),
+		Manager:      i.Manager,
+		Member:       i.Member,
+	}, nil
+}
+
 func ptr[T any](t T) *T {
 	return &t
 }

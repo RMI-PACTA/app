@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type LanguageCode } from '@/lib/language'
 import type OverlayPanel from 'primevue/overlaypanel'
 import { useToast } from 'primevue/usetoast'
 
@@ -8,11 +9,10 @@ const { t, locale: baseLocale, locales: baseLocales } = useI18n()
 const { languageWasSelectedOrDismissed } = useLocalStorage()
 
 // We go through this rigamarole because the additional information passed into
-// the i18n configuration is present here (namely, flag + name), but it doesn't
+// the i18n configuration is present here (namely, well, name), but it doesn't
 // appear in the typescript configuration.
 interface Option {
-  code: string
-  flag: string
+  code: LanguageCode
   name: string
 }
 const locales = computed<Option[]>(() => baseLocales.value as Option[])
@@ -54,25 +54,28 @@ const closeToast = () => {
     <PVButton
       class="p-button-rounded px-2 py-1"
       :class="visible ? '' : 'p-button-text'"
-      :label="`${locale.flag} ${locale.code.toUpperCase()}`"
       @click="toggleMenu"
-    />
+    >
+      <LanguageRepresentation
+        :code="locale.code"
+        :full-name="false"
+      />
+    </PVButton>
     <PVOverlayPanel
       ref="overlayPanel"
       @hide="hideMenu"
       @show="showMenu"
     >
-      <div class="flex flex-column gap-1 align-items-stretch">
+      <div class="flex flex-column gap-1 align-items-start">
         <LinkButton
           v-for="option in locales"
           :key="option.code"
           class="flex gap-3 justify-content-center"
           :class="option.code === locale.code ? 'p-button-outlined' : 'p-button-text'"
           :to="switchLocalePath(option.code)"
-          :label="option.flag"
           @click="toggleMenu"
         >
-          {{ option.name }}
+          <LanguageRepresentation :code="option.code" />
         </LinkButton>
       </div>
     </PVOverlayPanel>
@@ -92,10 +95,12 @@ const closeToast = () => {
               class="flex gap-1 p-2 justify-content-center p-button-rounded"
               :class="option.code === locale.code ? 'p-button-outlined' : 'p-button-text'"
               :to="switchLocalePath(option.code)"
-              :label="option.flag"
               @click="closeToast"
             >
-              {{ option.code.toUpperCase() }}
+              <LanguageRepresentation
+                :code="option.code"
+                :full-name="false"
+              />
             </LinkButton>
           </div>
           <div>{{ tt('Bottom Right') }}</div>

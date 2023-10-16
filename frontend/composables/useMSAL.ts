@@ -19,7 +19,7 @@ import { computed } from 'vue'
 import { type APIKey } from '~/openapi/generated/user'
 
 export const useMSAL = async () => {
-  const isAuthenticated = useState('useMSAL.isAuthenticated', () => false)
+  const { isAuthenticated } = useSession()
 
   // Don't initialize the MSAL client if we're not in the browser.
   if (process.server) {

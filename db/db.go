@@ -391,3 +391,19 @@ func SetIncompleteUploadHoldingsDate(value *pacta.HoldingsDate) UpdateIncomplete
 		return nil
 	}
 }
+
+type UpdateInitiativeUserRelationshipFn func(*pacta.InitiativeUserRelationship) error
+
+func SetInitiativeUserRelationshipMember(value bool) UpdateInitiativeUserRelationshipFn {
+	return func(v *pacta.InitiativeUserRelationship) error {
+		v.Member = value
+		return nil
+	}
+}
+
+func SetInitiativeUserRelationshipManager(value bool) UpdateInitiativeUserRelationshipFn {
+	return func(v *pacta.InitiativeUserRelationship) error {
+		v.Manager = value
+		return nil
+	}
+}

@@ -15,6 +15,7 @@ go_library(
         "//executors/docker",
         "//oapierr",
         "//openapi:pacta_generated",
+        "//pacta",
         "//secrets",
         "//task",
         "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",

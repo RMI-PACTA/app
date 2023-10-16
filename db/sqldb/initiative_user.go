@@ -83,6 +83,27 @@ func (d *DB) PutInitiativeUserRelationship(tx db.Tx, iur *pacta.InitiativeUserRe
 	return nil
 }
 
+func (d *DB) UpdateInitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID, mutations ...db.UpdateInitiativeUserRelationshipFn) error {
+	iur, err := d.InitiativeUserRelationship(tx, iid, uid)
+	if err != nil {
+		if db.IsNotFound(err) {
+			iur = &pacta.InitiativeUserRelationship{
+				Initiative: &pacta.Initiative{ID: iid},
+				User:       &pacta.User{ID: uid},
+			}
+		} else {
+			return fmt.Errorf("getting initiative_user_relationship: %w", err)
+		}
+	}
+	for _, mutation := range mutations {
+		if err := mutation(iur); err != nil {
+			return fmt.Errorf("applying mutation to initiative_user_relationship: %w", err)
+		}
+	}
+	iur.UpdatedAt = time.Now()
+	return d.PutInitiativeUserRelationship(tx, iur)
+}
+
 func validateInitiativeUserRelationshipForPut(iur *pacta.InitiativeUserRelationship) error {
 	if iur.User == nil || iur.User.ID == "" {
 		return fmt.Errorf("user_id is required")

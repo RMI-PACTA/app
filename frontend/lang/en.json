@@ -21,6 +21,13 @@
         "If Persists": "If this issue persists, please report this issue by",
         "File a Bug": "filing a bug in the PACTA repository"
     },
+    "ModalFakeUsers": {
+        "Heading": "Fake Users",
+        "Subheading": "Quickly switch between profiles for testing.",
+        "Description": "Microsoft Active Directory doesn't allow us to programatically log in as other users, so you will need to manually log in as one of the users below. These are only in the Local environment (for now).",
+        "Email": "Email",
+        "Password": "Password"
+    },
     "ModalPermissionDenied": {
         "Heading": "Permission Denied",
         "Subheading": "You aren't authorized to view this page",
@@ -33,15 +40,32 @@
     },
     "StandardFooter": {
         "A project of": "A project of",
+        "File a Bug": "File a Bug",
         "Terms of Use": "Terms of Use",
         "Privacy": "Privacy",
-        "About": "About"
+        "About": "About",
+        "Manage Fake Users": "Manage Fake Users",
+        "Toggle Debug Info": "Toggle Debug Info"
     },
     "StandardNav": {
         "Home": "Home",
-        "File a Bug": "File a Bug",
         "Admin": "Admin",
+        "My Stuff": "My Stuff",
         "Sign Out": "Sign Out",
         "Sign In": "Sign In"
+    },
+    "initiative/invitations": {
+        "Heading": "Initaitive Invitations",
+        "No Invitations": "This initiative does not require an invitation to join - anyone who finds this initiative can join it.",
+        "Yes Invitations": "This initiative requires an invitation (a unique, one-time code) to join. You can create these invitations below.",
+        "You can change": "You can change this behavior on the",
+        "edit initiative page": "edit initiative page",
+        "Create Initiative Invitations": "Create Initiative Invitations",
+        "New Invitations": "New Invitations",
+        "New Invitations Help": "Create new invitations by clicking the button below. You can create as many invitations as you want, but each invitation can only be used once. Invitation codes must only contain alphanumeric characters (a-z, A-Z, 0-9), underscores and dashes. You can create multiple invitations at once by separating them with tabs, commas, newlines, or spaces.",
+        "Create": "Create",
+        "Unused": "Unused",
+        "Includes Illegal Characters": "Includes illegal characters",
     }
+
 }

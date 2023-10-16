@@ -3,8 +3,10 @@ package pactasrv
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/RMI/pacta/cmd/server/pactasrv/conv"
+	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
@@ -19,7 +21,7 @@ func (s *Server) CreateInitiativeInvitation(ctx context.Context, request api.Cre
 	if err != nil {
 		return nil, err
 	}
-	id, err = s.DB.CreateInitiativeInvitation(s.DB.NoTxn(ctx), ii)
+	id, err := s.DB.CreateInitiativeInvitation(s.DB.NoTxn(ctx), ii)
 	if err != nil {
 		return nil, oapierr.Internal("failed to create initiative invitation", zap.Error(err))
 	}
@@ -62,7 +64,42 @@ func (s *Server) GetInitiativeInvitation(ctx context.Context, request api.GetIni
 // Claims this initiative invitation, if it exists
 // (POST /initiative-invitation/{id})
 func (s *Server) ClaimInitiativeInvitation(ctx context.Context, request api.ClaimInitiativeInvitationRequestObject) (api.ClaimInitiativeInvitationResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
+		ii, err := s.DB.InitiativeInvitation(tx, pacta.InitiativeInvitationID(request.Id))
+		if err != nil {
+			return fmt.Errorf("looking up initiative invite: %w", err)
+		}
+		if !ii.UsedAt.IsZero() || ii.UsedBy != nil {
+			if ii.UsedBy != nil && ii.UsedBy.ID == userID {
+				// We don't return an error if the same user tries to claim the same invitation twice,
+				// which might happen by accident, but wouldn't impact the state of the initiative memberships.
+				// We may want to log this, though.
+				return nil
+			} else {
+				return fmt.Errorf("initiative is already used: %+v", ii)
+			}
+		}
+		err = s.DB.UpdateInitiativeInvitation(tx, ii.ID,
+			db.SetInitiativeInvitationUsedAt(time.Now()),
+			db.SetInitiativeInvitationUsedBy(userID))
+		if err != nil {
+			return fmt.Errorf("updating initiative invite: %w", err)
+		}
+		err = s.DB.UpdateInitiativeUserRelationship(tx, ii.Initiative.ID, userID,
+			db.SetInitiativeUserRelationshipMember(true))
+		if err != nil {
+			return fmt.Errorf("creating initiative membership: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, oapierr.Internal("failed to claim initiative invitation", zap.Error(err))
+	}
+	return api.ClaimInitiativeInvitation204Response{}, nil
 }
 
 // Returns all initiative invitations associated with the initiative

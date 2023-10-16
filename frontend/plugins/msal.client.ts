@@ -49,16 +49,16 @@ export default defineNuxtPlugin((_nuxtApp) => {
               console.error(message)
               return
             case LogLevel.Info:
-              console.info(message)
+              // console.info(message)
               return
             case LogLevel.Verbose:
-              console.debug(message)
+              // console.debug(message)
               return
             case LogLevel.Warning:
               console.warn(message)
               return
             case LogLevel.Trace:
-              console.trace(message)
+              // console.trace(message)
               return
           }
         },

@@ -3,9 +3,11 @@ import { type MenuItem } from 'primevue/menuitem'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { showStandardDebug } = useLocalStorage()
 const { isAuthenticated, signIn, signOut } = await useMSAL()
+const { getMaybeMe } = useSession()
 const router = useRouter()
+
+const { isAdmin, maybeMe } = await getMaybeMe()
 
 const prefix = 'StandardNav'
 const tt = (s: string) => t(`${prefix}.${s}`)
@@ -27,15 +29,18 @@ const menuItems = computed(() => {
       to: localePath('/'),
       label: tt('Home'),
     },
-    {
-      to: 'https://github.com/RMI-PACTA/app/issues/new',
-      label: tt('File a Bug'),
-    },
+
   ]
-  if (showStandardDebug) {
+  if (isAdmin.value) {
     result.push({
       label: tt('Admin'),
       to: localePath('/admin'),
+    })
+  }
+  if (maybeMe.value) {
+    result.push({
+      label: tt('My Stuff'),
+      to: localePath(`/user/${maybeMe.value.id}`),
     })
   }
   if (isAuthenticated.value) {

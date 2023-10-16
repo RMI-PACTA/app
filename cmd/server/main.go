@@ -21,9 +21,11 @@ import (
 	"github.com/RMI/pacta/executors/docker"
 	"github.com/RMI/pacta/oapierr"
 	oapipacta "github.com/RMI/pacta/openapi/pacta"
+	"github.com/RMI/pacta/pacta"
 	"github.com/RMI/pacta/secrets"
 	"github.com/RMI/pacta/task"
 	"github.com/Silicon-Ally/cryptorand"
+
 	"github.com/Silicon-Ally/zaphttplog"
 	"github.com/docker/docker/client"
 	"github.com/go-chi/chi/v5"
@@ -268,11 +270,12 @@ func run(args []string) error {
 			// LogEntry created by the logging middleware.
 			chimiddleware.RequestID,
 			chimiddleware.RealIP,
-			zaphttplog.NewMiddleware(logger),
+			zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(true)),
 			chimiddleware.Recoverer,
 
 			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
 			jwtauth.Authenticator,
+			addUserIdentityToContextIfLoggedIn(logger, db),
 
 			oapimiddleware.OapiRequestValidator(pactaSwagger),
 
@@ -338,6 +341,61 @@ func rateLimitMiddleware(maxReq int, windowLength time.Duration) func(http.Handl
 			}
 			return id, nil
 		}))
+}
+
+func addUserIdentityToContextIfLoggedIn(logger *zap.Logger, db *sqldb.DB) func(http.Handler) http.Handler {
+	fn := func(c context.Context) (context.Context, error) {
+		token, _, err := jwtauth.FromContext(c)
+		if err != nil {
+			return nil, fmt.Errorf("error getting authorization token: %w", err)
+		}
+		if token == nil {
+			return nil, fmt.Errorf("nil authorization token")
+		}
+		emailsClaim, ok := token.PrivateClaims()["emails"]
+		if !ok {
+			return nil, fmt.Errorf("no email claim in token")
+		}
+		emails, ok := emailsClaim.([]interface{})
+		if !ok || len(emails) == 0 {
+			return nil, fmt.Errorf("couldn't find email claim in token: %T", emailsClaim)
+		}
+		// TODO(#18) Handle Multiple Emails in the Token Claims gracefully
+		if len(emails) > 1 {
+			return nil, fmt.Errorf("multiple emails in token: %+v", emails)
+		}
+		email, ok := emails[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("wrong type for email claim: %T", emails[0])
+		}
+		canonical, err := pacta.CanonicalizeEmail(email)
+		if err != nil {
+			return nil, fmt.Errorf("invalid email on token: %q", email)
+		}
+		authnID := token.Subject()
+		if authnID == "" {
+			return nil, fmt.Errorf("couldn't find authn id in jwt")
+		}
+		user, err := db.GetOrCreateUserByAuthn(db.NoTxn(c), pacta.AuthnMechanism_EmailAndPass, authnID, email, canonical)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user by authn: %w", err)
+		}
+		return jwtauth.WithUserId(c, string(user.ID)), nil
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx, err := fn(r.Context())
+			if err != nil {
+				// Optionally log errors here when debugging authentication access.
+				// logger.Warn("couldn't authenticate", zap.Error(err))
+				// http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				next.ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
 
 func findFirstInClaims(claims map[string]any, keys ...string) (string, error) {

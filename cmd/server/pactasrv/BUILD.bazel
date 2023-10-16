@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "initiative.go",
         "initiative_invitation.go",
+        "initiative_user_relationship.go",
         "pacta_version.go",
         "pactasrv.go",
         "user.go",

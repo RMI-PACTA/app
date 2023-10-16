@@ -5,5 +5,6 @@
     <ModalError />
     <ModalLoading />
     <ModalPermissionDenied />
+    <ModalFakeUsers />
   </div>
 </template>

@@ -51,20 +51,16 @@ func PactaVersionCreateFromOAPI(p *api.PactaVersionCreate) (*pacta.PACTAVersion,
 	}, nil
 }
 
-func InitiativeInvitationFromOAPI(i *api.InitiativeInvitation) (*pacta.InitiativeInvitation, error) {
+func InitiativeInvitationFromOAPI(i *api.InitiativeInvitationCreate) (*pacta.InitiativeInvitation, error) {
 	if i == nil {
 		return nil, oapierr.Internal("initiativeInvitationToOAPI: can't convert nil pointer")
 	}
-	if !i.CreatedAt.IsZero() {
-		return nil, oapierr.BadRequest("initiativeInvitationToOAPI: cannot set createdAt")
+	if !initiativeIDRegex.MatchString(i.Id) {
+		return nil, oapierr.BadRequest("id must contain only alphanumeric characters, underscores, and dashes")
 	}
-	if i.UsedAt != nil && *i.UsedAt != "" {
-		return nil, oapierr.BadRequest("initiativeInvitationToOAPI: cannot set usedAt")
+	if i.InitiativeId == "" {
+		return nil, oapierr.BadRequest("initiative_id must not be empty")
 	}
-	if i.UsedByUserId != nil && *i.UsedByUserId != "" {
-		return nil, oapierr.BadRequest("initiativeInvitationToOAPI: cannot set usedByUserId")
-	}
-
 	return &pacta.InitiativeInvitation{
 		ID:         pacta.InitiativeInvitationID(i.Id),
 		Initiative: &pacta.Initiative{ID: pacta.InitiativeID(i.InitiativeId)},

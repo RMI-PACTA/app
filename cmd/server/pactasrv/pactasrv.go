@@ -8,6 +8,7 @@ import (
 	"github.com/RMI/pacta/oapierr"
 	"github.com/RMI/pacta/pacta"
 	"github.com/RMI/pacta/task"
+	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
 )
 
@@ -42,6 +43,7 @@ type DB interface {
 	InitiativeUserRelationshipsByUser(tx db.Tx, uid pacta.UserID) ([]*pacta.InitiativeUserRelationship, error)
 	InitiativeUserRelationshipsByInitiatives(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error)
 	PutInitiativeUserRelationship(tx db.Tx, iur *pacta.InitiativeUserRelationship) error
+	UpdateInitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID, mutations ...db.UpdateInitiativeUserRelationshipFn) error
 
 	Initiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Initiative, error)
 	Initiatives(tx db.Tx, ids []pacta.InitiativeID) (map[pacta.InitiativeID]*pacta.Initiative, error)
@@ -73,6 +75,7 @@ type DB interface {
 type Server struct {
 	DB         DB
 	TaskRunner TaskRunner
+	Logger     *zap.Logger
 }
 
 func mapAll[I any, O any](is []I, f func(I) (O, error)) ([]O, error) {
@@ -99,4 +102,12 @@ func dereference[T any](ts []*T, e error) ([]T, error) {
 		result[i] = *t
 	}
 	return result, nil
+}
+
+func getUserID(ctx context.Context) (pacta.UserID, error) {
+	userID, err := jwtauth.UserIDFromContext(ctx)
+	if err != nil {
+		return "", oapierr.Unauthorized("error getting authorization token", zap.Error(err))
+	}
+	return pacta.UserID(userID), nil
 }
