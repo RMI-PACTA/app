@@ -65,7 +65,7 @@ const doSignOut = () => { void signOut().then(close) }
               v-if="!user.itMe"
               :value="user.email"
               icon="pi pi-user"
-              cta="Copy"
+              :cta="tt('Copy')"
               class="p-button-xs"
             />
           </div>
@@ -74,12 +74,12 @@ const doSignOut = () => { void signOut().then(close) }
             <CopyToClipboardButton
               v-if="!user.itMe"
               :value="user.password"
-              cta="Copy"
+              :cta="tt('Copy')"
               class="p-button-xs"
             />
             <PVButton
               v-else
-              label="Sign Out"
+              :label="tt('Sign Out')"
               icon="pi pi-sign-out"
               class="p-button-danger p-button-xs"
               @click="doSignOut"
@@ -90,7 +90,7 @@ const doSignOut = () => { void signOut().then(close) }
     </div>
     <PVButton
       v-if="!isAuthenticated"
-      label="Sign In"
+      :label="tt('Sign In')"
       icon="pi pi-sign-in"
       class="align-self-start"
       @click="signIn"

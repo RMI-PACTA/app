@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+
+const { t } = useI18n()
+
 interface Props {
   value: string
   cta: string
 }
 const props = defineProps<Props>()
 
-const prefix = `CopyToClipboardButton[${useStateIDGenerator().id()}]`
-const copiedToClipboard = useState<boolean>(`${prefix}.copiedToClipboard`, () => false)
-const message = computed(() => copiedToClipboard.value ? 'Copied to Clipboard!' : props.cta)
+const prefix = 'CopyToClipboardButton'
+const tt = (key: string) => t(`${prefix}.${key}`)
+
+const statePrefix = `${prefix}[${useStateIDGenerator().id()}]`
+const copiedToClipboard = useState<boolean>(`${statePrefix}.copiedToClipboard`, () => false)
+const message = computed(() => copiedToClipboard.value ? tt('Copied') : props.cta)
 const icon = computed(() => copiedToClipboard.value ? 'pi pi-check' : 'pi pi-copy')
 
 const copyToClipboard = async () => {

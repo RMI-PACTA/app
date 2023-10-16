@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { humanReadableTimeFromStandardString } from '@/lib/time'
 
-// const router = useRouter()
 const pactaClient = await usePACTA()
-// const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
 const { getMaybeMe } = useSession()

@@ -1,11 +1,8 @@
 <script setup lang="ts">
-// const router = useRouter()
 import { humanReadableDateFromStandardString } from '@/lib/time'
 
 const pactaClient = await usePACTA()
-// const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
-// const localePath = useLocalePath()
 
 const id = presentOrCheckURL(fromParams('id'))
 const prefix = `initiative/${id}/invitations`

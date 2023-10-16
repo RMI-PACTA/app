@@ -4,6 +4,7 @@ import { getEditorComputedValues } from './utils'
 
 export type EditorUser = EditorFieldsFor<User>
 
+// TODO(grady) Add i18n for forms.
 const createEditorUser = (user: User): EditorUser => {
   return {
     id: {

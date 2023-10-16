@@ -33,8 +33,8 @@ const tt = (s: string) => t(`${prefix}.${s}`)
           @click="() => showStandardDebug = !showStandardDebug"
         />
       </div>
-      <div>
-        Dev Tools
+      <div class="text-xs">
+        {{ tt('Dev Tools') }}
       </div>
     </div>
     <div class="flex flex-row gap-3 align-items-center flex-wrap">

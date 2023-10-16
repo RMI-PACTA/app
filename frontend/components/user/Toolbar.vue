@@ -3,11 +3,15 @@ const { getMaybeMe } = useSession()
 
 const localePath = useLocalePath()
 const { isAdmin, maybeMe } = await getMaybeMe()
+const { t } = useI18n()
 
 interface Props {
   userId: string
 }
 const props = defineProps<Props>()
+
+const prefix = 'UserToolbar'
+const tt = (key: string) => t(`${prefix}.${key}`)
 
 const isMe = computed<boolean>(() => {
   const mm = maybeMe.value
@@ -24,7 +28,7 @@ const showToolbar = computed<boolean>(() => canEdit.value)
   >
     <LinkButton
       :to="localePath(`/user/${props.userId}`)"
-      label="Profile"
+      :label="tt('Profile')"
       icon="pi pi-home"
       active-class="border-2"
       inactive-class="p-button-outlined"
@@ -32,7 +36,7 @@ const showToolbar = computed<boolean>(() => canEdit.value)
     <LinkButton
       v-if="canEdit"
       :to="localePath(`/user/${props.userId}/edit`)"
-      label="Edit"
+      :label="tt('Edit')"
       icon="pi pi-pencil"
       active-class="border-2"
       inactive-class="p-button-outlined"

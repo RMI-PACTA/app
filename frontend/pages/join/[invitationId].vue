@@ -1,11 +1,10 @@
 <script setup lang="ts">
-// const router = useRouter()
-const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
 const router = useRouter()
 const { getMaybeMe } = useSession()
+const pactaClient = await usePACTA()
 
 const { maybeMe } = await getMaybeMe()
 

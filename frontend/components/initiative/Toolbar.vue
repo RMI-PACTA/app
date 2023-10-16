@@ -3,8 +3,11 @@ import { type InitiativeUserRelationship } from '@/openapi/generated/pacta'
 
 const localePath = useLocalePath()
 const { getMaybeMe } = useSession()
+const { t } = useI18n()
 
 const { isAdmin, maybeMe } = await getMaybeMe()
+const prefix = 'InitiativeToolbar'
+const tt = (key: string) => t(`${prefix}.${key}`)
 
 interface Props {
   initiativeId: string
@@ -32,7 +35,7 @@ const showToolbar = computed<boolean>(() => canSeeInternal.value || canEdit.valu
   >
     <LinkButton
       :to="localePath(`/initiative/${initiativeId}`)"
-      label="Initiative Home"
+      :label="tt('Initiative Home')"
       icon="pi pi-home"
       active-class="border-2"
       inactive-class="p-button-outlined"
@@ -40,7 +43,7 @@ const showToolbar = computed<boolean>(() => canSeeInternal.value || canEdit.valu
     <LinkButton
       v-if="canEdit"
       :to="localePath(`/initiative/${initiativeId}/edit`)"
-      label="Edit"
+      :label="tt('Edit')"
       icon="pi pi-pencil"
       active-class="border-2"
       inactive-class="p-button-outlined"
@@ -48,7 +51,7 @@ const showToolbar = computed<boolean>(() => canSeeInternal.value || canEdit.valu
     <LinkButton
       v-if="canEdit"
       :to="localePath(`/initiative/${initiativeId}/invitations`)"
-      label="Invitations"
+      :label="tt('Invitations')"
       icon="pi pi-envelope"
       active-class="border-2"
       inactive-class="p-button-outlined"
@@ -56,7 +59,7 @@ const showToolbar = computed<boolean>(() => canSeeInternal.value || canEdit.valu
     <LinkButton
       v-if="canEdit"
       :to="localePath(`/initiative/${initiativeId}/relationships`)"
-      label="Relationships"
+      :label="tt('Relationships')"
       icon="pi pi-users"
       active-class="border-2"
       inactive-class="p-button-outlined"
@@ -64,24 +67,10 @@ const showToolbar = computed<boolean>(() => canSeeInternal.value || canEdit.valu
     <LinkButton
       v-if="canSeeInternal"
       :to="localePath(`/initiative/${initiativeId}/internal`)"
-      label="Internal Information"
+      :label="tt('Internal Information')"
       icon="pi pi-info-circle"
       active-class="border-2"
       inactive-class="p-button-outlined"
     />
   </div>
 </template>
-
-<style scoped lang="scss">
-.initiative-toolbar {
-  .router-link-active {
-    background: 'red';
- }
-
- /*
-  .my-link.router-link-active:hover {
-    @apply bg-green-200 font-medium;
-  }
-  */
-}
-</style>

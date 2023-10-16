@@ -1,7 +1,17 @@
 {
+    "CopyToClipboardButton": {
+        "Copied": "Copied to Clipboard!"
+    },
     "FormField": {
         "Required": "Required",
         "Loading": "Loading..."
+    },
+    "InitiativeToolbar": {
+        "Initiative Home": "Initiative Home",
+        "Edit": "Edit",
+        "Invitations": "Invitations",
+        "Relationships": "Relationships",
+        "Internal Information": "Internal Information",
     },
     "LocaleSelector": {
         "Availabile In": "This site is available in:",
@@ -26,7 +36,10 @@
         "Subheading": "Quickly switch between profiles for testing.",
         "Description": "Microsoft Active Directory doesn't allow us to programatically log in as other users, so you will need to manually log in as one of the users below. These are only in the Local environment (for now).",
         "Email": "Email",
-        "Password": "Password"
+        "Password": "Password",
+        "Sign Out": "Sign Out",
+        "Sign In": "Sign In",
+        "Copy": "Copy"
     },
     "ModalPermissionDenied": {
         "Heading": "Permission Denied",
@@ -45,7 +58,8 @@
         "Privacy": "Privacy",
         "About": "About",
         "Manage Fake Users": "Manage Fake Users",
-        "Toggle Debug Info": "Toggle Debug Info"
+        "Toggle Debug Info": "Toggle Debug Info",
+        "Dev Tools": "Dev Tools"
     },
     "StandardNav": {
         "Home": "Home",
@@ -53,6 +67,23 @@
         "My Stuff": "My Stuff",
         "Sign Out": "Sign Out",
         "Sign In": "Sign In"
+    },
+    "UserEditor": {
+        "The name that will be associated with": "The name that will be associated with ",
+        "you": "your public activities on the platform",
+        "this user": "this user's public activities on the platform",
+        "may be public": "Note that this name may be accessible to a public audience.",
+        "language help text": "What language should platform freatures that support internationalization default to for this user?",
+        "admin help text": "If enabled, this user will have administrator priveledges.",
+        "is admin": "Is an Administrator",
+        "is not admin": "Is not an Administrator",
+        "super admin help text": "If enabled, this user will have super-administrator priveledges.",
+        "is super admin": "Is a Super Administrator",
+        "is not super admin": "Is not a Super Administrator"
+    },
+    "UserToolbar": {
+        "Profile": "Profile",
+        "Edit": "Edit"
     },
     "initiative/invitations": {
         "Heading": "Initaitive Invitations",
@@ -65,7 +96,6 @@
         "New Invitations Help": "Create new invitations by clicking the button below. You can create as many invitations as you want, but each invitation can only be used once. Invitation codes must only contain alphanumeric characters (a-z, A-Z, 0-9), underscores and dashes. You can create multiple invitations at once by separating them with tabs, commas, newlines, or spaces.",
         "Create": "Create",
         "Unused": "Unused",
-        "Includes Illegal Characters": "Includes illegal characters",
-    }
-
+        "Includes Illegal Characters": "Includes illegal characters"
+    },
 }

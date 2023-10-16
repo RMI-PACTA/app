@@ -1,9 +1,6 @@
 <script setup lang="ts">
-// const router = useRouter()
 const pactaClient = await usePACTA()
-// const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
-// const localePath = useLocalePath()
 
 const id = presentOrCheckURL(fromParams('id'))
 const prefix = `initiative/${id}/invitations`

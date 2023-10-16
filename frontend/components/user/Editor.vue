@@ -23,11 +23,11 @@ const eu = computed({
   set: (eu) => { emit('update:editorUser', eu) },
 })
 const isMe = computed(() => maybeMe.value?.id === eu.value.id.currentValue)
-const profileDescription = computed(() => isMe.value ? tt('your profile') : tt('this user profile'))
+const profileDescription = computed(() => isMe.value ? tt('you') : tt('this user'))
 const nameHelpText = computed(() => {
   const pd = profileDescription.value
   const pre = tt('The name that will be associated with')
-  const post = tt('Note that this name will be accessible to a public audience.')
+  const post = tt('may be public')
   return `${pre} ${pd}. ${post}`
 })
 </script>
@@ -44,30 +44,30 @@ const nameHelpText = computed(() => {
     </FormEditorField>
     <FormEditorField
       :editor-field="eu.preferredLanguage"
-      help-text="What language should platform freatures that support internationalization default to for this user?"
+      :help-text="tt('language help text')"
     >
       <LanguageSelector
         v-model:value="eu.preferredLanguage.currentValue"
       />
     </FormEditorField>
     <FormEditorField
-      help-text="If enabled, this user will have administrator priveledges."
+      :help-text="tt('admin help text')"
       :editor-field="eu.admin"
     >
       <ExplicitInputSwitch
         v-model:value="eu.admin.currentValue"
-        on-label="Is an Administrator"
-        off-label="Is not an Administrator"
+        :on-label="tt('is admin')"
+        :off-label="tt('is not admin')"
       />
     </FormEditorField>
     <FormEditorField
-      help-text="If enabled, this user will have super-administrator priveledges."
+      :help-text="tt('super admin help text')"
       :editor-field="eu.superAdmin"
     >
       <ExplicitInputSwitch
         v-model:value="eu.superAdmin.currentValue"
-        on-label="Is a Super Administrator"
-        off-label="Is not a Super Administrator"
+        :on-label="tt('is super admin')"
+        :off-label="tt('is not super admin')"
       />
     </FormEditorField>
   </div>
