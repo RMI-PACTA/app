@@ -53,4 +53,12 @@ FLAGS+=(
   "--local_dsn=${LOCAL_DSN}"
 )
 
+LOCAL_DOCKER_CREDS="$(sops -d --extract '["localdocker"]' "${ROOT}/secrets/local.enc.json")"
+
+FLAGS+=(
+  "--local_docker_tenant_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .tenant_id)"
+  "--local_docker_client_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .client_id)"
+  "--local_docker_client_secret=$(echo $LOCAL_DOCKER_CREDS | jq -r .password)"
+)
+
 bazel run --run_under="cd $ROOT && " //cmd/server -- "${FLAGS[@]}"

@@ -1,9 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "local",
-    srcs = ["local.go"],
-    importpath = "github.com/RMI/pacta/executors/local",
-    visibility = ["//visibility:public"],
-    deps = ["//pacta"],
-)

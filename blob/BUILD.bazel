@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "blob",
+    srcs = ["blob.go"],
+    importpath = "github.com/RMI/pacta/blob",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "blob_test",
+    srcs = ["blob_test.go"],
+    embed = [":blob"],
+)

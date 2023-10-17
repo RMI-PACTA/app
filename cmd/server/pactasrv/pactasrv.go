@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/RMI/pacta/blob"
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	"github.com/RMI/pacta/pacta"
@@ -17,7 +18,8 @@ var (
 )
 
 type TaskRunner interface {
-	StartRun(context.Context, *task.StartRunRequest) (task.ID, error)
+	ProcessPortfolio(ctx context.Context, req *task.ProcessPortfolioRequest) (task.ID, error)
+	CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, error)
 }
 
 type DB interface {
@@ -70,9 +72,21 @@ type DB interface {
 	DeleteUser(tx db.Tx, id pacta.UserID) error
 }
 
+type Blob interface {
+	Scheme() blob.Scheme
+
+	// For uploading portfolios
+	SignedUploadURL(ctx context.Context, uri string) (string, error)
+	// For downloading reports
+	SignedDownloadURL(ctx context.Context, uri string) (string, error)
+}
+
 type Server struct {
 	DB         DB
 	TaskRunner TaskRunner
+
+	Blob              Blob
+	PorfolioUploadURI string
 }
 
 func mapAll[I any, O any](is []I, f func(I) (O, error)) ([]O, error) {

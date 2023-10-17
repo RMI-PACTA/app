@@ -9,23 +9,22 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/RMI/pacta/azure/azblob"
 	"github.com/RMI/pacta/azure/aztask"
 	"github.com/RMI/pacta/cmd/runner/taskrunner"
 	"github.com/RMI/pacta/cmd/server/pactasrv"
 	"github.com/RMI/pacta/db/sqldb"
-	"github.com/RMI/pacta/executors/docker"
+	"github.com/RMI/pacta/dockertask"
 	"github.com/RMI/pacta/oapierr"
 	oapipacta "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/secrets"
 	"github.com/RMI/pacta/task"
 	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/zaphttplog"
-	"github.com/docker/docker/client"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
@@ -62,6 +61,11 @@ func run(args []string) error {
 		env      = fs.String("env", "", "The environment that we're running in.")
 		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the secret configuration. Can only be used when running locally.")
 
+		// Only when running locally because the Dockerized runner can't use local `az` CLI credentials
+		localDockerTenantID     = fs.String("local_docker_tenant_id", "", "The Azure Tenant ID the localdocker service principal lives in")
+		localDockerClientID     = fs.String("local_docker_client_id", "", "The client ID of the localdocker service principal")
+		localDockerClientSecret = fs.String("local_docker_client_secret", "", "The client secret for accessing the localdocker service principal")
+
 		// PACTA Execution
 		useAZRunner = fs.Bool("use_azure_runner", false, "If true, execute PACTA on Azure Container Apps Jobs instead of a local instance.")
 
@@ -74,6 +78,9 @@ func run(args []string) error {
 
 		authKeyID   = fs.String("secret_auth_public_key_id", "", "Key ID (kid) of the JWT tokens to allow")
 		authKeyData = fs.String("secret_auth_public_key_data", "", "PEM-encoded Ed25519 public key to verify JWT tokens with, contains literal \\n characters that will need to be replaced before parsing")
+
+		azStorageAccount           = fs.String("secret_azure_storage_account", "", "The storage account to authenticate against for blob operations")
+		azSourcePortfolioContainer = fs.String("secret_azure_source_portfolio_container", "", "The container in the storage account where we write raw portfolios to")
 
 		runnerConfigLocation   = fs.String("secret_runner_config_location", "", "Location (like 'centralus') where the runner jobs should be executed")
 		runnerConfigConfigPath = fs.String("secret_runner_config_config_path", "", "Config path (like '/configs/dev.conf') where the runner jobs should read their base config from")
@@ -110,6 +117,7 @@ func run(args []string) error {
 			return fmt.Errorf("failed to init logger: %w", err)
 		}
 	}
+	defer logger.Sync()
 
 	sec, err := secrets.LoadPACTA(&secrets.RawPACTAConfig{
 		PostgresConfig: &secrets.RawPostgresConfig{
@@ -198,13 +206,12 @@ func run(args []string) error {
 		}
 	}
 
-	var taskRunner pactasrv.TaskRunner
+	var runner taskrunner.Runner
 	if *useAZRunner {
 		logger.Info("initializing Azure task runner client")
-		tmp, err := aztask.NewTaskRunner(creds, &aztask.Config{
-			Location:   runCfg.Location,
-			ConfigPath: runCfg.ConfigPath,
-			Rand:       rand.New(cryptorand.New()),
+		tmp, err := aztask.NewRunner(creds, &aztask.Config{
+			Location: runCfg.Location,
+			Rand:     rand.New(cryptorand.New()),
 			Identity: &aztask.RunnerIdentity{
 				Name:               runCfg.Identity.Name,
 				SubscriptionID:     runCfg.Identity.SubscriptionID,
@@ -212,31 +219,47 @@ func run(args []string) error {
 				ClientID:           runCfg.Identity.ClientID,
 				ManagedEnvironment: runCfg.Identity.ManagedEnvironment,
 			},
-			Image: &aztask.RunnerImage{
-				Registry: runCfg.Image.Registry,
-				Name:     runCfg.Image.Name,
-			},
 		})
 		if err != nil {
-			return fmt.Errorf("failed to init task runner: %w", err)
+			return fmt.Errorf("failed to init Azure runner: %w", err)
 		}
-		taskRunner = tmp
+		runner = tmp
 	} else {
-		cli, err := client.NewEnvClient()
+		tmp, err := dockertask.NewRunner(logger, &dockertask.ServicePrincipal{
+			TenantID:     *localDockerTenantID,
+			ClientID:     *localDockerClientID,
+			ClientSecret: *localDockerClientSecret,
+		})
 		if err != nil {
-			return fmt.Errorf("failed to initialize Docker client: %w", err)
+			return fmt.Errorf("failed to init docker runner: %w", err)
 		}
+		runner = tmp
+	}
 
-		dockerExec := docker.NewExecutor(cli, logger)
-		taskRunner = &localRunner{
-			handler: taskrunner.New(dockerExec, logger),
-		}
+	tr, err := taskrunner.New(&taskrunner.Config{
+		ConfigPath: runCfg.ConfigPath,
+		BaseImage: &task.BaseImage{
+			Registry: runCfg.Image.Registry,
+			Name:     runCfg.Image.Name,
+		},
+		Logger: logger,
+		Runner: runner,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to init task runner: %w", err)
+	}
+
+	blobClient, err := azblob.NewClient(creds, *azStorageAccount)
+	if err != nil {
+		return fmt.Errorf("failed to init blob client: %w", err)
 	}
 
 	// Create an instance of our handler which satisfies each generated interface
 	srv := &pactasrv.Server{
-		DB:         db,
-		TaskRunner: taskRunner,
+		Blob:              blobClient,
+		PorfolioUploadURI: *azSourcePortfolioContainer,
+		DB:                db,
+		TaskRunner:        tr,
 	}
 
 	pactaStrictHandler := oapipacta.NewStrictHandlerWithOptions(srv, nil /* middleware */, oapipacta.StrictHTTPServerOptions{
@@ -369,22 +392,4 @@ func responseErrorHandlerFuncForService(logger *zap.Logger, svc string) func(w h
 		logger.Error("error while handling request", zap.String("service", svc), zap.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-}
-
-// localRunner is a thin shim around *taskrunner.Handler that satisfies the
-// task runner interface, allowing us to run the handler in-process, usually for
-// local development.
-type localRunner struct {
-	handler *taskrunner.Handler
-
-	taskID int
-}
-
-func (l *localRunner) StartRun(ctx context.Context, req *task.StartRunRequest) (task.ID, error) {
-	if err := l.handler.Execute(ctx, req); err != nil {
-		return "", fmt.Errorf("error from handler: %w", err)
-	}
-
-	l.taskID++
-	return task.ID("task:" + strconv.Itoa(l.taskID)), nil
 }

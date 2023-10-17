@@ -1,16 +1,15 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "docker",
-    srcs = ["docker.go"],
-    importpath = "github.com/RMI/pacta/executors/docker",
+    name = "dockertask",
+    srcs = ["dockertask.go"],
+    importpath = "github.com/RMI/pacta/dockertask",
     visibility = ["//visibility:public"],
     deps = [
-        "//pacta",
+        "//task",
         "@com_github_docker_docker//api/types",
         "@com_github_docker_docker//api/types/container",
         "@com_github_docker_docker//client",
-        "@com_github_docker_docker//pkg/stdcopy",
         "@com_github_opencontainers_image_spec//specs-go/v1:specs-go",
         "@org_uber_go_zap//:zap",
     ],

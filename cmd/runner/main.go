@@ -1,15 +1,27 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/RMI/pacta/azure/azblob"
 	"github.com/RMI/pacta/azure/azlog"
-	"github.com/RMI/pacta/cmd/runner/taskrunner"
-	"github.com/RMI/pacta/executors/local"
+	"github.com/RMI/pacta/blob"
 	"github.com/RMI/pacta/pacta"
 	"github.com/RMI/pacta/task"
 	"github.com/namsral/flag"
@@ -35,7 +47,12 @@ func run(args []string) error {
 	var (
 		env = fs.String("env", "", "The environment we're running in.")
 
-		minLogLevel zapcore.Level = zapcore.WarnLevel
+		azStorageAccount           = fs.String("azure_storage_account", "", "The storage account to authenticate against for blob operations")
+		azSourcePortfolioContainer = fs.String("azure_source_portfolio_container", "", "The container in the storage account where we read raw portfolios from")
+		azDestPortfolioContainer   = fs.String("azure_dest_portfolio_container", "", "The container in the storage account where we read/write processed portfolios")
+		azReportContainer          = fs.String("azure_report_container", "", "The container in the storage account where we write generated portfolio reports to")
+
+		minLogLevel zapcore.Level = zapcore.DebugLevel
 	)
 	fs.Var(&minLogLevel, "min_log_level", "If set, retains logs at the given level and above. Options: 'debug', 'info', 'warn', 'error', 'dpanic', 'panic', 'fatal' - default warn.")
 
@@ -53,16 +70,294 @@ func run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to init logger: %w", err)
 	}
+	defer logger.Sync()
 
-	h := taskrunner.New(&local.Executor{}, logger)
+	var creds azcore.TokenCredential
+	// Azure has 3-4 ways to authenticate as an identity to their APIs (KMS, storage, etc).
+	//   - When running locally, we use the "Environment" approach, which means we provide AZURE_* environment variables that authenticate against a local-only service account.
+	//   - When running in Azure Container Apps Jobs, we use the "ManagedIdentitiy" approach, meaning we pull ambiently from the infrastructure we're running on (via a metadata service).
+	// See https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity#readme-credential-types for more info
+	if azClientSecret := os.Getenv("AZURE_CLIENT_SECRET"); azClientSecret != "" {
+		if creds, err = azidentity.NewEnvironmentCredential(nil); err != nil {
+			return fmt.Errorf("failed to load Azure credentials from environment: %w", err)
+		}
+	} else {
+		// We use "ManagedIdentity" instead of just "Default" because the default
+		// timeout is too low in azidentity.NewDefaultAzureCredentials, so it times out
+		// and fails to run.
+		azClientID := os.Getenv("AZURE_CLIENT_ID")
+		logger.Info("Loading user managed credentials", zap.String("client_id", azClientID))
+		if creds, err = azidentity.NewManagedIdentityCredential(&azidentity.ManagedIdentityCredentialOptions{
+			ID: azidentity.ClientID(azClientID),
+		}); err != nil {
+			return fmt.Errorf("failed to load Azure credentials: %w", err)
+		}
+	}
 
-	portfolioID := pacta.PortfolioID(os.Getenv("PORTFOLIO_ID"))
-	logger.Info("running PACTA task", zap.String("portfolio_id", string(portfolioID)))
-	if err := h.Execute(ctx, &task.StartRunRequest{
-		PortfolioID: portfolioID,
-	}); err != nil {
-		return fmt.Errorf("failed to run task: %w", err)
+	blobClient, err := azblob.NewClient(creds, *azStorageAccount)
+	if err != nil {
+		return fmt.Errorf("failed to init blob client: %w", err)
+	}
+
+	h := handler{
+		blob:                     blobClient,
+		sourcePortfolioContainer: *azSourcePortfolioContainer,
+		destPortfolioContainer:   *azDestPortfolioContainer,
+		reportContainer:          *azReportContainer,
+	}
+
+	validTasks := map[task.Type]func(context.Context) error{
+		task.ProcessPortfolio: toRunFn(processPortfolioReq, h.processPortfolio),
+		task.CreateReport:     toRunFn(createReportReq, h.createReport),
+	}
+
+	taskType := task.Type(os.Getenv("TASK_TYPE"))
+	if taskType == "" {
+		return errors.New("no TASK_TYPE given")
+	}
+
+	taskFn, ok := validTasks[taskType]
+	if !ok {
+		return fmt.Errorf("unknown task type %q", taskType)
+	}
+
+	logger.Info("running PACTA task", zap.String("task_type", string(taskType)))
+
+	if err := taskFn(ctx); err != nil {
+		return fmt.Errorf("error running task: %w", err)
+	}
+
+	logger.Info("ran PACTA task successfully", zap.String("task_type", string(taskType)))
+
+	return nil
+}
+
+type Blob interface {
+	ReadBlob(ctx context.Context, uri string) (io.ReadCloser, error)
+	WriteBlob(ctx context.Context, uri string, r io.Reader) error
+	Scheme() blob.Scheme
+}
+
+type handler struct {
+	blob                     Blob
+	sourcePortfolioContainer string
+	destPortfolioContainer   string
+	reportContainer          string
+}
+
+func processPortfolioReq() (*task.ProcessPortfolioRequest, error) {
+	rawAssetIDs := os.Getenv("ASSET_IDS")
+	if rawAssetIDs == "" {
+		return nil, errors.New("no ASSET_IDS given")
+	}
+
+	var assetIDs []string
+	if err := json.NewDecoder(strings.NewReader(rawAssetIDs)).Decode(&assetIDs); err != nil {
+		return nil, fmt.Errorf("failed to load asset IDs: %w", err)
+	}
+
+	return &task.ProcessPortfolioRequest{
+		AssetIDs: assetIDs,
+	}, nil
+}
+
+func (h *handler) uploadDirectory(ctx context.Context, dirPath, container string) error {
+	base := filepath.Base(dirPath)
+
+	return filepath.WalkDir(dirPath, func(path string, info fs.DirEntry, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+
+		// This is a file, let's upload it to the container
+		uri := blob.Join(h.blob.Scheme(), container, base, strings.TrimPrefix(path, dirPath))
+		if err := h.uploadBlob(ctx, path, uri); err != nil {
+			return fmt.Errorf("failed to upload blob: %w", err)
+		}
+		return nil
+	})
+}
+
+func (h *handler) uploadBlob(ctx context.Context, srcPath, destURI string) error {
+	srcF, err := os.Open(srcPath)
+	if err != nil {
+		return fmt.Errorf("failed to open file for upload: %w", err)
+	}
+	defer srcF.Close() // Best-effort in case something fails
+
+	if err := h.blob.WriteBlob(ctx, destURI, srcF); err != nil {
+		return fmt.Errorf("failed to write file to blob storage: %w", err)
+	}
+
+	if err := srcF.Close(); err != nil {
+		return fmt.Errorf("failed to close source file: %w", err)
 	}
 
 	return nil
+}
+
+func (h *handler) downloadBlob(ctx context.Context, srcURI, destPath string) error {
+	// Make sure the destination exists
+	if err := os.MkdirAll(filepath.Dir(destPath), 0600); err != nil {
+		return fmt.Errorf("failed to create directory to download blob to: %w", err)
+	}
+
+	destF, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("failed to create dest file: %w", err)
+	}
+	defer destF.Close() // Best-effort in case something fails
+
+	br, err := h.blob.ReadBlob(ctx, srcURI)
+	if err != nil {
+		return fmt.Errorf("failed to read raw portfolio: %w", err)
+	}
+	defer br.Close() // Best-effort in case something fails
+
+	if _, err := io.Copy(destF, br); err != nil {
+		return fmt.Errorf("failed to load raw portfolio: %w", err)
+	}
+
+	if err := br.Close(); err != nil {
+		return fmt.Errorf("failed to close blob reader: %w", err)
+	}
+
+	if err := destF.Close(); err != nil {
+		return fmt.Errorf("failed to close dest file: %w", err)
+	}
+
+	return nil
+}
+
+func (h *handler) processPortfolio(ctx context.Context, req *task.ProcessPortfolioRequest) error {
+	// Load the portfolio from blob storage, place it in /mnt/raw_portfolios, where
+	// the `process_portfolios.R` script expects it to be.
+	for _, assetID := range req.AssetIDs {
+		srcURI := blob.Join(h.blob.Scheme(), h.sourcePortfolioContainer, assetID)
+		// TODO: Probably set the CSV extension in the signed upload URL instead.
+		destPath := filepath.Join("/", "mnt", "raw_portfolios", assetID+".csv")
+
+		if err := h.downloadBlob(ctx, srcURI, destPath); err != nil {
+			return fmt.Errorf("failed to download raw portfolio blob: %w", err)
+		}
+	}
+
+	processedDir := filepath.Join("/", "mnt", "processed_portfolios")
+	if err := os.MkdirAll(processedDir, 0600); err != nil {
+		return fmt.Errorf("failed to create directory to download blob to: %w", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, "/usr/local/bin/Rscript", "/app/process_portfolios.R")
+	cmd.Stdout = io.MultiWriter(os.Stdout, &stdout)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr)
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run process_portfolios script: %w", err)
+	}
+
+	sc := bufio.NewScanner(&stderr)
+
+	// TODO: Load from the output database file (or similar, like reading the processed_portfolios dir) instead of parsing stderr
+	var paths []string
+	for sc.Scan() {
+		line := sc.Text()
+		idx := strings.Index(line, "writing to file: " /* 17 chars */)
+		if idx == -1 {
+			continue
+		}
+		paths = append(paths, strings.TrimSpace(line[idx+17:]))
+	}
+
+	// NOTE: This code could benefit from some concurrency, but I'm opting not to prematurely optimize.
+	for _, p := range paths {
+		destURI := blob.Join(h.blob.Scheme(), h.destPortfolioContainer, filepath.Base(p))
+		if err := h.uploadBlob(ctx, p, destURI); err != nil {
+			return fmt.Errorf("failed to copy processed portfolio from %q to %q: %w", p, destURI, err)
+		}
+	}
+
+	return nil
+}
+
+func createReportReq() (*task.CreateReportRequest, error) {
+	pID := os.Getenv("PORTFOLIO_ID")
+	if pID == "" {
+		return nil, errors.New("no PORTFOLIO_ID was given")
+	}
+
+	return &task.CreateReportRequest{
+		PortfolioID: pacta.PortfolioID(pID),
+	}, nil
+}
+
+func (h *handler) createReport(ctx context.Context, req *task.CreateReportRequest) error {
+	baseName := string(req.PortfolioID) + ".json"
+
+	// Load the processed portfolio from blob storage, place it in /mnt/
+	// processed_portfolios, where the `create_report.R` script expects it
+	// to be.
+	srcURI := blob.Join(h.blob.Scheme(), h.destPortfolioContainer, baseName)
+	destPath := filepath.Join("/", "mnt", "processed_portfolios", baseName)
+
+	if err := h.downloadBlob(ctx, srcURI, destPath); err != nil {
+		return fmt.Errorf("failed to download processed portfolio blob: %w", err)
+	}
+
+	reportDir := filepath.Join("/", "mnt", "reports")
+	if err := os.MkdirAll(reportDir, 0600); err != nil {
+		return fmt.Errorf("failed to create directory for reports to get copied to: %w", err)
+	}
+
+	cmd := exec.CommandContext(ctx, "/usr/local/bin/Rscript", "/app/create_report.R")
+	cmd.Env = append(cmd.Env,
+		"PORTFOLIO="+string(req.PortfolioID),
+		"HOME=/root", /* Required by pandoc */
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run pacta test CLI: %w", err)
+	}
+
+	// Download outputs from from /out and upload them to Azure
+	dirEntries, err := os.ReadDir(reportDir)
+	if err != nil {
+		return fmt.Errorf("failed to read report directory: %w", err)
+	}
+
+	for _, dirEntry := range dirEntries {
+		if !dirEntry.IsDir() {
+			continue
+		}
+		dirPath := filepath.Join(reportDir, dirEntry.Name())
+		if err := h.uploadDirectory(ctx, dirPath, h.reportContainer); err != nil {
+			return fmt.Errorf("failed to upload report directory: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func toRunFn[T any](reqFn func() (T, error), runFn func(context.Context, T) error) func(context.Context) error {
+	return func(ctx context.Context) error {
+		req, err := reqFn()
+		if err != nil {
+			return fmt.Errorf("failed to format request: %w", err)
+		}
+		return runFn(ctx, req)
+	}
+}
+
+type azureTokenCredential struct {
+	accessToken string
+}
+
+func (a *azureTokenCredential) GetToken(ctx context.Context, options policy.TokenRequestOptions) (azcore.AccessToken, error) {
+	return azcore.AccessToken{
+		Token: a.accessToken,
+		// We just don't bother with expiration time
+		ExpiresOn: time.Now().AddDate(1, 0, 0),
+	}, nil
 }
