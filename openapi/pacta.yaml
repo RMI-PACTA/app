@@ -276,6 +276,43 @@ paths:
       responses:
         '204':
           description: user deleted
+
+  /test:createPortfolioAsset:
+    post:
+      summary: Test endpoint, creates a new portfolio asset
+      description: |
+        Creates a new asset for a portfolio
+
+        Returns a signed URL where the portfolio can be uploaded to.
+      operationId: createPortfolioAsset
+      responses:
+        '200':
+          description: The asset can now be uploaded via the given signed URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewPortfolioAsset'
+
+  /test:processPortfolio:
+    post:
+      summary: Test endpoint, triggers a task to process the portfolio
+      description: |
+        Starts processing raw uploaded files
+      operationId: processPortfolio
+      requestBody:
+        description: The raw portfolio files to process
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessPortfolioReq'
+      responses:
+        '200':
+          description: The task has been started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessPortfolioResp'
               
 components:
   responses:
@@ -558,6 +595,38 @@ components:
         superAdmin:
           type: boolean
           description: Whether the given user is a super admin
+
+    NewPortfolioAsset:
+      type: object
+      required:
+        - upload_url
+        - asset_id
+      properties:
+        upload_url:
+          type: string
+          description: The signed URL where the file should be uploaded to, using PUT semantics.
+        asset_id:
+          type: string
+          description: A unique identifier for the uploaded asset
+
+    ProcessPortfolioReq:
+      type: object
+      required:
+        - asset_ids
+      properties:
+        asset_ids:
+          type: array
+          items:
+            type: string
+
+    ProcessPortfolioResp:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: string
+          description: The ID of the async task for processing the portfoio
 
     Error:
       type: object

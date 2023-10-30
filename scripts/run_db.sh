@@ -65,6 +65,9 @@ chmod 766 "$SOCKET_DIR"
 # appropriately.
 set_kv "SOCKET_DIR" "$SOCKET_DIR/sub"
 
+# Needed for rootless Podman setups
+mkdir -p "$SOCKET_DIR/sub"
+
 # We turn off ports and listen solely on our Unix socket.
 docker run \
   --name local-postgres \

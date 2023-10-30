@@ -6,11 +6,13 @@ go_library(
         "initiative.go",
         "pacta_version.go",
         "pactasrv.go",
+        "portfolio.go",
         "user.go",
     ],
     importpath = "github.com/RMI/pacta/cmd/server/pactasrv",
     visibility = ["//visibility:public"],
     deps = [
+        "//blob",
         "//cmd/server/pactasrv/conv",
         "//db",
         "//oapierr",
@@ -18,6 +20,7 @@ go_library(
         "//pacta",
         "//task",
         "@com_github_go_chi_jwtauth_v5//:jwtauth",
+        "@com_github_google_uuid//:uuid",
         "@org_uber_go_zap//:zap",
     ],
 )

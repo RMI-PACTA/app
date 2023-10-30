@@ -99,10 +99,10 @@ oci_pull(
     platforms = ["linux/amd64"],
 )
 
-# TODO: Replace this with the base image provided by RMI
 oci_pull(
     name = "runner_base",
-    digest = "sha256:46c5b9bd3e3efff512e28350766b54355fce6337a0b44ba3f822ab918eca4520",
-    image = "gcr.io/distroless/base",
-    platforms = ["linux/amd64"],
+    digest = "sha256:d0b2922dc48cb6acb7c767f89f0c92ccbe1a043166971bac0b585b3851a9b720",
+    # TODO(#44): Replace this base image with a more permanent one.
+    image = "docker.io/curfewreplica/pactatest",
+    # platforms = ["linux/amd64"],
 )
