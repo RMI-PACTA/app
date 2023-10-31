@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/RMI/pacta/azure/azblob"
+	"github.com/RMI/pacta/azure/azevents"
 	"github.com/RMI/pacta/azure/aztask"
 	"github.com/RMI/pacta/cmd/runner/taskrunner"
 	"github.com/RMI/pacta/cmd/server/pactasrv"
@@ -274,7 +275,15 @@ func run(args []string) error {
 		}),
 	})
 
+	eventSrv, err := azevents.NewServer(&azevents.Config{
+		Logger: logger,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to init Azure Event Grid handler: %w", err)
+	}
+
 	r := chi.NewRouter()
+	r.Group(eventSrv.RegisterHandlers)
 
 	jwKey, err := jwk.FromRaw(sec.AuthVerificationKey.PublicKey)
 	if err != nil {

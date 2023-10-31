@@ -9,6 +9,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//azure/azblob",
+        "//azure/azevents",
         "//azure/aztask",
         "//cmd/runner/taskrunner",
         "//cmd/server/pactasrv",
