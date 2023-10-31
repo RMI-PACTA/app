@@ -26,7 +26,7 @@ import (
 	"github.com/RMI/pacta/task"
 	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/zaphttplog"
-	"github.com/go-chi/chi/v5"
+	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -61,6 +61,9 @@ func run(args []string) error {
 
 		env      = fs.String("env", "", "The environment that we're running in.")
 		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the secret configuration. Can only be used when running locally.")
+
+		azEventSubscription  = fs.String("azure_event_subscription", "", "The Azure Subscription ID to allow webhook registrations from")
+		azEventResourceGroup = fs.String("azure_event_resource_group", "", "The Azure resource group to allow webhook registrations from")
 
 		// Only when running locally because the Dockerized runner can't use local `az` CLI credentials
 		localDockerTenantID     = fs.String("local_docker_tenant_id", "", "The Azure Tenant ID the localdocker service principal lives in")
@@ -276,7 +279,9 @@ func run(args []string) error {
 	})
 
 	eventSrv, err := azevents.NewServer(&azevents.Config{
-		Logger: logger,
+		Logger:        logger,
+		Subscription:  *azEventSubscription,
+		ResourceGroup: *azEventResourceGroup,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init Azure Event Grid handler: %w", err)

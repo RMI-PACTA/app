@@ -6,7 +6,7 @@ cd "$ROOT"
 
 # We keep it around because we'll need it at some point, but it can't be empty.
 VALID_FLAGS=(
-  "unused"
+  "with_public_endpoint"
 )
 
 VALID_FLAGS_NO_ARGS=(
@@ -23,6 +23,27 @@ OPTS=$(getopt \
   -- "$@"
 )
 
+if ! [ -x "$(command -v sops)" ]; then
+  echo 'Error: sops is not installed.' >&2
+  exit 1
+fi
+if ! [ -x "$(command -v jq)" ]; then
+  echo 'Error: jq is not installed.' >&2
+  exit 1
+fi
+
+SOPS_DATA="$(sops -d "${ROOT}/secrets/local.enc.json")"
+LOCAL_DOCKER_CREDS="$(echo $SOPS_DATA | jq .localdocker)"
+
+FRPC_PID=""
+function cleanup {
+  if [[ ! -z "${FRPC_PID}" ]]; then
+    echo "Stopping FRP client/proxy..."
+    kill $FRPC_PID
+  fi
+}
+trap cleanup EXIT
+
 eval set --$OPTS
 declare -a FLAGS=()
 while [ ! $# -eq 0 ]
@@ -30,6 +51,24 @@ do
   case "$1" in
     --use_azure_runner)
       FLAGS+=("--use_azure_runner")
+      ;;
+    --with_public_endpoint)
+      if ! [ -x "$(command -v frpc)" ]; then
+        echo 'Error: frpc is not installed, cannot run the FRP client/proxy.' >&2
+        exit 1
+      fi
+      FRP="$(echo $SOPS_DATA | jq .frpc)"
+      FRP_ADDR="$(echo $FRP | jq -r .addr)"
+      echo "Running FRP proxy at ${FRP_ADDR}..."
+      frpc http \
+    		--server_addr="$FRP_ADDR" \
+    		--server_port="$(echo $FRP | jq -r .port)" \
+    		--token="$(echo $FRP | jq -r .token)" \
+        --local_port=8081 \
+    		--proxy_name="webhook-$2" \
+    		--sd="$2" &
+      FRPC_PID=$!
+      shift # Extra shift for the subdomain parameter
       ;;
   esac
   shift
@@ -52,8 +91,6 @@ FLAGS+=(
   "--config=${ROOT}/cmd/server/configs/local.conf"
   "--local_dsn=${LOCAL_DSN}"
 )
-
-LOCAL_DOCKER_CREDS="$(sops -d --extract '["localdocker"]' "${ROOT}/secrets/local.enc.json")"
 
 FLAGS+=(
   "--local_docker_tenant_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .tenant_id)"
