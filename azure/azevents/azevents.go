@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -17,11 +18,20 @@ import (
 
 type Config struct {
 	Logger *zap.Logger
+
+	Subscription  string
+	ResourceGroup string
 }
 
 func (c *Config) validate() error {
 	if c.Logger == nil {
 		return errors.New("no logger was given")
+	}
+	if c.Subscription == "" {
+		return errors.New("no subscription given")
+	}
+	if c.ResourceGroup == "" {
+		return errors.New("no resource group given")
 	}
 	return nil
 }
@@ -29,6 +39,9 @@ func (c *Config) validate() error {
 // Server handles both validating the Event Grid subscription and handling incoming events.
 type Server struct {
 	logger *zap.Logger
+
+	subscription  string
+	resourceGroup string
 }
 
 func NewServer(cfg *Config) (*Server, error) {
@@ -37,12 +50,25 @@ func NewServer(cfg *Config) (*Server, error) {
 	}
 
 	return &Server{
-		logger: cfg.Logger,
+		logger:        cfg.Logger,
+		subscription:  cfg.Subscription,
+		resourceGroup: cfg.ResourceGroup,
 	}, nil
+}
+
+var pathToTopic = map[string]string{
+	"/events/processed_portfolio": "processed-portfolios",
 }
 
 func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		topic, ok := pathToTopic[r.URL.Path]
+		if !ok {
+			s.logger.Error("no topic found for path", zap.String("path", r.URL.Path))
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
 		if r.Header.Get("aeg-event-type") != "SubscriptionValidation" {
 			next.ServeHTTP(w, r)
 			return
@@ -84,6 +110,21 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 		}
 
 		s.logger.Info("received SubscriptionValidation request", zap.Any("req", req))
+
+		// Validate the request event type and topic
+		if got, want := req.EventType, "Microsoft.EventGrid.SubscriptionValidationEvent"; got != want {
+			s.logger.Error("invalid topic given for path", zap.String("got_event_type", got), zap.String("expected_event_type", want))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		fullTopic := path.Join("/subscriptions", s.subscription, "resourceGroups", s.resourceGroup, "providers/Microsoft.EventGrid/topics", topic)
+		if req.Topic != fullTopic {
+			s.logger.Error("invalid topic given for path", zap.String("got_topic", req.Topic), zap.String("expected_topic", fullTopic))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		s.logger.Info("validated SubscriptionValidation, responding success", zap.String("request_id", req.Id))
 
 		resp := struct {
 			ValidationResponse string `json:"validationResponse"`
