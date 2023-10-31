@@ -25,7 +25,7 @@ const adminItems: AdminItem[] = [
     title: 'Test Portfolio Processing',
     icon: 'pi pi-file-o',
     desc: 'Test out portfolio processing with an uploaded portfolio',
-    href: '/admin/portfolio_test'
+    href: '/admin/portfolio_test',
   },
 ]
 </script>

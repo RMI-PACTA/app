@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { NewPortfolioAsset } from 'openapi/generated/pacta';
-import { FileUploadUploaderEvent } from 'primevue/fileupload';
+import { type NewPortfolioAsset } from 'openapi/generated/pacta'
+import { type FileUploadUploaderEvent } from 'primevue/fileupload'
 
 const pactaClient = await usePACTA()
 const { $axios } = useNuxtApp()
@@ -24,7 +24,7 @@ const startProcessing = async () => {
   if (assetIDs.value?.length === 0) {
     return
   }
-  const resp = await pactaClient.processPortfolio({asset_ids: assetIDs.value})
+  const resp = await pactaClient.processPortfolio({ asset_ids: assetIDs.value })
   alert(`TASK ID: ${resp.task_id}`)
 }
 
@@ -39,7 +39,7 @@ const createPortfolioAsset = async (file: File) => {
       'x-ms-blob-type': 'BlockBlob',
     },
   })
-  uploadedAssets.value.push({resp, fileName: file.name})
+  uploadedAssets.value.push({ resp, fileName: file.name })
 }
 
 const onUpload = async (e: FileUploadUploaderEvent) => {
