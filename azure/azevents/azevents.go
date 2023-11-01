@@ -23,6 +23,11 @@ type Config struct {
 	Subscription  string
 	ResourceGroup string
 
+	// AuthSecret is a shared random secret between the event subscription and this
+	// receiver, to prevent random unauthenticated internet requests from triggering
+	// webhooks.
+	AuthSecret string
+
 	ProcessedPortfolioTopicName string
 }
 
@@ -36,6 +41,9 @@ func (c *Config) validate() error {
 	if c.ResourceGroup == "" {
 		return errors.New("no resource group given")
 	}
+	if c.AuthSecret == "" {
+		return errors.New("no auth secret was given")
+	}
 	if c.ProcessedPortfolioTopicName == "" {
 		return errors.New("no resource group given")
 	}
@@ -45,6 +53,8 @@ func (c *Config) validate() error {
 // Server handles both validating the Event Grid subscription and handling incoming events.
 type Server struct {
 	logger *zap.Logger
+
+	authSecret string
 
 	subscription  string
 	resourceGroup string
@@ -58,6 +68,7 @@ func NewServer(cfg *Config) (*Server, error) {
 
 	return &Server{
 		logger:        cfg.Logger,
+		authSecret:    cfg.AuthSecret,
 		subscription:  cfg.Subscription,
 		resourceGroup: cfg.ResourceGroup,
 		pathToTopic: map[string]string{
@@ -76,6 +87,11 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 		}
 
 		if r.Header.Get("aeg-event-type") != "SubscriptionValidation" {
+			if auth := r.Header.Get("authorization"); auth != s.authSecret {
+				s.logger.Error("missing or invalid auth", zap.String("invalid_auth", auth))
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
+			}
 			next.ServeHTTP(w, r)
 			return
 		}
