@@ -87,6 +87,8 @@ func run(args []string) error {
 		azStorageAccount           = fs.String("secret_azure_storage_account", "", "The storage account to authenticate against for blob operations")
 		azSourcePortfolioContainer = fs.String("secret_azure_source_portfolio_container", "", "The container in the storage account where we write raw portfolios to")
 
+		azEventWebhookSecret = fs.String("secret_azure_webhook_secret", "", "The shared secret required for incoming webhooks")
+
 		runnerConfigLocation   = fs.String("secret_runner_config_location", "", "Location (like 'centralus') where the runner jobs should be executed")
 		runnerConfigConfigPath = fs.String("secret_runner_config_config_path", "", "Config path (like '/configs/dev.conf') where the runner jobs should read their base config from")
 
@@ -282,6 +284,7 @@ func run(args []string) error {
 
 	eventSrv, err := azevents.NewServer(&azevents.Config{
 		Logger:                      logger,
+		AuthSecret:                  *azEventWebhookSecret,
 		Subscription:                *azEventSubscription,
 		ResourceGroup:               *azEventResourceGroup,
 		ProcessedPortfolioTopicName: *azEventProcessedPortfolioTopic,

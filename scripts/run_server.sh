@@ -35,6 +35,13 @@ fi
 SOPS_DATA="$(sops -d "${ROOT}/secrets/local.enc.json")"
 LOCAL_DOCKER_CREDS="$(echo $SOPS_DATA | jq .localdocker)"
 
+WEBHOOK_CREDS="$(echo $SOPS_DATA | jq .webhook)"
+TOPIC_ID="$(echo $WEBHOOK_CREDS | jq -r .topic_id)"
+WEBHOOK_SHARED_SECRET="$(echo $WEBHOOK_CREDS | jq -r .shared_secret)"
+
+FRP="$(echo $SOPS_DATA | jq .frpc)"
+FRP_ADDR="$(echo $FRP | jq -r .addr)"
+
 FRPC_PID=""
 function cleanup {
   if [[ ! -z "${FRPC_PID}" ]]; then
@@ -45,7 +52,23 @@ function cleanup {
 trap cleanup EXIT
 
 eval set --$OPTS
-declare -a FLAGS=()
+declare -a FLAGS=(
+  "--local_docker_tenant_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .tenant_id)"
+  "--local_docker_client_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .client_id)"
+  "--local_docker_client_secret=$(echo $LOCAL_DOCKER_CREDS | jq -r .password)"
+  "--secret_azure_webhook_secret=${WEBHOOK_SHARED_SECRET}"
+)
+
+function create_eventgrid_subscription {
+  az eventgrid event-subscription create \
+    --name "local-webhook-$1" \
+    --source-resource-id "$TOPIC_ID" \
+    --endpoint-type=webhook \
+    --endpoint="https://$1.${FRP_ADDR}/events/processed_portfolio" \
+    --delivery-attribute-mapping "Authorization static $WEBHOOK_SHARED_SECRET true"
+}
+
+EG_SUB_NAME=""
 while [ ! $# -eq 0 ]
 do
   case "$1" in
@@ -57,8 +80,29 @@ do
         echo 'Error: frpc is not installed, cannot run the FRP client/proxy.' >&2
         exit 1
       fi
-      FRP="$(echo $SOPS_DATA | jq .frpc)"
-      FRP_ADDR="$(echo $FRP | jq -r .addr)"
+      SUB_NAME="$2"
+
+      # Check if they already have an Event Grid subscription hooked up to their local env.
+      set +e # Don't exit on error, this command might fail if the topic doesn't exist
+      az eventgrid event-subscription show \
+        --name "local-webhook-${SUB_NAME}" \
+        --source-resource-id "$TOPIC_ID"
+      SUB_CHECK_EXIT_CODE=$?
+      set -e # Back to exiting on error
+
+      if [[ $SUB_CHECK_EXIT_CODE -ne 0 ]]; then
+        # The check failed, meaning the webhook doesn't exist.
+        # Offer to create it.
+        while true; do
+          read -p "Should we create a webhook subscription for you (y/n)?" yn
+          case $yn in
+            [Yy]* ) EG_SUB_NAME="$SUB_NAME"; break;;
+            [Nn]* ) break;;
+            * ) echo "Please answer yes or no.";;
+          esac
+        done
+      fi
+
       echo "Running FRP proxy at ${FRP_ADDR}..."
       frpc http \
     		--server_addr="$FRP_ADDR" \
@@ -92,10 +136,24 @@ FLAGS+=(
   "--local_dsn=${LOCAL_DSN}"
 )
 
-FLAGS+=(
-  "--local_docker_tenant_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .tenant_id)"
-  "--local_docker_client_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .client_id)"
-  "--local_docker_client_secret=$(echo $LOCAL_DOCKER_CREDS | jq -r .password)"
-)
+if [[ ! -z "$EG_SUB_NAME" ]]; then
+  {
+    # We wait because Event Grid requires validating the subscription, which will fail if we aren't running the validation endpoint.
+    echo "Waiting for server to start before creating EventGrid subscription"
+    sleep 10
+    echo "Creating subscription..."
+
+    set +e # Don't exit on error, we can just alert for this
+  usage error: --delivery-attribute-mapping NAME TYPE [SOURCEFIELD] [VALUE] [ISSECRET]
+    az eventgrid event-subscription create \
+      --name "local-webhook-$EG_SUB_NAME" \
+      --source-resource-id "$TOPIC_ID" \
+      --endpoint-type=webhook \
+      --endpoint="https://${EG_SUB_NAME}.${FRP_ADDR}/events/processed_portfolio" \
+      --delivery-attribute-mapping Authorization static "$WEBHOOK_SHARED_SECRET" true
+    set -e
+  } &
+fi
+
 
 bazel run --run_under="cd $ROOT && " //cmd/server -- "${FLAGS[@]}"
