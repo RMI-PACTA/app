@@ -109,7 +109,7 @@ func NewRunner(creds azcore.TokenCredential, cfg *Config) (*Runner, error) {
 	}, nil
 }
 
-func (r *Runner) Run(ctx context.Context, cfg *task.Config) (task.ID, error) {
+func (r *Runner) Run(ctx context.Context, cfg *task.Config) (task.RunnerID, error) {
 
 	name := r.gen.NewID()
 	identity := r.cfg.Identity.String()
@@ -204,7 +204,7 @@ func (r *Runner) Run(ctx context.Context, cfg *task.Config) (task.ID, error) {
 		return "", fmt.Errorf("failed to poll for container app start: %w", err)
 	}
 
-	return task.ID(*res.ID), nil
+	return task.RunnerID(*res.ID), nil
 }
 
 func toPtrs[T any](in []T) []*T {

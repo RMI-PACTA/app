@@ -7,8 +7,12 @@ import (
 	"github.com/RMI/pacta/pacta"
 )
 
-// TaskID uniquely identifies a task being processed.
+// ID uniquely identifies a task being processed.
 type ID string
+
+// RunnerID also uniquely identifies a task being processed, but is specific to
+// the underlying task runner (e.g. docker or AZ Container App Jobs)
+type RunnerID string
 
 type Type string
 
@@ -21,6 +25,12 @@ type ProcessPortfolioRequest struct {
 	// Note: This is temporary just to test the full end-to-end flow. We'll likely
 	// want to reference assets by the portfolio (group?) they were uploaded to.
 	AssetIDs []string
+}
+
+type ProcessPortfolioResponse struct {
+	TaskID   ID
+	AssetIDs []string
+	Outputs  []string
 }
 
 type CreateReportRequest struct {
