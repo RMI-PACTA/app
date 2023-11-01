@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/RMI/pacta/task"
@@ -123,7 +124,10 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 			return
 		}
 		fullTopic := path.Join("/subscriptions", s.subscription, "resourceGroups", s.resourceGroup, "providers/Microsoft.EventGrid/topics", topic)
-		if req.Topic != fullTopic {
+		// We lowercase these because *sometimes* the request comes from Azure with
+		// "microsoft.eventgrid" instead of "Microsoft.EventGrid". This is exceptionally
+		// annoying.
+		if strings.ToLower(req.Topic) != strings.ToLower(fullTopic) {
 			s.logger.Error("invalid topic given for path", zap.String("got_topic", req.Topic), zap.String("expected_topic", fullTopic))
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
