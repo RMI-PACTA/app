@@ -82,7 +82,7 @@ do
       fi
       SUB_NAME="$2"
 
-      # Check if they already have
+      # Check if they already have an Event Grid subscription hooked up to their local env.
       set +e # Don't exit on error, this command might fail if the topic doesn't exist
       az eventgrid event-subscription show \
         --name "local-webhook-${SUB_NAME}" \
