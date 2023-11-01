@@ -11,6 +11,7 @@ import (
 	"fmt"
 
 	"github.com/RMI/pacta/task"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -58,7 +59,7 @@ func validateImage(bi *task.BaseImage) error {
 }
 
 type Runner interface {
-	Run(ctx context.Context, cfg *task.Config) (task.ID, error)
+	Run(ctx context.Context, cfg *task.Config) (task.RunnerID, error)
 }
 
 type TaskRunner struct {
@@ -81,10 +82,10 @@ func New(cfg *Config) (*TaskRunner, error) {
 	}, nil
 }
 
-func (tr *TaskRunner) ProcessPortfolio(ctx context.Context, req *task.ProcessPortfolioRequest) (task.ID, error) {
+func (tr *TaskRunner) ProcessPortfolio(ctx context.Context, req *task.ProcessPortfolioRequest) (task.ID, task.RunnerID, error) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(req.AssetIDs); err != nil {
-		return "", fmt.Errorf("failed to encode asset IDs: %w", err)
+		return "", "", fmt.Errorf("failed to encode asset IDs: %w", err)
 	}
 	return tr.run(ctx, []task.EnvVar{
 		{
@@ -98,7 +99,7 @@ func (tr *TaskRunner) ProcessPortfolio(ctx context.Context, req *task.ProcessPor
 	})
 }
 
-func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, error) {
+func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, task.RunnerID, error) {
 	return tr.run(ctx, []task.EnvVar{
 		{
 			Key:   "TASK_TYPE",
@@ -111,10 +112,14 @@ func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRe
 	})
 }
 
-func (tr *TaskRunner) run(ctx context.Context, env []task.EnvVar) (task.ID, error) {
+func (tr *TaskRunner) run(ctx context.Context, env []task.EnvVar) (task.ID, task.RunnerID, error) {
 	tr.logger.Info("triggering task run", zap.Any("env", env))
-	return tr.runner.Run(ctx, &task.Config{
-		Env:     env,
+	taskID := uuid.NewString()
+	runnerID, err := tr.runner.Run(ctx, &task.Config{
+		Env: append(env, task.EnvVar{
+			Key:   "TASK_ID",
+			Value: taskID,
+		}),
 		Flags:   []string{"--config=" + tr.configPath},
 		Command: []string{"/runner"},
 		Image: &task.Image{
@@ -123,4 +128,8 @@ func (tr *TaskRunner) run(ctx context.Context, env []task.EnvVar) (task.ID, erro
 			Tag: "latest",
 		},
 	})
+	if err != nil {
+		return "", "", fmt.Errorf("failed to run task %q, %q: %w", taskID, runnerID, err)
+	}
+	return task.ID(taskID), runnerID, nil
 }

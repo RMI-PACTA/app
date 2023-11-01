@@ -18,8 +18,8 @@ var (
 )
 
 type TaskRunner interface {
-	ProcessPortfolio(ctx context.Context, req *task.ProcessPortfolioRequest) (task.ID, error)
-	CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, error)
+	ProcessPortfolio(ctx context.Context, req *task.ProcessPortfolioRequest) (task.ID, task.RunnerID, error)
+	CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, task.RunnerID, error)
 }
 
 type DB interface {
@@ -84,6 +84,7 @@ type Blob interface {
 type Server struct {
 	DB         DB
 	TaskRunner TaskRunner
+	Logger     *zap.Logger
 
 	Blob              Blob
 	PorfolioUploadURI string

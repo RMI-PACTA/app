@@ -7,11 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"path"
 	"time"
 
+	"github.com/RMI/pacta/task"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -21,6 +21,8 @@ type Config struct {
 
 	Subscription  string
 	ResourceGroup string
+
+	ProcessedPortfolioTopicName string
 }
 
 func (c *Config) validate() error {
@@ -33,6 +35,9 @@ func (c *Config) validate() error {
 	if c.ResourceGroup == "" {
 		return errors.New("no resource group given")
 	}
+	if c.ProcessedPortfolioTopicName == "" {
+		return errors.New("no resource group given")
+	}
 	return nil
 }
 
@@ -42,6 +47,7 @@ type Server struct {
 
 	subscription  string
 	resourceGroup string
+	pathToTopic   map[string]string
 }
 
 func NewServer(cfg *Config) (*Server, error) {
@@ -53,16 +59,15 @@ func NewServer(cfg *Config) (*Server, error) {
 		logger:        cfg.Logger,
 		subscription:  cfg.Subscription,
 		resourceGroup: cfg.ResourceGroup,
+		pathToTopic: map[string]string{
+			"/events/processed_portfolio": cfg.ProcessedPortfolioTopicName,
+		},
 	}, nil
-}
-
-var pathToTopic = map[string]string{
-	"/events/processed_portfolio": "processed-portfolios",
 }
 
 func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		topic, ok := pathToTopic[r.URL.Path]
+		topic, ok := s.pathToTopic[r.URL.Path]
 		if !ok {
 			s.logger.Error("no topic found for path", zap.String("path", r.URL.Path))
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -138,12 +143,35 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 func (s *Server) RegisterHandlers(r chi.Router) {
 	r.Use(s.verifyWebhook)
 	r.Post("/events/processed_portfolio", func(w http.ResponseWriter, r *http.Request) {
-		dat, err := io.ReadAll(r.Body)
-		if err != nil {
-			s.logger.Error("failed to read webhook request body", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		var reqs []struct {
+			Data            *task.ProcessPortfolioResponse `json:"data"`
+			EventType       string                         `json:"eventType"`
+			ID              string                         `json:"id"`
+			Subject         string                         `json:"subject"`
+			DataVersion     string                         `json:"dataVersion"`
+			MetadataVersion string                         `json:"metadataVersion"`
+			EventTime       time.Time                      `json:"eventTime"`
+			Topic           string                         `json:"topic"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
+			s.logger.Error("failed to parse webhook request body", zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
-		s.logger.Info("processed porfolio", zap.String("portfolio_data", string(dat)))
+		if len(reqs) != 1 {
+			s.logger.Error("webhook response had unexpected number of events", zap.Int("event_count", len(reqs)))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		req := reqs[0]
+
+		if req.Data == nil {
+			s.logger.Error("webhook response had no payload", zap.String("event_grid_id", req.ID))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		// TODO: Add any database persistence and other things we'd want to do after a portfolio was processed.
+		s.logger.Info("processed portfolio", zap.String("task_id", string(req.Data.TaskID)), zap.Strings("outputs", req.Data.Outputs))
 	})
 }
