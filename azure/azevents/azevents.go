@@ -23,9 +23,9 @@ type Config struct {
 	Subscription  string
 	ResourceGroup string
 
-	// AllowedAuthSecrets is a shared random secret between the event subscription and this
-	// receiver, to prevent random unauthenticated internet requests from triggering
-	// webhooks.
+	// AllowedAuthSecrets is a list of shared random secrets that will be accepted
+	// for incoming webhooks from the event subscription to this receiver, to
+	// prevent random unauthenticated internet requests from triggering webhooks.
 	AllowedAuthSecrets []string
 
 	ProcessedPortfolioTopicName string
