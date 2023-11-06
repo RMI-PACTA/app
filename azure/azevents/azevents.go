@@ -23,10 +23,10 @@ type Config struct {
 	Subscription  string
 	ResourceGroup string
 
-	// AuthSecret is a shared random secret between the event subscription and this
+	// AllowedAuthSecrets is a shared random secret between the event subscription and this
 	// receiver, to prevent random unauthenticated internet requests from triggering
 	// webhooks.
-	AuthSecret string
+	AllowedAuthSecrets []string
 
 	ProcessedPortfolioTopicName string
 }
@@ -41,8 +41,8 @@ func (c *Config) validate() error {
 	if c.ResourceGroup == "" {
 		return errors.New("no resource group given")
 	}
-	if c.AuthSecret == "" {
-		return errors.New("no auth secret was given")
+	if len(c.AllowedAuthSecrets) == 0 {
+		return errors.New("no auth secrets were given")
 	}
 	if c.ProcessedPortfolioTopicName == "" {
 		return errors.New("no resource group given")
@@ -54,7 +54,7 @@ func (c *Config) validate() error {
 type Server struct {
 	logger *zap.Logger
 
-	authSecret string
+	allowedAuthSecrets []string
 
 	subscription  string
 	resourceGroup string
@@ -67,14 +67,23 @@ func NewServer(cfg *Config) (*Server, error) {
 	}
 
 	return &Server{
-		logger:        cfg.Logger,
-		authSecret:    cfg.AuthSecret,
-		subscription:  cfg.Subscription,
-		resourceGroup: cfg.ResourceGroup,
+		logger:             cfg.Logger,
+		allowedAuthSecrets: cfg.AllowedAuthSecrets,
+		subscription:       cfg.Subscription,
+		resourceGroup:      cfg.ResourceGroup,
 		pathToTopic: map[string]string{
 			"/events/processed_portfolio": cfg.ProcessedPortfolioTopicName,
 		},
 	}, nil
+}
+
+func (s *Server) findValidAuthSecret(auth string) (int, bool) {
+	for idx, allowed := range s.allowedAuthSecrets {
+		if auth == allowed {
+			return idx, true
+		}
+	}
+	return 0, false
 }
 
 func (s *Server) verifyWebhook(next http.Handler) http.Handler {
@@ -87,11 +96,22 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 		}
 
 		if r.Header.Get("aeg-event-type") != "SubscriptionValidation" {
-			if auth := r.Header.Get("authorization"); auth != s.authSecret {
-				s.logger.Error("missing or invalid auth", zap.String("invalid_auth", auth))
+			// Azure doesn't have a native way to validate where a webhook request
+			// came from, so we implement a shared secret approach as described here:
+			// https://learn.microsoft.com/en-us/azure/event-grid/security-authentication#using-client-secret-as-a-query-parameter
+			auth := r.Header.Get("authorization")
+			if auth == "" {
+				s.logger.Error("webhook request was missing 'authorization' header")
 				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 				return
 			}
+			validAuthIdx, valid := s.findValidAuthSecret(auth)
+			if !valid {
+				s.logger.Error("webhook request had invalid 'authorization' header", zap.String("invalid_auth", auth))
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
+			}
+			s.logger.Info("received webhook request with valid 'authorization' header", zap.Int("auth_secret_index", validAuthIdx), zap.String("path", r.URL.Path))
 			next.ServeHTTP(w, r)
 			return
 		}

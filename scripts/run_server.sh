@@ -56,7 +56,7 @@ declare -a FLAGS=(
   "--local_docker_tenant_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .tenant_id)"
   "--local_docker_client_id=$(echo $LOCAL_DOCKER_CREDS | jq -r .client_id)"
   "--local_docker_client_secret=$(echo $LOCAL_DOCKER_CREDS | jq -r .password)"
-  "--secret_azure_webhook_secret=${WEBHOOK_SHARED_SECRET}"
+  "--secret_azure_webhook_secrets=${WEBHOOK_SHARED_SECRET}"
 )
 
 function create_eventgrid_subscription {
