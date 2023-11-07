@@ -139,13 +139,13 @@ func run(args []string) error {
 		return fmt.Errorf("unknown task type %q", taskType)
 	}
 
-	logger.Info("running PACTA task", zap.String("task_type", string(taskType)))
+	logger.Info("running PACTA task", zap.String("task_id", string(taskID)), zap.String("task_type", string(taskType)))
 
 	if err := taskFn(ctx, taskID); err != nil {
 		return fmt.Errorf("error running task: %w", err)
 	}
 
-	logger.Info("ran PACTA task successfully", zap.String("task_type", string(taskType)))
+	logger.Info("ran PACTA task successfully", zap.String("task_id", string(taskID)), zap.String("task_type", string(taskType)))
 
 	return nil
 }
