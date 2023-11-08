@@ -99,7 +99,7 @@ func run(args []string) error {
 		runnerConfigIdentityClientID           = fs.String("secret_runner_config_identity_client_id", "", "Client ID of the identity to run runner jobs with")
 		runnerConfigIdentityManagedEnvironment = fs.String("secret_runner_config_identity_managed_environment", "", "Name of the Container Apps Environment where runner jobs should run")
 
-		runnerConfigImageRegistry = fs.String("secret_runner_config_image_registry", "", "Registry where PACTA runner images live, like 'rmipacta.azurecr.io'")
+		runnerConfigImageRegistry = fs.String("secret_runner_config_image_registry", "", "Registry where PACTA runner images live, like 'rmisa.azurecr.io'")
 		runnerConfigImageName     = fs.String("secret_runner_config_image_name", "", "Name of the Docker image of the PACTA runner, like 'runner'")
 	)
 	// Allows for passing in configuration via a -config path/to/env-file.conf

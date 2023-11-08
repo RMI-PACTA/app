@@ -43,7 +43,7 @@ type EnvVar struct {
 }
 
 type BaseImage struct {
-	// Like 'rmipacta.azurecr.io'
+	// Like 'rmisa.azurecr.io'
 	Registry string
 	// Like 'runner'
 	Name string
