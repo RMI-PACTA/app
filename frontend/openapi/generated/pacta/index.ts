@@ -19,9 +19,12 @@ export type { InitiativeInvitationCreate } from './models/InitiativeInvitationCr
 export type { InitiativeUserRelationship } from './models/InitiativeUserRelationship';
 export type { InitiativeUserRelationshipChanges } from './models/InitiativeUserRelationshipChanges';
 export { Language } from './models/Language';
+export type { NewPortfolioAsset } from './models/NewPortfolioAsset';
 export type { PactaVersion } from './models/PactaVersion';
 export type { PactaVersionChanges } from './models/PactaVersionChanges';
 export type { PactaVersionCreate } from './models/PactaVersionCreate';
+export type { ProcessPortfolioRequest } from './models/ProcessPortfolioRequest';
+export type { ProcessPortfolioResponse } from './models/ProcessPortfolioResponse';
 export { User } from './models/User';
 export { UserChanges } from './models/UserChanges';
 

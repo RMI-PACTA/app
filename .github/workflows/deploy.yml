@@ -31,7 +31,7 @@ jobs:
           allow-no-subscriptions: false
 
       - name: Login to ACR via OIDC
-        run: az acr login --name rmipacta
+        run: az acr login --name rmisa
 
       - uses: actions/setup-node@v3
         with:
@@ -65,7 +65,7 @@ jobs:
           containerAppName: pactasrv-dev
           containerAppEnvironment: pacta-dev
           resourceGroup: rmi-pacta-dev
-          imageToDeploy: rmipacta.azurecr.io/pacta:dev
+          imageToDeploy: rmisa.azurecr.io/pacta:dev
           location: centralus
 
       - name: Deploy frontend

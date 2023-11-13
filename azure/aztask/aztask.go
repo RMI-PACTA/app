@@ -3,7 +3,6 @@
 package aztask
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -27,15 +26,8 @@ type Config struct {
 	// Location is the location to run the runner, like centralus
 	Location string
 
-	// ConfigPath should be a full path to a config file in the runner image,
-	// like: /configs/{local,dev}.conf
-	ConfigPath string
-
 	// Identity is the account the runner should act as.
 	Identity *RunnerIdentity
-
-	// Image the runner image to execute
-	Image *RunnerImage
 
 	Rand *rand.Rand
 }
@@ -45,16 +37,12 @@ func (c *Config) validate() error {
 		return errors.New("no container location given")
 	}
 
-	if c.ConfigPath == "" {
-		return errors.New("no runner config path given")
-	}
-
 	if err := c.Identity.validate(); err != nil {
 		return fmt.Errorf("invalid identity config: %w", err)
 	}
 
-	if err := c.Image.validate(); err != nil {
-		return fmt.Errorf("invalid image config: %w", err)
+	if c.Rand == nil {
+		return errors.New("no random number generator given")
 	}
 
 	return nil
@@ -99,35 +87,7 @@ func (r *RunnerIdentity) EnvironmentID() string {
 	return fmt.Sprintf(tmpl, r.SubscriptionID, r.ResourceGroup, r.ManagedEnvironment)
 }
 
-type RunnerImage struct {
-	// Like rmipacta.azurecr.io
-	Registry string
-	// Like runner
-	Name string
-}
-
-func (ri *RunnerImage) validate() error {
-	if ri.Registry == "" {
-		return errors.New("no runner image registry given")
-	}
-	if ri.Name == "" {
-		return errors.New("no runner image name given")
-	}
-	return nil
-}
-
-func (r *RunnerImage) WithTag(tag string) string {
-	var buf bytes.Buffer
-	// <registry>/<name>:<tag>
-	buf.WriteString(r.Registry)
-	buf.WriteRune('/')
-	buf.WriteString(r.Name)
-	buf.WriteRune(':')
-	buf.WriteString(tag)
-	return buf.String()
-}
-
-func NewTaskRunner(creds azcore.TokenCredential, cfg *Config) (*Runner, error) {
+func NewRunner(creds azcore.TokenCredential, cfg *Config) (*Runner, error) {
 	if err := cfg.validate(); err != nil {
 		return nil, fmt.Errorf("invalid task runner config: %w", err)
 	}
@@ -149,10 +109,28 @@ func NewTaskRunner(creds azcore.TokenCredential, cfg *Config) (*Runner, error) {
 	}, nil
 }
 
-func (r *Runner) StartRun(ctx context.Context, req *task.StartRunRequest) (task.ID, error) {
+func (r *Runner) Run(ctx context.Context, cfg *task.Config) (task.RunnerID, error) {
+
 	name := r.gen.NewID()
 	identity := r.cfg.Identity.String()
 	envID := r.cfg.Identity.EnvironmentID()
+
+	envVars := []*armappcontainers.EnvironmentVar{
+		{
+			Name:  to.Ptr("AZURE_CLIENT_ID"),
+			Value: to.Ptr(r.cfg.Identity.ClientID),
+		},
+		{
+			Name:  to.Ptr("MANAGED_IDENTITY_CLIENT_ID"),
+			Value: to.Ptr(r.cfg.Identity.ClientID),
+		},
+	}
+	for _, v := range cfg.Env {
+		envVars = append(envVars, &armappcontainers.EnvironmentVar{
+			Name:  to.Ptr(v.Key),
+			Value: to.Ptr(v.Value),
+		})
+	}
 
 	job := armappcontainers.Job{
 		Location: &r.cfg.Location,
@@ -176,7 +154,7 @@ func (r *Runner) StartRun(ctx context.Context, req *task.StartRunRequest) (task.
 				ReplicaRetryLimit: to.Ptr(int32(0)),
 				Registries: []*armappcontainers.RegistryCredentials{
 					{
-						Server:   to.Ptr(r.cfg.Image.Registry),
+						Server:   to.Ptr(cfg.Image.Base.Registry),
 						Identity: to.Ptr(identity),
 					},
 				},
@@ -188,30 +166,12 @@ func (r *Runner) StartRun(ctx context.Context, req *task.StartRunRequest) (task.
 			Template: &armappcontainers.JobTemplate{
 				Containers: []*armappcontainers.Container{
 					{
-						Args: []*string{
-							to.Ptr("--config=" + r.cfg.ConfigPath),
-						},
-						Command: []*string{
-							to.Ptr("/runner"),
-						},
-						Env: []*armappcontainers.EnvironmentVar{
-							{
-								Name:  to.Ptr("AZURE_CLIENT_ID"),
-								Value: to.Ptr(r.cfg.Identity.ClientID),
-							},
-							{
-								Name:  to.Ptr("MANAGED_IDENTITY_CLIENT_ID"),
-								Value: to.Ptr(r.cfg.Identity.ClientID),
-							},
-							{
-								Name:  to.Ptr("PORTFOLIO_ID"),
-								Value: to.Ptr(string(req.PortfolioID)),
-							},
-						},
-						// TODO: Take in the image digest as part of the task definition, as this can change per request.
-						Image:  to.Ptr(r.cfg.Image.WithTag("latest")),
-						Name:   to.Ptr(name),
-						Probes: []*armappcontainers.ContainerAppProbe{},
+						Args:    toPtrs(cfg.Flags),
+						Command: toPtrs(cfg.Command),
+						Env:     envVars,
+						Image:   to.Ptr(cfg.Image.String()),
+						Name:    to.Ptr(name),
+						Probes:  []*armappcontainers.ContainerAppProbe{},
 						Resources: &armappcontainers.ContainerResources{
 							CPU:    to.Ptr(1.0),
 							Memory: to.Ptr("2Gi"),
@@ -244,5 +204,16 @@ func (r *Runner) StartRun(ctx context.Context, req *task.StartRunRequest) (task.
 		return "", fmt.Errorf("failed to poll for container app start: %w", err)
 	}
 
-	return task.ID(*res.ID), nil
+	return task.RunnerID(*res.ID), nil
+}
+
+func toPtrs[T any](in []T) []*T {
+	if in == nil {
+		return nil
+	}
+	out := make([]*T, len(in))
+	for i, v := range in {
+		out[i] = &v
+	}
+	return out
 }

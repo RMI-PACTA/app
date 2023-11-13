@@ -9,9 +9,12 @@ import type { InitiativeInvitation } from '../models/InitiativeInvitation';
 import type { InitiativeInvitationCreate } from '../models/InitiativeInvitationCreate';
 import type { InitiativeUserRelationship } from '../models/InitiativeUserRelationship';
 import type { InitiativeUserRelationshipChanges } from '../models/InitiativeUserRelationshipChanges';
+import type { NewPortfolioAsset } from '../models/NewPortfolioAsset';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
+import type { ProcessPortfolioRequest } from '../models/ProcessPortfolioRequest';
+import type { ProcessPortfolioResponse } from '../models/ProcessPortfolioResponse';
 import type { User } from '../models/User';
 import type { UserChanges } from '../models/UserChanges';
 
@@ -465,6 +468,41 @@ export class DefaultService {
             path: {
                 'id': id,
             },
+        });
+    }
+
+    /**
+     * Test endpoint, creates a new portfolio asset
+     * Creates a new asset for a portfolio
+     *
+     * Returns a signed URL where the portfolio can be uploaded to.
+     *
+     * @returns NewPortfolioAsset The asset can now be uploaded via the given signed URL.
+     * @throws ApiError
+     */
+    public createPortfolioAsset(): CancelablePromise<NewPortfolioAsset> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/test:createPortfolioAsset',
+        });
+    }
+
+    /**
+     * Test endpoint, triggers a task to process the portfolio
+     * Starts processing raw uploaded files
+     *
+     * @param requestBody The raw portfolio files to process
+     * @returns ProcessPortfolioResponse The task has been started successfully
+     * @throws ApiError
+     */
+    public processPortfolio(
+        requestBody: ProcessPortfolioRequest,
+    ): CancelablePromise<ProcessPortfolioResponse> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/test:processPortfolio',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 

@@ -21,6 +21,12 @@ const adminItems: AdminItem[] = [
     desc: 'Create, update + manage Initiatives',
     href: '/admin/initiative',
   },
+  {
+    title: 'Test Portfolio Processing',
+    icon: 'pi pi-file-o',
+    desc: 'Test out portfolio processing with an uploaded portfolio',
+    href: '/admin/portfolio_test',
+  },
 ]
 </script>
 

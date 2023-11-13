@@ -8,11 +8,16 @@ go_library(
     importpath = "github.com/RMI/pacta/cmd/runner",
     visibility = ["//visibility:private"],
     deps = [
+        "//azure/azblob",
         "//azure/azlog",
-        "//cmd/runner/taskrunner",
-        "//executors/local",
+        "//blob",
         "//pacta",
         "//task",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//policy",
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//to",
+        "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
+        "@com_github_azure_azure_sdk_for_go_sdk_messaging_azeventgrid//publisher",
         "@com_github_namsral_flag//:flag",
         "@org_uber_go_zap//:zap",
         "@org_uber_go_zap//zapcore",
@@ -57,7 +62,7 @@ oci_push(
     name = "push_image",
     image = ":image",
     remote_tags = ["latest"],
-    repository = "rmipacta.azurecr.io/runner",
+    repository = "rmisa.azurecr.io/runner",
 )
 
 # Note: This tarball is provided for local testing of the Docker image, see the README.md for details on usage.
