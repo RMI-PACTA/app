@@ -17,7 +17,7 @@ const props = defineProps<Props>()
 
 const isManager = computed(() => {
   const mm = maybeMe.value
-  return (!!mm && props.initiativeUserRelationships.some(r => r.manager && r.userId === mm.id)) || true
+  return (!!mm && props.initiativeUserRelationships.some(r => r.manager && r.userId === mm.id))
 })
 const isMember = computed(() => {
   const mm = maybeMe.value

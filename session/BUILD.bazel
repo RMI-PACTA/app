@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "session",
+    srcs = ["session.go"],
+    importpath = "github.com/RMI/pacta/session",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//db",
+        "//oapierr",
+        "//pacta",
+        "@com_github_go_chi_jwtauth_v5//:jwtauth",
+        "@org_uber_go_zap//:zap",
+    ],
+)

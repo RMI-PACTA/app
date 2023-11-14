@@ -23,8 +23,8 @@ export type { NewPortfolioAsset } from './models/NewPortfolioAsset';
 export type { PactaVersion } from './models/PactaVersion';
 export type { PactaVersionChanges } from './models/PactaVersionChanges';
 export type { PactaVersionCreate } from './models/PactaVersionCreate';
-export type { ProcessPortfolioRequest } from './models/ProcessPortfolioRequest';
-export type { ProcessPortfolioResponse } from './models/ProcessPortfolioResponse';
+export type { ProcessPortfolioReq } from './models/ProcessPortfolioReq';
+export type { ProcessPortfolioResp } from './models/ProcessPortfolioResp';
 export { User } from './models/User';
 export { UserChanges } from './models/UserChanges';
 

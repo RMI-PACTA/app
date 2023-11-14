@@ -27,6 +27,7 @@ definitions:
       - fr
       - es
       - de
+basePath: /v1
 paths:
   /pacta-version/{id}:
     get:
@@ -300,6 +301,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InitiativeInvitation'      
+  /initiative-invitation/{id}:claim:
     post:
       summary: Claims this initiative invitation, if it exists 
       operationId: claimInitiativeInvitation
@@ -313,6 +315,8 @@ paths:
       responses:
         '204':
           description: initiative invitation claimed successfully 
+        '409':
+          description: initiative invitation already claimed
 
     delete:
       summary: Deletes an initiative invitation by id
@@ -385,6 +389,19 @@ paths:
       description: Returns the logged in user, if the user is logged in, otherwise returns empty
       summary: gets info about the logged in user 
       operationId: findUserByMe
+      responses:
+        '200':
+          description: user response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  
+  /user/authentication-followup:
+    post:
+      description: Creates a user in the database, if the user does not yet exist, or returns the existing user. 
+      summary: a callback after login to create or return the user
+      operationId: userAuthenticationFollowup
       responses:
         '200':
           description: user response

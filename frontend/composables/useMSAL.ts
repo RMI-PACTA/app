@@ -35,7 +35,7 @@ export const useMSAL = async () => {
   }
 
   const router = useRouter()
-  const { userClientWithAuth } = useAPI()
+  const { userClientWithAuth, pactaClientWithAuth } = useAPI()
   const localePath = useLocalePath()
 
   const { $msal: { msalConfig, b2cPolicies } } = useNuxtApp()
@@ -210,19 +210,6 @@ export const useMSAL = async () => {
     return filteredAccounts[0]
   })
 
-  const signIn = () => {
-    if (!instance.value) {
-      return Promise.reject(new Error('MSAL instance was not yet initialized'))
-    }
-
-    const req = { scopes }
-    return instance.value.loginPopup(req)
-      .then(handleResponse)
-      .catch((err) => {
-        console.log('useMSAL.loginPopup', err)
-      })
-  }
-
   const getToken = () => {
     if (!instance.value) {
       return Promise.reject(new Error('MSAL instance was not yet initialized'))
@@ -250,6 +237,21 @@ export const useMSAL = async () => {
         return response
       })
       .then(handleResponse)
+  }
+
+  const signIn = () => {
+    if (!instance.value) {
+      return Promise.reject(new Error('MSAL instance was not yet initialized'))
+    }
+
+    const req = { scopes }
+    return instance.value.loginPopup(req)
+      .then(handleResponse)
+      .then(getToken)
+      .then(token => pactaClientWithAuth(token.idToken).userAuthenticationFollowup())
+      .catch((err) => {
+        console.log('useMSAL.loginPopup', err)
+      })
   }
 
   const createAPIKey = (): Promise<APIKey> => {

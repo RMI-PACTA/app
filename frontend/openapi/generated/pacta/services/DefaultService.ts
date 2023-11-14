@@ -13,8 +13,8 @@ import type { NewPortfolioAsset } from '../models/NewPortfolioAsset';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
-import type { ProcessPortfolioRequest } from '../models/ProcessPortfolioRequest';
-import type { ProcessPortfolioResponse } from '../models/ProcessPortfolioResponse';
+import type { ProcessPortfolioReq } from '../models/ProcessPortfolioReq';
+import type { ProcessPortfolioResp } from '../models/ProcessPortfolioResp';
 import type { User } from '../models/User';
 import type { UserChanges } from '../models/UserChanges';
 
@@ -324,9 +324,12 @@ export class DefaultService {
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/initiative-invitation/{id}',
+            url: '/initiative-invitation/{id}:claim',
             path: {
                 'id': id,
+            },
+            errors: {
+                409: `initiative invitation already claimed`,
             },
         });
     }
@@ -343,7 +346,7 @@ export class DefaultService {
     ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'DELETE',
-            url: '/initiative-invitation/{id}',
+            url: '/initiative-invitation/{id}:claim',
             path: {
                 'id': id,
             },
@@ -407,6 +410,19 @@ export class DefaultService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/user/me',
+        });
+    }
+
+    /**
+     * a callback after login to create or return the user
+     * Creates a user in the database, if the user does not yet exist, or returns the existing user.
+     * @returns User user response
+     * @throws ApiError
+     */
+    public userAuthenticationFollowup(): CancelablePromise<User> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/user/authentication-followup',
         });
     }
 
@@ -492,12 +508,12 @@ export class DefaultService {
      * Starts processing raw uploaded files
      *
      * @param requestBody The raw portfolio files to process
-     * @returns ProcessPortfolioResponse The task has been started successfully
+     * @returns ProcessPortfolioResp The task has been started successfully
      * @throws ApiError
      */
     public processPortfolio(
-        requestBody: ProcessPortfolioRequest,
-    ): CancelablePromise<ProcessPortfolioResponse> {
+        requestBody: ProcessPortfolioReq,
+    ): CancelablePromise<ProcessPortfolioResp> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/test:processPortfolio',

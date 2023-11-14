@@ -8,8 +8,8 @@ import (
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	"github.com/RMI/pacta/pacta"
+	"github.com/RMI/pacta/session"
 	"github.com/RMI/pacta/task"
-	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
 )
 
@@ -67,7 +67,7 @@ type DB interface {
 	CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioInitiativeMembership) error
 	DeletePortfolioInitiativeMembership(tx db.Tx, pid pacta.PortfolioID, iid pacta.InitiativeID) error
 
-	GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID, enteredEmail, canonicalEmail string) (*pacta.User, error)
+	GetOrCreateUserByAuthn(tx db.Tx, mech pacta.AuthnMechanism, authnID, email, canonicalEmail string) (*pacta.User, error)
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
@@ -118,7 +118,7 @@ func dereference[T any](ts []*T, e error) ([]T, error) {
 }
 
 func getUserID(ctx context.Context) (pacta.UserID, error) {
-	userID, err := jwtauth.UserIDFromContext(ctx)
+	userID, err := session.UserIDFromContext(ctx)
 	if err != nil {
 		return "", oapierr.Unauthorized("error getting authorization token", zap.Error(err))
 	}

@@ -112,11 +112,8 @@ const buttonClass = computed(() => {
     'p-button-loading-label-only': props.loading !== undefined && props.icon === undefined && props.label !== undefined,
     'no-underline': true,
     'click-does-nothing': disabled.value,
-  }
-  if (isActive.value) {
-    result[props.activeClass] = true
-  } else {
-    result[props.inactiveClass] = true
+    [props.activeClass]: isActive.value,
+    [props.inactiveClass]: !isActive.value,
   }
   return result
 })

@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type ProcessPortfolioRequest = {
+export type ProcessPortfolioReq = {
     asset_ids: Array<string>;
 };
 

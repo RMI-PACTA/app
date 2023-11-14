@@ -2,12 +2,14 @@ package pactasrv
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/RMI/pacta/cmd/server/pactasrv/conv"
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
+	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
 )
 
@@ -83,4 +85,50 @@ func (s *Server) FindUserByMe(ctx context.Context, request api.FindUserByMeReque
 		return nil, err
 	}
 	return api.FindUserByMe200JSONResponse(*result), nil
+}
+
+// a callback after login to create or return the user
+// (POST /user/authentication-followup)
+func (s *Server) UserAuthenticationFollowup(ctx context.Context, _request api.UserAuthenticationFollowupRequestObject) (api.UserAuthenticationFollowupResponseObject, error) {
+	token, _, err := jwtauth.FromContext(ctx)
+	if err != nil {
+		return nil, oapierr.BadRequest("error getting authorization token", zap.Error(err))
+	}
+	if token == nil {
+		return nil, oapierr.BadRequest("nil authorization token")
+	}
+	emailsClaim, ok := token.PrivateClaims()["emails"]
+	if !ok {
+		return nil, oapierr.BadRequest("no email claim in token")
+	}
+	emails, ok := emailsClaim.([]interface{})
+	if !ok || len(emails) == 0 {
+		return nil, oapierr.BadRequest("couldn't find email claim in token", zap.String("emails_claim_type", fmt.Sprintf("%T", emailsClaim)))
+	}
+	// TODO(#18) Handle Multiple Emails in the Token Claims gracefully
+	if len(emails) > 1 {
+		return nil, oapierr.BadRequest(fmt.Sprintf("multiple emails in token: %+v", emails))
+	}
+	email, ok := emails[0].(string)
+	if !ok {
+		return nil, oapierr.BadRequest("wrong type for email claim", zap.String("email_claim_type", fmt.Sprintf("%T", emails[0])))
+	}
+	canonical, err := pacta.CanonicalizeEmail(email)
+	if err != nil {
+		return nil, oapierr.BadRequest(fmt.Sprintf("invalid email: %q", email), zap.String("email", email), zap.Error(err))
+	}
+	authnID := token.Subject()
+	if authnID == "" {
+		return nil, oapierr.BadRequest("couldn't find authn id in jwt")
+	}
+	user, err := s.DB.GetOrCreateUserByAuthn(s.DB.NoTxn(ctx), pacta.AuthnMechanism_EmailAndPass, authnID, email, canonical)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GetOrCreateUser by authn: %w", err)
+	}
+	result, err := conv.UserToOAPI(user)
+	if err != nil {
+		return nil, err
+	}
+	return api.UserAuthenticationFollowup200JSONResponse(*result), nil
+
 }

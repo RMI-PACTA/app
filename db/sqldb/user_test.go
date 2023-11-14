@@ -40,7 +40,7 @@ func TestcreateUser(t *testing.T) {
 	}
 
 	// Read by Authn
-	actual, err = tdb.userByAuthn(tx, u.AuthnMechanism, u.AuthnID)
+	actual, err = tdb.UserByAuthn(tx, u.AuthnMechanism, u.AuthnID)
 	if err != nil {
 		t.Fatalf("getting user by authn: %w", err)
 	}
@@ -230,7 +230,7 @@ func TestDeleteUser(t *testing.T) {
 	}
 
 	// Read by Authn
-	_, err = tdb.userByAuthn(tx, u.AuthnMechanism, u.AuthnID)
+	_, err = tdb.UserByAuthn(tx, u.AuthnMechanism, u.AuthnID)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}

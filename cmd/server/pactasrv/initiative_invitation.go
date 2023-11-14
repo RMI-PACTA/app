@@ -62,12 +62,13 @@ func (s *Server) GetInitiativeInvitation(ctx context.Context, request api.GetIni
 }
 
 // Claims this initiative invitation, if it exists
-// (POST /initiative-invitation/{id})
+// (POST /initiative-invitation/{id}:claim)
 func (s *Server) ClaimInitiativeInvitation(ctx context.Context, request api.ClaimInitiativeInvitationRequestObject) (api.ClaimInitiativeInvitationResponseObject, error) {
 	userID, err := getUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
+	var customErr api.ClaimInitiativeInvitationResponseObject
 	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
 		ii, err := s.DB.InitiativeInvitation(tx, pacta.InitiativeInvitationID(request.Id))
 		if err != nil {
@@ -80,6 +81,7 @@ func (s *Server) ClaimInitiativeInvitation(ctx context.Context, request api.Clai
 				// We may want to log this, though.
 				return nil
 			} else {
+				customErr = api.ClaimInitiativeInvitation409Response{}
 				return fmt.Errorf("initiative is already used: %+v", ii)
 			}
 		}
@@ -97,6 +99,9 @@ func (s *Server) ClaimInitiativeInvitation(ctx context.Context, request api.Clai
 		return nil
 	})
 	if err != nil {
+		if customErr != nil {
+			return customErr, nil
+		}
 		return nil, oapierr.Internal("failed to claim initiative invitation", zap.Error(err))
 	}
 	return api.ClaimInitiativeInvitation204Response{}, nil
