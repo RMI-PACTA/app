@@ -3,9 +3,15 @@ const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
 const router = useRouter()
-const { getMaybeMe } = useSession()
-const pactaClient = await usePACTA()
+const { t } = useI18n()
 
+const [
+  { getMaybeMe },
+  pactaClient,
+] = await Promise.all([
+  useSession(),
+  usePACTA(),
+])
 const { maybeMe } = await getMaybeMe()
 
 const id = presentOrCheckURL(fromParams('invitationId'))
@@ -14,8 +20,9 @@ const [
   { data: invitation },
 ] = await Promise.all([
   useSimpleAsyncData(`${prefix}.getInitiativeInvitation`, () => pactaClient.getInitiativeInvitation(id)),
-  // useSimpleAsyncData(`${prefix}.getMe`, () => pactaClient.findUserByMe()),
 ])
+const translationPrefix = 'pages/join'
+const tt = (key: string) => t(`${translationPrefix}.${key}`)
 
 if (invitation.value && maybeMe.value && invitation.value.usedByUserId === maybeMe.value.id) {
   void router.push(localePath(`/initiative/${invitation.value.initiativeId}/internal`))
@@ -29,37 +36,31 @@ const acceptInvitation = () => withLoading(
 
 <template>
   <StandardContent v-if="invitation">
-    <TitleBar :title="`Join Initiative '${invitation.initiativeId}'`" />
+    <TitleBar :title="`${tt('Join Initiative:')} '${invitation.initiativeId}'`" />
     <template v-if="!invitation.usedAt">
       <p>
-        You've been invited to join the initiative <b>{{ invitation.initiativeId }}</b>.
+        {{ tt('You\'ve been invited to join an initiative') }} <b>{{ invitation.initiativeId }}</b>.
         <NuxtLink :to="localePath(`/initiative/${invitation.initiativeId}`)">
-          You can learn more about that initiative here.
+          {{ tt('You can learn more about the initiative here.') }}
         </NuxtLink>
       </p>
       <p>
-        If you accept this invitation, you'll be able to add your portfolios to the
-        project, where they will be included in aggregated analysis.
-        You aren't required to accept this invitation if you just want to run the
-        analysis on your own, but joining the initiative may enable you to
-        access internal benefits, like the ability to see the analysis results
-        from the aggregated portfolios.
+        {{ tt('if-accept') }}
       </p>
       <p>
-        If you accept X, Y, Z will be whared with the initiative administrators,
-        but A, B, C will not be.
+        {{ tt('what-shared') }}
       </p>
-      <p>Do you want to accept this invitation?</p>
+      <p>{{ tt('do-accept' ) }}</p>
       <div class="flex gap-2">
         <LinkButton
           :to="localePath(`/initiative/${invitation.initiativeId}`)"
           class="p-button-secondary p-button-outlined"
           icon="pi pi-arrow-left"
-          label="Not Now"
+          :label="tt('Not Now')"
         />
         <PVButton
           class="p-button-success"
-          label="Accept Invitation"
+          :label="tt('Accept Invitation')"
           icon="pi pi-check"
           icon-pos="right"
           @click="acceptInvitation"
@@ -67,7 +68,7 @@ const acceptInvitation = () => withLoading(
       </div>
     </template>
     <template v-else>
-      This invitation has already been used.
+      {{ tt('This invitation has already been used.') }}
     </template>
 
     <StandardDebug

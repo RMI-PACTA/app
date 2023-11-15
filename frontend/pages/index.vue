@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const { isAuthenticated, signIn, signOut } = await useMSAL()
+const isAuthenticated = useIsAuthenticated()
+const { signOut } = await useMSAL()
+const { signIn } = await useSignIn()
 </script>
 
 <template>

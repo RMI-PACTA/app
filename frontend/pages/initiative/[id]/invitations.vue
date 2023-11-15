@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { humanReadableTimeFromStandardString } from '@/lib/time'
 import type DataTable from 'primevue/datatable'
-// const router = useRouter()
 
+const { humanReadableTimeFromStandardString } = useTime()
 const { public: { baseURL } } = useRuntimeConfig()
 const { t } = useI18n()
-const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
+const pactaClient = await usePACTA()
 
 const tt = (key: string) => t(`initiative/invitations.${key}`)
 

@@ -3,10 +3,17 @@ import { type MenuItem } from 'primevue/menuitem'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { isAuthenticated, signIn, signOut } = await useMSAL()
-const { getMaybeMe } = useSession()
+const isAuthenticated = useIsAuthenticated()
 const router = useRouter()
-
+const [
+  { signOut },
+  { signIn },
+  { getMaybeMe },
+] = await Promise.all([
+  useMSAL(),
+  useSignIn(),
+  useSession(),
+])
 const { isAdmin, maybeMe } = await getMaybeMe()
 
 const prefix = 'StandardNav'

@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { humanReadableTimeFromStandardString } from '@/lib/time'
 
-const pactaClient = await usePACTA()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
-const { getMaybeMe } = useSession()
+const { humanReadableTimeFromStandardString } = useTime()
 
+const [
+  pactaClient,
+  { getMaybeMe },
+] = await Promise.all([
+  usePACTA(),
+  useSession(),
+])
 const { maybeMe, isAdmin } = await getMaybeMe()
 
 const id = presentOrCheckURL(fromParams('id'))
@@ -24,13 +29,13 @@ const canManage = computed(() => {
 })
 
 const makeManager = (userId: string) => {
-  console.warn('make manager not yet implemented')
+  alert('make manager not yet implemented')
 }
 const removeFromInitiative = (userId: string) => {
-  console.warn('remove from initiative not yet implemented')
+  alert('remove from initiative not yet implemented')
 }
 const removeManager = (userId: string) => {
-  console.warn('remove manager not yet implemented')
+  alert('remove manager not yet implemented')
 }
 </script>
 

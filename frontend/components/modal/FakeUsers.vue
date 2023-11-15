@@ -1,9 +1,17 @@
 <script setup lang="ts">
 const { fakeUsers: { fakeUsersVisible } } = useModal()
 const { t } = useI18n()
-const { getMaybeMe, refreshMaybeMe } = useSession()
-const { isAuthenticated, signIn, signOut } = await useMSAL()
+const isAuthenticated = useIsAuthenticated()
 const localePath = useLocalePath()
+const [
+  { signOut },
+  { getMaybeMe, refreshMaybeMe },
+  { signIn },
+] = await Promise.all([
+  useMSAL(),
+  useSession(),
+  useSignIn(),
+])
 
 const prefix = 'ModalFakeUsers'
 const tt = (s: string) => t(`${prefix}.${s}`)

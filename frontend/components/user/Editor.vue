@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { type EditorUser } from '@/lib/editor'
 
-const { getMaybeMe } = useSession()
 const { t } = useI18n()
-
+const { getMaybeMe } = await useSession()
 const { maybeMe } = await getMaybeMe()
 
 interface Props {

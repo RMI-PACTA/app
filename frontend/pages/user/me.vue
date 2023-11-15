@@ -1,9 +1,8 @@
 <script setup lang="ts">
 const router = useRouter()
 const localePath = useLocalePath()
-const { getMaybeMe } = useSession()
 const { permissionDenied: { setPermissionDenied } } = useModal()
-
+const { getMaybeMe } = await useSession()
 const { maybeMe } = await getMaybeMe()
 
 onMounted(() => {

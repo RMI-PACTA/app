@@ -98,4 +98,15 @@
         "Unused": "Unused",
         "Includes Illegal Characters": "Includes illegal characters"
     },
+    "pages/join": {
+        "Join Initiative:": "Join Initiative:",
+        "You've been invited to join an initiative": "You've been invited to join an initiative",
+        "You can learn more about the initiative here.": "You can learn more about the initiative here.",
+        "if-accept": "If you accept this invitation, you'll be able to add your portfolios to the project, where they will be included in aggregated analysis. You aren't required to accept this invitation if you just want to run the analysis on your own, but joining the initiative may enable you to access internal benefits, like the ability to see the analysis results from the aggregated portfolios.",
+        "what-shared": "If you accept X, Y, Z will be whared with the initiative administrators, but A, B, C will not be.",
+        "do-accept": "Do you want to accept this invitation?",
+        "Not Now": "Not Now",
+        "Accept Invitation": "Accept Invitation",
+        "This invitation has already been used.": "This invitation has already been used.",
+    }
 }

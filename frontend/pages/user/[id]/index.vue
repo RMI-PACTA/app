@@ -3,7 +3,7 @@
 
 <template>
   <div>
-    TODO(grady) implement some kind of user landing page.
+    TODO(#58) implement some kind of user landing page.
 
     For admins/the user themselves, this is where their portfolio library would go.
 

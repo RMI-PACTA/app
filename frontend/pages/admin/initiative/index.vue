@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { humanReadableTimeFromStandardString } from '@/lib/time'
-
+const { humanReadableTimeFromStandardString } = useTime()
 const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()

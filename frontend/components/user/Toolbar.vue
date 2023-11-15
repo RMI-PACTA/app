@@ -1,9 +1,8 @@
 <script setup lang="ts">
-const { getMaybeMe } = useSession()
-
-const localePath = useLocalePath()
-const { isAdmin, maybeMe } = await getMaybeMe()
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { getMaybeMe } = await useSession()
+const { isAdmin, maybeMe } = await getMaybeMe()
 
 interface Props {
   userId: string

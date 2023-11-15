@@ -19,14 +19,14 @@ import { computed } from 'vue'
 import { type APIKey } from '~/openapi/generated/user'
 
 export const useMSAL = async () => {
-  const { isAuthenticated } = useSession()
+  const isAuthenticated = useIsAuthenticated()
 
   // Don't initialize the MSAL client if we're not in the browser.
   if (process.server) {
     const jwt = useCookie('jwt')
     isAuthenticated.value = !!jwt.value
     return {
-      signIn: () => Promise.reject(new Error('cannot call signIn on server')),
+      msalSignIn: () => Promise.reject(new Error('cannot call signIn on server')),
       signOut: () => Promise.reject(new Error('cannot call signOut on server')),
       createAPIKey: () => Promise.reject(new Error('cannot call createAPIKey on server')),
       getToken: () => Promise.reject(new Error('cannot call getToken on server')),
@@ -35,7 +35,7 @@ export const useMSAL = async () => {
   }
 
   const router = useRouter()
-  const { userClientWithAuth, pactaClientWithAuth } = useAPI()
+  const { userClientWithAuth } = useAPI()
   const localePath = useLocalePath()
 
   const { $msal: { msalConfig, b2cPolicies } } = useNuxtApp()
@@ -239,7 +239,7 @@ export const useMSAL = async () => {
       .then(handleResponse)
   }
 
-  const signIn = () => {
+  const msalSignIn: () => Promise<void> = (): Promise<void> => {
     if (!instance.value) {
       return Promise.reject(new Error('MSAL instance was not yet initialized'))
     }
@@ -247,8 +247,7 @@ export const useMSAL = async () => {
     const req = { scopes }
     return instance.value.loginPopup(req)
       .then(handleResponse)
-      .then(getToken)
-      .then(token => pactaClientWithAuth(token.idToken).userAuthenticationFollowup())
+      .then(() => { /* cast to void */ })
       .catch((err) => {
         console.log('useMSAL.loginPopup', err)
       })
@@ -291,7 +290,7 @@ export const useMSAL = async () => {
   }
 
   return {
-    signIn,
+    msalSignIn,
     signOut,
     createAPIKey,
     getToken,

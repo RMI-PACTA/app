@@ -1,9 +1,10 @@
 import { type User } from '@/openapi/generated/pacta'
 
-export const useSession = () => {
-  const prefix = 'useSession'
-  const isAuthenticated = useState<boolean>(`${prefix}.isAuthenticated`, () => true)
+export const useSession = async () => {
+  const isAuthenticated = useIsAuthenticated()
+  const pactaClient = await usePACTA()
 
+  const prefix = 'useSession'
   const currentUser = useState<User | undefined>(`${prefix}.currentUser`, () => undefined)
   const isAdmin = computed<boolean>(() => !!currentUser.value && currentUser.value.admin)
   const isSuperAdmin = computed<boolean>(() => !!currentUser.value && currentUser.value.superAdmin)
@@ -25,8 +26,7 @@ export const useSession = () => {
     // We're the first to request a user, kick of the request and hop in line at the front of the queue.
     return new Promise((resolve) => {
       resolvers.value.push(resolve)
-      void usePACTA()
-        .then(pactaClient => pactaClient.findUserByMe())
+      void pactaClient.findUserByMe()
         .then(m => {
           currentUser.value = m
 

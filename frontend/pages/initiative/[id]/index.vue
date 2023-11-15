@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { humanReadableDateFromStandardString } from '@/lib/time'
-
 const pactaClient = await usePACTA()
 const { fromParams } = useURLParams()
+const { humanReadableDateFromStandardString } = useTime()
 
 const id = presentOrCheckURL(fromParams('id'))
 const prefix = `initiative/${id}/invitations`
