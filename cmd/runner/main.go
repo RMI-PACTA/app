@@ -49,7 +49,7 @@ func run(args []string) error {
 	var (
 		env = fs.String("env", "", "The environment we're running in.")
 
-		azEventParsePortfolioCompleteTopic = fs.String("azure_event_parse_portfolio_complete_topic", "", "The EventGrid topic to send notifications when processing of portfolio(s) has finished")
+		azEventParsePortfolioCompleteTopic = fs.String("azure_event_parse_portfolio_complete_topic", "", "The EventGrid topic to send notifications when parsing of portfolio(s) has finished")
 		azTopicLocation                    = fs.String("azure_topic_location", "", "The location (like 'centralus-1') where our EventGrid topics are hosted")
 
 		azStorageAccount           = fs.String("azure_storage_account", "", "The storage account to authenticate against for blob operations")
