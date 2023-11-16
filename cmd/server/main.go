@@ -24,6 +24,7 @@ import (
 	"github.com/RMI/pacta/oapierr"
 	oapipacta "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/secrets"
+	"github.com/RMI/pacta/session"
 	"github.com/RMI/pacta/task"
 	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/zaphttplog"
@@ -312,11 +313,12 @@ func run(args []string) error {
 			// LogEntry created by the logging middleware.
 			chimiddleware.RequestID,
 			chimiddleware.RealIP,
-			zaphttplog.NewMiddleware(logger),
+			zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(true)),
 			chimiddleware.Recoverer,
 
 			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
 			jwtauth.Authenticator,
+			session.WithAuthn(logger, db),
 
 			oapimiddleware.OapiRequestValidator(pactaSwagger),
 

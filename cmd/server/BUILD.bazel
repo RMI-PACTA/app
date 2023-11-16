@@ -18,6 +18,7 @@ go_library(
         "//oapierr",
         "//openapi:pacta_generated",
         "//secrets",
+        "//session",
         "//task",
         "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
         "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",

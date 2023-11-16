@@ -48,6 +48,9 @@ export const useModal = () => {
     })
   }
 
+  // fakeUsers
+  const fakeUsersVisible = newModalVisibilityState('fakeUsersVisibile')
+
   // permissionDenied
   const permissionDeniedVisible = newModalVisibilityState('permissionDeniedVisibile')
   const permissionDeniedError = useState<Error | null>(`${prefix}.permissionDeniedError`, () => null)
@@ -61,6 +64,9 @@ export const useModal = () => {
   return {
     anyBlockingModalOpen,
     newModalVisibilityState,
+    fakeUsers: {
+      fakeUsersVisible,
+    },
     loading: {
       withLoading,
       onMountedWithLoading,

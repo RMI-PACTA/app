@@ -1,6 +1,10 @@
 import { createErrorWithRemediation, Remediation } from '@/lib/error'
 
 export const present = <T>(t: T | undefined | null, r: Remediation, cause?: string): T => {
+  const stack = new Error().stack
+  if (cause === undefined && stack !== undefined) {
+    cause = stack.split('\n').find((line, i) => !line.includes('present.ts') && i > 1)
+  }
   if (t === undefined) {
     throw createErrorWithRemediation({
       name: 'present error',

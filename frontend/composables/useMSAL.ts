@@ -19,14 +19,14 @@ import { computed } from 'vue'
 import { type APIKey } from '~/openapi/generated/user'
 
 export const useMSAL = async () => {
-  const isAuthenticated = useState('useMSAL.isAuthenticated', () => false)
+  const isAuthenticated = useIsAuthenticated()
 
   // Don't initialize the MSAL client if we're not in the browser.
   if (process.server) {
     const jwt = useCookie('jwt')
     isAuthenticated.value = !!jwt.value
     return {
-      signIn: () => Promise.reject(new Error('cannot call signIn on server')),
+      msalSignIn: () => Promise.reject(new Error('cannot call signIn on server')),
       signOut: () => Promise.reject(new Error('cannot call signOut on server')),
       createAPIKey: () => Promise.reject(new Error('cannot call createAPIKey on server')),
       getToken: () => Promise.reject(new Error('cannot call getToken on server')),
@@ -210,19 +210,6 @@ export const useMSAL = async () => {
     return filteredAccounts[0]
   })
 
-  const signIn = () => {
-    if (!instance.value) {
-      return Promise.reject(new Error('MSAL instance was not yet initialized'))
-    }
-
-    const req = { scopes }
-    return instance.value.loginPopup(req)
-      .then(handleResponse)
-      .catch((err) => {
-        console.log('useMSAL.loginPopup', err)
-      })
-  }
-
   const getToken = () => {
     if (!instance.value) {
       return Promise.reject(new Error('MSAL instance was not yet initialized'))
@@ -250,6 +237,20 @@ export const useMSAL = async () => {
         return response
       })
       .then(handleResponse)
+  }
+
+  const msalSignIn: () => Promise<void> = (): Promise<void> => {
+    if (!instance.value) {
+      return Promise.reject(new Error('MSAL instance was not yet initialized'))
+    }
+
+    const req = { scopes }
+    return instance.value.loginPopup(req)
+      .then(handleResponse)
+      .then(() => { /* cast to void */ })
+      .catch((err) => {
+        console.log('useMSAL.loginPopup', err)
+      })
   }
 
   const createAPIKey = (): Promise<APIKey> => {
@@ -289,7 +290,7 @@ export const useMSAL = async () => {
   }
 
   return {
-    signIn,
+    msalSignIn,
     signOut,
     createAPIKey,
     getToken,

@@ -8,6 +8,7 @@ import (
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	"github.com/RMI/pacta/pacta"
+	"github.com/RMI/pacta/session"
 	"github.com/RMI/pacta/task"
 	"go.uber.org/zap"
 )
@@ -44,6 +45,7 @@ type DB interface {
 	InitiativeUserRelationshipsByUser(tx db.Tx, uid pacta.UserID) ([]*pacta.InitiativeUserRelationship, error)
 	InitiativeUserRelationshipsByInitiatives(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error)
 	PutInitiativeUserRelationship(tx db.Tx, iur *pacta.InitiativeUserRelationship) error
+	UpdateInitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID, mutations ...db.UpdateInitiativeUserRelationshipFn) error
 
 	Initiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Initiative, error)
 	Initiatives(tx db.Tx, ids []pacta.InitiativeID) (map[pacta.InitiativeID]*pacta.Initiative, error)
@@ -65,7 +67,7 @@ type DB interface {
 	CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioInitiativeMembership) error
 	DeletePortfolioInitiativeMembership(tx db.Tx, pid pacta.PortfolioID, iid pacta.InitiativeID) error
 
-	GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID, enteredEmail, canonicalEmail string) (*pacta.User, error)
+	GetOrCreateUserByAuthn(tx db.Tx, mech pacta.AuthnMechanism, authnID, email, canonicalEmail string) (*pacta.User, error)
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
@@ -82,10 +84,9 @@ type Blob interface {
 }
 
 type Server struct {
-	DB         DB
-	TaskRunner TaskRunner
-	Logger     *zap.Logger
-
+	DB                DB
+	TaskRunner        TaskRunner
+	Logger            *zap.Logger
 	Blob              Blob
 	PorfolioUploadURI string
 }
@@ -114,4 +115,12 @@ func dereference[T any](ts []*T, e error) ([]T, error) {
 		result[i] = *t
 	}
 	return result, nil
+}
+
+func getUserID(ctx context.Context) (pacta.UserID, error) {
+	userID, err := session.UserIDFromContext(ctx)
+	if err != nil {
+		return "", oapierr.Unauthorized("error getting authorization token", zap.Error(err))
+	}
+	return pacta.UserID(userID), nil
 }

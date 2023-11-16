@@ -25,14 +25,13 @@ const deleteInitiative = () => withLoading(
 )
 const saveChanges = () => withLoading(
   () => pactaClient.updateInitiative(id, changes.value)
-    .then(() => router.push(localePath('/admin/initiative'))),
+    .then(() => router.push(localePath(`/initiative/${id}`))),
   `${prefix}.saveChanges`,
 )
 </script>
 
 <template>
-  <StandardContent v-if="editorInitiative">
-    <TitleBar :title="`Editing Initiative: ${editorInitiative.name.currentValue}`" />
+  <div class="flex flex-column gap-3">
     <InitiativeEditor
       v-model:editorInitiative="editorInitiative"
     />
@@ -61,11 +60,11 @@ const saveChanges = () => withLoading(
     </div>
     <StandardDebug
       :value="editorInitiative"
-      label="Editor Initiative"
+      label="Edit Initiative"
     />
     <StandardDebug
       :value="changes"
-      label="Initiative Changes"
+      label="Edit Initiative Changes"
     />
-  </StandardContent>
+  </div>
 </template>

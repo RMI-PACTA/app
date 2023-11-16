@@ -47,7 +47,7 @@ const onHide = () => { emit('closed') }
             v-if="props.subHeader"
             class="text-md"
           >
-            {{ props.subHeader }}}
+            {{ props.subHeader }}
           </div>
         </div>
       </div>

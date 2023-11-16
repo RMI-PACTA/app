@@ -5,12 +5,16 @@
 import type { Initiative } from '../models/Initiative';
 import type { InitiativeChanges } from '../models/InitiativeChanges';
 import type { InitiativeCreate } from '../models/InitiativeCreate';
+import type { InitiativeInvitation } from '../models/InitiativeInvitation';
+import type { InitiativeInvitationCreate } from '../models/InitiativeInvitationCreate';
+import type { InitiativeUserRelationship } from '../models/InitiativeUserRelationship';
+import type { InitiativeUserRelationshipChanges } from '../models/InitiativeUserRelationshipChanges';
 import type { NewPortfolioAsset } from '../models/NewPortfolioAsset';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
-import type { ProcessPortfolioRequest } from '../models/ProcessPortfolioRequest';
-import type { ProcessPortfolioResponse } from '../models/ProcessPortfolioResponse';
+import type { ProcessPortfolioReq } from '../models/ProcessPortfolioReq';
+import type { ProcessPortfolioResp } from '../models/ProcessPortfolioResp';
 import type { User } from '../models/User';
 import type { UserChanges } from '../models/UserChanges';
 
@@ -220,6 +224,183 @@ export class DefaultService {
     }
 
     /**
+     * Returns all initiative user relationships for this initiative that the caller has access to view
+     * @param initiativeId ID of the initiative to fetch relationships for
+     * @returns InitiativeUserRelationship
+     * @throws ApiError
+     */
+    public listInitiativeUserRelationshipsByInitiative(
+        initiativeId: string,
+    ): CancelablePromise<Array<InitiativeUserRelationship>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiative/{initiativeId}/user-relationships',
+            path: {
+                'initiativeId': initiativeId,
+            },
+        });
+    }
+
+    /**
+     * Returns all initiative user relationships for this user that the caller has access to view
+     * @param userId ID of the user to fetch relationships for
+     * @returns InitiativeUserRelationship
+     * @throws ApiError
+     */
+    public listInitiativeUserRelationshipsByUser(
+        userId: string,
+    ): CancelablePromise<Array<InitiativeUserRelationship>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiative/user-relationships/{userId}',
+            path: {
+                'userId': userId,
+            },
+        });
+    }
+
+    /**
+     * Returns all initiative invitations associated with the initiative
+     * @param id ID of the initiative to fetch invitations for
+     * @returns InitiativeInvitation
+     * @throws ApiError
+     */
+    public listInitiativeInvitations(
+        id: string,
+    ): CancelablePromise<Array<InitiativeInvitation>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiative/{id}/invitations',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Creates an initiative invitation
+     * Creates an initiative invitation
+     * @param requestBody
+     * @returns void
+     * @throws ApiError
+     */
+    public createInitiativeInvitation(
+        requestBody: InitiativeInvitationCreate,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/initiative-invitation',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Returns the initiative invitation from this id, if it exists
+     * @param id ID of the invitation to fetch details about
+     * @returns InitiativeInvitation
+     * @throws ApiError
+     */
+    public getInitiativeInvitation(
+        id: string,
+    ): CancelablePromise<InitiativeInvitation> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiative-invitation/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Claims this initiative invitation, if it exists
+     * @param id ID of the invitation to claim
+     * @returns void
+     * @throws ApiError
+     */
+    public claimInitiativeInvitation(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/initiative-invitation/{id}:claim',
+            path: {
+                'id': id,
+            },
+            errors: {
+                409: `initiative invitation already claimed`,
+            },
+        });
+    }
+
+    /**
+     * Deletes an initiative invitation by id
+     * deletes an initiative based on the ID supplied
+     * @param id ID of initiative invitation to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deleteInitiativeInvitation(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/initiative-invitation/{id}:claim',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Returns the initiative user relationship from this id, if it exists
+     * @param initiativeId ID of the initiative
+     * @param userId ID of the user
+     * @returns InitiativeUserRelationship
+     * @throws ApiError
+     */
+    public getInitiativeUserRelationship(
+        initiativeId: string,
+        userId: string,
+    ): CancelablePromise<InitiativeUserRelationship> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiative/{initiativeId}/user-relationship/{userId}',
+            path: {
+                'initiativeId': initiativeId,
+                'userId': userId,
+            },
+        });
+    }
+
+    /**
+     * Updates initiative user relationship properties
+     * Updates a given user's relationship properties for a given initiative
+     * @param initiativeId ID of the initiative
+     * @param userId ID of the user
+     * @param requestBody Relationship object properties to update
+     * @returns void
+     * @throws ApiError
+     */
+    public updateInitiativeUserRelationship(
+        initiativeId: string,
+        userId: string,
+        requestBody: InitiativeUserRelationshipChanges,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/initiative/{initiativeId}/user-relationship/{userId}',
+            path: {
+                'initiativeId': initiativeId,
+                'userId': userId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
      * gets info about the logged in user
      * Returns the logged in user, if the user is logged in, otherwise returns empty
      * @returns User user response
@@ -229,6 +410,19 @@ export class DefaultService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/user/me',
+        });
+    }
+
+    /**
+     * a callback after login to create or return the user
+     * Creates a user in the database, if the user does not yet exist, or returns the existing user.
+     * @returns User user response
+     * @throws ApiError
+     */
+    public userAuthenticationFollowup(): CancelablePromise<User> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/user/authentication-followup',
         });
     }
 
@@ -314,12 +508,12 @@ export class DefaultService {
      * Starts processing raw uploaded files
      *
      * @param requestBody The raw portfolio files to process
-     * @returns ProcessPortfolioResponse The task has been started successfully
+     * @returns ProcessPortfolioResp The task has been started successfully
      * @throws ApiError
      */
     public processPortfolio(
-        requestBody: ProcessPortfolioRequest,
-    ): CancelablePromise<ProcessPortfolioResponse> {
+        requestBody: ProcessPortfolioReq,
+    ): CancelablePromise<ProcessPortfolioResp> {
         return this.httpRequest.request({
             method: 'POST',
             url: '/test:processPortfolio',

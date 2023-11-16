@@ -1,14 +1,13 @@
 import { type User } from '@/openapi/generated/pacta'
 
-export const useSession = () => {
-  const { pactaClient } = useAPI()
+export const useSession = async () => {
+  const isAuthenticated = useIsAuthenticated()
+  const pactaClient = await usePACTA()
 
   const prefix = 'useSession'
-  const signedIn = useState<boolean>(`${prefix}.signedIn`, () => true)
-
   const currentUser = useState<User | undefined>(`${prefix}.currentUser`, () => undefined)
-  const isAdmin = computed(() => currentUser.value && currentUser.value.admin)
-  const isSuperAdmin = computed(() => currentUser.value && currentUser.value.superAdmin)
+  const isAdmin = computed<boolean>(() => !!currentUser.value && currentUser.value.admin)
+  const isSuperAdmin = computed<boolean>(() => !!currentUser.value && currentUser.value.superAdmin)
 
   const resolvers = useState<Array<() => void>>(`${prefix}.resolvers`, () => [])
   const loadCurrentUser = (hardRefresh = false): Promise<void> => {
@@ -48,7 +47,7 @@ export const useSession = () => {
     }
   }
   const getMaybeMe = async () => {
-    if (signedIn.value) {
+    if (isAuthenticated.value) {
       await loadCurrentUser()
     }
     return {
@@ -59,10 +58,17 @@ export const useSession = () => {
     }
   }
 
+  const refreshMaybeMe = async () => {
+    if (isAuthenticated.value) {
+      await loadCurrentUser(true)
+    }
+  }
+
   return {
-    signedIn,
+    isAuthenticated,
     getMe,
     getMaybeMe,
+    refreshMaybeMe,
     currentUser,
   }
 }

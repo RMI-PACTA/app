@@ -32,6 +32,8 @@ interface Props {
   badgeClass?: string
   loading?: string
   loadingIcon?: string
+  activeClass?: string
+  inactiveClass?: string
 }
 const props = withDefaults(defineProps<Props>(), {
   to: undefined,
@@ -45,9 +47,12 @@ const props = withDefaults(defineProps<Props>(), {
   badgeClass: undefined,
   loading: undefined,
   loadingIcon: 'pi pi-spinner pi-spin',
+  activeClass: '',
+  inactiveClass: '',
 })
 
 const attrs = useAttrs()
+const router = useRouter()
 
 const iconStyleClass = computed(() => {
   return [
@@ -73,6 +78,13 @@ const badgeStyleClass = computed(() => {
   ]
 })
 
+const isActive = computed(() => {
+  const cr = router.currentRoute.value
+  if (cr.fullPath === to.value) {
+    return true
+  }
+  return false
+})
 const disabled = computed(() => {
   if (props.loading !== undefined) {
     return true
@@ -83,21 +95,27 @@ const disabled = computed(() => {
   if (typeof (attrs.disabled) === 'boolean') {
     return attrs.disabled
   }
+  if (isActive.value) {
+    return true
+  }
   return true
 })
 
 const buttonClass = computed(() => {
-  return {
+  const result: Record<string, boolean> = {
     'p-button': true,
     'p-component': true,
     'p-button-icon-only': props.icon !== undefined && props.label === undefined,
-    'p-button-vertical': (props.iconPos === 'top' || props.iconPos === 'bottom') && props.label,
+    'p-button-vertical': (props.iconPos === 'top' || props.iconPos === 'bottom') && !!props.label,
     'p-disabled': disabled.value,
-    'p-button-loading': props.loading,
+    'p-button-loading': !!props.loading,
     'p-button-loading-label-only': props.loading !== undefined && props.icon === undefined && props.label !== undefined,
     'no-underline': true,
     'click-does-nothing': disabled.value,
+    [props.activeClass]: isActive.value,
+    [props.inactiveClass]: !isActive.value,
   }
+  return result
 })
 
 const defaultAriaLabel = computed(() => {
@@ -160,7 +178,10 @@ const href = computed(() => {
         v-if="props.icon"
         :class="iconStyleClass"
       />
-      <span class="p-button-label">{{ props.label || '&nbsp;' }}</span>
+      <span
+        v-if="props.label"
+        class="p-button-label"
+      >{{ props.label }}</span>
       <span
         v-if="props.badge"
         :class="badgeStyleClass"

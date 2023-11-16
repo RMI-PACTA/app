@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { humanReadableTimeFromStandardString } = useTime()
 const router = useRouter()
 const pactaClient = await usePACTA()
 const { loading: { withLoading } } = useModal()
@@ -38,12 +39,16 @@ const deleteInitiative = (id: string) => withLoading(
         field="createdAt"
         data-type="date"
         sortable
-      />
-      <PVColumn header="Edit">
+      >
+        <template #body="slotProps">
+          {{ humanReadableTimeFromStandardString(slotProps.data.createdAt) }}
+        </template>
+      </PVColumn>
+      <PVColumn header="View">
         <template #body="slotProps">
           <LinkButton
             icon="pi pi-arrow-right"
-            :to="localePath(`/admin/initiative/${slotProps.data.id}`)"
+            :to="localePath(`/initiative/${slotProps.data.id}`)"
           />
         </template>
       </PVColumn>

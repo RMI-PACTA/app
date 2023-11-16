@@ -37,7 +37,7 @@ func (d *DB) User(tx db.Tx, id pacta.UserID) (*pacta.User, error) {
 	return exactlyOne("user", id, us)
 }
 
-func (d *DB) userByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string) (*pacta.User, error) {
+func (d *DB) UserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID string) (*pacta.User, error) {
 	rows, err := d.query(tx, `
 		SELECT `+userSelectColumns+`
 		FROM pacta_user 
@@ -55,7 +55,7 @@ func (d *DB) userByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID 
 func (d *DB) GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanism, authnID, enteredEmail, canonicalEmail string) (*pacta.User, error) {
 	var user *pacta.User
 	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
-		u, err := d.userByAuthn(tx, authnMechanism, authnID)
+		u, err := d.UserByAuthn(tx, authnMechanism, authnID)
 		if err == nil {
 			user = u
 			return nil

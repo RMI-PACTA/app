@@ -51,6 +51,22 @@ func PactaVersionCreateFromOAPI(p *api.PactaVersionCreate) (*pacta.PACTAVersion,
 	}, nil
 }
 
+func InitiativeInvitationFromOAPI(i *api.InitiativeInvitationCreate) (*pacta.InitiativeInvitation, error) {
+	if i == nil {
+		return nil, oapierr.Internal("initiativeInvitationToOAPI: can't convert nil pointer")
+	}
+	if !initiativeIDRegex.MatchString(i.Id) {
+		return nil, oapierr.BadRequest("id must contain only alphanumeric characters, underscores, and dashes")
+	}
+	if i.InitiativeId == "" {
+		return nil, oapierr.BadRequest("initiative_id must not be empty")
+	}
+	return &pacta.InitiativeInvitation{
+		ID:         pacta.InitiativeInvitationID(i.Id),
+		Initiative: &pacta.Initiative{ID: pacta.InitiativeID(i.InitiativeId)},
+	}, nil
+}
+
 func ifNil[T any](t *T, fallback T) T {
 	if t == nil {
 		return fallback
