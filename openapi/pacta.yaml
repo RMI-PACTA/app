@@ -203,10 +203,9 @@ paths:
       responses:
         '204':
           description: initiative created successfully
-
   /initiative/{initiativeId}/user-relationships:
     get:
-      summary: Returns all initiative user relationships for this initiative that the caller has access to view 
+      summary: Returns all initiative user relationships for this initiative that the caller has access to view
       operationId: listInitiativeUserRelationshipsByInitiative
       parameters:
         - name: initiativeId
@@ -223,10 +222,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/InitiativeUserRelationship'
-
   /initiative/user-relationships/{userId}:
     get:
-      summary: Returns all initiative user relationships for this user that the caller has access to view 
+      summary: Returns all initiative user relationships for this user that the caller has access to view
       operationId: listInitiativeUserRelationshipsByUser
       parameters:
         - name: userId
@@ -243,10 +241,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/InitiativeUserRelationship'
-
   /initiative/{id}/invitations:
     get:
-      summary: Returns all initiative invitations associated with the initiative 
+      summary: Returns all initiative invitations associated with the initiative
       operationId: listInitiativeInvitations
       parameters:
         - name: id
@@ -263,10 +260,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/InitiativeInvitation'
-
   /initiative-invitation:
     post:
-      summary: Creates an initiative invitation 
+      summary: Creates an initiative invitation
       description: Creates an initiative invitation
       operationId: createInitiativeInvitation
       requestBody:
@@ -277,16 +273,15 @@ paths:
               $ref: '#/components/schemas/InitiativeInvitationCreate'
       responses:
         '204':
-          description: initiative invitation created successfully 
-
+          description: initiative invitation created successfully
   /initiative-invitation/{id}:
     get:
-      summary: Returns the initiative invitation from this id, if it exists 
+      summary: Returns the initiative invitation from this id, if it exists
       operationId: getInitiativeInvitation
       parameters:
         - name: id
           in: path
-          description: ID of the invitation to fetch details about 
+          description: ID of the invitation to fetch details about
           required: true
           schema:
             type: string
@@ -295,24 +290,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InitiativeInvitation'      
+                $ref: '#/components/schemas/InitiativeInvitation'
   /initiative-invitation/{id}:claim:
     post:
-      summary: Claims this initiative invitation, if it exists 
+      summary: Claims this initiative invitation, if it exists
       operationId: claimInitiativeInvitation
       parameters:
         - name: id
           in: path
-          description: ID of the invitation to claim 
+          description: ID of the invitation to claim
           required: true
           schema:
             type: string
       responses:
         '204':
-          description: initiative invitation claimed successfully 
+          description: initiative invitation claimed successfully
         '409':
           description: initiative invitation already claimed
-
     delete:
       summary: Deletes an initiative invitation by id
       description: deletes an initiative based on the ID supplied
@@ -323,25 +317,24 @@ paths:
           description: ID of initiative invitation to delete
           required: true
           schema:
-            type: string 
+            type: string
       responses:
         '204':
-          description: initiative invitation deleted successfully 
-
+          description: initiative invitation deleted successfully
   /initiative/{initiativeId}/user-relationship/{userId}:
     get:
-      summary: Returns the initiative user relationship from this id, if it exists 
+      summary: Returns the initiative user relationship from this id, if it exists
       operationId: getInitiativeUserRelationship
       parameters:
-        - name: initiativeId 
+        - name: initiativeId
           in: path
           description: ID of the initiative
           required: true
           schema:
             type: string
-        - name: userId 
+        - name: userId
           in: path
-          description: ID of the user 
+          description: ID of the user
           required: true
           schema:
             type: string
@@ -350,24 +343,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InitiativeUserRelationship'      
+                $ref: '#/components/schemas/InitiativeUserRelationship'
     patch:
-      summary: Updates initiative user relationship properties 
-      description: Updates a given user's relationship properties for a given initiative 
+      summary: Updates initiative user relationship properties
+      description: Updates a given user's relationship properties for a given initiative
       operationId: updateInitiativeUserRelationship
       parameters:
-        - name: initiativeId 
+        - name: initiativeId
           in: path
           description: ID of the initiative
           required: true
           schema:
             type: string
-        - name: userId 
+        - name: userId
           in: path
-          description: ID of the user 
+          description: ID of the user
           required: true
           schema:
-            type: string 
+            type: string
       requestBody:
         description: Relationship object properties to update
         required: true
@@ -378,7 +371,6 @@ paths:
       responses:
         '204':
           description: the relationship changes were applied successfully
-
   /user/me:
     get:
       description: Returns the logged in user, if the user is logged in, otherwise returns empty
@@ -391,7 +383,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-
+  /user/authentication-followup:
+    post:
+      description: Creates a user in the database, if the user does not yet exist, or returns the existing user.
+      summary: a callback after login to create or return the user
+      operationId: userAuthenticationFollowup
+      responses:
+        '200':
+          description: user response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
   /user/{id}:
     get:
       summary: Returns a user by ID
@@ -431,8 +434,7 @@ paths:
               $ref: '#/components/schemas/UserChanges'
       responses:
         '204':
-          description: the new user object
-    
+          description: the user changes were applied successfully
     delete:
       summary: Deletes a user by ID
       description: deletes a single user based on the ID supplied
@@ -705,8 +707,76 @@ components:
           enum: *LANGUAGES
         pactaVersion:
           type: string
-          description: The pacta model that this initiative should use, if not specified, the default pacta model will be used. 
-
+          description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
+    InitiativeInvitationCreate:
+      type: object
+      required:
+        - id
+        - initiativeId
+      properties:
+        id:
+          type: string
+          description: the human-readable id identifying this initiative invitation
+        initiativeId:
+          type: string
+          description: the id of the initiative that this invitation is for
+    InitiativeInvitation:
+      type: object
+      required:
+        - id
+        - initiativeId
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: the human-readable id identifying this initiative invitation
+        initiativeId:
+          type: string
+          description: the id of the initiative that this invitation is for
+        usedAt:
+          type: string
+          description: the time at which this initiative invitation was used, if it has been used
+        usedByUserId:
+          type: string
+          description: the id of the user that used this initiative invitation, if it has been used
+        createdAt:
+          type: string
+          format: date-time
+          description: the time at which this initiative invitation was created
+    InitiativeUserRelationship:
+      type: object
+      required:
+        - initiativeId
+        - userId
+        - manager
+        - member
+        - updatedAt
+      properties:
+        initiativeId:
+          type: string
+          description: the inititative that this relationship describes
+        userId:
+          type: string
+          description: the user that this relationship describes
+        manager:
+          type: boolean
+          description: whether this user is a manager of the initiative
+        member:
+          type: boolean
+          description: whether this user is a member of the initiative
+        updatedAt:
+          type: string
+          format: date-time
+          description: the time at which this relationship was last updated
+    InitiativeUserRelationshipChanges:
+      type: object
+      properties:
+        manager:
+          type: boolean
+          description: whether this user is a manager of the initiative
+        member:
+          type: boolean
+          description: whether this user is a member of the initiative
     User:
       type: object
       required:
@@ -796,7 +866,7 @@ components:
           description: Human readable error message (in English)
         error_id:
           type: string
-          description: |
+          description: |-
             An enum-like type indicating a more specific type of error.
 
             An example might be getting a 401 Unauthorized because you're logged in with multiple emails and haven't selected one, the error_id could be 'multiple_emails'.
