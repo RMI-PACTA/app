@@ -4,8 +4,8 @@ info:
   version: 0.0.1
   title: User API
   description: >
-    The User API allows users to exchange auth credentials for API credentials
-    that can be used with various RMI APIs.
+    The User API allows users to exchange auth credentials for API credentials that can be used with various RMI APIs.
+
   termsOfService: TODO
   contact:
     name: Silicon Ally
@@ -100,7 +100,6 @@ components:
           type: string
           format: date-time
           description: Timestamp when the token expires, RFC3339-formatted.
-
     Error:
       type: object
       required:

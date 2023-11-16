@@ -31,7 +31,7 @@ basePath: /v1
 paths:
   /pacta-version/{id}:
     get:
-      summary: Returns a version of the PACTA model by ID 
+      summary: Returns a version of the PACTA model by ID
       operationId: findPactaVersionById
       parameters:
         - name: id
@@ -48,8 +48,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/PactaVersion'
     patch:
-      summary: Updates a PACTA version 
-      description: Updates a PACTA version's settable properties 
+      summary: Updates a PACTA version
+      description: Updates a PACTA version's settable properties
       operationId: updatePactaVersion
       parameters:
         - name: id
@@ -67,7 +67,7 @@ paths:
               $ref: '#/components/schemas/PactaVersionChanges'
       responses:
         '204':
-          description: pacta version updated successfully 
+          description: pacta version updated successfully
     delete:
       summary: Deletes a pacta version by ID
       description: deletes a single pacta version based on the ID supplied
@@ -78,15 +78,14 @@ paths:
           description: ID of pacta version to delete
           required: true
           schema:
-            type: string 
+            type: string
       responses:
         '204':
-          description: pacta version deleted successfully 
-  
+          description: pacta version deleted successfully
   /pacta-version/{id}/set-default:
     post:
       summary: Marks this version of the PACTA model as the default
-      operationId: markPactaVersionAsDefault 
+      operationId: markPactaVersionAsDefault
       parameters:
         - name: id
           in: path
@@ -96,15 +95,14 @@ paths:
             type: string
       responses:
         '204':
-          description: updated successfully 
-    
+          description: updated successfully
   /pacta-versions:
     get:
-      summary: Returns all versions of the PACTA model 
+      summary: Returns all versions of the PACTA model
       operationId: listPactaVersions
       responses:
         '200':
-          description: pacta versions 
+          description: pacta versions
           content:
             application/json:
               schema:
@@ -112,7 +110,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/PactaVersion'
     post:
-      summary: Creates a PACTA version 
+      summary: Creates a PACTA version
       description: Creates a PACTA version
       operationId: createPactaVersion
       requestBody:
@@ -124,29 +122,28 @@ paths:
               $ref: '#/components/schemas/PactaVersionCreate'
       responses:
         '204':
-          description: pacta version created successfully 
-
+          description: pacta version created successfully
   /initiative/{id}:
     get:
-      summary: Returns an initiative by ID 
+      summary: Returns an initiative by ID
       operationId: findInitiativeById
       parameters:
         - name: id
           in: path
-          description: ID of the initiative to fetch 
+          description: ID of the initiative to fetch
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: the initiative requested 
+          description: the initiative requested
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Initiative'
     patch:
       summary: Updates an initiative
-      description: Updates an initiative's settable properties 
+      description: Updates an initiative's settable properties
       operationId: updateInitiative
       parameters:
         - name: id
@@ -156,16 +153,15 @@ paths:
           schema:
             type: string
       requestBody:
-          description: initiative object properties to update
-          required: true
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InitiativeChanges'
+        description: initiative object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiativeChanges'
       responses:
         '204':
-          description: initiative updated successfully 
-    
+          description: initiative updated successfully
     delete:
       summary: Deletes an initiative by id
       description: deletes an initiative based on the ID supplied
@@ -176,18 +172,17 @@ paths:
           description: ID of initiative to delete
           required: true
           schema:
-            type: string 
+            type: string
       responses:
         '204':
-          description: initiative deleted successfully 
-
+          description: initiative deleted successfully
   /initiatives:
     get:
-      summary: Returns all initiatives 
+      summary: Returns all initiatives
       operationId: listInitiatives
       responses:
         '200':
-          description: gets all initiatives 
+          description: gets all initiatives
           content:
             application/json:
               schema:
@@ -196,7 +191,7 @@ paths:
                   $ref: '#/components/schemas/Initiative'
     post:
       summary: Creates a initiative
-      description: Creates a new initiative 
+      description: Creates a new initiative
       operationId: createInitiative
       requestBody:
         description: Initiative object properties to update
@@ -207,7 +202,7 @@ paths:
               $ref: '#/components/schemas/InitiativeCreate'
       responses:
         '204':
-          description: initiative created successfully 
+          description: initiative created successfully
 
   /initiative/{initiativeId}/user-relationships:
     get:
@@ -387,21 +382,8 @@ paths:
   /user/me:
     get:
       description: Returns the logged in user, if the user is logged in, otherwise returns empty
-      summary: gets info about the logged in user 
+      summary: gets info about the logged in user
       operationId: findUserByMe
-      responses:
-        '200':
-          description: user response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  
-  /user/authentication-followup:
-    post:
-      description: Creates a user in the database, if the user does not yet exist, or returns the existing user. 
-      summary: a callback after login to create or return the user
-      operationId: userAuthenticationFollowup
       responses:
         '200':
           description: user response
@@ -431,7 +413,7 @@ paths:
                 $ref: '#/components/schemas/User'
     patch:
       summary: Updates user properties
-      description: Updates a user's settable properties 
+      description: Updates a user's settable properties
       operationId: updateUser
       parameters:
         - name: id
@@ -449,7 +431,7 @@ paths:
               $ref: '#/components/schemas/UserChanges'
       responses:
         '204':
-          description: the user changes were applied successfully
+          description: the new user object
     
     delete:
       summary: Deletes a user by ID
@@ -461,11 +443,10 @@ paths:
           description: ID of user to delete
           required: true
           schema:
-            type: string 
+            type: string
       responses:
         '204':
           description: user deleted
-
   /test:createPortfolioAsset:
     post:
       summary: Test endpoint, creates a new portfolio asset
@@ -481,7 +462,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NewPortfolioAsset'
-
   /test:processPortfolio:
     post:
       summary: Test endpoint, triggers a task to process the portfolio
@@ -502,17 +482,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProcessPortfolioResp'
-              
 components:
   responses:
     Unauthorized:
-      description: the user is not authorized to access this resource - if logged out, try logging in 
+      description: the user is not authorized to access this resource - if logged out, try logging in
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
     Forbidden:
-      description: the user is not authorized to access this resource 
+      description: the user is not authorized to access this resource
       content:
         application/json:
           schema:
@@ -551,7 +530,6 @@ components:
     Language:
       type: string
       enum: *LANGUAGES
-
     PactaVersionCreate:
       type: object
       required:
@@ -561,57 +539,54 @@ components:
       properties:
         name:
           type: string
-          description: the human meaningful name of the version of the PACTA model 
+          description: the human meaningful name of the version of the PACTA model
         description:
           type: string
-          description: Additional information about the version of the PACTA model 
+          description: Additional information about the version of the PACTA model
         digest:
-          type: string 
-          description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model. 
-
+          type: string
+          description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model.
     PactaVersion:
       type: object
       required:
-        - id 
+        - id
         - name
         - description
         - digest
-        - createdAt 
+        - createdAt
         - isDefault
       properties:
         id:
           type: string
-          description: Unique id of the pacta version - system assigned 
+          description: Unique id of the pacta version - system assigned
         name:
           type: string
-          description: the human meaningful name of the version of the PACTA model 
+          description: the human meaningful name of the version of the PACTA model
         description:
           type: string
-          description: Additional information about the version of the PACTA model 
+          description: Additional information about the version of the PACTA model
         digest:
-          type: string 
-          description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model. 
+          type: string
+          description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model.
         createdAt:
-          type: string 
+          type: string
           format: date-time
-          description: The time at which this version of the PACTA model was created 
+          description: The time at which this version of the PACTA model was created
         isDefault:
-          type: boolean 
-          description: Whether this version of the PACTA model is the default version 
-
+          type: boolean
+          description: Whether this version of the PACTA model is the default version
     PactaVersionChanges:
       type: object
       properties:
         name:
           type: string
-          description: the human meaningful name of the version of the PACTA model 
+          description: the human meaningful name of the version of the PACTA model
         description:
           type: string
-          description: Additional information about the version of the PACTA model 
+          description: Additional information about the version of the PACTA model
         digest:
-          type: string 
-          description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model. 
-
+          type: string
+          description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model.
     InitiativeCreate:
       type: object
       required:
@@ -627,30 +602,29 @@ components:
           description: the human meaningful name of the version of the initiative
         affiliation:
           type: string
-          description: the group that sponsors/created/owns this initiative 
+          description: the group that sponsors/created/owns this initiative
         publicDescription:
           type: string
-          description: Additional information about the initiative 
+          description: Additional information about the initiative
         internalDescription:
           type: string
-          description: Additional information about the initiative, for participants only 
+          description: Additional information about the initiative, for participants only
         requiresInvitationToJoin:
-          type: boolean 
+          type: boolean
           description: If set, only users who have been invited to join this initiative can join it, otherwise, anyone can join it. Defaults to false.
         isAcceptingNewMembers:
-          type: boolean 
+          type: boolean
           description: If set, new users can join the initiative. Defaults to false.
         isAcceptingNewPortfolios:
-          type: boolean 
+          type: boolean
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
-          description: The language this initiative should be conducted in. 
+          description: The language this initiative should be conducted in.
           type: string
           enum: *LANGUAGES
         pactaVersion:
           type: string
-          description: The id of the PACTA model that this initiative should use, if not specified, the default PACTA model will be used. 
-
+          description: The id of the PACTA model that this initiative should use, if not specified, the default PACTA model will be used.
     Initiative:
       type: object
       required:
@@ -664,7 +638,7 @@ components:
         - isAcceptingNewPortfolios
         - pactaVersionId
         - language
-        - createdAt 
+        - createdAt
       properties:
         id:
           type: string
@@ -674,34 +648,33 @@ components:
           description: the human meaningful name of the version of the initiative
         affiliation:
           type: string
-          description: the group that sponsors/created/owns this initiative 
+          description: the group that sponsors/created/owns this initiative
         publicDescription:
           type: string
-          description: Additional information about the initiative 
+          description: Additional information about the initiative
         internalDescription:
           type: string
-          description: Additional information about the initiative, for participants only 
+          description: Additional information about the initiative, for participants only
         requiresInvitationToJoin:
-          type: boolean 
+          type: boolean
           description: If set, only users who have been invited to join this initiative can join it, otherwise, anyone can join it. Defaults to false.
         isAcceptingNewMembers:
-          type: boolean 
+          type: boolean
           description: If set, new users can join the initiative. Defaults to false.
         isAcceptingNewPortfolios:
-          type: boolean 
+          type: boolean
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
-          description: The language this initiative should be conducted in. 
+          description: The language this initiative should be conducted in.
           type: string
           enum: *LANGUAGES
         pactaVersion:
           type: string
-          description: The pacta model that this initiative should use, if not specified, the default pacta model will be used. 
+          description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
         createdAt:
           type: string
           format: date-time
-          description: The time at which this initiative was created. 
-
+          description: The time at which this initiative was created.
     InitiativeChanges:
       type: object
       properties:
@@ -710,102 +683,29 @@ components:
           description: the human meaningful name of the version of the initiative
         affiliation:
           type: string
-          description: the group that sponsors/created/owns this initiative 
+          description: the group that sponsors/created/owns this initiative
         publicDescription:
           type: string
-          description: Additional information about the initiative 
+          description: Additional information about the initiative
         internalDescription:
           type: string
-          description: Additional information about the initiative, for participants only 
+          description: Additional information about the initiative, for participants only
         requiresInvitationToJoin:
-          type: boolean 
+          type: boolean
           description: If set, only users who have been invited to join this initiative can join it, otherwise, anyone can join it. Defaults to false.
         isAcceptingNewMembers:
-          type: boolean 
+          type: boolean
           description: If set, new users can join the initiative. Defaults to false.
         isAcceptingNewPortfolios:
-          type: boolean 
+          type: boolean
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
-          description: The language this initiative should be conducted in. 
+          description: The language this initiative should be conducted in.
           type: string
           enum: *LANGUAGES
         pactaVersion:
           type: string
           description: The pacta model that this initiative should use, if not specified, the default pacta model will be used. 
-
-    InitiativeInvitationCreate:
-      type: object
-      required:
-        - id
-        - initiativeId 
-      properties:
-        id:
-          type: string
-          description: the human-readable id identifying this initiative invitation 
-        initiativeId:
-          type: string
-          description: the id of the initiative that this invitation is for 
-
-    InitiativeInvitation:
-      type: object
-      required:
-        - id
-        - initiativeId 
-        - createdAt 
-      properties:
-        id:
-          type: string
-          description: the human-readable id identifying this initiative invitation 
-        initiativeId:
-          type: string
-          description: the id of the initiative that this invitation is for 
-        usedAt:
-          type: string
-          description: the time at which this initiative invitation was used, if it has been used
-        usedByUserId:
-          type: string
-          description: the id of the user that used this initiative invitation, if it has been used
-        createdAt:
-          type: string
-          format: date-time
-          description: the time at which this initiative invitation was created 
-
-    InitiativeUserRelationship:
-      type: object
-      required:
-        - initiativeId
-        - userId
-        - manager
-        - member
-        - updatedAt
-      properties:
-        initiativeId:
-          type: string
-          description: the inititative that this relationship describes
-        userId:
-          type: string
-          description: the user that this relationship describes 
-        manager:
-          type: boolean
-          description: whether this user is a manager of the initiative 
-        member:
-          type: boolean 
-          description: whether this user is a member of the initiative 
-        updatedAt:
-          type: string
-          format: date-time
-          description: the time at which this relationship was last updated
-
-    InitiativeUserRelationshipChanges:
-      type: object
-      properties:
-        manager:
-          type: boolean
-          description: whether this user is a manager of the initiative 
-        member:
-          type: boolean 
-          description: whether this user is a member of the initiative 
 
     User:
       type: object
@@ -823,41 +723,39 @@ components:
           description: Unique id of the user
         enteredEmail:
           type: string
-          description: User's email address as entered 
+          description: User's email address as entered
         canonicalEmail:
           type: string
           description: Stanard formatting of the email address of the user
         admin:
-          type: boolean 
+          type: boolean
           description: Whether the user is an administrator of the PACTA platform
         superAdmin:
-          type: boolean 
-          description: Whether the user is an administrator of the PACTA platform 
+          type: boolean
+          description: Whether the user is an administrator of the PACTA platform
         name:
           type: string
-          description: Name of the user 
+          description: Name of the user
         preferredLanguage:
-          description: The user's preferred language, if present 
+          description: The user's preferred language, if present
           type: string
           enum: *LANGUAGES
-
     UserChanges:
-      type:  object
+      type: object
       properties:
         name:
           type: string
-          description: The new name of the user 
+          description: The new name of the user
         preferredLanguage:
           description: The user's new preferred language
           type: string
           enum: *LANGUAGES
         admin:
           type: boolean
-          description: Whether the given user is an admin 
+          description: Whether the given user is an admin
         superAdmin:
           type: boolean
           description: Whether the given user is a super admin
-
     NewPortfolioAsset:
       type: object
       required:
@@ -870,7 +768,6 @@ components:
         asset_id:
           type: string
           description: A unique identifier for the uploaded asset
-
     ProcessPortfolioReq:
       type: object
       required:
@@ -880,7 +777,6 @@ components:
           type: array
           items:
             type: string
-
     ProcessPortfolioResp:
       type: object
       required:
@@ -889,7 +785,6 @@ components:
         task_id:
           type: string
           description: The ID of the async task for processing the portfoio
-
     Error:
       type: object
       required:
