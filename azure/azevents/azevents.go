@@ -28,8 +28,10 @@ type Config struct {
 	// prevent random unauthenticated internet requests from triggering webhooks.
 	AllowedAuthSecrets []string
 
-	ProcessedPortfolioTopicName string
+	ParsedPortfolioTopicName string
 }
+
+const parsedPortfolioPath = "/events/parsed_portfolio"
 
 func (c *Config) validate() error {
 	if c.Logger == nil {
@@ -44,8 +46,8 @@ func (c *Config) validate() error {
 	if len(c.AllowedAuthSecrets) == 0 {
 		return errors.New("no auth secrets were given")
 	}
-	if c.ProcessedPortfolioTopicName == "" {
-		return errors.New("no resource group given")
+	if c.ParsedPortfolioTopicName == "" {
+		return errors.New("no parsed portfolio topic name given")
 	}
 	return nil
 }
@@ -72,7 +74,7 @@ func NewServer(cfg *Config) (*Server, error) {
 		subscription:       cfg.Subscription,
 		resourceGroup:      cfg.ResourceGroup,
 		pathToTopic: map[string]string{
-			"/events/processed_portfolio": cfg.ProcessedPortfolioTopicName,
+			parsedPortfolioPath: cfg.ParsedPortfolioTopicName,
 		},
 	}, nil
 }
@@ -182,16 +184,16 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 
 func (s *Server) RegisterHandlers(r chi.Router) {
 	r.Use(s.verifyWebhook)
-	r.Post("/events/processed_portfolio", func(w http.ResponseWriter, r *http.Request) {
+	r.Post(parsedPortfolioPath, func(w http.ResponseWriter, r *http.Request) {
 		var reqs []struct {
-			Data            *task.ProcessPortfolioResponse `json:"data"`
-			EventType       string                         `json:"eventType"`
-			ID              string                         `json:"id"`
-			Subject         string                         `json:"subject"`
-			DataVersion     string                         `json:"dataVersion"`
-			MetadataVersion string                         `json:"metadataVersion"`
-			EventTime       time.Time                      `json:"eventTime"`
-			Topic           string                         `json:"topic"`
+			Data            *task.ParsePortfolioResponse `json:"data"`
+			EventType       string                       `json:"eventType"`
+			ID              string                       `json:"id"`
+			Subject         string                       `json:"subject"`
+			DataVersion     string                       `json:"dataVersion"`
+			MetadataVersion string                       `json:"metadataVersion"`
+			EventTime       time.Time                    `json:"eventTime"`
+			Topic           string                       `json:"topic"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
 			s.logger.Error("failed to parse webhook request body", zap.Error(err))
@@ -211,7 +213,7 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 			return
 		}
 
-		// TODO: Add any database persistence and other things we'd want to do after a portfolio was processed.
-		s.logger.Info("processed portfolio", zap.String("task_id", string(req.Data.TaskID)), zap.Strings("outputs", req.Data.Outputs))
+		// TODO: Add any database persistence and other things we'd want to do after a portfolio was parsed.
+		s.logger.Info("parsed portfolio", zap.String("task_id", string(req.Data.TaskID)), zap.Strings("outputs", req.Data.Outputs))
 	})
 }

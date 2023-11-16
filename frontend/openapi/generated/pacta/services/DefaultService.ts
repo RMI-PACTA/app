@@ -13,8 +13,8 @@ import type { NewPortfolioAsset } from '../models/NewPortfolioAsset';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
-import type { ProcessPortfolioReq } from '../models/ProcessPortfolioReq';
-import type { ProcessPortfolioResp } from '../models/ProcessPortfolioResp';
+import type { ParsePortfolioReq } from '../models/ParsePortfolioReq';
+import type { ParsePortfolioResp } from '../models/ParsePortfolioResp';
 import type { User } from '../models/User';
 import type { UserChanges } from '../models/UserChanges';
 
@@ -508,15 +508,15 @@ export class DefaultService {
      * Starts processing raw uploaded files
      *
      * @param requestBody The raw portfolio files to process
-     * @returns ProcessPortfolioResp The task has been started successfully
+     * @returns ParsePortfolioResp The task has been started successfully
      * @throws ApiError
      */
-    public processPortfolio(
-        requestBody: ProcessPortfolioReq,
-    ): CancelablePromise<ProcessPortfolioResp> {
+    public parsePortfolio(
+        requestBody: ParsePortfolioReq,
+    ): CancelablePromise<ParsePortfolioResp> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/test:processPortfolio',
+            url: '/test:parsePortfolio',
             body: requestBody,
             mediaType: 'application/json',
         });

@@ -37,6 +37,7 @@ LOCAL_DOCKER_CREDS="$(echo $SOPS_DATA | jq .localdocker)"
 
 WEBHOOK_CREDS="$(echo $SOPS_DATA | jq .webhook)"
 TOPIC_ID="$(echo $WEBHOOK_CREDS | jq -r .topic_id)"
+WEBHOOK_PATH="/events/parsed_portfolio"
 WEBHOOK_SHARED_SECRET="$(echo $WEBHOOK_CREDS | jq -r .shared_secret)"
 
 FRP="$(echo $SOPS_DATA | jq .frpc)"
@@ -64,7 +65,7 @@ function create_eventgrid_subscription {
     --name "local-webhook-$1" \
     --source-resource-id "$TOPIC_ID" \
     --endpoint-type=webhook \
-    --endpoint="https://$1.${FRP_ADDR}/events/processed_portfolio" \
+    --endpoint="https://$1.${FRP_ADDR}${WEBHOOK_PATH}" \
     --delivery-attribute-mapping "Authorization static $WEBHOOK_SHARED_SECRET true"
 }
 
@@ -149,7 +150,7 @@ if [[ ! -z "$EG_SUB_NAME" ]]; then
       --name "local-webhook-$EG_SUB_NAME" \
       --source-resource-id "$TOPIC_ID" \
       --endpoint-type=webhook \
-      --endpoint="https://${EG_SUB_NAME}.${FRP_ADDR}/events/processed_portfolio" \
+      --endpoint="https://${EG_SUB_NAME}.${FRP_ADDR}${WEBHOOK_PATH}" \
       --delivery-attribute-mapping Authorization static "$WEBHOOK_SHARED_SECRET" true
     set -e
   } &
