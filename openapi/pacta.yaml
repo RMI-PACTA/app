@@ -464,7 +464,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NewPortfolioAsset'
-  /startPortfolioUpload:
+  /portfolio-upload:
     post:
       summary: Starts the process of uploading one or more portfolio files
       description: Creates one or more new incomplete portfolio uploads, and creates upload URLs for the user to put their blobs into.
@@ -475,15 +475,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StartPortfolioUploadRequest'
+              $ref: '#/components/schemas/StartPortfolioUploadReq'
       responses:
         '200':
           description: The assets can now be uploaded via the given signed URLs.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StartPortfolioUploadResponse'
-  /completePortfolioUpload:
+                $ref: '#/components/schemas/StartPortfolioUploadResp'
+  /portfolio-upload:complete:
     post:
       summary: Called after uploads of portfolios to cloud storage are complete.
       description: Signals that the upload of the portfolios are complete, and that the server should start parsing them.
@@ -494,14 +494,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompletePortfolioUploadRequest'
+              $ref: '#/components/schemas/CompletePortfolioUploadReq'
       responses:
         '200':
           description: The process to initiate the parsing of the uploads has been initiated.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CompletePortfolioUploadResponse'
+                $ref: '#/components/schemas/CompletePortfolioUploadResp'
   /test:parsePortfolio:
     post:
       summary: Test endpoint, triggers a task to parse the portfolio
@@ -876,7 +876,7 @@ components:
         asset_id:
           type: string
           description: A unique identifier for the uploaded asset
-    StartPortfolioUploadRequest:
+    StartPortfolioUploadReq:
       type: object
       required:
         - items
@@ -884,8 +884,8 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/StartPortfolioUploadRequestItem'
-    StartPortfolioUploadRequestItem:
+            $ref: '#/components/schemas/StartPortfolioUploadReqItem'
+    StartPortfolioUploadReqItem:
       type: object
       required:
         - file_name
@@ -893,7 +893,7 @@ components:
         file_name:
           type: string
           description: The name of the file, including its extension.
-    StartPortfolioUploadResponse:
+    StartPortfolioUploadResp:
       type: object
       required:
         - items
@@ -901,8 +901,8 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/StartPortfolioUploadResponseItem'
-    StartPortfolioUploadResponseItem:
+            $ref: '#/components/schemas/StartPortfolioUploadRespItem'
+    StartPortfolioUploadRespItem:
       type: object
       required:
         - file_name
@@ -918,17 +918,25 @@ components:
         incomplete_upload_id:
           type: string
           description: A unique identifier for the uploaded asset
-    CompletePortfolioUpload:
+    CompletePortfolioUploadReq:
       type: object
       required:
-        - incomplete_upload_ids
+        - items
       properties:
-        incomplete_upload_ids:
+        items:
           type: array
           items:
-            type: string
-          description: The incomplete uploads that have been successfully uploaded and are ready for parsing.
-    CompletePortfolioUpload:
+            $ref: '#/components/schemas/CompletePortfolioUploadReqItem'
+          description: The incomplete uploads that have been successfully uploaded to storage and are ready for parsing.
+    CompletePortfolioUploadReqItem:
+      type: object
+      required:
+        - incomplete_upload_id
+      properties:
+        incomplete_upload_id:
+          type: string
+          description: The unique identifier for the uploaded asset
+    CompletePortfolioUploadResp:
       type: object
       required:
         - analysis_id
