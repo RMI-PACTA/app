@@ -39,3 +39,9 @@ func (s *Server) ParsePortfolio(ctx context.Context, req api.ParsePortfolioReque
 		TaskId: string(taskID),
 	}, nil
 }
+
+// (GET /portfolios)
+
+func (s *Server) ListPortfolios(ctx context.Context, request api.ListPortfoliosRequestObject) (api.ListPortfoliosResponseObject, error) {
+	return nil, oapierr.NotImplemented("not implemented")
+}
