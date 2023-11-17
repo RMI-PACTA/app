@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { deserializeError } from 'serialize-error'
+
 const { error: { errorModalVisible, error: modalError } } = useModal()
 const error = useError()
 const router = useRouter()
@@ -26,7 +28,7 @@ const maybeGoBack = async () => {
 }
 
 const fullError = computed(() => {
-  const err = error.value ?? modalError.value
+  const err = error.value ?? deserializeError(modalError.value)
   if (err instanceof Error) {
     return {
       name: err.name ?? '',

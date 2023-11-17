@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { serializeError } from 'serialize-error'
+
 const { loading: { clearLoading }, error: { errorModalVisible, error } } = useModal()
 
 const handleError = (err: Error) => {
-  error.value = err
+  error.value = serializeError(err)
   errorModalVisible.value = true
   clearLoading()
 }
