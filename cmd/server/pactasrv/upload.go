@@ -18,3 +18,8 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 func (s *Server) CompletePortfolioUpload(ctx context.Context, request api.CompletePortfolioUploadRequestObject) (api.CompletePortfolioUploadResponseObject, error) {
 	return nil, fmt.Errorf("not implemented")
 }
+
+// (GET /incomplete-uploads)
+func (s *Server) ListIncompleteUploads(ctx context.Context, request api.ListIncompleteUploadsRequestObject) (api.ListIncompleteUploadsResponseObject, error) {
+	return nil, fmt.Errorf("not implemented")
+}

@@ -371,6 +371,40 @@ paths:
       responses:
         '204':
           description: the relationship changes were applied successfully
+  /incomplete-uploads:
+    get:
+      description: Gets the incomplete uploads that the user is the owner of 
+      operationId: listIncompleteUploads 
+      requestBody:
+        description: A request describing the incomplete uploads to return 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListIncompleteUploadsReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListIncompleteUploadsResp'
+  /portfolios:
+    get:
+      description: Gets the list of portfolios that the user is the owner of 
+      operationId: listPortfolios
+      requestBody:
+        description: A request describing the portfolios to return 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListPortfoliosReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPortfoliosResp'
   /user/me:
     get:
       description: Returns the logged in user, if the user is logged in, otherwise returns empty
@@ -944,6 +978,103 @@ components:
         analysis_id:
           type: string
           description: The analysis id to track for the parsing task.
+    HoldingsDate:
+      type: object
+      required:
+        - time
+      properties:
+        time: 
+          type: string 
+          format: date-time
+          description: The time at which the holdings are represented at 
+    IncompleteUpload:
+      type: object
+      properties:
+        ID:
+          type: string # Assuming IncompleteUploadID is a string, otherwise define its structure
+          description: Unique identifier for the incomplete upload
+        Name:
+          type: string
+          description: Name of the upload
+        Description:
+          type: string
+          description: Description of the upload
+        HoldingsDate:
+          $ref: '#/components/schemas/HoldingsDate'
+        CreatedAt:
+          type: string
+          format: date-time
+          description: The time when the upload was created
+        RanAt:
+          type: string
+          format: date-time
+          description: The time when the upload process was run
+        CompletedAt:
+          type: string
+          format: date-time
+          description: The time when the upload was completed
+        FailureCode:
+          type: string
+          description: Code describing the failure, if any
+        FailureMessage:
+          type: string
+          description: Message describing the failure, if any
+        AdminDebugEnabled:
+          type: boolean
+          description: Flag to indicate whether admin debug mode is enabled
+    Portfolio:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - createdAt
+        - adminDebugEnabled
+        - numberOfRows
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the portfolio 
+        name:
+          type: string
+          description: the human meaningful name of the portfolio
+        description:
+          type: string
+          description: Additional information about the portfolio
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this portfolio was successfully parsed from a raw  
+        holdingsDate: 
+          $ref: '#/components/schemas/HoldingsDate'
+        adminDebugEnabled:
+          type: boolean 
+          description: Whether the admin debug mode is enabled for this portfolio
+        numberOfRows:
+          type: integer
+          description: The number of rows in the portfolio
+    ListIncompleteUploadsReq:
+      type: object
+    ListIncompleteUploadsResp:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncompleteUpload'
+    ListPortfoliosReq:
+      type: object
+    ListPortfoliosResp:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Portfolio'
     ParsePortfolioReq:
       type: object
       required:
