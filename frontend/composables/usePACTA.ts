@@ -5,7 +5,7 @@ import { CancelablePromise } from '~/openapi/generated/pacta/core/CancelableProm
 import type { OpenAPIConfig } from '~/openapi/generated/pacta/core/OpenAPI'
 import { request as __request } from '~/openapi/generated/pacta/core/request'
 
-export const usePACTA = async () => {
+export const usePACTA = () => {
   const {
     pactaClient, // On the server, if there's no JWT
     pactaClientWithAuth, // On the server, forward the cookie we got from the client
@@ -23,7 +23,7 @@ export const usePACTA = async () => {
   // If we're on the client, we can see if Azure has cached credentials and use
   // those, or refresh them if not. Our cookies have the same lifetime as our
   // access tokens, so we refresh them together.
-  const { getToken } = await useMSAL()
+  const { $msal: { getToken } } = useNuxtApp()
 
   // We define this class as a variable so we can override the PACTA client
   // with middleware that refreshes our credentials. This matches the

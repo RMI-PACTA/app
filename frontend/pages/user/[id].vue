@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { fromParams } = useURLParams()
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 
 const id = presentOrCheckURL(fromParams('id'))
 const prefix = `user/[${id}]`

@@ -2,7 +2,7 @@
 import { initiativeEditor } from '@/lib/editor'
 
 const router = useRouter()
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()

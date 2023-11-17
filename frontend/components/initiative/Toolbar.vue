@@ -3,7 +3,7 @@ import { type InitiativeUserRelationship } from '@/openapi/generated/pacta'
 
 const localePath = useLocalePath()
 const { t } = useI18n()
-const { getMaybeMe } = await useSession()
+const { getMaybeMe } = useSession()
 const { isAdmin, maybeMe } = await getMaybeMe()
 
 const prefix = 'InitiativeToolbar'

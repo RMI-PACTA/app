@@ -6,8 +6,8 @@ import type { OpenAPIConfig } from '@/openapi/generated/pacta/core/OpenAPI'
 
 type HttpRequestConstructor = new (config: OpenAPIConfig) => BaseHttpRequest
 
-// Note: This is a low-level composable intended to be used by other
-// composables, like usePACTA or useMSAL, it probably shouldn't be used by end
+// Note: This is a low-level composable intended to be used by other composables
+// like usePACTA or the $msal plugin, it probably shouldn't be used by end
 // clients.
 export const useAPI = () => {
   const { public: { apiServerURL, authServerURL } } = useRuntimeConfig()

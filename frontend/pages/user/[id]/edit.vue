@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { userEditor } from '@/lib/editor'
 
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const { fromParams } = useURLParams()
 const { loading: { withLoading } } = useModal()
 const router = useRouter()

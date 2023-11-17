@@ -5,7 +5,7 @@ import { initiativeEditor } from '@/lib/editor'
 const localePath = useLocalePath()
 const prefix = 'admin/initiative/new'
 const router = useRouter()
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 
 const {

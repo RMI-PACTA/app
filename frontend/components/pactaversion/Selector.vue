@@ -12,7 +12,7 @@ const value = computed({
   set: (v: string | undefined) => { emits('update:value', v) },
 })
 
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const prefix = 'components/pactaversion/Selector'
 const { data: pactaVersions, refresh } = await useSimpleAsyncData(
   `${prefix}.getPactaVersions`,

@@ -2,7 +2,7 @@
 const router = useRouter()
 const localePath = useLocalePath()
 const { permissionDenied: { setPermissionDenied } } = useModal()
-const { getMaybeMe } = await useSession()
+const { getMaybeMe } = useSession()
 const { maybeMe } = await getMaybeMe()
 
 onMounted(() => {
