@@ -502,26 +502,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompletePortfolioUploadResponse'
-  /test:processPortfolio:
+  /test:parsePortfolio:
     post:
-      summary: Test endpoint, triggers a task to process the portfolio
+      summary: Test endpoint, triggers a task to parse the portfolio
       description: |
         Starts processing raw uploaded files
-      operationId: processPortfolio
+      operationId: parsePortfolio
       requestBody:
         description: The raw portfolio files to process
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProcessPortfolioReq'
+              $ref: '#/components/schemas/ParsePortfolioReq'
       responses:
         '200':
           description: The task has been started successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessPortfolioResp'
+                $ref: '#/components/schemas/ParsePortfolioResp'
 components:
   responses:
     Unauthorized:
@@ -936,7 +936,7 @@ components:
         analysis_id:
           type: string
           description: The analysis id to track for the parsing task.
-    ProcessPortfolioReq:
+    ParsePortfolioReq:
       type: object
       required:
         - asset_ids
@@ -945,7 +945,7 @@ components:
           type: array
           items:
             type: string
-    ProcessPortfolioResp:
+    ParsePortfolioResp:
       type: object
       required:
         - task_id

@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type ProcessPortfolioResp = {
+export type ParsePortfolioResp = {
     /**
      * The ID of the async task for processing the portfoio
      */

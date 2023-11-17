@@ -17,17 +17,17 @@ type RunnerID string
 type Type string
 
 const (
-	ProcessPortfolio = Type("process_portfolio")
-	CreateReport     = Type("create_report")
+	ParsePortfolio = Type("parse_portfolio")
+	CreateReport   = Type("create_report")
 )
 
-type ProcessPortfolioRequest struct {
+type ParsePortfolioRequest struct {
 	// Note: This is temporary just to test the full end-to-end flow. We'll likely
 	// want to reference assets by the portfolio (group?) they were uploaded to.
 	AssetIDs []string
 }
 
-type ProcessPortfolioResponse struct {
+type ParsePortfolioResponse struct {
 	TaskID   ID
 	AssetIDs []string
 	Outputs  []string

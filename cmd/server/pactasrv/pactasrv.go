@@ -19,7 +19,7 @@ var (
 )
 
 type TaskRunner interface {
-	ProcessPortfolio(ctx context.Context, req *task.ProcessPortfolioRequest) (task.ID, task.RunnerID, error)
+	ParsePortfolio(ctx context.Context, req *task.ParsePortfolioRequest) (task.ID, task.RunnerID, error)
 	CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, task.RunnerID, error)
 }
 
