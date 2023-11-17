@@ -9,6 +9,7 @@ go_library(
         "pacta_version.go",
         "pactasrv.go",
         "portfolio.go",
+        "upload.go",
         "user.go",
     ],
     importpath = "github.com/RMI/pacta/cmd/server/pactasrv",

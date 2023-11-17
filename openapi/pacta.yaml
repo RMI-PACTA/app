@@ -464,9 +464,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NewPortfolioAsset'
+  /portfolio-upload:
+    post:
+      summary: Starts the process of uploading one or more portfolio files
+      description: Creates one or more new incomplete portfolio uploads, and creates upload URLs for the user to put their blobs into.
+      operationId: startPortfolioUpload
+      requestBody:
+        description: A request describing the portfolios that the user wants to upload
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartPortfolioUploadReq'
+      responses:
+        '200':
+          description: The assets can now be uploaded via the given signed URLs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartPortfolioUploadResp'
+  /portfolio-upload:complete:
+    post:
+      summary: Called after uploads of portfolios to cloud storage are complete.
+      description: Signals that the upload of the portfolios are complete, and that the server should start parsing them.
+      operationId: completePortfolioUpload
+      requestBody:
+        description: A request describing the incomplete uploads that the user wants to begin processing
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletePortfolioUploadReq'
+      responses:
+        '200':
+          description: The process to initiate the parsing of the uploads has been initiated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompletePortfolioUploadResp'
   /test:parsePortfolio:
     post:
-      summary: Test endpoint, triggers a task to process the portfolio
+      summary: Test endpoint, triggers a task to parse the portfolio
       description: |
         Starts processing raw uploaded files
       operationId: parsePortfolio
@@ -838,6 +876,74 @@ components:
         asset_id:
           type: string
           description: A unique identifier for the uploaded asset
+    StartPortfolioUploadReq:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StartPortfolioUploadReqItem'
+    StartPortfolioUploadReqItem:
+      type: object
+      required:
+        - file_name
+      properties:
+        file_name:
+          type: string
+          description: The name of the file, including its extension.
+    StartPortfolioUploadResp:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StartPortfolioUploadRespItem'
+    StartPortfolioUploadRespItem:
+      type: object
+      required:
+        - file_name
+        - upload_url
+        - incomplete_upload_id
+      properties:
+        file_name:
+          type: string
+          description: The name of the file, including its extension, used as a round-trip id.
+        upload_url:
+          type: string
+          description: The signed URL where the file should be uploaded to, using PUT semantics.
+        incomplete_upload_id:
+          type: string
+          description: A unique identifier for the uploaded asset
+    CompletePortfolioUploadReq:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompletePortfolioUploadReqItem'
+          description: The incomplete uploads that have been successfully uploaded to storage and are ready for parsing.
+    CompletePortfolioUploadReqItem:
+      type: object
+      required:
+        - incomplete_upload_id
+      properties:
+        incomplete_upload_id:
+          type: string
+          description: The unique identifier for the uploaded asset
+    CompletePortfolioUploadResp:
+      type: object
+      required:
+        - analysis_id
+      properties:
+        analysis_id:
+          type: string
+          description: The analysis id to track for the parsing task.
     ParsePortfolioReq:
       type: object
       required:

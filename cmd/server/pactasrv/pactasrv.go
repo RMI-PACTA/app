@@ -67,6 +67,12 @@ type DB interface {
 	CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioInitiativeMembership) error
 	DeletePortfolioInitiativeMembership(tx db.Tx, pid pacta.PortfolioID, iid pacta.InitiativeID) error
 
+	IncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (*pacta.IncompleteUpload, error)
+	IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, error)
+	CreateIncompleteUpload(tx db.Tx, i *pacta.IncompleteUpload) (pacta.IncompleteUploadID, error)
+	UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error
+	DeleteIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (pacta.BlobURI, error)
+
 	GetOrCreateUserByAuthn(tx db.Tx, mech pacta.AuthnMechanism, authnID, email, canonicalEmail string) (*pacta.User, error)
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
