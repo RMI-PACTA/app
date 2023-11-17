@@ -100,6 +100,10 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
 
   const scopes: string[] = ['openid', 'profile', 'offline_access', msalConfig.auth.clientId]
 
+  const router = useRouter()
+  const { userClientWithAuth } = useAPI()
+  const localePath = useLocalePath()
+
   const accounts = useState<AccountInfo[] | undefined>('useMSAL.accounts')
   const interactionStatus = useState<InteractionStatus | undefined>('useMSAL.interactionStatus')
 
@@ -132,6 +136,24 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     await instance.initialize()
   } catch (error) {
     throw new Error('failed to init MSAL instance', { cause: error })
+  }
+
+  const signOut = (): Promise<void> => {
+    const logoutRequest = {
+      postLogoutRedirectUri: msalConfig.auth.redirectUri,
+      mainWindowRedirectUri: msalConfig.auth.logoutUri,
+    }
+    const userClient = userClientWithAuth('') // Logging out doesn't require auth.
+    return Promise.all([
+      userClient.logout(),
+      instance.logoutPopup(logoutRequest),
+    ])
+      .catch((e) => { console.log('failed to log out', e) })
+      .then(() => { /* cast to void */ })
+      .finally(() => {
+        isAuthenticated.value = false
+        void router.push(localePath('/'))
+      })
   }
 
   const handleResponse = async (response: AuthenticationResult, force = false): Promise<AuthenticationResult> => {
@@ -182,10 +204,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     // When we handle this, use instance.setActiveAccount
     console.log('multiple accounts found, user needs to select one')
   }
-
-  const router = useRouter()
-  const { userClientWithAuth } = useAPI()
-  const localePath = useLocalePath()
 
   const account = computed(() => {
     if (!accounts.value) {
@@ -275,24 +293,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
           throw new Error(`error creating a new API key ${resp.message}`)
         }
         return resp
-      })
-  }
-
-  const signOut = (): Promise<void> => {
-    const logoutRequest = {
-      postLogoutRedirectUri: msalConfig.auth.redirectUri,
-      mainWindowRedirectUri: msalConfig.auth.logoutUri,
-    }
-    const userClient = userClientWithAuth('') // Logging out doesn't require auth.
-    return Promise.all([
-      userClient.logout(),
-      instance.logoutPopup(logoutRequest),
-    ])
-      .catch((e) => { console.log('failed to log out', e) })
-      .then(() => { /* cast to void */ })
-      .finally(() => {
-        isAuthenticated.value = false
-        void router.push(localePath('/'))
       })
   }
 
