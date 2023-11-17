@@ -24,18 +24,18 @@ func (s *Server) CreatePortfolioAsset(ctx context.Context, req api.CreatePortfol
 	}, nil
 }
 
-func (s *Server) ProcessPortfolio(ctx context.Context, req api.ProcessPortfolioRequestObject) (api.ProcessPortfolioResponseObject, error) {
-	taskID, runnerID, err := s.TaskRunner.ProcessPortfolio(ctx, &task.ProcessPortfolioRequest{
+func (s *Server) ParsePortfolio(ctx context.Context, req api.ParsePortfolioRequestObject) (api.ParsePortfolioResponseObject, error) {
+	taskID, runnerID, err := s.TaskRunner.ParsePortfolio(ctx, &task.ParsePortfolioRequest{
 		AssetIDs: req.Body.AssetIds,
 		// PortfolioID: req.Body.PortfolioID,
 	})
 	if err != nil {
 		return nil, oapierr.Internal("failed to start task", zap.Error(err))
 	}
-	s.Logger.Info("triggered process portfolio task",
+	s.Logger.Info("triggered parse portfolio task",
 		zap.String("task_id", string(taskID)),
 		zap.String("task_runner_id", string(runnerID)))
-	return api.ProcessPortfolio200JSONResponse{
+	return api.ParsePortfolio200JSONResponse{
 		TaskId: string(taskID),
 	}, nil
 }

@@ -49,8 +49,8 @@ func run(args []string) error {
 	var (
 		env = fs.String("env", "", "The environment we're running in.")
 
-		azProcessedPortfolioTopic = fs.String("azure_processed_portfolio_topic", "", "The EventGrid topic to send notifications of processed portfolios")
-		azTopicLocation           = fs.String("azure_topic_location", "", "The location (like 'centralus-1') where our EventGrid topics are hosted")
+		azEventParsePortfolioCompleteTopic = fs.String("azure_event_parse_portfolio_complete_topic", "", "The EventGrid topic to send notifications when parsing of portfolio(s) has finished")
+		azTopicLocation                    = fs.String("azure_topic_location", "", "The location (like 'centralus-1') where our EventGrid topics are hosted")
 
 		azStorageAccount           = fs.String("azure_storage_account", "", "The storage account to authenticate against for blob operations")
 		azSourcePortfolioContainer = fs.String("azure_source_portfolio_container", "", "The container in the storage account where we read raw portfolios from")
@@ -99,7 +99,7 @@ func run(args []string) error {
 		}
 	}
 
-	pubsubClient, err := publisher.NewClient(fmt.Sprintf("https://%s.%s.eventgrid.azure.net/api/events", *azProcessedPortfolioTopic, *azTopicLocation), creds, nil)
+	pubsubClient, err := publisher.NewClient(fmt.Sprintf("https://%s.%s.eventgrid.azure.net/api/events", *azEventParsePortfolioCompleteTopic, *azTopicLocation), creds, nil)
 	if err != nil {
 		return fmt.Errorf("failed to init pub/sub client: %w", err)
 	}
@@ -120,8 +120,8 @@ func run(args []string) error {
 	}
 
 	validTasks := map[task.Type]func(context.Context, task.ID) error{
-		task.ProcessPortfolio: toRunFn(processPortfolioReq, h.processPortfolio),
-		task.CreateReport:     toRunFn(createReportReq, h.createReport),
+		task.ParsePortfolio: toRunFn(parsePortfolioReq, h.parsePortfolio),
+		task.CreateReport:   toRunFn(createReportReq, h.createReport),
 	}
 
 	taskID := task.ID(os.Getenv("TASK_ID"))
@@ -166,7 +166,7 @@ type handler struct {
 	reportContainer          string
 }
 
-func processPortfolioReq() (*task.ProcessPortfolioRequest, error) {
+func parsePortfolioReq() (*task.ParsePortfolioRequest, error) {
 	rawAssetIDs := os.Getenv("ASSET_IDS")
 	if rawAssetIDs == "" {
 		return nil, errors.New("no ASSET_IDS given")
@@ -177,7 +177,7 @@ func processPortfolioReq() (*task.ProcessPortfolioRequest, error) {
 		return nil, fmt.Errorf("failed to load asset IDs: %w", err)
 	}
 
-	return &task.ProcessPortfolioRequest{
+	return &task.ParsePortfolioRequest{
 		AssetIDs: assetIDs,
 	}, nil
 }
@@ -250,7 +250,7 @@ func (h *handler) downloadBlob(ctx context.Context, srcURI, destPath string) err
 	return nil
 }
 
-func (h *handler) processPortfolio(ctx context.Context, taskID task.ID, req *task.ProcessPortfolioRequest) error {
+func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.ParsePortfolioRequest) error {
 	// Load the portfolio from blob storage, place it in /mnt/raw_portfolios, where
 	// the `process_portfolios.R` script expects it to be.
 	for _, assetID := range req.AssetIDs {
@@ -295,20 +295,20 @@ func (h *handler) processPortfolio(ctx context.Context, taskID task.ID, req *tas
 	for _, p := range paths {
 		destURI := blob.Join(h.blob.Scheme(), h.destPortfolioContainer, filepath.Base(p))
 		if err := h.uploadBlob(ctx, p, destURI); err != nil {
-			return fmt.Errorf("failed to copy processed portfolio from %q to %q: %w", p, destURI, err)
+			return fmt.Errorf("failed to copy parsed portfolio from %q to %q: %w", p, destURI, err)
 		}
 		out = append(out, destURI)
 	}
 
 	events := []publisher.Event{
 		{
-			Data: task.ProcessPortfolioResponse{
+			Data: task.ParsePortfolioResponse{
 				TaskID:   taskID,
 				AssetIDs: req.AssetIDs,
 				Outputs:  out,
 			},
 			DataVersion: to.Ptr("1.0"),
-			EventType:   to.Ptr("processed-portfolio"),
+			EventType:   to.Ptr("parse-portfolio-complete"),
 			EventTime:   to.Ptr(time.Now()),
 			ID:          to.Ptr(string(taskID)),
 			Subject:     to.Ptr("subject"),
@@ -319,7 +319,7 @@ func (h *handler) processPortfolio(ctx context.Context, taskID task.ID, req *tas
 		return fmt.Errorf("failed to publish event: %w", err)
 	}
 
-	h.logger.Info("processed portfolio", zap.String("task_id", string(taskID)))
+	h.logger.Info("parsed portfolio", zap.String("task_id", string(taskID)))
 
 	return nil
 }
@@ -338,7 +338,7 @@ func createReportReq() (*task.CreateReportRequest, error) {
 func (h *handler) createReport(ctx context.Context, taskID task.ID, req *task.CreateReportRequest) error {
 	baseName := string(req.PortfolioID) + ".json"
 
-	// Load the processed portfolio from blob storage, place it in /mnt/
+	// Load the parsed portfolio from blob storage, place it in /mnt/
 	// processed_portfolios, where the `create_report.R` script expects it
 	// to be.
 	srcURI := blob.Join(h.blob.Scheme(), h.destPortfolioContainer, baseName)

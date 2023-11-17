@@ -24,7 +24,7 @@ const startProcessing = async () => {
   if (assetIDs.value?.length === 0) {
     return
   }
-  const resp = await pactaClient.processPortfolio({ asset_ids: assetIDs.value })
+  const resp = await pactaClient.parsePortfolio({ asset_ids: assetIDs.value })
   alert(`TASK ID: ${resp.task_id}`)
 }
 

@@ -82,7 +82,7 @@ func New(cfg *Config) (*TaskRunner, error) {
 	}, nil
 }
 
-func (tr *TaskRunner) ProcessPortfolio(ctx context.Context, req *task.ProcessPortfolioRequest) (task.ID, task.RunnerID, error) {
+func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfolioRequest) (task.ID, task.RunnerID, error) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(req.AssetIDs); err != nil {
 		return "", "", fmt.Errorf("failed to encode asset IDs: %w", err)
@@ -90,7 +90,7 @@ func (tr *TaskRunner) ProcessPortfolio(ctx context.Context, req *task.ProcessPor
 	return tr.run(ctx, []task.EnvVar{
 		{
 			Key:   "TASK_TYPE",
-			Value: string(task.ProcessPortfolio),
+			Value: string(task.ParsePortfolio),
 		},
 		{
 			Key:   "ASSET_IDS",
