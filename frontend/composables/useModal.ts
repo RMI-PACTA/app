@@ -1,4 +1,5 @@
 import { type Ref } from 'vue'
+import { type ErrorObject } from 'serialize-error'
 
 export const useModal = () => {
   const prefix = 'useModal'
@@ -22,7 +23,7 @@ export const useModal = () => {
 
   // error
   const errorModalVisible = newModalVisibilityState('errorModalVisible')
-  const error = useState<Error>('errorModal.error')
+  const error = useState<ErrorObject>('errorModal.error')
 
   // loading
   const loadingSet = useState<Set<string>>(`${prefix}.loadingSet`, () => new Set<string>())
