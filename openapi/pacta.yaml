@@ -989,37 +989,43 @@ components:
           description: The time at which the holdings are represented at 
     IncompleteUpload:
       type: object
+      required:
+        - id
+        - name
+        - description
+        - createdAt
+        - adminDebugEnabled
       properties:
-        ID:
+        id:
           type: string # Assuming IncompleteUploadID is a string, otherwise define its structure
           description: Unique identifier for the incomplete upload
-        Name:
+        name:
           type: string
           description: Name of the upload
-        Description:
+        description:
           type: string
           description: Description of the upload
-        HoldingsDate:
+        holdingsDate:
           $ref: '#/components/schemas/HoldingsDate'
-        CreatedAt:
+        createdAt:
           type: string
           format: date-time
           description: The time when the upload was created
-        RanAt:
+        ranAt:
           type: string
           format: date-time
           description: The time when the upload process was run
-        CompletedAt:
+        completedAt:
           type: string
           format: date-time
           description: The time when the upload was completed
-        FailureCode:
+        failureCode:
           type: string
           description: Code describing the failure, if any
-        FailureMessage:
+        failureMessage:
           type: string
           description: Message describing the failure, if any
-        AdminDebugEnabled:
+        adminDebugEnabled:
           type: boolean
           description: Flag to indicate whether admin debug mode is enabled
     Portfolio:

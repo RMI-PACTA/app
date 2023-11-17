@@ -2,7 +2,6 @@ package pactasrv
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/RMI/pacta/blob"
 	"github.com/RMI/pacta/oapierr"
@@ -44,5 +43,5 @@ func (s *Server) ParsePortfolio(ctx context.Context, req api.ParsePortfolioReque
 // (GET /portfolios)
 
 func (s *Server) ListPortfolios(ctx context.Context, request api.ListPortfoliosRequestObject) (api.ListPortfoliosResponseObject, error) {
-	return nil, fmt.Errorf("not implemented")
+	return nil, oapierr.NotImplemented("not implemented")
 }
