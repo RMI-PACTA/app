@@ -3,15 +3,10 @@ const { fakeUsers: { fakeUsersVisible } } = useModal()
 const { t } = useI18n()
 const isAuthenticated = useIsAuthenticated()
 const localePath = useLocalePath()
-const [
-  { signOut },
-  { getMaybeMe, refreshMaybeMe },
-  { signIn },
-] = await Promise.all([
-  useMSAL(),
-  useSession(),
-  useSignIn(),
-])
+
+const { $msal: { signOut } } = useNuxtApp()
+const { signIn } = useSignIn()
+const { getMaybeMe, refreshMaybeMe } = useSession()
 
 const prefix = 'ModalFakeUsers'
 const tt = (s: string) => t(`${prefix}.${s}`)

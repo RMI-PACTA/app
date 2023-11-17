@@ -3,7 +3,7 @@ import { pactaVersionEditor } from '@/lib/editor'
 
 const prefix = 'admin/pacta-version/new'
 const router = useRouter()
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const localePath = useLocalePath()
 

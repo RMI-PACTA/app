@@ -7,7 +7,7 @@ const { t } = useI18n()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 
 const tt = (key: string) => t(`initiative/invitations.${key}`)
 

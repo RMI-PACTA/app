@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type NewPortfolioAsset } from 'openapi/generated/pacta'
+import { type NewPortfolioAsset } from '@/openapi/generated/pacta'
 import { type FileUploadUploaderEvent } from 'primevue/fileupload'
 
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
 
 interface Asset {

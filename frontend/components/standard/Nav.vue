@@ -5,15 +5,11 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const isAuthenticated = useIsAuthenticated()
 const router = useRouter()
-const [
-  { signOut },
-  { signIn },
-  { getMaybeMe },
-] = await Promise.all([
-  useMSAL(),
-  useSignIn(),
-  useSession(),
-])
+
+const { $msal: { signOut } } = useNuxtApp()
+const { signIn } = useSignIn()
+const { getMaybeMe } = useSession()
+
 const { isAdmin, maybeMe } = await getMaybeMe()
 
 const prefix = 'StandardNav'

@@ -1,13 +1,7 @@
-export const useSignIn = async () => {
-  const [
-    { msalSignIn },
-    pactaClient,
-    { refreshMaybeMe },
-  ] = await Promise.all([
-    useMSAL(),
-    usePACTA(),
-    useSession(),
-  ])
+export const useSignIn = () => {
+  const { $msal: { msalSignIn } } = useNuxtApp()
+  const pactaClient = usePACTA()
+  const { refreshMaybeMe } = useSession()
 
   const signIn = () => msalSignIn()
     .then(() => pactaClient.userAuthenticationFollowup())

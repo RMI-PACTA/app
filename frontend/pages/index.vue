@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const isAuthenticated = useIsAuthenticated()
-const { signOut } = await useMSAL()
-const { signIn } = await useSignIn()
+const { $msal: { signOut } } = useNuxtApp()
+const { signIn } = useSignIn()
 </script>
 
 <template>

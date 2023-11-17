@@ -1,8 +1,8 @@
 import { type User } from '@/openapi/generated/pacta'
 
-export const useSession = async () => {
+export const useSession = () => {
   const isAuthenticated = useIsAuthenticated()
-  const pactaClient = await usePACTA()
+  const pactaClient = usePACTA()
 
   const prefix = 'useSession'
   const currentUser = useState<User | undefined>(`${prefix}.currentUser`, () => undefined)

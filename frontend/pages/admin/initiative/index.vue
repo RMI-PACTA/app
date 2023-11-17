@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { humanReadableTimeFromStandardString } = useTime()
 const router = useRouter()
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const localePath = useLocalePath()
 

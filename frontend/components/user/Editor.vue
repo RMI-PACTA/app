@@ -2,7 +2,7 @@
 import { type EditorUser } from '@/lib/editor'
 
 const { t } = useI18n()
-const { getMaybeMe } = await useSession()
+const { getMaybeMe } = useSession()
 const { maybeMe } = await getMaybeMe()
 
 interface Props {

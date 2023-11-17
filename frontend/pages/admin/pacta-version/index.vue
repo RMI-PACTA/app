@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const router = useRouter()
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const localePath = useLocalePath()
 

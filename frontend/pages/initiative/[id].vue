@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const pactaClient = await usePACTA()
+const pactaClient = usePACTA()
 const { fromParams } = useURLParams()
 
 const id = presentOrCheckURL(fromParams('id'))
