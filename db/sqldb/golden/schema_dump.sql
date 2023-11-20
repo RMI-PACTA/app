@@ -109,7 +109,8 @@ CREATE TYPE public.file_type AS ENUM (
     'csv',
     'yaml',
     'zip',
-    'html'
+    'html',
+    'json'
 );
 
 
