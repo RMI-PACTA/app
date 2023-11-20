@@ -4,6 +4,7 @@ import (
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
+	"go.uber.org/zap"
 )
 
 func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
@@ -94,6 +95,60 @@ func InitiativeUserRelationshipToOAPI(i *pacta.InitiativeUserRelationship) (*api
 	}, nil
 }
 
-func ptr[T any](t T) *T {
-	return &t
+func HoldingsDateToOAPI(hd *pacta.HoldingsDate) (*api.HoldingsDate, error) {
+	if hd == nil {
+		return nil, nil
+	}
+	return &api.HoldingsDate{
+		Time: hd.Time,
+	}, nil
+}
+
+func IncompleteUploadsToOAPI(ius []*pacta.IncompleteUpload) ([]*api.IncompleteUpload, error) {
+	return convAll(ius, IncompleteUploadToOAPI)
+}
+
+func IncompleteUploadToOAPI(iu *pacta.IncompleteUpload) (*api.IncompleteUpload, error) {
+	if iu == nil {
+		return nil, oapierr.Internal("incompleteUploadToOAPI: can't convert nil pointer")
+	}
+	hd, err := HoldingsDateToOAPI(iu.HoldingsDate)
+	if err != nil {
+		return nil, oapierr.Internal("incompleteUploadToOAPI: holdingsDateToOAPI failed", zap.Error(err))
+	}
+	return &api.IncompleteUpload{
+		Id:                string(iu.ID),
+		Name:              iu.Name,
+		Description:       iu.Description,
+		HoldingsDate:      hd,
+		CreatedAt:         iu.CreatedAt,
+		RanAt:             timeToNilable(iu.RanAt),
+		CompletedAt:       timeToNilable(iu.CompletedAt),
+		FailureCode:       stringToNilable(iu.FailureCode),
+		FailureMessage:    stringToNilable(iu.FailureMessage),
+		AdminDebugEnabled: iu.AdminDebugEnabled,
+	}, nil
+}
+
+func PortfoliosToOAPI(ius []*pacta.Portfolio) ([]*api.Portfolio, error) {
+	return convAll(ius, PortfolioToOAPI)
+}
+
+func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
+	if p == nil {
+		return nil, oapierr.Internal("portfolioToOAPI: can't convert nil pointer")
+	}
+	hd, err := HoldingsDateToOAPI(p.HoldingsDate)
+	if err != nil {
+		return nil, oapierr.Internal("portfolioToOAPI: holdingsDateToOAPI failed", zap.Error(err))
+	}
+	return &api.Portfolio{
+		Id:                string(p.ID),
+		Name:              p.Name,
+		Description:       p.Description,
+		HoldingsDate:      hd,
+		CreatedAt:         p.CreatedAt,
+		NumberOfRows:      p.NumberOfRows,
+		AdminDebugEnabled: p.AdminDebugEnabled,
+	}, nil
 }

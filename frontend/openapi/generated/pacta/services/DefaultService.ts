@@ -2,6 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CompletePortfolioUploadReq } from '../models/CompletePortfolioUploadReq';
+import type { CompletePortfolioUploadResp } from '../models/CompletePortfolioUploadResp';
+import type { IncompleteUpload } from '../models/IncompleteUpload';
+import type { IncompleteUploadChanges } from '../models/IncompleteUploadChanges';
 import type { Initiative } from '../models/Initiative';
 import type { InitiativeChanges } from '../models/InitiativeChanges';
 import type { InitiativeCreate } from '../models/InitiativeCreate';
@@ -9,12 +13,15 @@ import type { InitiativeInvitation } from '../models/InitiativeInvitation';
 import type { InitiativeInvitationCreate } from '../models/InitiativeInvitationCreate';
 import type { InitiativeUserRelationship } from '../models/InitiativeUserRelationship';
 import type { InitiativeUserRelationshipChanges } from '../models/InitiativeUserRelationshipChanges';
-import type { NewPortfolioAsset } from '../models/NewPortfolioAsset';
+import type { ListIncompleteUploadsResp } from '../models/ListIncompleteUploadsResp';
+import type { ListPortfoliosResp } from '../models/ListPortfoliosResp';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
-import type { ParsePortfolioReq } from '../models/ParsePortfolioReq';
-import type { ParsePortfolioResp } from '../models/ParsePortfolioResp';
+import type { Portfolio } from '../models/Portfolio';
+import type { PortfolioChanges } from '../models/PortfolioChanges';
+import type { StartPortfolioUploadReq } from '../models/StartPortfolioUploadReq';
+import type { StartPortfolioUploadResp } from '../models/StartPortfolioUploadResp';
 import type { User } from '../models/User';
 import type { UserChanges } from '../models/UserChanges';
 
@@ -401,6 +408,152 @@ export class DefaultService {
     }
 
     /**
+     * Gets the incomplete uploads that the user is the owner of
+     * @returns ListIncompleteUploadsResp
+     * @throws ApiError
+     */
+    public listIncompleteUploads(): CancelablePromise<ListIncompleteUploadsResp> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/incomplete-uploads',
+        });
+    }
+
+    /**
+     * Returns an incomplete upload by ID
+     * Returns an incomplete upload based on a single ID
+     * @param id ID of incomplete upload to fetch
+     * @returns IncompleteUpload incomplete upload response
+     * @throws ApiError
+     */
+    public findIncompleteUploadById(
+        id: string,
+    ): CancelablePromise<IncompleteUpload> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/incomplete-upload/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Updates incomplete upload properties
+     * Updates a incomplete upload's settable properties
+     * @param id ID of incomplete upload to update
+     * @param requestBody Incomplete Upload object properties to update
+     * @returns void
+     * @throws ApiError
+     */
+    public updateIncompleteUpload(
+        id: string,
+        requestBody: IncompleteUploadChanges,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/incomplete-upload/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Deletes an incomplete upload by ID
+     * deletes an incomplete upload based on the ID supplied
+     * @param id ID of incomplete upload to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deleteIncompleteUpload(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/incomplete-upload/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Gets the list of portfolios that the user is the owner of
+     * @returns ListPortfoliosResp
+     * @throws ApiError
+     */
+    public listPortfolios(): CancelablePromise<ListPortfoliosResp> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/portfolios',
+        });
+    }
+
+    /**
+     * Returns an portfolio by ID
+     * Returns an portfolio based on a single ID
+     * @param id ID of portfolio to fetch
+     * @returns Portfolio portfolio response
+     * @throws ApiError
+     */
+    public findPortfolioById(
+        id: string,
+    ): CancelablePromise<Portfolio> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/portfolio/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Updates portfolio properties
+     * Updates a portfolio's settable properties
+     * @param id ID of portfolio to update
+     * @param requestBody portfolio object properties to update
+     * @returns void
+     * @throws ApiError
+     */
+    public updatePortfolio(
+        id: string,
+        requestBody: PortfolioChanges,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/portfolio/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Deletes an portfolio by ID
+     * deletes an portfolio based on the ID supplied
+     * @param id ID of portfolio to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deletePortfolio(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/portfolio/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
      * gets info about the logged in user
      * Returns the logged in user, if the user is logged in, otherwise returns empty
      * @returns User user response
@@ -488,35 +641,36 @@ export class DefaultService {
     }
 
     /**
-     * Test endpoint, creates a new portfolio asset
-     * Creates a new asset for a portfolio
-     *
-     * Returns a signed URL where the portfolio can be uploaded to.
-     *
-     * @returns NewPortfolioAsset The asset can now be uploaded via the given signed URL.
+     * Starts the process of uploading one or more portfolio files
+     * Creates one or more new incomplete portfolio uploads, and creates upload URLs for the user to put their blobs into.
+     * @param requestBody A request describing the portfolios that the user wants to upload
+     * @returns StartPortfolioUploadResp The assets can now be uploaded via the given signed URLs.
      * @throws ApiError
      */
-    public createPortfolioAsset(): CancelablePromise<NewPortfolioAsset> {
+    public startPortfolioUpload(
+        requestBody: StartPortfolioUploadReq,
+    ): CancelablePromise<StartPortfolioUploadResp> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/test:createPortfolioAsset',
+            url: '/portfolio-upload',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 
     /**
-     * Test endpoint, triggers a task to process the portfolio
-     * Starts processing raw uploaded files
-     *
-     * @param requestBody The raw portfolio files to process
-     * @returns ParsePortfolioResp The task has been started successfully
+     * Called after uploads of portfolios to cloud storage are complete.
+     * Signals that the upload of the portfolios are complete, and that the server should start parsing them.
+     * @param requestBody A request describing the incomplete uploads that the user wants to begin processing
+     * @returns CompletePortfolioUploadResp The process to initiate the parsing of the uploads has been initiated.
      * @throws ApiError
      */
-    public parsePortfolio(
-        requestBody: ParsePortfolioReq,
-    ): CancelablePromise<ParsePortfolioResp> {
+    public completePortfolioUpload(
+        requestBody: CompletePortfolioUploadReq,
+    ): CancelablePromise<CompletePortfolioUploadResp> {
         return this.httpRequest.request({
             method: 'POST',
-            url: '/test:parsePortfolio',
+            url: '/portfolio-upload:complete',
             body: requestBody,
             mediaType: 'application/json',
         });

@@ -87,6 +87,30 @@ func (c *Client) ReadBlob(ctx context.Context, uri string) (io.ReadCloser, error
 	return resp.Body, nil
 }
 
+func (c *Client) DeleteBlob(ctx context.Context, uri string) error {
+	ctr, blb, ok := blob.SplitURI(Scheme, uri)
+	if !ok {
+		return fmt.Errorf("malformed URI %q is not for Azure", uri)
+	}
+
+	_, err := c.client.DeleteBlob(ctx, ctr, blb, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete blob: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) DeleteBlobs(ctx context.Context, uris []string) error {
+	// TODO: Implement parallel delete if slow.
+	for _, uri := range uris {
+		if err := c.DeleteBlob(ctx, uri); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // SignedUploadURL returns a URL that is allowed to upload to the given URI.
 // See https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/storage/azblob@v1.0.0/sas#example-package-UserDelegationSAS
 func (c *Client) SignedUploadURL(ctx context.Context, uri string) (string, error) {

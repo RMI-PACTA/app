@@ -76,6 +76,7 @@ func (r *Runner) Run(ctx context.Context, taskCfg *task.Config) (task.RunnerID, 
 		return "", fmt.Errorf("failed to create PACTA container: %w", err)
 	}
 
+	// ERROR IS HERE
 	if err := r.client.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return "", fmt.Errorf("failed to start PACTA container: %w", err)
 	}

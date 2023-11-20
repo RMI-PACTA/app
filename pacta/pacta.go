@@ -3,6 +3,7 @@ package pacta
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -203,6 +204,7 @@ const (
 	FileType_CSV  = "csv"
 	FileType_YAML = "yaml"
 	FileType_ZIP  = "zip"
+	FileType_JSON = "json"
 	FileType_HTML = "html"
 )
 
@@ -210,17 +212,24 @@ var FileTypeValues = []FileType{
 	FileType_CSV,
 	FileType_YAML,
 	FileType_ZIP,
+	FileType_JSON,
 	FileType_HTML,
 }
 
 func ParseFileType(s string) (FileType, error) {
-	switch s {
+	ss := strings.TrimSpace(strings.ToLower(s))
+	if strings.HasPrefix(ss, ".") {
+		ss = ss[1:]
+	}
+	switch ss {
 	case "csv":
 		return FileType_CSV, nil
 	case "yaml":
 		return FileType_YAML, nil
 	case "zip":
 		return FileType_ZIP, nil
+	case "json":
+		return FileType_JSON, nil
 	case "html":
 		return FileType_HTML, nil
 	}

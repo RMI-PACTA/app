@@ -57,6 +57,21 @@ func (d *DB) Portfolios(tx db.Tx, ids []pacta.PortfolioID) (map[pacta.PortfolioI
 	return result, nil
 }
 
+func (d *DB) PortfoliosByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.Portfolio, error) {
+	rows, err := d.query(tx, `
+		SELECT `+portfolioSelectColumns+`
+		FROM portfolio 
+		WHERE owner_id = $1;`, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("querying portfolios: %w", err)
+	}
+	pvs, err := rowsToPortfolios(rows)
+	if err != nil {
+		return nil, fmt.Errorf("translating rows to portfolios: %w", err)
+	}
+	return pvs, nil
+}
+
 func (d *DB) CreatePortfolio(tx db.Tx, p *pacta.Portfolio) (pacta.PortfolioID, error) {
 	if err := validatePortfolioForCreation(p); err != nil {
 		return "", fmt.Errorf("validating portfolio for creation: %w", err)
@@ -205,6 +220,9 @@ func validatePortfolioForCreation(p *pacta.Portfolio) error {
 	}
 	if p.NumberOfRows < 0 {
 		return fmt.Errorf("portfolio number_of_rows must be non-negative")
+	}
+	if p.HoldingsDate == nil || p.HoldingsDate.Time.IsZero() {
+		return fmt.Errorf("portfolio holdings_date must be non-nil and non-zero")
 	}
 	return nil
 }

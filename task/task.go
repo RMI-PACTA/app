@@ -22,15 +22,19 @@ const (
 )
 
 type ParsePortfolioRequest struct {
-	// Note: This is temporary just to test the full end-to-end flow. We'll likely
-	// want to reference assets by the portfolio (group?) they were uploaded to.
-	AssetIDs []string
+	IncompleteUploadIDs []pacta.IncompleteUploadID
+	BlobURIs            []pacta.BlobURI
+}
+
+type ParsePortfolioResponseItem struct {
+	Blob      pacta.Blob
+	LineCount int
 }
 
 type ParsePortfolioResponse struct {
-	TaskID   ID
-	AssetIDs []string
-	Outputs  []string
+	TaskID  ID
+	Request *ParsePortfolioRequest
+	Outputs []*ParsePortfolioResponseItem
 }
 
 type CreateReportRequest struct {

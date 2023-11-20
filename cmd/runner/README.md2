@@ -1,0 +1,7 @@
+
+bazel build --@io_bazel_rules_go//go/config:pure //cmd/runner:image_tarball;
+docker load < bazel-bin/cmd/runner/image_tarball/tarball.tar;
+docker tag <that SHA> rmisa.azurecr.io/runner
+
+
+RUN server with --with_public_endpoint

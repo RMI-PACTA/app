@@ -4,6 +4,7 @@
 package azevents
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RMI/pacta/db"
+	"github.com/RMI/pacta/pacta"
 	"github.com/RMI/pacta/task"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -19,6 +22,8 @@ import (
 
 type Config struct {
 	Logger *zap.Logger
+	DB     DB
+	Now    func() time.Time
 
 	Subscription  string
 	ResourceGroup string
@@ -29,6 +34,16 @@ type Config struct {
 	AllowedAuthSecrets []string
 
 	ParsedPortfolioTopicName string
+}
+
+type DB interface {
+	Transactional(context.Context, func(tx db.Tx) error) error
+
+	CreateBlob(tx db.Tx, b *pacta.Blob) (pacta.BlobID, error)
+	CreatePortfolio(tx db.Tx, p *pacta.Portfolio) (pacta.PortfolioID, error)
+
+	IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, error)
+	UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error
 }
 
 const parsedPortfolioPath = "/events/parsed_portfolio"
@@ -49,6 +64,12 @@ func (c *Config) validate() error {
 	if c.ParsedPortfolioTopicName == "" {
 		return errors.New("no parsed portfolio topic name given")
 	}
+	if c.DB == nil {
+		return errors.New("no DB was given")
+	}
+	if c.Now == nil {
+		return errors.New("no Now function was given")
+	}
 	return nil
 }
 
@@ -61,6 +82,8 @@ type Server struct {
 	subscription  string
 	resourceGroup string
 	pathToTopic   map[string]string
+	db            DB
+	now           func() time.Time
 }
 
 func NewServer(cfg *Config) (*Server, error) {
@@ -73,6 +96,8 @@ func NewServer(cfg *Config) (*Server, error) {
 		allowedAuthSecrets: cfg.AllowedAuthSecrets,
 		subscription:       cfg.Subscription,
 		resourceGroup:      cfg.ResourceGroup,
+		db:                 cfg.DB,
+		now:                cfg.Now,
 		pathToTopic: map[string]string{
 			parsedPortfolioPath: cfg.ParsedPortfolioTopicName,
 		},
@@ -206,6 +231,7 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 			return
 		}
 		req := reqs[0]
+		s.logger.Info("starting to process portfolio task", zap.String("task_id", string(req.Data.TaskID)))
 
 		if req.Data == nil {
 			s.logger.Error("webhook response had no payload", zap.String("event_grid_id", req.ID))
@@ -213,7 +239,91 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 			return
 		}
 
-		// TODO: Add any database persistence and other things we'd want to do after a portfolio was parsed.
-		s.logger.Info("parsed portfolio", zap.String("task_id", string(req.Data.TaskID)), zap.Strings("outputs", req.Data.Outputs))
+		if len(req.Data.Outputs) == 0 {
+			s.logger.Error("webhook response had no processed portfolios", zap.String("event_grid_id", req.ID))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		portfolioIDs := []pacta.PortfolioID{}
+		var ranAt time.Time
+		now := s.now()
+		err := s.db.Transactional(r.Context(), func(tx db.Tx) error {
+			incompleteUploads, err := s.db.IncompleteUploads(tx, req.Data.Request.IncompleteUploadIDs)
+			if err != nil {
+				return fmt.Errorf("reading incomplete uploads: %w", err)
+			}
+			if len(incompleteUploads) == 0 {
+				return fmt.Errorf("no incomplete uploads found for ids: %v", req.Data.Request.IncompleteUploadIDs)
+			}
+			var holdingsDate *pacta.HoldingsDate
+			var ownerID pacta.OwnerID
+			for _, iu := range incompleteUploads {
+				if ownerID == "" {
+					ownerID = iu.Owner.ID
+				} else if ownerID != iu.Owner.ID {
+					return fmt.Errorf("multiple owners found for incomplete uploads: %+v", incompleteUploads)
+				}
+				if iu.HoldingsDate == nil {
+					return fmt.Errorf("incomplete upload %s had no holdings date", iu.ID)
+				}
+				if holdingsDate == nil {
+					holdingsDate = iu.HoldingsDate
+				} else if *holdingsDate != *iu.HoldingsDate {
+					return fmt.Errorf("multiple holdings dates found for incomplete uploads: %+v", incompleteUploads)
+				}
+				ranAt = iu.RanAt
+			}
+			for i, output := range req.Data.Outputs {
+				blobID, err := s.db.CreateBlob(tx, &output.Blob)
+				if err != nil {
+					return fmt.Errorf("creating blob %d: %w", i, err)
+				}
+				portfolioID, err := s.db.CreatePortfolio(tx, &pacta.Portfolio{
+					Owner:        &pacta.Owner{ID: ownerID},
+					Name:         output.Blob.FileName,
+					NumberOfRows: output.LineCount,
+					Blob:         &pacta.Blob{ID: blobID},
+					HoldingsDate: holdingsDate,
+				})
+				if err != nil {
+					return fmt.Errorf("creating portfolio %d: %w", i, err)
+				}
+				portfolioIDs = append(portfolioIDs, portfolioID)
+			}
+			for i, iu := range incompleteUploads {
+				err := s.db.UpdateIncompleteUpload(
+					tx,
+					iu.ID,
+					db.SetIncompleteUploadCompletedAt(now),
+					db.SetIncompleteUploadFailureMessage(""),
+					db.SetIncompleteUploadFailureCode(""))
+				if err != nil {
+					return fmt.Errorf("updating incomplete upload %d: %w", i, err)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			s.logger.Error("failed to save response to database", zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		s.logger.Info("parsed portfolio",
+			zap.String("task_id", string(req.Data.TaskID)),
+			zap.Duration("run_time", now.Sub(ranAt)),
+			zap.Strings("incomplete_upload_ids", asStrs(req.Data.Request.IncompleteUploadIDs)),
+			zap.Int("incomplete_upload_count", len(req.Data.Request.IncompleteUploadIDs)),
+			zap.Strings("portfolio_ids", asStrs(portfolioIDs)),
+			zap.Int("portfolio_count", len(portfolioIDs)))
 	})
+}
+
+func asStrs[T ~string](ts []T) []string {
+	ss := make([]string, len(ts))
+	for i, t := range ts {
+		ss[i] = string(t)
+	}
+	return ss
 }

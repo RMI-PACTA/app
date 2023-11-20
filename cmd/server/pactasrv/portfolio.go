@@ -2,46 +2,111 @@ package pactasrv
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/RMI/pacta/blob"
+	"github.com/RMI/pacta/cmd/server/pactasrv/conv"
+	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
-	"github.com/RMI/pacta/task"
-	"github.com/google/uuid"
+	"github.com/RMI/pacta/pacta"
 	"go.uber.org/zap"
 )
 
-func (s *Server) CreatePortfolioAsset(ctx context.Context, req api.CreatePortfolioAssetRequestObject) (api.CreatePortfolioAssetResponseObject, error) {
-	id := uuid.NewString()
-	uri := blob.Join(s.Blob.Scheme(), s.PorfolioUploadURI, id)
-	signed, err := s.Blob.SignedUploadURL(ctx, uri)
-	if err != nil {
-		return nil, oapierr.Internal("failed to sign blob URI", zap.String("uri", uri), zap.Error(err))
-	}
-	return api.CreatePortfolioAsset200JSONResponse{
-		UploadUrl: signed,
-		AssetId:   id,
-	}, nil
-}
-
-func (s *Server) ParsePortfolio(ctx context.Context, req api.ParsePortfolioRequestObject) (api.ParsePortfolioResponseObject, error) {
-	taskID, runnerID, err := s.TaskRunner.ParsePortfolio(ctx, &task.ParsePortfolioRequest{
-		AssetIDs: req.Body.AssetIds,
-		// PortfolioID: req.Body.PortfolioID,
-	})
-	if err != nil {
-		return nil, oapierr.Internal("failed to start task", zap.Error(err))
-	}
-	s.Logger.Info("triggered parse portfolio task",
-		zap.String("task_id", string(taskID)),
-		zap.String("task_runner_id", string(runnerID)))
-	return api.ParsePortfolio200JSONResponse{
-		TaskId: string(taskID),
-	}, nil
-}
-
 // (GET /portfolios)
-
 func (s *Server) ListPortfolios(ctx context.Context, request api.ListPortfoliosRequestObject) (api.ListPortfoliosResponseObject, error) {
-	return nil, oapierr.NotImplemented("not implemented")
+	// TODO(#12) Implement Authorization
+	ownerID, err := s.getUserOwnerID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ius, err := s.DB.PortfoliosByOwner(s.DB.NoTxn(ctx), ownerID)
+	if err != nil {
+		return nil, oapierr.Internal("failed to query portfolios", zap.Error(err))
+	}
+	items, err := dereference(conv.PortfoliosToOAPI(ius))
+	if err != nil {
+		return nil, err
+	}
+	return api.ListPortfolios200JSONResponse{Items: items}, nil
+}
+
+// Deletes an portfolio by ID
+// (DELETE /portfolio/{id})
+func (s *Server) DeletePortfolio(ctx context.Context, request api.DeletePortfolioRequestObject) (api.DeletePortfolioResponseObject, error) {
+	id := pacta.PortfolioID(request.Id)
+	_, err := s.checkPortfolioAuthorization(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	blobURIs, err := s.DB.DeletePortfolio(s.DB.NoTxn(ctx), id)
+	if err != nil {
+		return nil, oapierr.Internal("failed to delete portfolio", zap.Error(err))
+	}
+	if err := s.Blob.DeleteBlobs(ctx, asStrs(blobURIs)); err != nil {
+		return nil, oapierr.Internal("failed to delete blob", zap.Error(err))
+	}
+	return api.DeletePortfolio204Response{}, nil
+}
+
+// Returns an portfolio by ID
+// (GET /portfolio/{id})
+func (s *Server) FindPortfolioById(ctx context.Context, request api.FindPortfolioByIdRequestObject) (api.FindPortfolioByIdResponseObject, error) {
+	iu, err := s.checkPortfolioAuthorization(ctx, pacta.PortfolioID(request.Id))
+	if err != nil {
+		return nil, err
+	}
+	converted, err := conv.PortfolioToOAPI(iu)
+	if err != nil {
+		return nil, err
+	}
+	return api.FindPortfolioById200JSONResponse(*converted), nil
+}
+
+// Updates portfolio properties
+// (PATCH /portfolio/{id})
+func (s *Server) UpdatePortfolio(ctx context.Context, request api.UpdatePortfolioRequestObject) (api.UpdatePortfolioResponseObject, error) {
+	id := pacta.PortfolioID(request.Id)
+	_, err := s.checkPortfolioAuthorization(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// TODO(#12) Implement Authorization
+	mutations := []db.UpdatePortfolioFn{}
+	if request.Body.Name != nil {
+		mutations = append(mutations, db.SetPortfolioName(*request.Body.Name))
+	}
+	if request.Body.Description != nil {
+		mutations = append(mutations, db.SetPortfolioDescription(*request.Body.Description))
+	}
+	if request.Body.AdminDebugEnabled != nil {
+		mutations = append(mutations, db.SetPortfolioAdminDebugEnabled(*request.Body.AdminDebugEnabled))
+	}
+	err = s.DB.UpdatePortfolio(s.DB.NoTxn(ctx), id, mutations...)
+	if err != nil {
+		return nil, oapierr.Internal("failed to update portfolio", zap.Error(err))
+	}
+	return api.UpdatePortfolio204Response{}, nil
+}
+
+func (s *Server) checkPortfolioAuthorization(ctx context.Context, id pacta.PortfolioID) (*pacta.Portfolio, error) {
+	// TODO(#12) Implement Authorization
+	actorOwnerID, err := s.getUserOwnerID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Extracted to a common variable so that we return the same response for not found and unauthorized.
+	notFoundErr := func(err error) error {
+		return oapierr.NotFound("portfolio not found", zap.String("portfolio_id", string(id)), zap.Error(err))
+	}
+	iu, err := s.DB.Portfolio(s.DB.NoTxn(ctx), id)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return nil, notFoundErr(err)
+		}
+		return nil, oapierr.Internal("failed to look up portfolio", zap.String("portfolio_id", string(id)), zap.Error(err))
+	}
+	if iu.Owner.ID != actorOwnerID {
+		return nil, notFoundErr(fmt.Errorf("portfolio does not belong to user: owner=%s actor=%s", iu.Owner.ID, actorOwnerID))
+	}
+	return iu, nil
 }

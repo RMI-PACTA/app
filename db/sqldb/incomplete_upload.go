@@ -33,11 +33,11 @@ func (d *DB) IncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (*pacta.Inc
 	if err != nil {
 		return nil, fmt.Errorf("querying incomplete_upload: %w", err)
 	}
-	pvs, err := rowsToIncompleteUploads(rows)
+	ius, err := rowsToIncompleteUploads(rows)
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to incomplete_uploads: %w", err)
 	}
-	return exactlyOne("incomplete_upload", id, pvs)
+	return exactlyOne("incomplete_upload", id, ius)
 }
 
 func (d *DB) IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, error) {
@@ -49,15 +49,30 @@ func (d *DB) IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pa
 	if err != nil {
 		return nil, fmt.Errorf("querying incomplete_uploads: %w", err)
 	}
-	pvs, err := rowsToIncompleteUploads(rows)
+	ius, err := rowsToIncompleteUploads(rows)
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to incomplete_uploads: %w", err)
 	}
-	result := make(map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, len(pvs))
-	for _, pv := range pvs {
-		result[pv.ID] = pv
+	result := make(map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, len(ius))
+	for _, iu := range ius {
+		result[iu.ID] = iu
 	}
 	return result, nil
+}
+
+func (d *DB) IncompleteUploadsByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.IncompleteUpload, error) {
+	rows, err := d.query(tx, `
+		SELECT `+incompleteUploadSelectColumns+`
+		FROM incomplete_upload 
+		WHERE owner_id = $1;`, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("querying incomplete_uploads: %w", err)
+	}
+	ius, err := rowsToIncompleteUploads(rows)
+	if err != nil {
+		return nil, fmt.Errorf("translating rows to incomplete_uploads: %w", err)
+	}
+	return ius, nil
 }
 
 func (d *DB) CreateIncompleteUpload(tx db.Tx, i *pacta.IncompleteUpload) (pacta.IncompleteUploadID, error) {
