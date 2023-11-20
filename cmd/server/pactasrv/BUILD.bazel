@@ -24,7 +24,6 @@ go_library(
         "//session",
         "//task",
         "@com_github_go_chi_jwtauth_v5//:jwtauth",
-        "@com_github_google_uuid//:uuid",
         "@org_uber_go_zap//:zap",
     ],
 )

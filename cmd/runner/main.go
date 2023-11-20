@@ -26,6 +26,7 @@ import (
 	"github.com/RMI/pacta/blob"
 	"github.com/RMI/pacta/pacta"
 	"github.com/RMI/pacta/task"
+	"github.com/google/uuid"
 	"github.com/namsral/flag"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -167,19 +168,15 @@ type handler struct {
 }
 
 func parsePortfolioReq() (*task.ParsePortfolioRequest, error) {
-	rawAssetIDs := os.Getenv("ASSET_IDS")
-	if rawAssetIDs == "" {
-		return nil, errors.New("no ASSET_IDS given")
+	taskStr := os.Getenv("PARSE_PORTFOLIO_REQUEST")
+	if taskStr == "" {
+		return nil, errors.New("no PARSE_PORTFOLIO_REQUEST given")
 	}
-
-	var assetIDs []string
-	if err := json.NewDecoder(strings.NewReader(rawAssetIDs)).Decode(&assetIDs); err != nil {
-		return nil, fmt.Errorf("failed to load asset IDs: %w", err)
+	var task task.ParsePortfolioRequest
+	if err := json.NewDecoder(strings.NewReader(taskStr)).Decode(&task); err != nil {
+		return nil, fmt.Errorf("failed to load ParsePortfolioRequest: %w", err)
 	}
-
-	return &task.ParsePortfolioRequest{
-		AssetIDs: assetIDs,
-	}, nil
+	return &task, nil
 }
 
 func (h *handler) uploadDirectory(ctx context.Context, dirPath, container string) error {
@@ -250,15 +247,15 @@ func (h *handler) downloadBlob(ctx context.Context, srcURI, destPath string) err
 	return nil
 }
 
+// TODO: Send a notification when parsing fails.
 func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.ParsePortfolioRequest) error {
 	// Load the portfolio from blob storage, place it in /mnt/raw_portfolios, where
 	// the `process_portfolios.R` script expects it to be.
-	for _, assetID := range req.AssetIDs {
-		srcURI := blob.Join(h.blob.Scheme(), h.sourcePortfolioContainer, assetID)
+	for _, srcURI := range req.BlobURIs {
+		id := uuid.New().String()
 		// TODO: Probably set the CSV extension in the signed upload URL instead.
-		destPath := filepath.Join("/", "mnt", "raw_portfolios", assetID+".csv")
-
-		if err := h.downloadBlob(ctx, srcURI, destPath); err != nil {
+		destPath := filepath.Join("/", "mnt", "raw_portfolios", fmt.Sprintf("%s.csv", id))
+		if err := h.downloadBlob(ctx, string(srcURI), destPath); err != nil {
 			return fmt.Errorf("failed to download raw portfolio blob: %w", err)
 		}
 	}
@@ -291,21 +288,38 @@ func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.
 	}
 
 	// NOTE: This code could benefit from some concurrency, but I'm opting not to prematurely optimize.
-	var out []string
+	var out []*task.ParsePortfolioResponseItem
 	for _, p := range paths {
-		destURI := blob.Join(h.blob.Scheme(), h.destPortfolioContainer, filepath.Base(p))
-		if err := h.uploadBlob(ctx, p, destURI); err != nil {
-			return fmt.Errorf("failed to copy parsed portfolio from %q to %q: %w", p, destURI, err)
+		lineCount, err := countLines(p)
+		if err != nil {
+			return fmt.Errorf("failed to count lines in file %q: %w", p, err)
 		}
-		out = append(out, destURI)
+		fileName := filepath.Base(p)
+		blobURI := pacta.BlobURI(blob.Join(h.blob.Scheme(), h.destPortfolioContainer, fileName))
+		if err := h.uploadBlob(ctx, p, string(blobURI)); err != nil {
+			return fmt.Errorf("failed to copy parsed portfolio from %q to %q: %w", p, blobURI, err)
+		}
+		extension := filepath.Ext(fileName)
+		fileType, err := pacta.ParseFileType(extension)
+		if err != nil {
+			return fmt.Errorf("failed to parse file type from file name %q: %w", fileName, err)
+		}
+		out = append(out, &task.ParsePortfolioResponseItem{
+			Blob: pacta.Blob{
+				FileName: fileName,
+				FileType: fileType,
+				BlobURI:  blobURI,
+			},
+			LineCount: lineCount,
+		})
 	}
 
 	events := []publisher.Event{
 		{
 			Data: task.ParsePortfolioResponse{
-				TaskID:   taskID,
-				AssetIDs: req.AssetIDs,
-				Outputs:  out,
+				TaskID:  taskID,
+				Request: req,
+				Outputs: out,
 			},
 			DataVersion: to.Ptr("1.0"),
 			EventType:   to.Ptr("parse-portfolio-complete"),
@@ -322,6 +336,23 @@ func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.
 	h.logger.Info("parsed portfolio", zap.String("task_id", string(taskID)))
 
 	return nil
+}
+
+func countLines(path string) (int, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, fmt.Errorf("opening file failed: %w", err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	lineCount := 0
+	for scanner.Scan() {
+		lineCount++
+	}
+	if err := scanner.Err(); err != nil {
+		return 0, fmt.Errorf("scanner.error returned: %w", err)
+	}
+	return lineCount, nil
 }
 
 func createReportReq() (*task.CreateReportRequest, error) {

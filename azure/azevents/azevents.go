@@ -214,6 +214,6 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 		}
 
 		// TODO: Add any database persistence and other things we'd want to do after a portfolio was parsed.
-		s.logger.Info("parsed portfolio", zap.String("task_id", string(req.Data.TaskID)), zap.Strings("outputs", req.Data.Outputs))
+		s.logger.Info("parsed portfolio", zap.String("task_id", string(req.Data.TaskID)))
 	})
 }
