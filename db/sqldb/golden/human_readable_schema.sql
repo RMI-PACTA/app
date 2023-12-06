@@ -40,7 +40,8 @@ CREATE TYPE file_type AS ENUM (
     'csv',
     'yaml',
     'zip',
-    'html');
+    'html',
+    'json');
 CREATE TYPE language AS ENUM (
     'en',
     'de',

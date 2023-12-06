@@ -8,6 +8,7 @@ go_library(
         "initiative_user_relationship.go",
         "pacta_version.go",
         "pactasrv.go",
+        "parallel.go",
         "portfolio.go",
         "upload.go",
         "user.go",

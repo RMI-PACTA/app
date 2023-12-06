@@ -1,6 +1,9 @@
 package pacta
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
 func TestParseAuthMechanism(t *testing.T) {
 	testParseEnum(t, AuthnMechanismValues, ParseAuthnMechanism)
@@ -12,6 +15,20 @@ func TestParseLanguage(t *testing.T) {
 
 func TestParseFileType(t *testing.T) {
 	testParseEnum(t, FileTypeValues, ParseFileType)
+	otherCases := []string{
+		"hello/world.json",
+		"hello/world/hithere.JsOn",
+		"  hello/world/hithere.json   ",
+	}
+	for _, c := range otherCases {
+		ft, err := ParseFileType(filepath.Ext(c))
+		if err != nil {
+			t.Errorf("expected successful parse, got %w", err)
+		}
+		if ft != FileType_JSON {
+			t.Errorf("expected JSON, got %v", ft)
+		}
+	}
 }
 
 // need

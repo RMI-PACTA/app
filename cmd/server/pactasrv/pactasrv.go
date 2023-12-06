@@ -87,6 +87,7 @@ type Blob interface {
 	SignedUploadURL(ctx context.Context, uri string) (string, error)
 	// For downloading reports
 	SignedDownloadURL(ctx context.Context, uri string) (string, error)
+	DeleteBlob(ctx context.Context, uri string) error
 }
 
 type Server struct {
