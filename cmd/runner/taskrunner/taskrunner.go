@@ -98,7 +98,7 @@ func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfol
 		},
 		{
 			Key:   "PARSE_PORTFOLIO_REQUEST",
-			Value: buf.String(),
+			Value: value,
 		},
 	})
 }

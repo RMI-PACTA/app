@@ -91,6 +91,21 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 		t.Fatalf("mismatch (-want +got):\n%s", diff)
 	}
 
+	iusbyo, err := tdb.IncompleteUploadsByOwner(tx, o2.ID)
+	if err != nil {
+		t.Fatalf("reading incomplete_uploads by owner: %v", err)
+	}
+	if diff := cmp.Diff([]*pacta.IncompleteUpload{iu}, iusbyo, cmpOpts); diff != "" {
+		t.Fatalf("mismatch (-want +got):\n%s", diff)
+	}
+	iusbyo, err = tdb.IncompleteUploadsByOwner(tx, o1.ID)
+	if err != nil {
+		t.Fatalf("reading incomplete_uploads by owner: %v", err)
+	}
+	if diff := cmp.Diff([]*pacta.IncompleteUpload{}, iusbyo, cmpOpts); diff != "" {
+		t.Fatalf("mismatch (-want +got):\n%s", diff)
+	}
+
 	buris, err := tdb.DeleteIncompleteUpload(tx, iu.ID)
 	if err != nil {
 		t.Fatalf("deleting incompleteUpload: %v", err)

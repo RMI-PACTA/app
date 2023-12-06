@@ -80,6 +80,20 @@ func TestPortfolioCRUD(t *testing.T) {
 	if diff := cmp.Diff(p, actual, portfolioCmpOpts()); diff != "" {
 		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
 	}
+	pls, err := tdb.PortfoliosByOwner(tx, o2.ID)
+	if err != nil {
+		t.Fatalf("reading portfolios: %w", err)
+	}
+	if diff := cmp.Diff([]*pacta.Portfolio{p}, pls, portfolioCmpOpts()); diff != "" {
+		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
+	}
+	pls, err = tdb.PortfoliosByOwner(tx, o1.ID)
+	if err != nil {
+		t.Fatalf("reading portfolios: %w", err)
+	}
+	if diff := cmp.Diff([]*pacta.Portfolio{}, pls, portfolioCmpOpts()); diff != "" {
+		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
+	}
 
 	buris, err := tdb.DeletePortfolio(tx, p.ID)
 	if err != nil {

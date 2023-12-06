@@ -67,9 +67,11 @@ func InitiativeInvitationFromOAPI(i *api.InitiativeInvitationCreate) (*pacta.Ini
 	}, nil
 }
 
-func ifNil[T any](t *T, fallback T) T {
-	if t == nil {
-		return fallback
+func HoldingsDateFromOAPI(hd *api.HoldingsDate) (*pacta.HoldingsDate, error) {
+	if hd == nil {
+		return nil, nil
 	}
-	return *t
+	return &pacta.HoldingsDate{
+		Time: hd.Time,
+	}, nil
 }

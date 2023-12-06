@@ -3,6 +3,7 @@ package pactasrv
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/RMI/pacta/blob"
 	"github.com/RMI/pacta/db"
@@ -67,11 +68,20 @@ type DB interface {
 	CreatePortfolioInitiativeMembership(tx db.Tx, pim *pacta.PortfolioInitiativeMembership) error
 	DeletePortfolioInitiativeMembership(tx db.Tx, pid pacta.PortfolioID, iid pacta.InitiativeID) error
 
+	Portfolio(tx db.Tx, id pacta.PortfolioID) (*pacta.Portfolio, error)
+	PortfoliosByOwner(tx db.Tx, owner pacta.OwnerID) ([]*pacta.Portfolio, error)
+	CreatePortfolio(tx db.Tx, i *pacta.Portfolio) (pacta.PortfolioID, error)
+	UpdatePortfolio(tx db.Tx, id pacta.PortfolioID, mutations ...db.UpdatePortfolioFn) error
+	DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, error)
+
 	IncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (*pacta.IncompleteUpload, error)
 	IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, error)
+	IncompleteUploadsByOwner(tx db.Tx, owner pacta.OwnerID) ([]*pacta.IncompleteUpload, error)
 	CreateIncompleteUpload(tx db.Tx, i *pacta.IncompleteUpload) (pacta.IncompleteUploadID, error)
 	UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error
 	DeleteIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (pacta.BlobURI, error)
+
+	GetOrCreateOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error)
 
 	GetOrCreateUserByAuthn(tx db.Tx, mech pacta.AuthnMechanism, authnID, email, canonicalEmail string) (*pacta.User, error)
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
@@ -83,9 +93,7 @@ type DB interface {
 type Blob interface {
 	Scheme() blob.Scheme
 
-	// For uploading portfolios
 	SignedUploadURL(ctx context.Context, uri string) (string, error)
-	// For downloading reports
 	SignedDownloadURL(ctx context.Context, uri string) (string, error)
 	DeleteBlob(ctx context.Context, uri string) error
 }
@@ -95,6 +103,7 @@ type Server struct {
 	TaskRunner        TaskRunner
 	Logger            *zap.Logger
 	Blob              Blob
+	Now               func() time.Time
 	PorfolioUploadURI string
 }
 
@@ -130,4 +139,25 @@ func getUserID(ctx context.Context) (pacta.UserID, error) {
 		return "", oapierr.Unauthorized("error getting authorization token", zap.Error(err))
 	}
 	return pacta.UserID(userID), nil
+}
+
+func (s *Server) getUserOwnerID(ctx context.Context) (pacta.OwnerID, error) {
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return "", err
+	}
+	ownerID, err := s.DB.GetOrCreateOwnerForUser(s.DB.NoTxn(ctx), userID)
+	if err != nil {
+		return "", oapierr.Internal("failed to find or create owner for user",
+			zap.String("user_id", string(userID)), zap.Error(err))
+	}
+	return ownerID, nil
+}
+
+func asStrs[T ~string](ts []T) []string {
+	result := make([]string, len(ts))
+	for i, t := range ts {
+		result[i] = string(t)
+	}
+	return result
 }

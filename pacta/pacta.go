@@ -212,6 +212,7 @@ var FileTypeValues = []FileType{
 	FileType_CSV,
 	FileType_YAML,
 	FileType_ZIP,
+	FileType_JSON,
 	FileType_HTML,
 	FileType_JSON,
 }
