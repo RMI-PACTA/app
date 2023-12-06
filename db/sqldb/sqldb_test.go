@@ -86,6 +86,7 @@ func TestSchemaHistory(t *testing.T) {
 		{ID: 2, Version: 2}, // 0002_create_user_table
 		{ID: 3, Version: 3}, // 0003_domain_types
 		{ID: 4, Version: 4}, // 0004_audit_log_tweaks
+		{ID: 5, Version: 5}, // 0005_json_blob_type
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {

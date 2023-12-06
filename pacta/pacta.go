@@ -3,6 +3,7 @@ package pacta
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -204,6 +205,7 @@ const (
 	FileType_YAML = "yaml"
 	FileType_ZIP  = "zip"
 	FileType_HTML = "html"
+	FileType_JSON = "json"
 )
 
 var FileTypeValues = []FileType{
@@ -211,10 +213,15 @@ var FileTypeValues = []FileType{
 	FileType_YAML,
 	FileType_ZIP,
 	FileType_HTML,
+	FileType_JSON,
 }
 
 func ParseFileType(s string) (FileType, error) {
-	switch s {
+	ss := strings.TrimSpace(strings.ToLower(s))
+	if strings.HasPrefix(ss, ".") {
+		ss = ss[1:]
+	}
+	switch ss {
 	case "csv":
 		return FileType_CSV, nil
 	case "yaml":
@@ -223,8 +230,10 @@ func ParseFileType(s string) (FileType, error) {
 		return FileType_ZIP, nil
 	case "html":
 		return FileType_HTML, nil
+	case "json":
+		return FileType_JSON, nil
 	}
-	return "", fmt.Errorf("unknown FileType: %q", s)
+	return "", fmt.Errorf("unknown pacta.FileType: %q", s)
 }
 
 type BlobURI string
