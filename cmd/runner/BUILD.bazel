@@ -25,12 +25,6 @@ go_library(
     ],
 )
 
-go_binary(
-    name = "runner",
-    embed = [":runner_lib"],
-    visibility = ["//visibility:public"],
-)
-
 pkg_tar(
     name = "runner_tar",
     srcs = [":runner"],
@@ -71,4 +65,10 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = [],
+)
+
+go_binary(
+    name = "runner",
+    embed = [":runner_lib"],
+    visibility = ["//visibility:public"],
 )

@@ -43,7 +43,7 @@ func (s *Server) DeleteIncompleteUpload(ctx context.Context, request api.DeleteI
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete incomplete upload", zap.Error(err))
 	}
-	if err := s.Blob.DeleteBlobs(ctx, []string{string(blobURI)}); err != nil {
+	if err := s.deleteBlobs(ctx, []string{string(blobURI)}); err != nil {
 		return nil, oapierr.Internal("failed to delete blob", zap.Error(err))
 	}
 	return api.DeleteIncompleteUpload204Response{}, nil
