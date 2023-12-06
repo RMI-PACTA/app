@@ -12,3 +12,14 @@ If you do want to actually run the full `runner` image on Azure, you can use:
 # Run the backend, tell it to create tasks as real Azure Container Apps Jobs.
 bazel run //scripts:run_apiserver -- --use_azure_runner
 ```
+
+### Creating a new docker image to run locally
+
+```bash
+# Build the runner binary
+bazel build --@io_bazel_rules_go//go/config:pure //cmd/runner:image_tarball
+# Load the new image into docker, which will output a SHA256 value
+docker load < bazel-bin/cmd/runner/image_tarball/tarball.tar
+# Tag the runner image in order for it to be picked up locally. Don't push this to the registry!
+docker tag <SHA from previous step> rmisa.azurecr.io/runner
+```
