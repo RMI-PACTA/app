@@ -290,7 +290,7 @@ func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.
 	// NOTE: This code could benefit from some concurrency, but I'm opting not to prematurely optimize.
 	var out []*task.ParsePortfolioResponseItem
 	for _, p := range paths {
-		lineCount, err := countLines(p)
+		lineCount, err := countCSVLines(p)
 		if err != nil {
 			return fmt.Errorf("failed to count lines in file %q: %w", p, err)
 		}
@@ -338,7 +338,7 @@ func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.
 	return nil
 }
 
-func countLines(path string) (int, error) {
+func countCSVLines(path string) (int, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return 0, fmt.Errorf("opening file failed: %w", err)
@@ -352,7 +352,8 @@ func countLines(path string) (int, error) {
 	if err := scanner.Err(); err != nil {
 		return 0, fmt.Errorf("scanner.error returned: %w", err)
 	}
-	return lineCount, nil
+	// Subtract 1 for the header row
+	return lineCount - 1, nil
 }
 
 func createReportReq() (*task.CreateReportRequest, error) {

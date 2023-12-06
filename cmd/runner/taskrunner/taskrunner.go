@@ -83,9 +83,13 @@ func New(cfg *Config) (*TaskRunner, error) {
 }
 
 func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfolioRequest) (task.ID, task.RunnerID, error) {
-	var taskBuffer bytes.Buffer
-	if err := json.NewEncoder(&taskBuffer).Encode(req); err != nil {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(req); err != nil {
 		return "", "", fmt.Errorf("failed to encode ParsePortfolioRequest: %w", err)
+	}
+	value := buf.String()
+	if len(value) > 128*1024 {
+		return "", "", fmt.Errorf("ParsePortfolioRequest is too large: %d bytes > 128 kb", len(value))
 	}
 	return tr.run(ctx, []task.EnvVar{
 		{
@@ -94,7 +98,7 @@ func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfol
 		},
 		{
 			Key:   "PARSE_PORTFOLIO_REQUEST",
-			Value: taskBuffer.String(),
+			Value: buf.String(),
 		},
 	})
 }
