@@ -375,36 +375,130 @@ paths:
     get:
       description: Gets the incomplete uploads that the user is the owner of 
       operationId: listIncompleteUploads 
-      requestBody:
-        description: A request describing the incomplete uploads to return 
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ListIncompleteUploadsReq'
       responses:
         '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListIncompleteUploadsResp'
-  /portfolios:
+  /incomplete-upload/{id}:
     get:
-      description: Gets the list of portfolios that the user is the owner of 
-      operationId: listPortfolios
+      summary: Returns an incomplete upload by ID
+      description: Returns an incomplete upload based on a single ID
+      operationId: findIncompleteUploadById
+      parameters:
+        - name: id
+          in: path
+          description: ID of incomplete upload to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: incomplete upload response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncompleteUpload'
+    patch:
+      summary: Updates incomplete upload properties
+      description: Updates a incomplete upload's settable properties
+      operationId: updateIncompleteUpload
+      parameters:
+        - name: id
+          in: path
+          description: ID of incomplete upload to update
+          required: true
+          schema:
+            type: string
       requestBody:
-        description: A request describing the portfolios to return 
+        description: Incomplete Upload object properties to update
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ListPortfoliosReq'
+              $ref: '#/components/schemas/IncompleteUploadChanges'
+      responses:
+        '204':
+          description: the user changes were applied successfully
+    delete:
+      summary: Deletes an incomplete upload by ID
+      description: deletes an incomplete upload based on the ID supplied
+      operationId: deleteIncompleteUpload
+      parameters:
+        - name: id
+          in: path
+          description: ID of incomplete upload to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: incomplete upload deleted
+  /portfolios:
+    get:
+      description: Gets the list of portfolios that the user is the owner of 
+      operationId: listPortfolios
       responses:
         '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListPortfoliosResp'
+  /portfolio/{id}:
+    get:
+      summary: Returns an portfolio by ID
+      description: Returns an portfolio based on a single ID
+      operationId: findPortfolioById
+      parameters:
+        - name: id
+          in: path
+          description: ID of portfolio to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: portfolio response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+    patch:
+      summary: Updates portfolio properties
+      description: Updates a portfolio's settable properties
+      operationId: updatePortfolio
+      parameters:
+        - name: id
+          in: path
+          description: ID of portfolio to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: portfolio object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortfolioChanges'
+      responses:
+        '204':
+          description: the user changes were applied successfully
+    delete:
+      summary: Deletes an portfolio by ID
+      description: deletes an portfolio based on the ID supplied
+      operationId: deletePortfolio
+      parameters:
+        - name: id
+          in: path
+          description: ID of portfolio to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: portfolio deleted
   /user/me:
     get:
       description: Returns the logged in user, if the user is logged in, otherwise returns empty
@@ -483,21 +577,6 @@ paths:
       responses:
         '204':
           description: user deleted
-  /test:createPortfolioAsset:
-    post:
-      summary: Test endpoint, creates a new portfolio asset
-      description: |
-        Creates a new asset for a portfolio
-
-        Returns a signed URL where the portfolio can be uploaded to.
-      operationId: createPortfolioAsset
-      responses:
-        '200':
-          description: The asset can now be uploaded via the given signed URL.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NewPortfolioAsset'
   /portfolio-upload:
     post:
       summary: Starts the process of uploading one or more portfolio files
@@ -536,26 +615,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompletePortfolioUploadResp'
-  /test:parsePortfolio:
-    post:
-      summary: Test endpoint, triggers a task to parse the portfolio
-      description: |
-        Starts processing raw uploaded files
-      operationId: parsePortfolio
-      requestBody:
-        description: The raw portfolio files to process
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ParsePortfolioReq'
-      responses:
-        '200':
-          description: The task has been started successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ParsePortfolioResp'
 components:
   responses:
     Unauthorized:
@@ -914,11 +973,14 @@ components:
       type: object
       required:
         - items
+        - holdings_date
       properties:
         items:
           type: array
           items:
             $ref: '#/components/schemas/StartPortfolioUploadReqItem'
+        holdings_date:
+          $ref: '#/components/schemas/HoldingsDate'
     StartPortfolioUploadReqItem:
       type: object
       required:
@@ -972,12 +1034,6 @@ components:
           description: The unique identifier for the uploaded asset
     CompletePortfolioUploadResp:
       type: object
-      required:
-        - analysis_id
-      properties:
-        analysis_id:
-          type: string
-          description: The analysis id to track for the parsing task.
     HoldingsDate:
       type: object
       required:
@@ -1028,6 +1084,19 @@ components:
         adminDebugEnabled:
           type: boolean
           description: Flag to indicate whether admin debug mode is enabled
+    IncompleteUploadChanges:
+      type: object
+      required:
+      properties:
+        name:
+          type: string
+          description: Name of the upload
+        description:
+          type: string
+          description: Description of the upload
+        adminDebugEnabled:
+          type: boolean
+          description: Flag to indicate whether admin debug mode is enabled
     Portfolio:
       type: object
       required:
@@ -1059,6 +1128,18 @@ components:
         numberOfRows:
           type: integer
           description: The number of rows in the portfolio
+    PortfolioChanges:
+      type: object
+      properties:
+        name:
+          type: string
+          description: the human meaningful name of the portfolio
+        description:
+          type: string
+          description: Additional information about the portfolio
+        adminDebugEnabled:
+          type: boolean 
+          description: Whether the admin debug mode is enabled for this portfolio
     ListIncompleteUploadsReq:
       type: object
     ListIncompleteUploadsResp:

@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "pactasrv",
     srcs = [
+        "incomplete_upload.go",
         "initiative.go",
         "initiative_invitation.go",
         "initiative_user_relationship.go",
@@ -25,6 +26,8 @@ go_library(
         "//session",
         "//task",
         "@com_github_go_chi_jwtauth_v5//:jwtauth",
+        "@com_github_google_uuid//:uuid",
         "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
     ],
 )

@@ -234,6 +234,7 @@ func run(args []string) error {
 		}
 		runner = tmp
 	} else {
+		logger.Info("initializing local task runner client")
 		tmp, err := dockertask.NewRunner(logger, &dockertask.ServicePrincipal{
 			TenantID:     *localDockerTenantID,
 			ClientID:     *localDockerClientID,
@@ -270,6 +271,7 @@ func run(args []string) error {
 		Logger:            logger,
 		DB:                db,
 		TaskRunner:        tr,
+		Now:               time.Now,
 	}
 
 	pactaStrictHandler := oapipacta.NewStrictHandlerWithOptions(srv, nil /* middleware */, oapipacta.StrictHTTPServerOptions{
@@ -290,6 +292,8 @@ func run(args []string) error {
 		Subscription:             *azEventSubscription,
 		ResourceGroup:            *azEventResourceGroup,
 		ParsedPortfolioTopicName: *azEventParsedPortfolioTopic,
+		DB:                       db,
+		Now:                      time.Now,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init Azure Event Grid handler: %w", err)
@@ -313,7 +317,7 @@ func run(args []string) error {
 			// LogEntry created by the logging middleware.
 			chimiddleware.RequestID,
 			chimiddleware.RealIP,
-			zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(true)),
+			zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(false)),
 			chimiddleware.Recoverer,
 
 			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
