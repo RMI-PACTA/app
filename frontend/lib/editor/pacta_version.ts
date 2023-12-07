@@ -1,54 +1,77 @@
 import { type PactaVersion } from '@/openapi/generated/pacta'
-import { type EditorFieldsFor, Validation, type EditorComputedValues } from './common'
-import { getEditorComputedValues } from './utils'
+import { type EditorFieldsFor, type EditorValuesFor, Validation, type EditorComputedValues } from './common'
+import { getEditorComputedValues, type Translation } from './utils'
 
-export type EditorPactaVersion = EditorFieldsFor<PactaVersion>
+export type EditorPactaVersionFields = EditorFieldsFor<PactaVersion>
+export type EditorPactaVersionValues = EditorValuesFor<PactaVersion>
 
-const createEditorPactaVersion = (pactaVersion: PactaVersion): EditorPactaVersion => {
+const createEditorPactaVersionFields = (translation: Translation): EditorPactaVersionFields => {
+  const tt = (key: string) => translation.t(`lib/editor/pacta-version/${key}`)
   return {
     id: {
       name: 'id',
-      label: 'ID',
+      label: tt('ID'),
+    },
+    name: {
+      name: 'name',
+      label: tt('Name'),
+      validation: [Validation.NotEmpty],
+    },
+    description: {
+      name: 'description',
+      label: tt('Description'),
+      validation: [Validation.NotEmpty],
+    },
+    digest: {
+      name: 'digest',
+      label: tt('Docker Image Digest'),
+      validation: [Validation.NotEmpty],
+    },
+    isDefault: {
+      name: 'isDefault',
+      label: tt('Is Default Version'),
+    },
+    createdAt: {
+      name: 'createdAt',
+      label: tt('Created At'),
+    },
+  }
+}
+
+const createEditorPactaVersionValues = (pactaVersion: PactaVersion): EditorPactaVersionValues => {
+  return {
+    id: {
       originalValue: pactaVersion.id,
       currentValue: pactaVersion.id,
     },
     name: {
-      name: 'name',
-      label: 'Name',
-      validation: [Validation.NotEmpty],
       originalValue: pactaVersion.name,
       currentValue: pactaVersion.name,
     },
     description: {
-      name: 'description',
-      label: 'Description',
-      validation: [Validation.NotEmpty],
       originalValue: pactaVersion.description,
       currentValue: pactaVersion.description,
     },
     digest: {
-      name: 'digest',
-      label: 'Docker Image Digest',
-      validation: [Validation.NotEmpty],
       originalValue: pactaVersion.digest,
       currentValue: pactaVersion.digest,
     },
     isDefault: {
-      name: 'isDefault',
-      label: 'Is Default Version',
       originalValue: pactaVersion.isDefault,
       currentValue: pactaVersion.isDefault,
     },
     createdAt: {
-      name: 'createdAt',
-      label: 'Created At',
       originalValue: pactaVersion.createdAt,
       currentValue: pactaVersion.createdAt,
     },
   }
 }
 
-export const pactaVersionEditor = (pv: PactaVersion): EditorComputedValues<PactaVersion> => {
+export const pactaVersionEditor = (pv: PactaVersion, translation: Translation): EditorComputedValues<PactaVersion> => {
   return getEditorComputedValues(
-    'lib/editor/pacta-version', pv, createEditorPactaVersion)
+    'lib/editor/pacta-version',
+    pv,
+    createEditorPactaVersionFields,
+    createEditorPactaVersionValues,
+    translation)
 }

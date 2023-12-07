@@ -1,54 +1,61 @@
-import { type EditorFieldsFor, isValid, type EditorComputedValues } from './common'
+import { type EditorFieldsFor, type EditorValuesFor, isValid, type EditorComputedValues } from './common'
 
-const getCurrentValue = <R> (record: EditorFieldsFor<R>): R => {
+const getCurrentValue = <R> (values: EditorValuesFor<R>): R => {
   const result: Partial<R> = {}
-  for (const key in record) {
-    result[key] = record[key].currentValue
+  for (const key in values) {
+    result[key] = values[key].currentValue
   }
   return result as R
 }
 
-const getInvalidFields = <R> (record: EditorFieldsFor<R>): string[] => {
+const getInvalidFields = <R> (fields: EditorFieldsFor<R>, values: EditorValuesFor<R>): string[] => {
   const result: string[] = []
-  for (const key in record) {
-    if (!isValid(record[key])) {
-      result.push(key)
+  for (const key in values) {
+    if (!isValid(values[key])) {
+      result.push(fields[key].label)
     }
   }
   return result
 }
 
-const getChanges = <R> (record: EditorFieldsFor<R>): Partial<R> => {
+const getChanges = <R> (values: EditorValuesFor<R>): Partial<R> => {
   const result: Partial<R> = {}
-  for (const key in record) {
-    if (record[key].currentValue !== record[key].originalValue) {
-      result[key] = record[key].currentValue
+  for (const key in values) {
+    if (values[key].currentValue !== values[key].originalValue) {
+      result[key] = values[key].currentValue
     }
   }
   return result
 }
 
-type ToEFF <R> = (r: R) => EditorFieldsFor<R>
+export type Translation = ReturnType<typeof useI18n>
+type ToEVF <R> = (r: R) => EditorValuesFor<R>
+type ToEFF <R> = (r: R, translation: Translation) => EditorFieldsFor<R>
 
-export const getEditorComputedValues = <R> (key: string, r: R, fn: ToEFF<R>): EditorComputedValues<R> => {
-  const eff = useState<EditorFieldsFor<R>>(key)
-  eff.value = fn(r)
-  const invalidFields = computed(() => getInvalidFields(eff.value))
-  const changes = computed(() => getChanges(eff.value))
-  const currentValue = computed(() => getCurrentValue(eff.value))
-  const setEditorValue = (r: R) => { eff.value = fn(r) }
+export const getEditorComputedValues = <R> (key: string, r: R, toEFF: ToEFF<R>, toEVF: ToEVF<R>, translation: Translation): EditorComputedValues<R> => {
+  const editorValues = useState<EditorValuesFor<R>>(key)
+  editorValues.value = toEVF(r)
+  const editorFields = computed(() => toEFF(r, translation))
+  const invalidFields = computed(() => getInvalidFields(editorFields.value, editorValues.value))
+  const changes = computed(() => getChanges(editorValues.value))
+  const currentValue = computed(() => getCurrentValue(editorValues.value))
+  const setEditorValue = (r: R) => { editorValues.value = toEVF(r) }
   const hasChanges = computed(() => changes.value && Object.keys(changes.value).length > 0)
   const isInvalid = computed(() => invalidFields.value.length > 0)
   const canSave = computed(() => hasChanges.value && !isInvalid.value)
+  const { t } = translation
+  const allSaved = t('lib/editor/utils/AllChangesSaved')
+  const cannotSave = t('lib/editor/utils/CannotSaveWithInvalidFields')
   const saveTooltip = computed<string | undefined>(() => {
-    if (!hasChanges.value) { return 'All changes saved' }
-    if (isInvalid.value) { return `Cannot save with invalid fields: ${invalidFields.value.join(', ')}` }
+    if (!hasChanges.value) { return allSaved }
+    if (isInvalid.value) { return `${cannotSave}: ${invalidFields.value.join(', ')}` }
     return undefined
   })
 
   return {
     setEditorValue,
-    editorObject: eff,
+    editorValues,
+    editorFields,
     invalidFields,
     changes,
     currentValue,

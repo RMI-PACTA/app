@@ -2,6 +2,9 @@ export interface EditorField<R, Name extends keyof R> {
   name: Name
   label: string
   validation?: Validation[]
+}
+
+export interface EditorValue<R, Name extends keyof R> {
   originalValue: R[Name]
   currentValue: R[Name]
 }
@@ -10,12 +13,16 @@ export type EditorFieldsFor<R> = {
   [K in keyof R]-?: EditorField<R, K>
 }
 
-export const isValid = (editorField: EditorField<any, any>): boolean => {
+export type EditorValuesFor<R> = {
+  [K in keyof R]-?: EditorValue<R, K>
+}
+
+export const isValid = <R, K extends keyof R>(editorField: EditorField<R, K>, editorValue: EditorValue<R, K>): boolean => {
   if (!editorField.validation === undefined) {
     return true
   }
   for (const v of (editorField.validation ?? [])) {
-    if (!isValidFor(editorField, v)) {
+    if (!isValidFor(editorValue, v)) {
       return false
     }
   }
@@ -28,19 +35,19 @@ export enum Validation {
 }
 
 const alphanumericAndDashesAndUnderscores = /^[a-zA-Z0-9-_]+$/
-const isValidFor = (editorField: EditorField<any, any>, validation: Validation): boolean => {
+const isValidFor = (editorValue: EditorValue<any, any>, validation: Validation): boolean => {
   switch (validation) {
-    // TODO(gady PICKUP HERE)
     case Validation.NotEmpty:
-      return !!editorField.currentValue
+      return !!editorValue.currentValue
     case Validation.AlphanumericAndDashesAndUnderscores:
-      return alphanumericAndDashesAndUnderscores.test(editorField.currentValue)
+      return alphanumericAndDashesAndUnderscores.test(editorValue.currentValue)
   }
 }
 
 export interface EditorComputedValues <R> {
   setEditorValue: (r: R) => void
-  editorObject: Ref<EditorFieldsFor<R>>
+  editorValues: Ref<EditorValuesFor<R>>
+  editorFields: ComputedRef<EditorFieldsFor<R>>
   invalidFields: ComputedRef<string[]>
   changes: ComputedRef<Partial<R>>
   currentValue: ComputedRef<R>

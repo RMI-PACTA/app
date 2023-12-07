@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { useSlots } from 'vue'
-import { type EditorField, isValid } from '@/lib/editor'
+import { type EditorField, type EditorValue, isValid } from '@/lib/editor'
+
+const { t } = useI18n()
+const tt = (key: string) => t(`FormEditorField.${key}`)
 
 interface Props {
   editorField: EditorField<any, keyof any>
+  editorValue: EditorValue<any, keyof any>
   helpText?: string
   startHelpTextExpanded?: boolean
   isLoading?: boolean
@@ -15,15 +19,15 @@ const props = withDefaults(defineProps<Props>(), {
   helpText: undefined,
   startHelpTextExpanded: false,
   loading: false,
-  loadingLabel: 'Loading...',
-  invalidLabel: 'Needs Attention',
+  loadingLabel: tt('Loading...'),
+  invalidLabel: tt('Needs Attention'),
   validLabel: '',
 })
 const slots = useSlots()
 
 const helpTextSlotExists = computed(() => slots['help-text'] !== undefined)
-const valid = computed(() => isValid(props.editorField))
-const hasValidation = computed(() => (props.editorField.validation ?? []).length > 0)
+const valid = computed(() => isValid(props.editorValue))
+const hasValidation = computed(() => (props.editorValue.validation ?? []).length > 0)
 </script>
 
 <template>
