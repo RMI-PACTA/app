@@ -31,10 +31,12 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 		return nil, err
 	}
 	n := len(request.Body.Items)
-	blobs := make([]*pacta.Blob, n)
-	resp := api.StartPortfolioUpload200JSONResponse{
-		Items: make([]api.StartPortfolioUploadRespItem, n),
+	if n > 25 {
+		// TODO(#71) Implement basic limits
+		return nil, oapierr.BadRequest("too many items")
 	}
+	blobs := make([]*pacta.Blob, n)
+	respItems := make([]api.StartPortfolioUploadRespItem, n)
 	for i, item := range request.Body.Items {
 		fn := item.FileName
 		extStr := filepath.Ext(fn)
@@ -46,13 +48,13 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 				zap.String("file_name", fn),
 				zap.Error(err)).
 				WithErrorID("INVALID_FILE_EXTENSION").
-				WithMessage(fmt.Sprintf("File extension %q from file %q is not supported", extStr, fn))
+				WithMessage(fmt.Sprintf(`{"file": %q, "extension": %q}`, fn, extStr))
 		}
 		blobs[i] = &pacta.Blob{
 			FileType: ft,
 			FileName: item.FileName,
 		}
-		resp.Items[i].FileName = string(fn)
+		respItems[i].FileName = string(fn)
 	}
 
 	for i := range request.Body.Items {
@@ -63,7 +65,7 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 			return nil, oapierr.Internal("failed to sign blob URI", zap.String("uri", uri), zap.Error(err))
 		}
 		blobs[i].BlobURI = pacta.BlobURI(uri)
-		resp.Items[i].UploadUrl = signed
+		respItems[i].UploadUrl = signed
 	}
 
 	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
@@ -83,7 +85,7 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 			if err != nil {
 				return fmt.Errorf("creating incomplete upload %d: %w", i, err)
 			}
-			resp.Items[i].IncompleteUploadId = string(iuid)
+			respItems[i].IncompleteUploadId = string(iuid)
 		}
 		return nil
 	})
@@ -91,7 +93,7 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 		return nil, oapierr.Internal("failed to create uploads", zap.Error(err))
 	}
 
-	return resp, nil
+	return api.StartPortfolioUpload200JSONResponse{Items: respItems}, nil
 }
 
 // Called after uploads of portfolios to cloud storage are complete.
@@ -119,7 +121,7 @@ func (s *Server) CompletePortfolioUpload(ctx context.Context, request api.Comple
 		blobIDs := []pacta.BlobID{}
 		for _, id := range ids {
 			iu := ius[id]
-			if iu == nil || iu.Owner.ID != ownerID {
+			if iu == nil || iu.Owner == nil || iu.Owner.ID != ownerID {
 				return oapierr.NotFound(
 					fmt.Sprintf("incomplete upload %s does not belong to user", id),
 					zap.String("incomplete_upload_id", string(id)),

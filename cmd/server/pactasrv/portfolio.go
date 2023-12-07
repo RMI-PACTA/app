@@ -10,6 +10,7 @@ import (
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // (GET /portfolios)
@@ -95,18 +96,19 @@ func (s *Server) checkPortfolioAuthorization(ctx context.Context, id pacta.Portf
 		return nil, err
 	}
 	// Extracted to a common variable so that we return the same response for not found and unauthorized.
-	notFoundErr := func(err error) error {
-		return oapierr.NotFound("portfolio not found", zap.String("portfolio_id", string(id)), zap.Error(err))
+	notFoundErr := func(fields ...zapcore.Field) error {
+		fs := append(fields, zap.String("portfolio_id", string(id)))
+		return oapierr.NotFound("portfolio not found", fs...)
 	}
 	iu, err := s.DB.Portfolio(s.DB.NoTxn(ctx), id)
 	if err != nil {
 		if db.IsNotFound(err) {
-			return nil, notFoundErr(err)
+			return nil, notFoundErr(zap.Error(err))
 		}
 		return nil, oapierr.Internal("failed to look up portfolio", zap.String("portfolio_id", string(id)), zap.Error(err))
 	}
 	if iu.Owner.ID != actorOwnerID {
-		return nil, notFoundErr(fmt.Errorf("portfolio does not belong to user: owner=%s actor=%s", iu.Owner.ID, actorOwnerID))
+		return nil, notFoundErr(zap.Error(fmt.Errorf("portfolio does not belong to user")), zap.String("owner", string(iu.Owner.ID)), zap.String("actor", string(actorOwnerID)))
 	}
 	return iu, nil
 }

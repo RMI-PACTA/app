@@ -10,11 +10,11 @@ import (
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // (GET /incomplete-uploads)
 func (s *Server) ListIncompleteUploads(ctx context.Context, request api.ListIncompleteUploadsRequestObject) (api.ListIncompleteUploadsResponseObject, error) {
-	// TODO(#12) Implement Authorization
 	ownerID, err := s.getUserOwnerID(ctx)
 	if err != nil {
 		return nil, err
@@ -96,18 +96,19 @@ func (s *Server) checkIncompleteUploadAuthorization(ctx context.Context, id pact
 		return nil, err
 	}
 	// Extracted to a common variable so that we return the same response for not found and unauthorized.
-	notFoundErr := func(err error) error {
-		return oapierr.NotFound("incomplete upload not found", zap.String("incomplete_upload_id", string(id)), zap.Error(err))
+	notFoundErr := func(fields ...zapcore.Field) error {
+		fs := append(fields, zap.String("incomplete_upload_id", string(id)))
+		return oapierr.NotFound("incomplete upload not found", fs...)
 	}
 	iu, err := s.DB.IncompleteUpload(s.DB.NoTxn(ctx), id)
 	if err != nil {
 		if db.IsNotFound(err) {
-			return nil, notFoundErr(err)
+			return nil, notFoundErr(zap.Error(err))
 		}
 		return nil, oapierr.Internal("failed to look up incomplete upload", zap.String("incomplete_upload_id", string(id)), zap.Error(err))
 	}
 	if iu.Owner.ID != actorOwnerID {
-		return nil, notFoundErr(fmt.Errorf("incomplete upload does not belong to user: owner=%s actor=%s", iu.Owner.ID, actorOwnerID))
+		return nil, notFoundErr(zap.Error(fmt.Errorf("incomplete upload does not belong to user")), zap.String("owner_id", string(iu.Owner.ID)), zap.String("actor_id", string(actorOwnerID)))
 	}
 	return iu, nil
 }

@@ -247,7 +247,8 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 		portfolioIDs := []pacta.PortfolioID{}
 		var ranAt time.Time
 		now := s.now()
-		err := s.db.Transactional(r.Context(), func(tx db.Tx) error {
+		// We use a background context here rather than the one from the request so that it cannot be cancelled upstream.
+		err := s.db.Transactional(context.Background(), func(tx db.Tx) error {
 			incompleteUploads, err := s.db.IncompleteUploads(tx, req.Data.Request.IncompleteUploadIDs)
 			if err != nil {
 				return fmt.Errorf("reading incomplete uploads: %w", err)
@@ -271,7 +272,9 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 				} else if *holdingsDate != *iu.HoldingsDate {
 					return fmt.Errorf("multiple holdings dates found for incomplete uploads: %+v", incompleteUploads)
 				}
-				ranAt = iu.RanAt
+				if iu.RanAt.After(ranAt) {
+					ranAt = iu.RanAt
+				}
 			}
 			for i, output := range req.Data.Outputs {
 				blobID, err := s.db.CreateBlob(tx, &output.Blob)
@@ -294,9 +297,7 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 				err := s.db.UpdateIncompleteUpload(
 					tx,
 					iu.ID,
-					db.SetIncompleteUploadCompletedAt(now),
-					db.SetIncompleteUploadFailureMessage(""),
-					db.SetIncompleteUploadFailureCode(""))
+					db.SetIncompleteUploadCompletedAt(now))
 				if err != nil {
 					return fmt.Errorf("updating incomplete upload %d: %w", i, err)
 				}
