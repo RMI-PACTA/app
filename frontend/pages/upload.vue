@@ -86,7 +86,7 @@ const fileStatesWithDetail = computed<FileStateDetail[]>(() => {
       icon = 'pi pi-circle'
     }
     let otherError: string | undefined
-    // TODO(grady) validate this server side too.
+    // TODO(#79) validate this server side too.
     if (fileState.file.name.length > 1000) {
       otherError = 'Filename is too long (1000 characters max).'
     } else if (fileState.file.size > 1028 * 1028 * 100) {
@@ -156,9 +156,7 @@ const startUpload = async () => {
   const startPortfolioUploadResp = await pactaClient.startPortfolioUpload({
     items: fileStates.value.map((fileState: FileState) => ({
       file_name: fileState.file.name,
-      // TODO(grady) consider adding file size here as a validation step.
-      // TODO(grady) consider adding file type validation here.
-      // TODO(grady) consider adding duplicate file checking here.
+      // TODO(#79) consider adding file size here as a validation step.
     })),
     holdings_date: {
       time: holdingsDate.value.toISOString(),
@@ -255,18 +253,18 @@ const waitForValidationToCompleteOrTimeout = async () => {
 
 const refreshStateFromIncompleteUploads = async () => {
   const resp = await pactaClient.listIncompleteUploads()
-  console.log('resp', resp)
   const incompleteUploads = resp.items
   for (const incompleteUpload of incompleteUploads) {
     const idx = fileStates.value.findIndex((fileState) => fileState.incompleteUploadId === incompleteUpload.id)
     // Note - this item might not be in the list if the user hasn't cleaned up prior incomplete portfolios.
-    if (idx >= 0) {
-      if (incompleteUpload.failureCode) {
-        fileStates.value[idx].status = FileStatus.Error
-        fileStates.value[idx].errorMessage = incompleteUpload.failureMessage
-      } else if (incompleteUpload.completedAt) {
-        fileStates.value[idx].status = FileStatus.CleanUp
-      }
+    if (idx < 0) {
+      continue
+    }
+    if (incompleteUpload.failureCode) {
+      fileStates.value[idx].status = FileStatus.Error
+      fileStates.value[idx].errorMessage = incompleteUpload.failureMessage
+    } else if (incompleteUpload.completedAt) {
+      fileStates.value[idx].status = FileStatus.CleanUp
     }
   }
 }
@@ -286,6 +284,7 @@ const cleanUpIncompleteUploads = async () => {
 <template>
   <StandardContent>
     <TitleBar title="Upload Portfolios" />
+    <!-- TODO(#80) Finalize this copy -->
     <p>
       This is a page where you can upload portfolios to test out the PACTA platform.
       This Copy will need work, and will need to link to the documentation.
@@ -386,6 +385,7 @@ const cleanUpIncompleteUploads = async () => {
         class="m-0"
         :closable="false"
       >
+        <!-- TODO(#80) Finalize This Copy -->
         Files have been uploaded, parsed, and translated to portfolios successfully.
       </PVMessage>
       <div class="flex gap-3">
