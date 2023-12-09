@@ -5,40 +5,7 @@ import { getEditorComputedValues, type Translation } from './utils'
 export type EditorUserFields = EditorFieldsFor<User>
 export type EditorUserValues = EditorValuesFor<User>
 
-const createEditorUserValues = (user: User): EditorUserValues => {
-  return {
-    id: {
-      originalValue: user.id,
-      currentValue: user.id,
-    },
-    enteredEmail: {
-      originalValue: user.enteredEmail,
-      currentValue: user.enteredEmail,
-    },
-    canonicalEmail: {
-      originalValue: user.canonicalEmail,
-      currentValue: user.canonicalEmail,
-    },
-    admin: {
-      originalValue: user.admin,
-      currentValue: user.admin,
-    },
-    superAdmin: {
-      originalValue: user.superAdmin,
-      currentValue: user.superAdmin,
-    },
-    name: {
-      originalValue: user.name,
-      currentValue: user.name,
-    },
-    preferredLanguage: {
-      originalValue: user.preferredLanguage,
-      currentValue: user.preferredLanguage,
-    },
-  }
-}
-
-const createEditorUserFields = (user: User, translation: Translation): EditorUserFields => {
+const createEditorUserFields = (translation: Translation): EditorUserFields => {
   const tt = (key: string) => translation.t(`lib/editor/user/${key}`)
   return {
     id: {
@@ -56,23 +23,27 @@ const createEditorUserFields = (user: User, translation: Translation): EditorUse
     admin: {
       name: 'admin',
       label: tt('Admin'),
+      helpText: tt('AdminHelpText'),
     },
     superAdmin: {
       name: 'superAdmin',
       label: tt('Super Admin'),
+      helpText: tt('SuperAdminHelpText'),
     },
     name: {
       validation: [Validation.NotEmpty],
       name: 'name',
       label: tt('Name'),
+      helpText: tt('NameHelpText'),
     },
     preferredLanguage: {
       name: 'preferredLanguage',
       label: tt('Preferred Language'),
+      helpText: tt('PreferredLanguageHelpText'),
     },
   }
 }
 
 export const userEditor = (u: User, translation: Translation): EditorComputedValues<User> => {
-  return getEditorComputedValues('lib/editor/user', u, createEditorUserFields, createEditorUserValues, translation)
+  return getEditorComputedValues('lib/editor/user', u, createEditorUserFields, translation)
 }

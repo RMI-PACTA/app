@@ -3,7 +3,7 @@ const { showStandardDebug } = useLocalStorage()
 const { fakeUsers: { fakeUsersVisible } } = useModal()
 const { t } = useI18n()
 
-const prefix = 'StandardFooter'
+const prefix = 'components/standard/Footer'
 const tt = (s: string) => t(`${prefix}.${s}`)
 </script>
 

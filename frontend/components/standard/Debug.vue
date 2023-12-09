@@ -2,7 +2,7 @@
 const { showStandardDebug } = useLocalStorage()
 const { t } = useI18n()
 
-const prefix = 'StandardDebug'
+const prefix = 'components/standard/Debug'
 const tt = (s: string) => t(`${prefix}.${s}`)
 
 interface Props {

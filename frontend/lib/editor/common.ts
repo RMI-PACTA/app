@@ -2,6 +2,11 @@ export interface EditorField<R, Name extends keyof R> {
   name: Name
   label: string
   validation?: Validation[]
+  startHelpTextExpanded?: boolean
+  helpText?: string
+  loadingLabel?: string
+  invalidLabel?: string
+  validLabel?: string
 }
 
 export interface EditorValue<R, Name extends keyof R> {
@@ -56,3 +61,13 @@ export interface EditorComputedValues <R> {
   saveTooltip: ComputedRef<string | undefined>
   canSave: ComputedRef<boolean>
 }
+
+export const createEditorValues = <R>(r: R): EditorValuesFor<R> => Object.keys(r as any)
+  .map(k => k as keyof R)
+  .map((key: keyof R) => ({
+    [key]: {
+      originalValue: r[key],
+      currentValue: r[key],
+    },
+  }))
+  .reduce((acc, curr) => ({ ...acc, ...curr }), {}) as EditorValuesFor<R>

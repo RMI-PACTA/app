@@ -4,7 +4,7 @@ import { useSlots } from 'vue'
 const slots = useSlots()
 const { t } = useI18n()
 
-const prefix = 'FormField'
+const prefix = 'components/form/Field'
 const tt = (s: string) => t(`${prefix}.${s}`)
 
 interface Props {

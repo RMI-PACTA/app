@@ -6,20 +6,23 @@ const router = useRouter()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const localePath = useLocalePath()
+const i18n = useI18n()
 
-const {
-  editorObject: editorPactaVersion,
-  currentValue: pactaVersion,
-  canSave,
-  saveTooltip,
-} = pactaVersionEditor({
+const defaultPactaVersion = {
   id: '',
   name: '',
   description: '',
   digest: '',
   createdAt: '',
   isDefault: false,
-})
+}
+const {
+  editorFields,
+  editorValues,
+  currentValue: pactaVersion,
+  canSave,
+  saveTooltip,
+} = pactaVersionEditor(defaultPactaVersion, i18n)
 const discard = () => router.push(localePath('/admin/pacta-version'))
 const save = () => withLoading(
   () => pactaClient.createPactaVersion(pactaVersion.value).then(() => router.push(localePath('/admin/pacta-version'))),
@@ -34,7 +37,8 @@ const save = () => withLoading(
       Pacta version info goes here
     </p>
     <PactaversionEditor
-      v-model:editorPactaVersion="editorPactaVersion"
+      v-model:editorValues="editorValues"
+      :editor-fields="editorFields"
     />
     <div class="flex gap-3">
       <PVButton
@@ -54,8 +58,12 @@ const save = () => withLoading(
       </div>
     </div>
     <StandardDebug
-      label="PACTA Version"
-      :value="editorPactaVersion"
+      label="Editor Fields"
+      :value="editorFields"
+    />
+    <StandardDebug
+      label="Editor Values"
+      :value="editorValues"
     />
   </StandardContent>
 </template>

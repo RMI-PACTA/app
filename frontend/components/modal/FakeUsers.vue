@@ -8,7 +8,7 @@ const { $msal: { signOut } } = useNuxtApp()
 const { signIn } = useSignIn()
 const { getMaybeMe, refreshMaybeMe } = useSession()
 
-const prefix = 'ModalFakeUsers'
+const prefix = 'components/modal/FakeUsers'
 const tt = (s: string) => t(`${prefix}.${s}`)
 
 // TODO(grady) move this to an env-specific location, omit the component if empty.

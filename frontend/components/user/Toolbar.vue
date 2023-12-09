@@ -9,7 +9,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const prefix = 'UserToolbar'
+const prefix = 'components/user/Toolbar'
 const tt = (key: string) => t(`${prefix}.${key}`)
 
 const isMe = computed<boolean>(() => {
