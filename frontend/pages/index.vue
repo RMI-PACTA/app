@@ -17,14 +17,24 @@ const { signIn } = useSignIn()
     <PVButton
       v-if="!isAuthenticated"
       label="Sign In"
+      icon="pi pi-sign-in"
+      icon-pos="right"
       @click="signIn"
     />
-    <PVButton
-      v-else
-      class="inline-block"
-      label="Sign Out"
-      icon="pi pi-sign-out"
-      @click="signOut"
-    />
+    <template v-else>
+      <LinkButton
+        label="Get Started"
+        icon="pi pi-arrow-right"
+        icon-pos="right"
+        to="/upload"
+      />
+      <PVButton
+        class="p-button-outlined"
+        label="Sign Out"
+        icon="pi pi-sign-out"
+        icon-pos="right"
+        @click="signOut"
+      />
+    </template>
   </StandardContent>
 </template>
