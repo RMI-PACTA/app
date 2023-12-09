@@ -4,6 +4,10 @@ import {
   type EditorInitiativeValues as EditorValues,
 } from '@/lib/editor'
 
+const prefix = 'components/initiative/Editor'
+const { t } = useI18n()
+const tt = (key: string) => t(`${prefix}.${key}`)
+
 interface Props {
   editorFields: EditorFields
   editorValues: EditorValues
@@ -72,8 +76,8 @@ const evs = computed({
     >
       <ExplicitInputSwitch
         v-model:value="evs.requiresInvitationToJoin.currentValue"
-        on-label="Requires Invitation To Join"
-        off-label="Anyone Can Join"
+        :on-label="tt('Requires Invitation To Join')"
+        :off-label="tt('Anyone Can Join')"
       />
     </FormEditorField>
     <FormEditorField
@@ -82,8 +86,8 @@ const evs = computed({
     >
       <ExplicitInputSwitch
         v-model:value="evs.isAcceptingNewMembers.currentValue"
-        on-label="Accepting New Members"
-        off-label="Closed To New Members"
+        :on-label="tt('Accepting New Members')"
+        :off-label="tt('Closed To New Members')"
       />
     </FormEditorField>
     <FormEditorField
@@ -92,8 +96,8 @@ const evs = computed({
     >
       <ExplicitInputSwitch
         v-model:value="evs.isAcceptingNewPortfolios.currentValue"
-        on-label="Accepting New Portfolios"
-        off-label="Closed To New Portfolios"
+        :on-label="tt('Accepting New Portfolios')"
+        :off-label="tt('Closed To New Portfolios')"
       />
     </FormEditorField>
     <FormEditorField
