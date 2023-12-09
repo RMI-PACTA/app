@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { showStandardDebug } = useLocalStorage()
-const { fakeUsers: { fakeUsersVisible } } = useModal()
+const { fakeUsers: { fakeUsersVisible }, missingTranslations: { missingTranslationsVisible } } = useModal()
 const { t } = useI18n()
 
 const prefix = 'components/standard/Footer'
@@ -31,6 +31,13 @@ const tt = (s: string) => t(`${prefix}.${s}`)
           class="p-1 w-auto"
           :class="showStandardDebug ? '' : 'p-button-text'"
           @click="() => showStandardDebug = !showStandardDebug"
+        />
+        <PVButton
+          v-tooltip.top="tt('Missing Translations')"
+          icon="pi pi-language"
+          class="p-1 w-auto"
+          :class="missingTranslationsVisible ? '' : 'p-button-text'"
+          @click="() => missingTranslationsVisible = !missingTranslationsVisible"
         />
       </div>
       <div class="text-xs">

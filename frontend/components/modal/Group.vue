@@ -6,5 +6,6 @@
     <ModalLoading />
     <ModalPermissionDenied />
     <ModalFakeUsers />
+    <ModalMissingTranslations />
   </div>
 </template>

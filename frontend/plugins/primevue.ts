@@ -15,6 +15,8 @@ import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import InputSwitch from 'primevue/inputswitch'
 import FileUpload from 'primevue/fileupload'
+import TabPanel from 'primevue/tabpanel'
+import TabView from 'primevue/tabview'
 import Textarea from 'primevue/textarea'
 import Tooltip from 'primevue/tooltip'
 import Message from 'primevue/message'
@@ -44,6 +46,8 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVMessage', Message)
   vueApp.component('PVOverlayPanel', OverlayPanel)
   vueApp.component('PVProgressSpinner', ProgressSpinner)
+  vueApp.component('PVTabPanel', TabPanel)
+  vueApp.component('PVTabView', TabView)
   vueApp.component('PVTextarea', Textarea)
   vueApp.component('PVToast', Toast)
 
