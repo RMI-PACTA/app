@@ -10,7 +10,13 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { CompletePortfolioUploadReq } from './models/CompletePortfolioUploadReq';
+export type { CompletePortfolioUploadReqItem } from './models/CompletePortfolioUploadReqItem';
+export type { CompletePortfolioUploadResp } from './models/CompletePortfolioUploadResp';
 export type { Error } from './models/Error';
+export type { HoldingsDate } from './models/HoldingsDate';
+export type { IncompleteUpload } from './models/IncompleteUpload';
+export type { IncompleteUploadChanges } from './models/IncompleteUploadChanges';
 export { Initiative } from './models/Initiative';
 export { InitiativeChanges } from './models/InitiativeChanges';
 export { InitiativeCreate } from './models/InitiativeCreate';
@@ -19,12 +25,22 @@ export type { InitiativeInvitationCreate } from './models/InitiativeInvitationCr
 export type { InitiativeUserRelationship } from './models/InitiativeUserRelationship';
 export type { InitiativeUserRelationshipChanges } from './models/InitiativeUserRelationshipChanges';
 export { Language } from './models/Language';
+export type { ListIncompleteUploadsReq } from './models/ListIncompleteUploadsReq';
+export type { ListIncompleteUploadsResp } from './models/ListIncompleteUploadsResp';
+export type { ListPortfoliosReq } from './models/ListPortfoliosReq';
+export type { ListPortfoliosResp } from './models/ListPortfoliosResp';
 export type { NewPortfolioAsset } from './models/NewPortfolioAsset';
 export type { PactaVersion } from './models/PactaVersion';
 export type { PactaVersionChanges } from './models/PactaVersionChanges';
 export type { PactaVersionCreate } from './models/PactaVersionCreate';
 export type { ParsePortfolioReq } from './models/ParsePortfolioReq';
 export type { ParsePortfolioResp } from './models/ParsePortfolioResp';
+export type { Portfolio } from './models/Portfolio';
+export type { PortfolioChanges } from './models/PortfolioChanges';
+export type { StartPortfolioUploadReq } from './models/StartPortfolioUploadReq';
+export type { StartPortfolioUploadReqItem } from './models/StartPortfolioUploadReqItem';
+export type { StartPortfolioUploadResp } from './models/StartPortfolioUploadResp';
+export type { StartPortfolioUploadRespItem } from './models/StartPortfolioUploadRespItem';
 export { User } from './models/User';
 export { UserChanges } from './models/UserChanges';
 

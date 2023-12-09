@@ -33,17 +33,9 @@ export const useTime = () => {
     })
   }
 
-  const humanReadableDateLongFromStandardString = (s: string): ComputedRef<string> => {
-    return humanReadableDateLong(new Date(Date.parse(s)))
-  }
-
-  const humanReadableDateFromStandardString = (s: string): ComputedRef<string> => {
-    return humanReadableDate(new Date(Date.parse(s)))
-  }
-
-  const humanReadableTimeFromStandardString = (asStr: string): ComputedRef<string> => {
-    return humanReadableTime(new Date(Date.parse(asStr)))
-  }
+  const humanReadableDateLongFromStandardString = (s: string): ComputedRef<string> => humanReadableDateLong(new Date(Date.parse(s)))
+  const humanReadableDateFromStandardString = (s: string): ComputedRef<string> => humanReadableDate(new Date(Date.parse(s)))
+  const humanReadableTimeFromStandardString = (asStr: string): ComputedRef<string> => humanReadableTime(new Date(Date.parse(asStr)))
 
   const humanReadableTimeWithSeconds = (t: Date): ComputedRef<string> => {
     return computed(() => {
