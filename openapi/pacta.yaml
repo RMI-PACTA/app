@@ -371,6 +371,89 @@ paths:
       responses:
         '204':
           description: the relationship changes were applied successfully
+  /portfolio-groups:
+    get:
+      summary: Returns the portfolio groups that the user has access to 
+      operationId: listPortfolioGroups 
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPortfolioGroupsResp'
+    post:
+      summary: Creates a portfolio group
+      description: Creates a new portfolio group 
+      operationId: createPortfolioGroup
+      requestBody:
+        description: Initial portfolio group object properties
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortfolioGroupCreate'
+       
+      responses:
+        '200':
+          description: portfolio group created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioGroup'
+  /portfolio-group/{id}:
+    get:
+      summary: Returns a portfolio group by ID
+      description: Returns a portfolio group based on a single ID
+      operationId: findPortfolioGroupById
+      parameters:
+        - name: id
+          in: path
+          description: ID of portfolio group to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: portfolio group response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioGroup'
+    patch:
+      summary: Updates portfolio group properties
+      description: Updates a portfolio group's settable properties
+      operationId: updatePortfolioGroup
+      parameters:
+        - name: id
+          in: path
+          description: ID of the portfolio group to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Portfolio Group object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortfolioGroupChanges'
+      responses:
+        '204':
+          description: the changes were applied successfully
+    delete:
+      summary: Deletes a portfolio group by ID
+      description: deletes a portfolio group based on the ID supplied - note this does not delete the portfolios that are members to this group
+      operationId: deletePortfolioGroup
+      parameters:
+        - name: id
+          in: path
+          description: ID of portfolio group to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: portfolio group deleted        
   /incomplete-uploads:
     get:
       description: Gets the incomplete uploads that the user is the owner of 
@@ -720,6 +803,77 @@ components:
         digest:
           type: string
           description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model.
+    PortfolioGroupMembershipPortfolio:
+      type: object
+      required:
+        - portfolio
+        - createdAt
+      properties:
+        portfolio:
+          $ref: '#/components/schemas/Portfolio'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this membership was created.
+    PortfolioGroupMembershipPortfolioGroup:
+      type: object
+      required:
+        - portfolioGroup 
+        - createdAt
+      properties:
+        portfolioGroup:
+          $ref: '#/components/schemas/PortfolioGroup'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this membership was created.
+    PortfolioGroupCreate:
+      type: object
+      required:
+        - name
+        - description 
+      properties:
+        name:
+          type: string
+          description: the human meaningful name of the portfolio group 
+        description:
+          type: string
+          description: an optional description of the contents or purpose of the portfolio group 
+    PortfolioGroup:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: the system assigned id of the portfolio group 
+        name:
+          type: string
+          description: the human meaningful name of the portfoio group 
+        description:
+          type: string
+          description: the description of the contents or purpose of the portfolio group
+        members:
+          type: array
+          description: the list of portfolios that are members of this portfolio group
+          items:
+            $ref: '#/components/schemas/PortfolioGroupMembershipPortfolio'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this initiative was created.
+    PortfolioGroupChanges:
+      type: object
+      properties:
+        name:
+          type: string
+          description: the human meaningful name of the portfolio group
+        description:
+          type: string
+          description: the description of the contents or purpose of the portfolio group
     InitiativeCreate:
       type: object
       required:
@@ -1128,6 +1282,11 @@ components:
         numberOfRows:
           type: integer
           description: The number of rows in the portfolio
+        groups:
+          type: array
+          description: The list of portfolio groups that this portfolio is a member of
+          items:
+            $ref: '#/components/schemas/PortfolioGroupMembershipPortfolioGroup'
     PortfolioChanges:
       type: object
       properties:
@@ -1162,6 +1321,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Portfolio'
+    ListPortfolioGroupsReq:
+      type: object
+    ListPortfolioGroupsResp:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioGroup'
     ParsePortfolioReq:
       type: object
       required:

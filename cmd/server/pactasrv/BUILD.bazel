@@ -11,6 +11,7 @@ go_library(
         "pactasrv.go",
         "parallel.go",
         "portfolio.go",
+        "portfolio_group.go",
         "upload.go",
         "user.go",
     ],
