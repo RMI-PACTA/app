@@ -13,8 +13,10 @@ onMounted(async () => {
     const langData = await $axios({
       method: 'get',
       url: `/_nuxt/lang/${lang}.json`,
+      transformResponse: (res) => res,
+      responseType: 'json',
     }).then((r) => {
-      return JSON.stringify(r.data)
+      return r.data
     })
     existing.value.set(lang, langData)
   }

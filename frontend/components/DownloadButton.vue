@@ -18,7 +18,7 @@ const downloaded = useState<boolean>(`${statePrefix}.downloaded`, () => false)
 const message = computed(() => downloaded.value ? tt('Downloaded') : props.cta)
 const icon = computed(() => downloaded.value ? 'pi pi-check' : 'pi pi-download')
 
-const download = async () => {
+const download = () => {
   downloaded.value = true
   const a = document.createElement('a')
   const file = new Blob([props.value])

@@ -6,8 +6,8 @@ const { t } = useI18n()
 const tt = (key: string) => t(`components/form/EditorField.${key}`)
 
 interface Props {
-  editorField: EditorField<any, keyof any>
-  editorValue: EditorValue<any, keyof any>
+  editorField: EditorField<T, keyof T>
+  editorValue: EditorValue<T, keyof T>
   isLoading?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {

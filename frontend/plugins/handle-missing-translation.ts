@@ -18,7 +18,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   nuxtApp.vueApp.provide('handleMissingTranslation', handleMissingTranslation)
   const values = computed(() => {
-    console.log('missingTranslations computed')
     return missingTranslations.value
   })
   return {
