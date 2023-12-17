@@ -5,9 +5,21 @@ import { type EditorField, type EditorValue, isValid } from '@/lib/editor'
 const { t } = useI18n()
 const tt = (key: string) => t(`components/form/EditorField.${key}`)
 
-interface Props {
-  editorField: EditorField<T, keyof T>
-  editorValue: EditorValue<T, keyof T>
+// Why this convoluted type structure?
+// In order for typchecking down the line, the EditorField and EditorValue need to have the SAME key.
+// Enforcing that requires a check at a higher level, otherwise we'd have to directly parameterize Props
+// with a non-any parameter value, which is a no-no. This leads us to Indirect1.
+// Then, we have a second problem: we want to specify the `any`
+// on props, but we don't want to use `keyof any`, which doesn't guarantee that the key will correspond to the parameterized type.
+// The Indirect2 allows us to condense these two constraints down to one, which allows us to use the single `any` in props.
+interface Indirect1<T, K extends keyof T> {
+  editorField: EditorField<T, K>
+  editorValue: EditorValue<T, K>
+}
+
+interface Indirect2<T> extends Indirect1<T, keyof T> {}
+
+interface Props extends Indirect2<any> {
   isLoading?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
