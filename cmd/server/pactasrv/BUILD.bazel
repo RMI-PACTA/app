@@ -10,6 +10,7 @@ go_library(
         "pacta_version.go",
         "pactasrv.go",
         "parallel.go",
+        "populate.go",
         "portfolio.go",
         "portfolio_group.go",
         "upload.go",

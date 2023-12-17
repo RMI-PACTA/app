@@ -20,11 +20,14 @@ func (s *Server) ListPortfolios(ctx context.Context, request api.ListPortfoliosR
 	if err != nil {
 		return nil, err
 	}
-	ius, err := s.DB.PortfoliosByOwner(s.DB.NoTxn(ctx), ownerID)
+	ps, err := s.DB.PortfoliosByOwner(s.DB.NoTxn(ctx), ownerID)
 	if err != nil {
 		return nil, oapierr.Internal("failed to query portfolios", zap.Error(err))
 	}
-	items, err := dereference(conv.PortfoliosToOAPI(ius))
+	if err := populatePortfolioGroupsInPortfolios(s, ctx, ps); err != nil {
+		return nil, err
+	}
+	items, err := dereference(conv.PortfoliosToOAPI(ps))
 	if err != nil {
 		return nil, err
 	}
@@ -52,11 +55,14 @@ func (s *Server) DeletePortfolio(ctx context.Context, request api.DeletePortfoli
 // Returns an portfolio by ID
 // (GET /portfolio/{id})
 func (s *Server) FindPortfolioById(ctx context.Context, request api.FindPortfolioByIdRequestObject) (api.FindPortfolioByIdResponseObject, error) {
-	iu, err := s.checkPortfolioAuthorization(ctx, pacta.PortfolioID(request.Id))
+	p, err := s.checkPortfolioAuthorization(ctx, pacta.PortfolioID(request.Id))
 	if err != nil {
 		return nil, err
 	}
-	converted, err := conv.PortfolioToOAPI(iu)
+	if err := populatePortfolioGroupsInPortfolios(s, ctx, []*pacta.Portfolio{p}); err != nil {
+		return nil, err
+	}
+	converted, err := conv.PortfolioToOAPI(p)
 	if err != nil {
 		return nil, err
 	}

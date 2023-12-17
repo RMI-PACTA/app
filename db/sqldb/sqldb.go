@@ -259,6 +259,14 @@ func exactlyOneFromMap[V any, K ~string](name string, id K, m map[K]V) (V, error
 	return v, nil
 }
 
+func valuesFromMap[V any, K ~string](m map[K]V) []V {
+	result := make([]V, 0, len(m))
+	for _, v := range m {
+		result = append(result, v)
+	}
+	return result
+}
+
 func createWhereInFmt(n int) string {
 	dollaz := make([]string, n)
 	for i := 0; i < n; i++ {

@@ -453,7 +453,36 @@ paths:
             type: string
       responses:
         '204':
-          description: portfolio group deleted        
+          description: portfolio group deleted 
+  /portfolio-group-membership:
+    put:
+      summary: creates a portfolio group membership 
+      description: creates a portfolio group membership 
+      operationId: createPortfolioGroupMembership 
+      requestBody:
+        description: Portfolio Group membership to create 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortfolioGroupMembershipIds'
+      responses:
+        '204':
+          description: the changes were applied successfully
+    delete:
+      summary: Deletes a portfolio group membership 
+      description: removes the membership of a portfolio in a portfolio - note this does not delete the portfolio or the portfolio group
+      operationId: deletePortfolioGroupMembership
+      requestBody:
+        description: Portfolio Group membership to delete 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortfolioGroupMembershipIds'
+      responses:
+        '204':
+          description: portfolio group membership deleted 
   /incomplete-uploads:
     get:
       description: Gets the incomplete uploads that the user is the owner of 
@@ -803,6 +832,18 @@ components:
         digest:
           type: string
           description: The hash (typically SHA256) that uniquely identifies this version of the PACTA model.
+    PortfolioGroupMembershipIds:
+      type: object
+      required:
+        - portfolioId
+        - portfolioGroupId 
+      properties:
+        portfolioId:
+          type: string
+          description: the id of the portfolio member of the portfolio group
+        portfolioGroupId:
+          type: string
+          description: the id of the portfolio group 
     PortfolioGroupMembershipPortfolio:
       type: object
       required:

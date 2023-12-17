@@ -152,3 +152,31 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 		AdminDebugEnabled: p.AdminDebugEnabled,
 	}, nil
 }
+
+func PortfolioGroupToOAPI(pg *pacta.PortfolioGroup) (*api.PortfolioGroup, error) {
+	if pg == nil {
+		return nil, oapierr.Internal("portfolioGroupToOAPI: can't convert nil pointer")
+	}
+	members := []api.PortfolioGroupMembershipPortfolio{}
+	for _, m := range pg.Members {
+		portfolio, err := PortfolioToOAPI(m.Portfolio)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioGroupToOAPI: portfolioToOAPI failed", zap.Error(err))
+		}
+		members = append(members, api.PortfolioGroupMembershipPortfolio{
+			CreatedAt: m.CreatedAt,
+			Portfolio: *portfolio,
+		})
+	}
+	return &api.PortfolioGroup{
+		Id:          string(pg.ID),
+		Name:        pg.Name,
+		Description: pg.Description,
+		CreatedAt:   pg.CreatedAt,
+		Members:     &members,
+	}, nil
+}
+
+func PortfolioGroupsToOAPI(pgs []*pacta.PortfolioGroup) ([]*api.PortfolioGroup, error) {
+	return convAll(pgs, PortfolioGroupToOAPI)
+}

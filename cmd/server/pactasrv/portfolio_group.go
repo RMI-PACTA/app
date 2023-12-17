@@ -3,6 +3,7 @@ package pactasrv
 import (
 	"context"
 
+	"github.com/RMI/pacta/cmd/server/pactasrv/conv"
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
@@ -20,6 +21,9 @@ func (s *Server) FindPortfolioGroupById(ctx context.Context, request api.FindPor
 			return nil, oapierr.NotFound("portfolio group not found", zap.String("portfolio_group_id", request.Id))
 		}
 		return nil, oapierr.Internal("failed to load portfolio_group", zap.String("portfolio_group_id", request.Id), zap.Error(err))
+	}
+	if err := populatePortfoliosInPortfolioGroups(s, ctx, []*pacta.PortfolioGroup{pg}); err != nil {
+		return nil, err
 	}
 	resp, err := conv.PortfolioGroupToOAPI(pg)
 	if err != nil {
@@ -40,6 +44,9 @@ func (s *Server) ListPortfolioGroups(ctx context.Context, request api.ListPortfo
 	if err != nil {
 		return nil, oapierr.Internal("failed to query portfolio groups", zap.Error(err))
 	}
+	if err := populatePortfoliosInPortfolioGroups(s, ctx, pgs); err != nil {
+		return nil, err
+	}
 	items, err := dereference(conv.PortfolioGroupsToOAPI(pgs))
 	if err != nil {
 		return nil, err
@@ -50,11 +57,11 @@ func (s *Server) ListPortfolioGroups(ctx context.Context, request api.ListPortfo
 // Creates a portfolio group
 // (POST /portfolio-groups)
 func (s *Server) CreatePortfolioGroup(ctx context.Context, request api.CreatePortfolioGroupRequestObject) (api.CreatePortfolioGroupResponseObject, error) {
-	userID, err := getUserID(ctx)
+	ownerID, err := s.getUserOwnerID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	pg, err := conv.PortfolioGroupCreateFromOAPI(request.Body, userID)
+	pg, err := conv.PortfolioGroupCreateFromOAPI(request.Body, ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +75,7 @@ func (s *Server) CreatePortfolioGroup(ctx context.Context, request api.CreatePor
 	if err != nil {
 		return nil, err
 	}
-	return api.CreatePortfolioGroup200Response{Body: resp}, nil
+	return api.CreatePortfolioGroup200JSONResponse(*resp), nil
 }
 
 // Updates portfolio group properties
@@ -100,4 +107,30 @@ func (s *Server) DeletePortfolioGroup(ctx context.Context, request api.DeletePor
 		return nil, oapierr.Internal("failed to delete portfolio group", zap.String("portfolio_group_id", request.Id), zap.Error(err))
 	}
 	return api.DeletePortfolioGroup204Response{}, nil
+}
+
+// Deletes a portfolio group membership
+// (DELETE /portfolio-group-membership)
+func (s *Server) DeletePortfolioGroupMembership(ctx context.Context, request api.DeletePortfolioGroupMembershipRequestObject) (api.DeletePortfolioGroupMembershipResponseObject, error) {
+	// TODO(#12) Implement Authorization
+	pgID := pacta.PortfolioGroupID(request.Body.PortfolioGroupId)
+	pID := pacta.PortfolioID(request.Body.PortfolioGroupId)
+	err := s.DB.DeletePortfolioGroupMembership(s.DB.NoTxn(ctx), pgID, pID)
+	if err != nil {
+		return nil, oapierr.Internal("failed to delete portfolio group membership", zap.String("portfolio_group_id", string(pgID)), zap.String("portfolio_id", string(pID)), zap.Error(err))
+	}
+	return api.DeletePortfolioGroupMembership204Response{}, nil
+}
+
+// creates a portfolio group membership
+// (PUT /portfolio-group-membership)
+func (s *Server) CreatePortfolioGroupMembership(ctx context.Context, request api.CreatePortfolioGroupMembershipRequestObject) (api.CreatePortfolioGroupMembershipResponseObject, error) {
+	// TODO(#12) Implement Authorization
+	pgID := pacta.PortfolioGroupID(request.Body.PortfolioGroupId)
+	pID := pacta.PortfolioID(request.Body.PortfolioGroupId)
+	err := s.DB.CreatePortfolioGroupMembership(s.DB.NoTxn(ctx), pgID, pID)
+	if err != nil {
+		return nil, oapierr.Internal("failed to create portfolio group membership", zap.String("portfolio_group_id", string(pgID)), zap.String("portfolio_id", string(pID)), zap.Error(err))
+	}
+	return api.CreatePortfolioGroupMembership204Response{}, nil
 }

@@ -3,6 +3,7 @@ package sqldb
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
@@ -10,23 +11,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const portfolioSelectColumns = `
-	portfolio.id,
-	portfolio.owner_id,
-	portfolio.name,
-	portfolio.description,
-	portfolio.created_at,
-	portfolio.holdings_date,
-	portfolio.blob_id,
-	portfolio.admin_debug_enabled,
-	portfolio.number_of_rows 
+const portfolioQueryStanza = `
+	SELECT
+		portfolio.id,
+		portfolio.owner_id,
+		portfolio.name,
+		portfolio.description,
+		portfolio.created_at,
+		portfolio.holdings_date,
+		portfolio.blob_id,
+		portfolio.admin_debug_enabled,
+		portfolio.number_of_rows,
+		portfolio_group_membership.portfolio_group_id,
+		portfolio_group_membership.createdAt,
+	FROM portfolio
+	LEFT JOIN portfolio_group_membership 
+	ON portfolio_group_membership.portfolio_id = portfolio.id
 `
 
 func (d *DB) Portfolio(tx db.Tx, id pacta.PortfolioID) (*pacta.Portfolio, error) {
-	rows, err := d.query(tx, `
-		SELECT `+portfolioSelectColumns+`
-		FROM portfolio 
-		WHERE id = $1;`, id)
+	rows, err := d.query(tx, portfolioQueryStanza+` WHERE id = $1;`, id)
 	if err != nil {
 		return nil, fmt.Errorf("querying portfolio: %w", err)
 	}
@@ -34,14 +38,12 @@ func (d *DB) Portfolio(tx db.Tx, id pacta.PortfolioID) (*pacta.Portfolio, error)
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to portfolios: %w", err)
 	}
-	return exactlyOne("portfolio", id, pvs)
+	return exactlyOne("portfolio", id, valuesFromMap(pvs))
 }
 
 func (d *DB) Portfolios(tx db.Tx, ids []pacta.PortfolioID) (map[pacta.PortfolioID]*pacta.Portfolio, error) {
 	ids = dedupeIDs(ids)
-	rows, err := d.query(tx, `
-		SELECT `+portfolioSelectColumns+`
-		FROM portfolio 
+	rows, err := d.query(tx, portfolioQueryStanza+`
 		WHERE id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
 	if err != nil {
 		return nil, fmt.Errorf("querying portfolios: %w", err)
@@ -58,9 +60,7 @@ func (d *DB) Portfolios(tx db.Tx, ids []pacta.PortfolioID) (map[pacta.PortfolioI
 }
 
 func (d *DB) PortfoliosByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.Portfolio, error) {
-	rows, err := d.query(tx, `
-		SELECT `+portfolioSelectColumns+`
-		FROM portfolio 
+	rows, err := d.query(tx, portfolioQueryStanza+`
 		WHERE owner_id = $1;`, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("querying portfolios: %w", err)
@@ -69,7 +69,9 @@ func (d *DB) PortfoliosByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.Portfo
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to portfolios: %w", err)
 	}
-	return pvs, nil
+	// Note the map interface here is ~required in the deserialization process to track multiple membersihps,
+	// so we're not just converting to a map and back.
+	return valuesFromMap(pvs), nil
 }
 
 func (d *DB) CreatePortfolio(tx db.Tx, p *pacta.Portfolio) (pacta.PortfolioID, error) {
@@ -153,32 +155,65 @@ func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, e
 	return buris, nil
 }
 
-func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
-	p := &pacta.Portfolio{Owner: &pacta.Owner{}, Blob: &pacta.Blob{}}
+type portfolioRow struct {
+	Portfolio                         *pacta.Portfolio
+	PortfolioGroupMembershipGroupID   pacta.PortfolioGroupID
+	PortfolioGroupMembershipCreatedAt time.Time
+}
+
+func rowToPortfolioRow(row rowScanner) (*portfolioRow, error) {
+	p := &portfolioRow{Portfolio: &pacta.Portfolio{Owner: &pacta.Owner{}, Blob: &pacta.Blob{}}}
 	hd := pgtype.Timestamptz{}
+	mid := pgtype.Text{}
+	mca := pgtype.Timestamptz{}
 	err := row.Scan(
-		&p.ID,
-		&p.Owner.ID,
-		&p.Name,
-		&p.Description,
-		&p.CreatedAt,
+		&p.Portfolio.ID,
+		&p.Portfolio.Owner.ID,
+		&p.Portfolio.Name,
+		&p.Portfolio.Description,
+		&p.Portfolio.CreatedAt,
 		&hd,
-		&p.Blob.ID,
-		&p.AdminDebugEnabled,
-		&p.NumberOfRows,
+		&p.Portfolio.Blob.ID,
+		&p.Portfolio.AdminDebugEnabled,
+		&p.Portfolio.NumberOfRows,
+		&mid,
+		&mca,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("scanning into portfolio: %w", err)
+		return nil, fmt.Errorf("scanning into portfolio row: %w", err)
 	}
-	p.HoldingsDate, err = decodeHoldingsDate(hd)
+	p.Portfolio.HoldingsDate, err = decodeHoldingsDate(hd)
 	if err != nil {
 		return nil, fmt.Errorf("decoding holdings date: %w", err)
+	}
+	if mid.Valid {
+		p.PortfolioGroupMembershipGroupID = pacta.PortfolioGroupID(mid.String)
+		p.PortfolioGroupMembershipCreatedAt = mca.Time
 	}
 	return p, nil
 }
 
-func rowsToPortfolios(rows pgx.Rows) ([]*pacta.Portfolio, error) {
-	return mapRows("portfolio", rows, rowToPortfolio)
+func rowsToPortfolios(rows pgx.Rows) (map[pacta.PortfolioID]*pacta.Portfolio, error) {
+	prows, err := mapRows("portfolio", rows, rowToPortfolioRow)
+	if err != nil {
+		return nil, fmt.Errorf("translating rows to portfolios: %w", err)
+	}
+	result := make(map[pacta.PortfolioID]*pacta.Portfolio)
+	for _, row := range prows {
+		id := row.Portfolio.ID
+		if _, ok := result[id]; !ok {
+			result[id] = row.Portfolio
+		}
+		if row.PortfolioGroupMembershipGroupID != "" {
+			result[id].MemberOf = append(result[id].MemberOf, &pacta.PortfolioGroupMembership{
+				PortfolioGroup: &pacta.PortfolioGroup{
+					ID: row.PortfolioGroupMembershipGroupID,
+				},
+				CreatedAt: row.PortfolioGroupMembershipCreatedAt,
+			})
+		}
+	}
+	return result, nil
 }
 
 func (db *DB) putPortfolio(tx db.Tx, p *pacta.Portfolio) error {
