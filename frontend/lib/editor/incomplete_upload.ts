@@ -1,75 +1,60 @@
 import { type IncompleteUpload } from '@/openapi/generated/pacta'
-import { Validation, type EditorFieldsFor, type EditorComputedValues } from './common'
-import { getEditorComputedValues } from './utils'
+import { Validation, type EditorFieldsFor, type EditorValuesFor, type EditorComputedValues } from './common'
+import { getEditorComputedValues, type Translation } from './utils'
 
-export type EditorIncompleteUpload = EditorFieldsFor<IncompleteUpload>
+export type EditorIncompleteUploadFields = EditorFieldsFor<IncompleteUpload>
+export type EditorIncompleteUploadValues = EditorValuesFor<IncompleteUpload>
 
-const createEditorIncompleteUpload = (incompleteUpload: IncompleteUpload): EditorIncompleteUpload => {
+const createEditorIncompleteUploadFields = (translation: Translation): EditorIncompleteUploadFields => {
+  const tt = (key: string) => translation.t(`lib/editor/incomplete_upload/${key}`)
   return {
     id: {
       name: 'id',
-      label: 'ID',
-      originalValue: incompleteUpload.id,
-      currentValue: incompleteUpload.id,
+      label: tt('ID'),
     },
     name: {
       name: 'name',
-      label: 'Name',
+      label: tt('Name'),
       validation: [Validation.NotEmpty],
-      originalValue: incompleteUpload.name,
-      currentValue: incompleteUpload.name,
+      helpText: tt('The name of this uploaded source file.'),
     },
     description: {
       name: 'description',
-      label: 'Description',
-      originalValue: incompleteUpload.description,
-      currentValue: incompleteUpload.description,
+      label: tt('The description of this upload - helpful for record keeping, not used for anything.'),
+      helpText: tt('DescriptionHelpText'),
     },
     adminDebugEnabled: {
       name: 'adminDebugEnabled',
-      label: 'Admin Debugging Enabled',
-      originalValue: incompleteUpload.adminDebugEnabled,
-      currentValue: incompleteUpload.adminDebugEnabled,
+      label: tt('Admin Debugging Enabled'),
+      helpText: tt('When enabled, this upload can be accessed by administrators to help with debugging. Only turn this on if you\'re comfortable with system administrators accessing this data.'),
     },
     holdingsDate: {
       name: 'holdingsDate',
-      label: 'Holdings Date',
-      originalValue: incompleteUpload.holdingsDate,
-      currentValue: incompleteUpload.holdingsDate,
+      label: tt('Holdings Date'),
     },
     createdAt: {
       name: 'createdAt',
-      label: 'Created At',
-      originalValue: incompleteUpload.createdAt,
-      currentValue: incompleteUpload.createdAt,
+      label: tt('Created At'),
     },
     ranAt: {
       name: 'ranAt',
-      label: 'Ran At',
-      originalValue: incompleteUpload.ranAt,
-      currentValue: incompleteUpload.ranAt,
+      label: tt('Ran At'),
     },
     completedAt: {
       name: 'completedAt',
-      label: 'Completed At',
-      originalValue: incompleteUpload.completedAt,
-      currentValue: incompleteUpload.completedAt,
+      label: tt('Completed At'),
     },
     failureMessage: {
       name: 'failureMessage',
-      label: 'Failure Message',
-      originalValue: incompleteUpload.failureMessage,
-      currentValue: incompleteUpload.failureMessage,
+      label: tt('Failure Message'),
     },
     failureCode: {
       name: 'failureCode',
-      label: 'Failure Code',
-      originalValue: incompleteUpload.failureCode,
-      currentValue: incompleteUpload.failureCode,
+      label: tt('Failure Code'),
     },
   }
 }
 
-export const incompleteUploadEditor = (i: IncompleteUpload): EditorComputedValues<IncompleteUpload> => {
-  return getEditorComputedValues(`lib/editor/incompleteUpload[${i.id}]`, i, createEditorIncompleteUpload)
+export const incompleteUploadEditor = (i: IncompleteUpload, translation: Translation): EditorComputedValues<IncompleteUpload> => {
+  return getEditorComputedValues(`lib/editor/incompleteUpload[${i.id}]`, i, createEditorIncompleteUploadFields, translation)
 }

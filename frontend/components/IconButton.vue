@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
   tooltipClass: undefined,
   offlineSafe: undefined,
 })
-const tt = computed(() => {
+const tooltip = computed(() => {
   const result = { value: props.alt, class: props.tooltipClass }
   return result
 })
@@ -22,7 +22,7 @@ const tt = computed(() => {
 
 <template>
   <PVButton
-    v-tooltip="tt"
+    v-tooltip="tooltip"
     :icon="props.icon"
     :aria-label="props.alt"
     :class="props.buttonClass"

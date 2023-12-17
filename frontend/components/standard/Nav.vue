@@ -12,7 +12,7 @@ const { getMaybeMe } = useSession()
 
 const { isAdmin, maybeMe } = await getMaybeMe()
 
-const prefix = 'StandardNav'
+const prefix = 'components/standard/Nav'
 const tt = (s: string) => t(`${prefix}.${s}`)
 const menuHidden = useState<boolean>(`${prefix}.menuHidden`, () => false)
 

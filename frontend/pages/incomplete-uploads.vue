@@ -4,6 +4,7 @@ import { incompleteUploadEditor } from '@/lib/editor'
 const { humanReadableTimeFromStandardString } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
+const i18n = useI18n()
 
 const prefix = 'pages/portfolios'
 const expandedRows = useState(`${prefix}.expandedRows`, () => [])
@@ -14,7 +15,7 @@ const [
   useSimpleAsyncData(`${prefix}.incompleteUploads`, () => pactaClient.listIncompleteUploads()),
 ])
 
-let editorObjects = data.value.items.map((item) => ({ ...incompleteUploadEditor(item), id: item.id }))
+let editorObjects = data.value.items.map((item) => ({ ...incompleteUploadEditor(item, i18n), id: item.id }))
 
 const deleteIncompleteUpload = (id: string) => withLoading(
   () => pactaClient.deleteIncompleteUpload(id).then(() => {
@@ -29,7 +30,7 @@ const saveChanges = (id: string) => {
     () => pactaClient.updateIncompleteUpload(id, eo.changes.value)
       .then(() => pactaClient.findIncompleteUploadById(id))
       .then((incompleteUpload) => {
-        editorObjects[index] = { ...incompleteUploadEditor(incompleteUpload), id }
+        editorObjects[index] = { ...incompleteUploadEditor(incompleteUpload, i18n), id }
       }),
     `${prefix}.saveChanges`,
   )
@@ -71,16 +72,16 @@ const deleteAll = () => withLoading(
       class="incomplete-upload-table"
     >
       <PVColumn
-        field="editorObject.value.createdAt.originalValue"
+        field="editorValues.value.createdAt.originalValue"
         header="Created At"
         sortable
       >
         <template #body="slotProps">
-          {{ humanReadableTimeFromStandardString(slotProps.data.editorObject.value.createdAt.originalValue).value }}
+          {{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}
         </template>
       </PVColumn>
       <PVColumn
-        field="editorObject.value.name.originalValue"
+        field="editorValues.value.name.originalValue"
         sortable
         header="Name"
       />
@@ -98,23 +99,23 @@ const deleteAll = () => withLoading(
           <div class="flex flex-column gap-2 w-fit">
             <div class="flex gap-2 justify-content-between">
               <span>Created At</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorObject.value.createdAt.originalValue).value }}</b>
+              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Ran At</span>
-              <b>{{ slotProps.data.editorObject.value.ranAt.originalValue ? humanReadableTimeFromStandardString(slotProps.data.editorObject.value.ranAt.originalValue).value : 'N/A' }}</b>
+              <b>{{ slotProps.data.editorValues.value.ranAt.originalValue ? humanReadableTimeFromStandardString(slotProps.data.editorValues.value.ranAt.originalValue).value : 'N/A' }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Completed At</span>
-              <b>{{ slotProps.data.editorObject.value.completedAt.originalValue ? humanReadableTimeFromStandardString(slotProps.data.editorObject.value.completedAt.originalValue).value : 'N/A' }}</b>
+              <b>{{ slotProps.data.editorValues.value.completedAt.originalValue ? humanReadableTimeFromStandardString(slotProps.data.editorValues.value.completedAt.originalValue).value : 'N/A' }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Failure Code</span>
-              <b>{{ slotProps.data.editorObject.value.failureCode.originalValue ?? 'N/A' }}</b>
+              <b>{{ slotProps.data.editorValues.value.failureCode.originalValue ?? 'N/A' }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Failure Message</span>
-              <b>{{ slotProps.data.editorObject.value.failureMessage.originalValue ?? 'N/A' }}</b>
+              <b>{{ slotProps.data.editorValues.value.failureMessage.originalValue ?? 'N/A' }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>ID</span>
@@ -124,7 +125,10 @@ const deleteAll = () => withLoading(
           <h2 class="mt-5">
             Editable Properties
           </h2>
-          <IncompleteuploadEditor v-model:editor-incomplete-upload="slotProps.data.editorObject.value" />
+          <IncompleteuploadEditor
+            v-model:editor-values="slotProps.data.editorValues.value"
+            :editor-fields="slotProps.data.editorFields.value"
+          />
           <div class="flex gap-3 justify-content-between">
             <PVButton
               icon="pi pi-trash"
@@ -143,8 +147,12 @@ const deleteAll = () => withLoading(
             </div>
           </div>
           <StandardDebug
-            :value="slotProps.data.editorObject.value"
-            label="Incomplete Upload"
+            :value="slotProps.data.editorFields.value"
+            label="Editor Fields"
+          />
+          <StandardDebug
+            :value="slotProps.data.editorValues.value"
+            label="EditorValues"
           />
         </div>
       </template>

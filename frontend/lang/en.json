@@ -1,112 +1,122 @@
+
 {
-    "CopyToClipboardButton": {
-        "Copied": "Copied to Clipboard!"
-    },
-    "FormField": {
-        "Required": "Required",
-        "Loading": "Loading..."
-    },
-    "InitiativeToolbar": {
-        "Initiative Home": "Initiative Home",
-        "Edit": "Edit",
-        "Invitations": "Invitations",
-        "Relationships": "Relationships",
-        "Internal Information": "Internal Information",
-    },
-    "LocaleSelector": {
-        "Availabile In": "This site is available in:",
-        "Bottom Right": "You can change the language at any time in the bottom right corner of the page. ↘️"
-    },
-    "ModalError": {
-        "Heading": "An error occurred",
-        "Subheading": "Sorry about that, our team take bug reports seriously, and will try to make it right!",
-        "Error Details": "Error Details",
-        "Common Steps": "Some common troubleshooting steps that might be helpful:",
-        "Refresh": "Refresh this page",
-        "Refresh Explanation": "most of our pages save your progress as you go, so it's almost always fine to reload the page.",
-        "Connection": "Check your internet connection",
-        "Connection Explanation": "this site requires connection to the internet for most functionality.",
-        "Desktop": "Visit this site on a desktop computer",
-        "Desktop Explanation": "this site works best on desktop web browsers.",
-        "If Persists": "If this issue persists, please report this issue by",
-        "File a Bug": "filing a bug in the PACTA repository"
-    },
-    "ModalFakeUsers": {
-        "Heading": "Fake Users",
-        "Subheading": "Quickly switch between profiles for testing.",
-        "Description": "Microsoft Active Directory doesn't allow us to programatically log in as other users, so you will need to manually log in as one of the users below. These are only in the Local environment (for now).",
-        "Email": "Email",
-        "Password": "Password",
-        "Sign Out": "Sign Out",
-        "Sign In": "Sign In",
-        "Copy": "Copy"
-    },
-    "ModalPermissionDenied": {
-        "Heading": "Permission Denied",
-        "Subheading": "You aren't authorized to view this page",
-        "How You Got Here": "It is likely that you have gotten here either by entering in an invalid URL, or by clicking on a link or button that is not set up correctly.",
-        "Email Us": "If you think this is a bug (something that you should have access to), or if you want to let us know how you got here, please email us at",
-        "Technical Error": "Technical Error"
-    },
-    "StandardDebug": {
-        "Debugging Information": "Debugging Information"
-    },
-    "StandardFooter": {
-        "A project of": "A project of",
-        "File a Bug": "File a Bug",
-        "Terms of Use": "Terms of Use",
-        "Privacy": "Privacy",
-        "About": "About",
-        "Manage Fake Users": "Manage Fake Users",
-        "Toggle Debug Info": "Toggle Debug Info",
-        "Dev Tools": "Dev Tools"
-    },
-    "StandardNav": {
-        "Home": "Home",
-        "Admin": "Admin",
-        "My Stuff": "My Stuff",
-        "Sign Out": "Sign Out",
-        "Sign In": "Sign In"
-    },
-    "UserEditor": {
-        "The name that will be associated with": "The name that will be associated with ",
-        "you": "your public activities on the platform",
-        "this user": "this user's public activities on the platform",
-        "may be public": "Note that this name may be accessible to a public audience.",
-        "language help text": "What language should platform freatures that support internationalization default to for this user?",
-        "admin help text": "If enabled, this user will have administrator priveledges.",
-        "is admin": "Is an Administrator",
-        "is not admin": "Is not an Administrator",
-        "super admin help text": "If enabled, this user will have super-administrator priveledges.",
-        "is super admin": "Is a Super Administrator",
-        "is not super admin": "Is not a Super Administrator"
-    },
-    "UserToolbar": {
-        "Profile": "Profile",
-        "Edit": "Edit"
-    },
-    "initiative/invitations": {
-        "Heading": "Initaitive Invitations",
-        "No Invitations": "This initiative does not require an invitation to join - anyone who finds this initiative can join it.",
-        "Yes Invitations": "This initiative requires an invitation (a unique, one-time code) to join. You can create these invitations below.",
-        "You can change": "You can change this behavior on the",
-        "edit initiative page": "edit initiative page",
-        "Create Initiative Invitations": "Create Initiative Invitations",
-        "New Invitations": "New Invitations",
-        "New Invitations Help": "Create new invitations by clicking the button below. You can create as many invitations as you want, but each invitation can only be used once. Invitation codes must only contain alphanumeric characters (a-z, A-Z, 0-9), underscores and dashes. You can create multiple invitations at once by separating them with tabs, commas, newlines, or spaces.",
-        "Create": "Create",
-        "Unused": "Unused",
-        "Includes Illegal Characters": "Includes illegal characters"
-    },
-    "pages/join": {
-        "Join Initiative:": "Join Initiative:",
-        "You've been invited to join an initiative": "You've been invited to join an initiative",
-        "You can learn more about the initiative here.": "You can learn more about the initiative here.",
-        "if-accept": "If you accept this invitation, you'll be able to add your portfolios to the project, where they will be included in aggregated analysis. You aren't required to accept this invitation if you just want to run the analysis on your own, but joining the initiative may enable you to access internal benefits, like the ability to see the analysis results from the aggregated portfolios.",
-        "what-shared": "If you accept X, Y, Z will be whared with the initiative administrators, but A, B, C will not be.",
-        "do-accept": "Do you want to accept this invitation?",
-        "Not Now": "Not Now",
-        "Accept Invitation": "Accept Invitation",
-        "This invitation has already been used.": "This invitation has already been used.",
-    }
+  "UserToolbar": {},
+  "components/CopyToClipboardButton": {
+    "Copied": "Copied"
+  },
+  "components/DownloadButton": {
+    "Downloaded": "Downloaded"
+  },
+  "components/form/Field": {
+    "Loading": "Loading...",
+    "Required": "Required"
+  },
+  "components/initiative/Toolbar": {
+    "Edit": "Edit",
+    "Initiative Home": "Initiative Home",
+    "Internal Information": "Internal Information",
+    "Invitations": "Invitations",
+    "Relationships": "Relationships"
+  },
+  "components/locale/Selector": {
+    "Availabile In": "This site is available in:",
+    "Bottom Right": "You can change the language at any time in the bottom right corner of the page. ↘️"
+  },
+  "components/modal/Error": {
+    "Common Steps": "Some common troubleshooting steps that might be helpful:",
+    "Connection": "Check your internet connection",
+    "Connection Explanation": "this site requires connection to the internet for most functionality.",
+    "Desktop": "Visit this site on a desktop computer",
+    "Desktop Explanation": "this site works best on desktop web browsers.",
+    "Error Details": "Error Details",
+    "File a Bug": "filing a bug in the PACTA repository",
+    "Heading": "An error occurred",
+    "If Persists": "If this issue persists, please report this issue by",
+    "Refresh": "Refresh this page",
+    "Refresh Explanation": "most of our pages save your progress as you go, so it's almost always fine to reload the page.",
+    "Subheading": "Sorry about that, our team take bug reports seriously, and will try to make it right!"
+  },
+  "components/modal/FakeUsers": {
+    "Copy": "Copy",
+    "Description": "Microsoft Active Directory doesn't allow us to programatically log in as other users, so you will need to manually log in as one of the users below. These are only in the Local environment (for now).",
+    "Email": "Email",
+    "Heading": "Fake Users",
+    "Password": "Password",
+    "Sign In": "Sign In",
+    "Sign Out": "Sign Out",
+    "Subheading": "Quickly switch between profiles for testing."
+  },
+  "components/modal/MissingTranslations": {
+    "Copy to Clipboard": "Copy to Clipboard",
+    "Download File": "Download File"
+  },
+  "components/modal/PermissionDenied": {
+    "Email Us": "If you think this is a bug (something that you should have access to), or if you want to let us know how you got here, please email us at",
+    "Heading": "Permission Denied",
+    "How You Got Here": "It is likely that you have gotten here either by entering in an invalid URL, or by clicking on a link or button that is not set up correctly.",
+    "Subheading": "You aren't authorized to view this page",
+    "Technical Error": "Technical Error"
+  },
+  "components/standard/Debug": {
+    "Debugging Information": "Debugging Information"
+  },
+  "components/standard/Footer": {
+    "A project of": "A project of",
+    "About": "About",
+    "Dev Tools": "Dev Tools",
+    "File a Bug": "File a Bug",
+    "Manage Fake Users": "Manage Fake Users",
+    "Missing Translations": "Missing Translations",
+    "Privacy": "Privacy",
+    "Terms of Use": "Terms of Use",
+    "Toggle Debug Info": "Toggle Debug Info"
+  },
+  "components/standard/Nav": {
+    "Admin": "Admin",
+    "Home": "Home",
+    "My Stuff": "My Stuff",
+    "Sign In": "Sign In",
+    "Sign Out": "Sign Out"
+  },
+  "components/user/Editor": {
+    "The name that will be associated with": "The name that will be associated with ",
+    "admin help text": "If enabled, this user will have administrator priveledges.",
+    "is admin": "Is an Administrator",
+    "is not admin": "Is not an Administrator",
+    "is not super admin": "Is not a Super Administrator",
+    "is super admin": "Is a Super Administrator",
+    "language help text": "What language should platform freatures that support internationalization default to for this user?",
+    "may be public": "Note that this name may be accessible to a public audience.",
+    "super admin help text": "If enabled, this user will have super-administrator priveledges.",
+    "this user": "this user's public activities on the platform",
+    "you": "your public activities on the platform"
+  },
+  "components/user/Toolbar": {
+    "Edit": "Edit",
+    "Profile": "Profile"
+  },
+  "initiative/invitations": {
+    "Create": "Create",
+    "Create Initiative Invitations": "Create Initiative Invitations",
+    "Heading": "Initaitive Invitations",
+    "Includes Illegal Characters": "Includes illegal characters",
+    "New Invitations": "New Invitations",
+    "New Invitations Help": "Create new invitations by clicking the button below. You can create as many invitations as you want, but each invitation can only be used once. Invitation codes must only contain alphanumeric characters (a-z, A-Z, 0-9), underscores and dashes. You can create multiple invitations at once by separating them with tabs, commas, newlines, or spaces.",
+    "No Invitations": "This initiative does not require an invitation to join - anyone who finds this initiative can join it.",
+    "Unused": "Unused",
+    "Yes Invitations": "This initiative requires an invitation (a unique, one-time code) to join. You can create these invitations below.",
+    "You can change": "You can change this behavior on the",
+    "edit initiative page": "edit initiative page"
+  },
+  "pages/join": {
+    "Accept Invitation": "Accept Invitation",
+    "Join Initiative:": "Join Initiative:",
+    "Not Now": "Not Now",
+    "This invitation has already been used.": "This invitation has already been used.",
+    "You can learn more about the initiative here.": "You can learn more about the initiative here.",
+    "You've been invited to join an initiative": "You've been invited to join an initiative",
+    "do-accept": "Do you want to accept this invitation?",
+    "if-accept": "If you accept this invitation, you'll be able to add your portfolios to the project, where they will be included in aggregated analysis. You aren't required to accept this invitation if you just want to run the analysis on your own, but joining the initiative may enable you to access internal benefits, like the ability to see the analysis results from the aggregated portfolios.",
+    "what-shared": "If you accept X, Y, Z will be whared with the initiative administrators, but A, B, C will not be."
+  }
 }

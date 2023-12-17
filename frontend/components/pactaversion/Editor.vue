@@ -1,45 +1,51 @@
 <script setup lang="ts">
-import { type EditorPactaVersion } from '@/lib/editor'
+import {
+  type EditorPactaVersionFields as EditorFields,
+  type EditorPactaVersionValues as EditorValues,
+} from '@/lib/editor'
 
 interface Props {
-  editorPactaVersion: EditorPactaVersion
+  editorFields: EditorFields
+  editorValues: EditorValues
 }
 interface Emits {
-  (e: 'update:editorPactaVersion', epv: EditorPactaVersion): void
+  (e: 'update:editorValues', evs: EditorValues): void
 }
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
-const epv = computed({
-  get: () => props.editorPactaVersion,
-  set: (epv) => { emit('update:editorPactaVersion', epv) },
+
+const efs = computed(() => props.editorFields)
+const evs = computed({
+  get: () => props.editorValues,
+  set: (evs) => { emit('update:editorValues', evs) },
 })
 </script>
 
 <template>
   <div>
     <FormEditorField
-      :editor-field="epv.name"
-      help-text="The name of the version of the PACTA algorithm."
+      :editor-field="efs.name"
+      :editor-value="evs.name"
     >
       <PVInputText
-        v-model="epv.name.currentValue"
+        v-model="evs.name.currentValue"
       />
     </FormEditorField>
     <FormEditorField
-      :editor-field="epv.description"
-      help-text="An optional description of this version of the PACTA algorithm."
+      :editor-field="efs.description"
+      :editor-value="evs.description"
     >
       <PVTextarea
-        v-model="epv.description.currentValue"
+        v-model="evs.description.currentValue"
         auto-resize
       />
     </FormEditorField>
     <FormEditorField
-      :editor-field="epv.digest"
-      help-text="The SHA hash of the docker image that should correspond to this version of the PACTA version."
+      :editor-field="efs.digest"
+      :editor-value="evs.digest"
     >
       <PVInputText
-        v-model="epv.digest.currentValue"
+        v-model="evs.digest.currentValue"
       />
     </FormEditorField>
   </div>

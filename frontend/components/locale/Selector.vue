@@ -19,7 +19,7 @@ const locales = computed<Option[]>(() => baseLocales.value as Option[])
 const locale = computed<Option>(
   () => presentOrFileBug(locales.value.find(o => o.code === baseLocale.value)))
 
-const prefix = 'LocaleSelector'
+const prefix = 'components/locale/Selector'
 const tt = (s: string) => t(`${prefix}.${s}`)
 const visible = useState<boolean>(`${prefix}.visible`, () => false)
 

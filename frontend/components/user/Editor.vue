@@ -1,70 +1,65 @@
 <script setup lang="ts">
-import { type EditorUser } from '@/lib/editor'
+import {
+  type EditorUserFields as EditorFields,
+  type EditorUserValues as EditorValues,
+} from '@/lib/editor'
+
+const prefix = 'components/user/Editor'
 
 const { t } = useI18n()
-const { getMaybeMe } = useSession()
-const { maybeMe } = await getMaybeMe()
+const tt = (key: string) => t(`${prefix}.${key}`)
 
 interface Props {
-  editorUser: EditorUser
+  editorValues: EditorValues
+  editorFields: EditorFields
 }
 interface Emits {
-  (e: 'update:editorUser', eu: EditorUser): void
+  (e: 'update:editorValues', evs: EditorValues): void
 }
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const prefix = 'UserEditor'
-const tt = (key: string) => t(`${prefix}.${key}`)
-
-const eu = computed({
-  get: () => props.editorUser,
-  set: (eu) => { emit('update:editorUser', eu) },
-})
-const isMe = computed(() => maybeMe.value?.id === eu.value.id.currentValue)
-const profileDescription = computed(() => isMe.value ? tt('you') : tt('this user'))
-const nameHelpText = computed(() => {
-  const pd = profileDescription.value
-  const pre = tt('The name that will be associated with')
-  const post = tt('may be public')
-  return `${pre} ${pd}. ${post}`
+const efs = computed(() => props.editorFields)
+const evs = computed({
+  get: () => props.editorValues,
+  set: (evs) => { emit('update:editorValues', evs) },
 })
 </script>
 
 <template>
   <div>
     <FormEditorField
-      :editor-field="eu.name"
-      :help-text="nameHelpText"
+      :editor-field="efs.name"
+      :editor-value="evs.name"
     >
       <PVInputText
-        v-model="eu.name.currentValue"
+        v-model="evs.name.currentValue"
       />
     </FormEditorField>
     <FormEditorField
-      :editor-field="eu.preferredLanguage"
-      :help-text="tt('language help text')"
+      :editor-field="efs.preferredLanguage"
+      :editor-value="evs.preferredLanguage"
     >
       <LanguageSelector
-        v-model:value="eu.preferredLanguage.currentValue"
+        v-model:value="evs.preferredLanguage.currentValue"
       />
     </FormEditorField>
     <FormEditorField
-      :help-text="tt('admin help text')"
-      :editor-field="eu.admin"
+      :editor-field="efs.admin"
+      :editor-value="evs.admin"
     >
       <ExplicitInputSwitch
-        v-model:value="eu.admin.currentValue"
+        v-model:value="evs.admin.currentValue"
         :on-label="tt('is admin')"
         :off-label="tt('is not admin')"
       />
     </FormEditorField>
     <FormEditorField
-      :help-text="tt('super admin help text')"
-      :editor-field="eu.superAdmin"
+      :editor-field="efs.superAdmin"
+      :editor-value="evs.superAdmin"
     >
       <ExplicitInputSwitch
-        v-model:value="eu.superAdmin.currentValue"
+        v-model:value="evs.superAdmin.currentValue"
         :on-label="tt('is super admin')"
         :off-label="tt('is not super admin')"
       />

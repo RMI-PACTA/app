@@ -7,13 +7,10 @@ const prefix = 'admin/initiative/new'
 const router = useRouter()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
+const i18n = useI18n()
+const { t } = i18n
 
-const {
-  editorObject: editorInitiative,
-  currentValue: initiative,
-  saveTooltip,
-  canSave,
-} = initiativeEditor({
+const defaultInitiative = {
   id: '',
   name: '',
   affiliation: '',
@@ -25,26 +22,35 @@ const {
   language: Initiative.language.EN,
   pactaVersion: undefined,
   createdAt: '',
-})
+}
+const {
+  editorFields,
+  editorValues,
+  currentValue: initiative,
+  saveTooltip,
+  canSave,
+} = initiativeEditor(defaultInitiative, i18n)
 const discard = () => router.push(localePath('/admin/initiative'))
 const save = () => withLoading(
   () => pactaClient.createInitiative(initiative.value).then(() => router.push(localePath('/admin/initiative'))),
   `${prefix}.save`,
 )
+const tt = (key: string) => t(`pages/admin/initiative/new.${key}`)
 </script>
 
 <template>
   <StandardContent>
-    <TitleBar title="New Initiative" />
+    <TitleBar :title="tt('New Initiative')" />
     <p>
-      TODO(#38) Initiative Copy Goes Here
+      TODO(#80) Initiative Copy Goes Here
     </p>
     <InitiativeEditor
-      v-model:editorInitiative="editorInitiative"
+      v-model:editorValues="editorValues"
+      :editor-fields="editorFields"
     />
     <div class="flex gap-3">
       <PVButton
-        label="Discard"
+        :label="tt('Discard')"
         icon="pi pi-arrow-left"
         class="p-button-secondary p-button-outlined"
         @click="discard"
@@ -52,7 +58,7 @@ const save = () => withLoading(
       <div v-tooltip.bottom="saveTooltip">
         <PVButton
           :disabled="!canSave"
-          label="Save"
+          :label="tt('Save')"
           icon="pi pi-arrow-right"
           icon-pos="right"
           @click="save"
@@ -60,8 +66,12 @@ const save = () => withLoading(
       </div>
     </div>
     <StandardDebug
-      label="Editor Initiative"
-      :value="editorInitiative"
+      :value="editorFields"
+      label="Editor Fields"
+    />
+    <StandardDebug
+      :value="editorValues"
+      label="Editor Values"
     />
   </StandardContent>
 </template>

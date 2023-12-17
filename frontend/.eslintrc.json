@@ -41,7 +41,9 @@
     "@typescript-eslint/promise-function-async": 0,
     "@typescript-eslint/prefer-function-type": 0,
     "comma-dangle": "off",
-    "@typescript-eslint/comma-dangle": ["error", "always-multiline" ]
+    "@typescript-eslint/comma-dangle": ["error", "always-multiline" ],
+    "require-await": "off",
+    "@typescript-eslint/require-await": "error"
   },
   "overrides": [
     {

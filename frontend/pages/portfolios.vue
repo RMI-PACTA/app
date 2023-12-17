@@ -7,6 +7,7 @@ const {
 } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
+const i18n = useI18n()
 
 interface EditorObject extends ReturnType<typeof portfolioEditor> {
   id: string
@@ -22,7 +23,7 @@ const [
   useSimpleAsyncData(`${prefix}.portfolios`, () => pactaClient.listPortfolios()),
 ])
 
-let editorObjects = data.value.items.map((item) => ({ ...portfolioEditor(item), id: item.id }))
+let editorObjects = data.value.items.map((item) => ({ ...portfolioEditor(item, i18n), id: item.id }))
 
 const deletePortfolio = (id: string) => withLoading(
   () => pactaClient.deletePortfolio(id).then(() => {
@@ -38,7 +39,7 @@ const saveChanges = (id: string) => {
     () => pactaClient.updatePortfolio(id, eo.changes.value)
       .then(() => pactaClient.findPortfolioById(id))
       .then((portfolio) => {
-        editorObjects[index] = { ...portfolioEditor(portfolio), id }
+        editorObjects[index] = { ...portfolioEditor(portfolio, i18n), id }
       }),
     `${prefix}.saveChanges`,
   )
@@ -61,16 +62,16 @@ const saveChanges = (id: string) => {
     >
       <PVColumn selection-mode="multiple" />
       <PVColumn
-        field="editorObject.value.createdAt.originalValue"
+        field="editorValues.value.createdAt.originalValue"
         header="Created At"
         sortable
       >
         <template #body="slotProps">
-          {{ humanReadableTimeFromStandardString(slotProps.data.editorObject.value.createdAt.originalValue).value }}
+          {{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}
         </template>
       </PVColumn>
       <PVColumn
-        field="editorObject.value.name.originalValue"
+        field="editorValues.value.name.originalValue"
         sortable
         header="Name"
       />
@@ -88,21 +89,24 @@ const saveChanges = (id: string) => {
           <div class="flex flex-column gap-2 w-fit">
             <div class="flex gap-2 justify-content-between">
               <span>Created At</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorObject.value.createdAt.originalValue).value }}</b>
+              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Number of Rows</span>
-              <b>{{ slotProps.data.editorObject.value.numberOfRows.originalValue }}</b>
+              <b>{{ slotProps.data.editorValues.value.numberOfRows.originalValue }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Holdings Date</span>
-              <b>{{ humanReadableDateFromStandardString(slotProps.data.editorObject.value.holdingsDate.originalValue.time).value }}</b>
+              <b>{{ humanReadableDateFromStandardString(slotProps.data.editorValues.value.holdingsDate.originalValue.time).value }}</b>
             </div>
           </div>
           <h2 class="mt-5">
             Editable Properties
           </h2>
-          <PortfolioEditor v-model:editor-portfolio="slotProps.data.editorObject.value" />
+          <PortfolioEditor
+            v-model:editor-values="slotProps.data.editorValues.value"
+            :editor-fields="slotProps.data.editorFields"
+          />
           <div class="flex gap-3 justify-content-between">
             <PVButton
               icon="pi pi-trash"
@@ -121,8 +125,12 @@ const saveChanges = (id: string) => {
             </div>
           </div>
           <StandardDebug
-            :value="slotProps.data.editorObject.value"
-            label="Portfolio Upload"
+            :value="slotProps.data.editorFields.value"
+            label="Editor Fields"
+          />
+          <StandardDebug
+            :value="slotProps.data.editorValues.value"
+            label="Editor Values"
           />
         </div>
       </template>

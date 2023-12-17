@@ -3,7 +3,7 @@ export const useTime = () => {
   const defaultLocale = 'en-US'
   const locale = computed(() => i18nLocale.value || defaultLocale)
 
-  const prefix = 'useTime'
+  const prefix = 'composables/useTime'
   const tt = (key: string) => t(`${prefix}.${key}`)
 
   const humanReadableDateLong = (t: Date): ComputedRef<string> => {

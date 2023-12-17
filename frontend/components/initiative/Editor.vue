@@ -1,110 +1,119 @@
 <script setup lang="ts">
-import { type EditorInitiative } from '@/lib/editor'
+import {
+  type EditorInitiativeFields as EditorFields,
+  type EditorInitiativeValues as EditorValues,
+} from '@/lib/editor'
+
+const prefix = 'components/initiative/Editor'
+const { t } = useI18n()
+const tt = (key: string) => t(`${prefix}.${key}`)
 
 interface Props {
-  editorInitiative: EditorInitiative
+  editorFields: EditorFields
+  editorValues: EditorValues
 }
 interface Emits {
-  (e: 'update:editorInitiative', ei: EditorInitiative): void
+  (e: 'update:editorValues', evs: EditorValues): void
 }
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const model = computed({
-  get: () => props.editorInitiative,
-  set: (editorInitiative: EditorInitiative) => { emit('update:editorInitiative', editorInitiative) },
+const efs = computed(() => props.editorFields)
+const evs = computed({
+  get: () => props.editorValues,
+  set: (evs) => { emit('update:editorValues', evs) },
 })
 </script>
 
 <template>
   <div>
     <FormEditorField
-      help-text="The name of the PACTA initiative."
-      :editor-field="model.name"
+      :editor-field="efs.name"
+      :editor-value="evs.name"
     >
       <PVInputText
-        v-model="model.name.currentValue"
+        v-model="evs.name.currentValue"
       />
     </FormEditorField>
     <FormEditorField
-      help-text="This is the immutable unique identifier for the initiative. It can only contain alphanumeric characters, underscores, and dashes. This value will be shown in URLs, but will typically not be user visible."
-      :editor-field="model.id"
+      :editor-field="efs.id"
+      :editor-value="evs.id"
     >
       <PVInputText
-        v-model="model.id.currentValue"
-        :disabled="!!model.id.originalValue"
+        v-model="evs.id.currentValue"
+        :disabled="!!evs.id.originalValue"
       />
     </FormEditorField>
     <FormEditorField
-      help-text="An optional description of the organization or entity that is hosting this initiative."
-      :editor-field="model.affiliation"
+      :editor-field="efs.affiliation"
+      :editor-value="evs.affiliation"
     >
       <PVInputText
-        v-model="model.affiliation.currentValue"
+        v-model="evs.affiliation.currentValue"
       />
     </FormEditorField>
     <FormEditorField
-      help-text="The description of the initiative that will be shown to the public. Newlines will be respected."
-      :editor-field="model.publicDescription"
+      :editor-field="efs.publicDescription"
+      :editor-value="evs.publicDescription"
     >
       <PVTextarea
-        v-model="model.publicDescription.currentValue"
+        v-model="evs.publicDescription.currentValue"
         auto-resize
       />
     </FormEditorField>
     <FormEditorField
-      help-text="The description of the initiative that will be shown to members of the inititiative. Newlines will be respected."
-      :editor-field="model.internalDescription"
+      :editor-field="efs.internalDescription"
+      :editor-value="evs.internalDescription"
     >
       <PVTextarea
-        v-model="model.internalDescription.currentValue"
+        v-model="evs.internalDescription.currentValue"
         auto-resize
       />
     </FormEditorField>
     <FormEditorField
-      help-text="When disabled, anyone can join this initiative. When enabled, initiative administrators can mint invitation codes that they can share with folks to allow them to join the project."
-      :editor-field="model.requiresInvitationToJoin"
+      :editor-field="efs.requiresInvitationToJoin"
+      :editor-value="evs.requiresInvitationToJoin"
     >
       <ExplicitInputSwitch
-        v-model:value="model.requiresInvitationToJoin.currentValue"
-        on-label="Requires Invitation To Join"
-        off-label="Anyone Can Join"
+        v-model:value="evs.requiresInvitationToJoin.currentValue"
+        :on-label="tt('Requires Invitation To Join')"
+        :off-label="tt('Anyone Can Join')"
       />
     </FormEditorField>
     <FormEditorField
-      :editor-field="model.isAcceptingNewMembers"
-      help-text="When enabled, new members can join the project through the joining mechanism selected above."
+      :editor-field="efs.isAcceptingNewMembers"
+      :editor-value="evs.isAcceptingNewMembers"
     >
       <ExplicitInputSwitch
-        v-model:value="model.isAcceptingNewMembers.currentValue"
-        on-label="Accepting New Members"
-        off-label="Closed To New Members"
+        v-model:value="evs.isAcceptingNewMembers.currentValue"
+        :on-label="tt('Accepting New Members')"
+        :off-label="tt('Closed To New Members')"
       />
     </FormEditorField>
     <FormEditorField
-      :editor-field="model.isAcceptingNewPortfolios"
-      help-text="When enabled, initiative members can add new portfolios to the initiative."
+      :editor-field="efs.isAcceptingNewPortfolios"
+      :editor-value="evs.isAcceptingNewPortfolios"
     >
       <ExplicitInputSwitch
-        v-model:value="model.isAcceptingNewPortfolios.currentValue"
-        on-label="Accepting New Portfolios"
-        off-label="Closed To New Portfolios"
+        v-model:value="evs.isAcceptingNewPortfolios.currentValue"
+        :on-label="tt('Accepting New Portfolios')"
+        :off-label="tt('Closed To New Portfolios')"
       />
     </FormEditorField>
     <FormEditorField
-      :editor-field="model.language"
-      help-text="What language should reports have when they are generated for this initiative?"
+      :editor-field="efs.language"
+      :editor-value="evs.language"
     >
       <LanguageSelector
-        v-model:value="model.language.currentValue"
+        v-model:value="evs.language.currentValue"
       />
     </FormEditorField>
     <FormEditorField
-      help-text="What version of the PACTA algorithm should this initiative use to generate reports?"
-      :editor-field="model.pactaVersion"
+      :editor-field="efs.pactaVersion"
+      :editor-value="evs.pactaVersion"
     >
       <PactaversionSelector
-        v-model:value="model.pactaVersion.currentValue"
+        v-model:value="evs.pactaVersion.currentValue"
       />
     </FormEditorField>
   </div>

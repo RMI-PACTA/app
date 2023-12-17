@@ -9,7 +9,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const prefix = 'CopyToClipboardButton'
+const prefix = 'components/CopyToClipboardButton'
 const tt = (key: string) => t(`${prefix}.${key}`)
 
 const statePrefix = `${prefix}[${useStateIDGenerator().id()}]`

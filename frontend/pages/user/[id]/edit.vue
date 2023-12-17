@@ -6,17 +6,19 @@ const { fromParams } = useURLParams()
 const { loading: { withLoading } } = useModal()
 const router = useRouter()
 const localePath = useLocalePath()
+const i18n = useI18n()
 
 const id = presentOrCheckURL(fromParams('id'))
 const prefix = `user/[${id}]`
 
 const { data } = await useSimpleAsyncData(`${prefix}.getUser`, () => pactaClient.findUserById(id))
 const {
-  editorObject: editorUser,
+  editorValues,
+  editorFields,
   changes,
   saveTooltip,
   canSave,
-} = userEditor(presentOrCheckURL(data.value, 'no user in response'))
+} = userEditor(presentOrCheckURL(data.value, 'no user in response'), i18n)
 
 const deleteUser = () => withLoading(
   () => pactaClient.deleteUser(id).then(() => router.push(localePath('/'))),
@@ -31,7 +33,10 @@ const saveChanges = () => withLoading(
 
 <template>
   <div class="flex flex-column gap-3">
-    <UserEditor v-model:editorUser="editorUser" />
+    <UserEditor
+      v-model:editorValues="editorValues"
+      :editor-fields="editorFields"
+    />
     <div class="flex gap-3">
       <PVButton
         icon="pi pi-trash"
@@ -56,8 +61,12 @@ const saveChanges = () => withLoading(
       </div>
     </div>
     <StandardDebug
-      :value="editorUser"
-      label="Editor User"
+      :value="editorFields"
+      label="Editor Fields"
+    />
+    <StandardDebug
+      :value="editorValues"
+      label="Editor Values"
     />
     <StandardDebug
       :value="changes"
