@@ -4,7 +4,7 @@ const router = useRouter()
 const { t } = useI18n()
 const localePath = useLocalePath()
 
-const prefix = 'ModalPermissionDenied'
+const prefix = 'components/modal/PermissionDenied'
 const tt = (s: string) => t(`${prefix}.${s}`)
 
 const navigateBack = () => {

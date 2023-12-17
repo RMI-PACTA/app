@@ -6,17 +6,21 @@ const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
+const i18n = useI18n()
+const { t } = i18n
 
 const id = presentOrCheckURL(fromParams('id'))
 
-const prefix = `admin/initiative/${id}`
+const prefix = `pages/initiative/${id}`
 const { data } = await useSimpleAsyncData(`${prefix}.getInitiative`, () => pactaClient.findInitiativeById(id))
 const {
-  editorObject: editorInitiative,
+  editorValues,
+  editorFields,
   changes,
   saveTooltip,
   canSave,
-} = initiativeEditor(presentOrCheckURL(data.value, 'no initiative in response'))
+} = initiativeEditor(presentOrCheckURL(data.value, 'no initiative in response'), i18n)
+const tt = (key: string) => t(`pages/initiative/id/${key}`)
 
 const deleteInitiative = () => withLoading(
   () => pactaClient.deleteInitiative(id)
@@ -33,13 +37,14 @@ const saveChanges = () => withLoading(
 <template>
   <div class="flex flex-column gap-3">
     <InitiativeEditor
-      v-model:editorInitiative="editorInitiative"
+      v-model:editor-values="editorValues"
+      :editor-fields="editorFields"
     />
     <div class="flex gap-3">
       <PVButton
         icon="pi pi-trash"
         class="p-button-danger"
-        label="Delete"
+        :label="tt('Delete')"
         @click="deleteInitiative"
       />
       <LinkButton
@@ -51,7 +56,7 @@ const saveChanges = () => withLoading(
       <div v-tooltip.bottom="saveTooltip">
         <PVButton
           :disabled="!canSave"
-          label="Save Changes"
+          :label="tt('Save Changes')"
           icon="pi pi-arrow-right"
           icon-pos="right"
           @click="saveChanges"
@@ -59,8 +64,12 @@ const saveChanges = () => withLoading(
       </div>
     </div>
     <StandardDebug
-      :value="editorInitiative"
-      label="Edit Initiative"
+      :value="editorFields"
+      label="Editor Fields"
+    />
+    <StandardDebug
+      :value="editorValues"
+      label="Editor Values"
     />
     <StandardDebug
       :value="changes"

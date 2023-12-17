@@ -6,9 +6,12 @@ const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
+const i18n = useI18n()
+const { t } = i18n
 
 const id = presentOrCheckURL(fromParams('id'))
 
+const tt = (key: string) => t(`pages/admin/pacta-version/id/${key}`)
 const prefix = `admin/pacta-version/${id}`
 const { data, refresh } = await useSimpleAsyncData(
   `${prefix}.getPactaVersion`,
@@ -17,12 +20,13 @@ const { data, refresh } = await useSimpleAsyncData(
 
 const {
   setEditorValue: setPactaVersion,
-  editorObject: editorPactaVersion,
+  editorFields,
+  editorValues,
   changes,
   saveTooltip,
   canSave,
-} = pactaVersionEditor(presentOrCheckURL(data.value, 'no PACTA version in response'))
-const isDefault = computed(() => editorPactaVersion.value.isDefault.currentValue)
+} = pactaVersionEditor(presentOrCheckURL(data.value, 'no PACTA version in response'), i18n)
+const isDefault = computed(() => editorValues.value.isDefault.currentValue)
 
 const refreshPACTA = async () => {
   await refresh()
@@ -48,13 +52,13 @@ const saveChanges = () => withLoading(
 </script>
 
 <template>
-  <StandardContent v-if="editorPactaVersion">
-    <TitleBar :title="`Editing PACTA Version: ${editorPactaVersion.name.currentValue}`" />
+  <StandardContent v-if="editorValues">
+    <TitleBar :title="`${tt('Editing PACTA Version')}: ${editorValues.name.currentValue}`" />
     <div class="flex gap-3">
       <PVButton
         :disabled="isDefault"
         class="p-button-success"
-        :label="isDefault ? 'Default Version' : 'Make Default Version'"
+        :label="isDefault ? tt('Default Version') : tt('Make Default Version')"
         :icon="isDefault ? 'pi pi-check-circle' : 'pi pi-circle'"
         @click="markDefault"
       />
@@ -62,16 +66,17 @@ const saveChanges = () => withLoading(
         :disabled="isDefault"
         icon="pi pi-trash"
         class="p-button-danger"
-        label="Delete"
+        :label="tt('Delete')"
         @click="deletePV"
       />
     </div>
     <PactaversionEditor
-      v-model:editorPactaVersion="editorPactaVersion"
+      v-model:editorValues="editorValues"
+      :editor-fields="editorFields"
     />
     <div class="flex gap-3 align-items-center">
       <LinkButton
-        label="Discard Changes"
+        :label="tt('Discard Changes')"
         icon="pi pi-arrow-left"
         class="p-button-secondary p-button-outlined"
         :to="localePath('/admin/pacta-version')"
@@ -79,7 +84,7 @@ const saveChanges = () => withLoading(
       <div v-tooltip.bottom="saveTooltip">
         <PVButton
           :disabled="!canSave"
-          label="Save Changes"
+          :label="tt('Save Changes')"
           icon="pi pi-arrow-right"
           icon-pos="right"
           @click="saveChanges"
@@ -87,8 +92,12 @@ const saveChanges = () => withLoading(
       </div>
     </div>
     <StandardDebug
-      :value="editorPactaVersion"
-      label="PACTA Version"
+      :value="editorFields"
+      label="Editor Fields"
+    />
+    <StandardDebug
+      :value="editorValues"
+      label="Editor Values"
     />
     <StandardDebug
       :value="changes"

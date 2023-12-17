@@ -6,7 +6,7 @@ const error = useError()
 const router = useRouter()
 const { t } = useI18n()
 
-const prefix = 'ModalError'
+const prefix = 'components/modal/Error'
 const tt = (s: string) => t(`${prefix}.${s}`)
 
 interface Props {

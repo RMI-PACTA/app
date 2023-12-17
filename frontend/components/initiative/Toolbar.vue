@@ -6,7 +6,7 @@ const { t } = useI18n()
 const { getMaybeMe } = useSession()
 const { isAdmin, maybeMe } = await getMaybeMe()
 
-const prefix = 'InitiativeToolbar'
+const prefix = 'components/initiative/Toolbar'
 const tt = (key: string) => t(`${prefix}.${key}`)
 
 interface Props {

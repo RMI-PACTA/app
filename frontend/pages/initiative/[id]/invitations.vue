@@ -9,7 +9,7 @@ const { fromParams } = useURLParams()
 const localePath = useLocalePath()
 const pactaClient = usePACTA()
 
-const tt = (key: string) => t(`initiative/invitations.${key}`)
+const tt = (key: string) => t(`pages/initiative/invitations.${key}`)
 
 const id = presentOrCheckURL(fromParams('id'))
 const prefix = `initiative/${id}/invitations`

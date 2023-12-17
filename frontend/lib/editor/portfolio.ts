@@ -1,57 +1,48 @@
 import { type Portfolio } from '@/openapi/generated/pacta'
-import { Validation, type EditorFieldsFor, type EditorComputedValues } from './common'
-import { getEditorComputedValues } from './utils'
+import { Validation, type EditorFieldsFor, type EditorValuesFor, type EditorComputedValues } from './common'
+import { getEditorComputedValues, type Translation } from './utils'
 
-export type EditorPortfolio = EditorFieldsFor<Portfolio>
+export type EditorPortfolioFields = EditorFieldsFor<Portfolio>
+export type EditorPortfolioValues = EditorValuesFor<Portfolio>
 
-const createEditorPortfolio = (portfolio: Portfolio): EditorPortfolio => {
+const createEditorPortfolioFields = (translation: Translation): EditorPortfolioFields => {
+  const tt = (key: string) => translation.t(`lib/editor/portfolio/${key}`)
   return {
     id: {
       name: 'id',
-      label: 'ID',
-      originalValue: portfolio.id,
-      currentValue: portfolio.id,
+      label: tt('ID'),
     },
     name: {
       name: 'name',
-      label: 'Name',
+      label: tt('Name'),
       validation: [Validation.NotEmpty],
-      originalValue: portfolio.name,
-      currentValue: portfolio.name,
+      helpText: tt('The name of this portfolio.'),
     },
     description: {
       name: 'description',
-      label: 'Description',
-      originalValue: portfolio.description,
-      currentValue: portfolio.description,
+      label: tt('Description'),
+      helpText: tt('The description of this portfolio - helpful for record keeping, not used for anything besides organization.'),
     },
     adminDebugEnabled: {
       name: 'adminDebugEnabled',
-      label: 'Admin Debugging Enabled',
-      originalValue: portfolio.adminDebugEnabled,
-      currentValue: portfolio.adminDebugEnabled,
+      label: tt('Admin Debugging Enabled'),
+      helpText: tt('When enabled, this portfolio can be accessed by administrators to help with debugging. Only turn this on if you\'re comfortable with system administrators accessing this data.'),
     },
     holdingsDate: {
       name: 'holdingsDate',
-      label: 'Holdings Date',
-      originalValue: portfolio.holdingsDate,
-      currentValue: portfolio.holdingsDate,
+      label: tt('Holdings Date'),
     },
     createdAt: {
       name: 'createdAt',
-      label: 'Created At',
-      originalValue: portfolio.createdAt,
-      currentValue: portfolio.createdAt,
+      label: tt('Created At'),
     },
     numberOfRows: {
       name: 'numberOfRows',
-      label: 'Number of Rows',
-      originalValue: portfolio.numberOfRows,
-      currentValue: portfolio.numberOfRows,
+      label: tt('Number of Rows'),
     },
   }
 }
 
-export const portfolioEditor = (i: Portfolio): EditorComputedValues<Portfolio> => {
-  return getEditorComputedValues(`lib/editor/portfolio[${i.id}]`, i, createEditorPortfolio)
+export const portfolioEditor = (i: Portfolio, translation: Translation): EditorComputedValues<Portfolio> => {
+  return getEditorComputedValues(`lib/editor/portfolio[${i.id}]`, i, createEditorPortfolioFields, translation)
 }

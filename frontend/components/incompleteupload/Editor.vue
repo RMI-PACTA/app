@@ -1,48 +1,58 @@
 <script setup lang="ts">
-import { type EditorIncompleteUpload } from '@/lib/editor'
+import {
+  type EditorIncompleteUploadFields as EditorFields,
+  type EditorIncompleteUploadValues as EditorValues,
+} from '@/lib/editor'
+
+const prefix = 'components/incompleteupload/Editor'
+
+const { t } = useI18n()
+const tt = (key: string) => t(`${prefix}.${key}`)
 
 interface Props {
-  editorIncompleteUpload: EditorIncompleteUpload
+  editorValues: EditorValues
+  editorFields: EditorFields
 }
 interface Emits {
-  (e: 'update:editorIncompleteUpload', ei: EditorIncompleteUpload): void
+  (e: 'update:editorValues', evs: EditorValues): void
 }
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const model = computed({
-  get: () => props.editorIncompleteUpload,
-  set: (editorIncompleteUpload: EditorIncompleteUpload) => { emit('update:editorIncompleteUpload', editorIncompleteUpload) },
+const efs = computed(() => props.editorFields)
+const evs = computed({
+  get: () => props.editorValues,
+  set: (editorValues: EditorValues) => { emit('update:editorValues', editorValues) },
 })
 </script>
 
 <template>
   <div>
     <FormEditorField
-      help-text="The name of this uploaded source file."
-      :editor-field="model.name"
+      :editor-field="efs.name"
+      :editor-value="evs.name"
     >
       <PVInputText
-        v-model="model.name.currentValue"
+        v-model="evs.name.currentValue"
       />
     </FormEditorField>
     <FormEditorField
-      help-text="The description of this upload - helpful for record keeping, not used for anything."
-      :editor-field="model.description"
+      :editor-field="efs.description"
+      :editor-value="evs.description"
     >
       <PVTextarea
-        v-model="model.description.currentValue"
+        v-model="evs.description.currentValue"
         auto-resize
       />
     </FormEditorField>
     <FormEditorField
-      help-text="When enabled, this upload can be accessed by administrators to help with debugging. Only turn this on if you're comfortable with system administrators accessing this data."
-      :editor-field="model.adminDebugEnabled"
+      :editor-field="efs.adminDebugEnabled"
+      :editor-value="evs.adminDebugEnabled"
     >
       <ExplicitInputSwitch
-        v-model:value="model.adminDebugEnabled.currentValue"
-        on-label="Administrator Debugging Access Enabled"
-        off-label="No Administrator Access Enabled"
+        v-model:value="evs.adminDebugEnabled.currentValue"
+        :on-label="tt('Administrator Debugging Access Enabled')"
+        :off-label="tt('No Administrator Access Enabled')"
       />
     </FormEditorField>
   </div>

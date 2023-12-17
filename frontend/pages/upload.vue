@@ -7,7 +7,7 @@ const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
 const { t } = useI18n()
 
-const prefix = 'Upload'
+const prefix = 'pages/upload'
 const tt = (key: string) => t(`${prefix}.${key}`)
 
 enum FileStatus {
