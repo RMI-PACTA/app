@@ -19,6 +19,8 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	u2 := userForTestingWithKey(t, tdb, "2")
 	o1 := ownerUserForTesting(t, tdb, u1)
 	o2 := ownerUserForTesting(t, tdb, u2)
+	p1 := portfolioForTestingWithKey(t, tdb, "3")
+	p2 := portfolioForTestingWithKey(t, tdb, "4")
 
 	pg1 := &pacta.PortfolioGroup{
 		Name:  "portfolio-group-name",
@@ -69,6 +71,51 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	if diff := cmp.Diff(expecteds, actuals, portfolioGroupCmpOpts()); diff != "" {
 		t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
 	}
+
+	if err := tdb.CreatePortfolioGroupMembership(tx, pg1.ID, p1.ID); err != nil {
+		t.Fatalf("creating portfolio group membership: %v", err)
+	}
+	if err := tdb.CreatePortfolioGroupMembership(tx, pg1.ID, p2.ID); err != nil {
+		t.Fatalf("creating portfolio group membership: %v", err)
+	}
+	if err := tdb.CreatePortfolioGroupMembership(tx, pg2.ID, p1.ID); err != nil {
+		t.Fatalf("creating portfolio group membership: %v", err)
+	}
+	if err := tdb.CreatePortfolioGroupMembership(tx, pg2.ID, p2.ID); err != nil {
+		t.Fatalf("creating portfolio group membership: %v", err)
+	}
+	if err := tdb.DeletePortfolioGroupMembership(tx, pg2.ID, p2.ID); err != nil {
+		t.Fatalf("deleting portfolio group membership: %v", err)
+	}
+
+	actuals, err = tdb.PortfolioGroups(tx, []pacta.PortfolioGroupID{pg1.ID, pg2.ID})
+	pg1.Members = []*pacta.PortfolioGroupMembership{{
+		Portfolio: &pacta.Portfolio{ID: p1.ID},
+		CreatedAt: time.Now(),
+	}, {
+		Portfolio: &pacta.Portfolio{ID: p2.ID},
+		CreatedAt: time.Now(),
+	}}
+	pg2.Members = []*pacta.PortfolioGroupMembership{{
+		Portfolio: &pacta.Portfolio{ID: p1.ID},
+		CreatedAt: time.Now(),
+	}}
+	expecteds = map[pacta.PortfolioGroupID]*pacta.PortfolioGroup{
+		pg1.ID: pg1,
+		pg2.ID: pg2,
+	}
+	if diff := cmp.Diff(expecteds, actuals, portfolioGroupCmpOpts()); diff != "" {
+		t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
+	}
+
+	expectedP1 := p1.Clone()
+	expectedP1.MemberOf = []*pacta.PortfolioGroupMembership{{
+		PortfolioGroup: &pacta.PortfolioGroup{ID: pg1.ID},
+		CreatedAt:      time.Now(),
+	}, {
+		PortfolioGroup: &pacta.PortfolioGroup{ID: pg2.ID},
+		CreatedAt:      time.Now(),
+	}}
 
 	err = tdb.DeletePortfolioGroup(tx, pg1.ID)
 	if err != nil {
@@ -174,8 +221,18 @@ func portfolioGroupCmpOpts() cmp.Option {
 	portfolioGroupLessFn := func(a, b *pacta.PortfolioGroup) bool {
 		return a.ID < b.ID
 	}
+	portfolioMembershipLessFn := func(a, b *pacta.PortfolioGroupMembership) bool {
+		if a.Portfolio != nil && b.Portfolio != nil {
+			return a.Portfolio.ID < b.Portfolio.ID
+		}
+		if a.PortfolioGroup != nil && b.PortfolioGroup != nil {
+			return a.PortfolioGroup.ID < b.PortfolioGroup.ID
+		}
+		return false // Fundamentally uncomparable.
+	}
 	return cmp.Options{
 		cmpopts.SortSlices(portfolioGroupLessFn),
+		cmpopts.SortSlices(portfolioMembershipLessFn),
 		cmpopts.SortMaps(portfolioGroupIDLessFn),
 		cmpopts.EquateEmpty(),
 		cmpopts.EquateApproxTime(time.Second),

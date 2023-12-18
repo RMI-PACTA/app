@@ -356,6 +356,7 @@ type Portfolio struct {
 	Blob              *Blob
 	AdminDebugEnabled bool
 	NumberOfRows      int
+	MemberOf          []*PortfolioGroupMembership
 }
 
 func (o *Portfolio) Clone() *Portfolio {
@@ -372,6 +373,7 @@ func (o *Portfolio) Clone() *Portfolio {
 		Blob:              o.Blob.Clone(),
 		AdminDebugEnabled: o.AdminDebugEnabled,
 		NumberOfRows:      o.NumberOfRows,
+		MemberOf:          cloneAll(o.MemberOf),
 	}
 }
 
