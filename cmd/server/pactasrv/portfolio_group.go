@@ -22,7 +22,7 @@ func (s *Server) FindPortfolioGroupById(ctx context.Context, request api.FindPor
 		}
 		return nil, oapierr.Internal("failed to load portfolio_group", zap.String("portfolio_group_id", request.Id), zap.Error(err))
 	}
-	if err := populatePortfoliosInPortfolioGroups(s, ctx, []*pacta.PortfolioGroup{pg}); err != nil {
+	if err := s.populatePortfoliosInPortfolioGroups(ctx, []*pacta.PortfolioGroup{pg}); err != nil {
 		return nil, err
 	}
 	resp, err := conv.PortfolioGroupToOAPI(pg)
@@ -44,7 +44,7 @@ func (s *Server) ListPortfolioGroups(ctx context.Context, request api.ListPortfo
 	if err != nil {
 		return nil, oapierr.Internal("failed to query portfolio groups", zap.Error(err))
 	}
-	if err := populatePortfoliosInPortfolioGroups(s, ctx, pgs); err != nil {
+	if err := s.populatePortfoliosInPortfolioGroups(ctx, pgs); err != nil {
 		return nil, err
 	}
 	items, err := dereference(conv.PortfolioGroupsToOAPI(pgs))

@@ -72,7 +72,7 @@ func (d *DB) PortfoliosByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.Portfo
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to portfolios: %w", err)
 	}
-	// Note the map interface here is ~required in the deserialization process to track multiple membersihps,
+	// Note the map interface here is ~required in the deserialization process to track multiple memberships,
 	// so we're not just converting to a map and back.
 	return valuesFromMap(pvs), nil
 }

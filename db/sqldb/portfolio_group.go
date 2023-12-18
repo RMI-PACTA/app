@@ -51,7 +51,7 @@ func (d *DB) PortfolioGroupsByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.P
 	if err != nil {
 		return nil, fmt.Errorf("querying portfolio_groups: %w", err)
 	}
-	// Note the map interface here is ~required in the deserialization process to track multiple membersihps,
+	// Note the map interface here is ~required in the deserialization process to track multiple memberships,
 	// so we're not just converting to a map and back.
 	asMap, err := rowsToPortfolioGroups(rows)
 	if err != nil {
