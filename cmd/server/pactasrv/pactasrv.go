@@ -70,6 +70,7 @@ type DB interface {
 
 	Portfolio(tx db.Tx, id pacta.PortfolioID) (*pacta.Portfolio, error)
 	PortfoliosByOwner(tx db.Tx, owner pacta.OwnerID) ([]*pacta.Portfolio, error)
+	Portfolios(tx db.Tx, ids []pacta.PortfolioID) (map[pacta.PortfolioID]*pacta.Portfolio, error)
 	CreatePortfolio(tx db.Tx, i *pacta.Portfolio) (pacta.PortfolioID, error)
 	UpdatePortfolio(tx db.Tx, id pacta.PortfolioID, mutations ...db.UpdatePortfolioFn) error
 	DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, error)
@@ -82,6 +83,15 @@ type DB interface {
 	DeleteIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (pacta.BlobURI, error)
 
 	GetOrCreateOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error)
+
+	PortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) (*pacta.PortfolioGroup, error)
+	PortfolioGroupsByOwner(tx db.Tx, owner pacta.OwnerID) ([]*pacta.PortfolioGroup, error)
+	PortfolioGroups(tx db.Tx, ids []pacta.PortfolioGroupID) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error)
+	CreatePortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) (pacta.PortfolioGroupID, error)
+	UpdatePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID, mutations ...db.UpdatePortfolioGroupFn) error
+	DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error
+	CreatePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
+	DeletePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
 
 	GetOrCreateUserByAuthn(tx db.Tx, mech pacta.AuthnMechanism, authnID, email, canonicalEmail string) (*pacta.User, error)
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)

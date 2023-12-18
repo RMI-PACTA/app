@@ -10,7 +10,7 @@ If you do want to actually run the full `runner` image on Azure, you can use:
 
 ```bash
 # Run the backend, tell it to create tasks as real Azure Container Apps Jobs.
-bazel run //scripts:run_apiserver -- --use_azure_runner
+bazel run //scripts:run_server -- --use_azure_runner
 ```
 
 ### Creating a new docker image to run locally

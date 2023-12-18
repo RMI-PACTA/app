@@ -142,6 +142,17 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 	if err != nil {
 		return nil, oapierr.Internal("portfolioToOAPI: holdingsDateToOAPI failed", zap.Error(err))
 	}
+	memberOfs := []api.PortfolioGroupMembershipPortfolioGroup{}
+	for _, m := range p.MemberOf {
+		pg, err := PortfolioGroupToOAPI(m.PortfolioGroup)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioToOAPI: portfolioGroupToOAPI failed", zap.Error(err))
+		}
+		memberOfs = append(memberOfs, api.PortfolioGroupMembershipPortfolioGroup{
+			CreatedAt:      m.CreatedAt,
+			PortfolioGroup: *pg,
+		})
+	}
 	return &api.Portfolio{
 		Id:                string(p.ID),
 		Name:              p.Name,
@@ -150,5 +161,34 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 		CreatedAt:         p.CreatedAt,
 		NumberOfRows:      p.NumberOfRows,
 		AdminDebugEnabled: p.AdminDebugEnabled,
+		Groups:            &memberOfs,
 	}, nil
+}
+
+func PortfolioGroupToOAPI(pg *pacta.PortfolioGroup) (*api.PortfolioGroup, error) {
+	if pg == nil {
+		return nil, oapierr.Internal("portfolioGroupToOAPI: can't convert nil pointer")
+	}
+	members := []api.PortfolioGroupMembershipPortfolio{}
+	for _, m := range pg.Members {
+		portfolio, err := PortfolioToOAPI(m.Portfolio)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioGroupToOAPI: portfolioToOAPI failed", zap.Error(err))
+		}
+		members = append(members, api.PortfolioGroupMembershipPortfolio{
+			CreatedAt: m.CreatedAt,
+			Portfolio: *portfolio,
+		})
+	}
+	return &api.PortfolioGroup{
+		Id:          string(pg.ID),
+		Name:        pg.Name,
+		Description: pg.Description,
+		CreatedAt:   pg.CreatedAt,
+		Members:     &members,
+	}, nil
+}
+
+func PortfolioGroupsToOAPI(pgs []*pacta.PortfolioGroup) ([]*api.PortfolioGroup, error) {
+	return convAll(pgs, PortfolioGroupToOAPI)
 }

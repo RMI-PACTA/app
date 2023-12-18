@@ -75,3 +75,20 @@ func HoldingsDateFromOAPI(hd *api.HoldingsDate) (*pacta.HoldingsDate, error) {
 		Time: hd.Time,
 	}, nil
 }
+
+func PortfolioGroupCreateFromOAPI(pg *api.PortfolioGroupCreate, ownerID pacta.OwnerID) (*pacta.PortfolioGroup, error) {
+	if pg == nil {
+		return nil, oapierr.Internal("portfolioGroupCreateFromOAPI: can't convert nil pointer")
+	}
+	if pg.Name == "" {
+		return nil, oapierr.BadRequest("name must not be empty")
+	}
+	if ownerID == "" {
+		return nil, oapierr.Internal("portfolioGroupCreateFromOAPI: ownerID must not be empty")
+	}
+	return &pacta.PortfolioGroup{
+		Name:        pg.Name,
+		Description: pg.Description,
+		Owner:       &pacta.Owner{ID: ownerID},
+	}, nil
+}

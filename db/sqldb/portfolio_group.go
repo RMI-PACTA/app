@@ -19,25 +19,45 @@ func (d *DB) PortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) (*pacta.Portfol
 	return exactlyOneFromMap("portfolioGroup", id, pgs)
 }
 
+const portfolioGroupQueryStanza = `
+	SELECT
+		portfolio_group.id, 
+		portfolio_group.owner_id, 
+		portfolio_group.name, 
+		portfolio_group.description, 
+		portfolio_group.created_at,
+		portfolio_group_membership.portfolio_id,
+		portfolio_group_membership.created_at
+	FROM portfolio_group
+	LEFT JOIN portfolio_group_membership 
+	ON portfolio_group_membership.portfolio_group_id = portfolio_group.id
+`
+
 func (d *DB) PortfolioGroups(tx db.Tx, ids []pacta.PortfolioGroupID) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error) {
+	if len(ids) == 0 {
+		return make(map[pacta.PortfolioGroupID]*pacta.PortfolioGroup), nil
+	}
 	ids = dedupeIDs(ids)
-	rows, err := d.query(tx, `
-		SELECT
-			portfolio_group.id, 
-			portfolio_group.owner_id, 
-			portfolio_group.name, 
-			portfolio_group.description, 
-			portfolio_group.created_at,
-			portfolio_group_membership.portfolio_id,
-			portfolio_group_membership.created_at
-		FROM portfolio_group
-		LEFT JOIN portfolio_group_membership 
-		ON portfolio_group_membership.portfolio_group_id = portfolio_group.id
+	rows, err := d.query(tx, portfolioGroupQueryStanza+`
 		WHERE portfolio_group.id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
 	if err != nil {
 		return nil, fmt.Errorf("querying portfolio_groups: %w", err)
 	}
 	return rowsToPortfolioGroups(rows)
+}
+
+func (d *DB) PortfolioGroupsByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.PortfolioGroup, error) {
+	rows, err := d.query(tx, portfolioGroupQueryStanza+` WHERE portfolio_group.owner_id = $1;`, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("querying portfolio_groups: %w", err)
+	}
+	// Note the map interface here is ~required in the deserialization process to track multiple membersihps,
+	// so we're not just converting to a map and back.
+	asMap, err := rowsToPortfolioGroups(rows)
+	if err != nil {
+		return nil, fmt.Errorf("converting rows to portfolio groups: %w", err)
+	}
+	return valuesFromMap(asMap), nil
 }
 
 func (d *DB) CreatePortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) (pacta.PortfolioGroupID, error) {
@@ -96,25 +116,21 @@ func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error {
 }
 
 type portfolioGroupRow struct {
-	ID                       pacta.PortfolioGroupID
-	Owner                    *pacta.Owner
-	Name                     string
-	Description              string
-	CreatedAt                time.Time
-	PortfolioMemberID        pacta.PortfolioID
-	PortfolioMemberCreatedAt time.Time
+	PortfolioGroup                      *pacta.PortfolioGroup
+	PortfolioGroupMembershipPortfolioID pacta.PortfolioID
+	PortfolioGroupMembershipCreatedAt   time.Time
 }
 
 func rowToPortfolioGroupRow(row rowScanner) (*portfolioGroupRow, error) {
-	p := &portfolioGroupRow{Owner: &pacta.Owner{}}
+	p := &portfolioGroupRow{PortfolioGroup: &pacta.PortfolioGroup{Owner: &pacta.Owner{}}}
 	mi := pgtype.Text{}
 	ca := pgtype.Timestamptz{}
 	err := row.Scan(
-		&p.ID,
-		&p.Owner.ID,
-		&p.Name,
-		&p.Description,
-		&p.CreatedAt,
+		&p.PortfolioGroup.ID,
+		&p.PortfolioGroup.Owner.ID,
+		&p.PortfolioGroup.Name,
+		&p.PortfolioGroup.Description,
+		&p.PortfolioGroup.CreatedAt,
 		&mi,
 		&ca,
 	)
@@ -122,34 +138,35 @@ func rowToPortfolioGroupRow(row rowScanner) (*portfolioGroupRow, error) {
 		return nil, fmt.Errorf("scanning into portfolio_group row: %w", err)
 	}
 	if mi.Valid {
-		p.PortfolioMemberID = pacta.PortfolioID(mi.String)
-		p.PortfolioMemberCreatedAt = ca.Time
+		p.PortfolioGroupMembershipPortfolioID = pacta.PortfolioID(mi.String)
+		p.PortfolioGroupMembershipCreatedAt = ca.Time
 	}
 	return p, nil
 }
 
 func rowsToPortfolioGroups(rows pgx.Rows) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error) {
-	pgrs, err := mapRows("portfolioGroup", rows, rowToPortfolioGroupRow)
+	pgRows, err := mapRows("portfolioGroup", rows, rowToPortfolioGroupRow)
 	if err != nil {
 		return nil, fmt.Errorf("translating rows to portfolio_groups: %w", err)
 	}
 	result := make(map[pacta.PortfolioGroupID]*pacta.PortfolioGroup)
-	for _, pgr := range pgrs {
-		if _, ok := result[pgr.ID]; !ok {
-			result[pgr.ID] = &pacta.PortfolioGroup{
-				ID:          pgr.ID,
-				Owner:       pgr.Owner,
-				Name:        pgr.Name,
-				Description: pgr.Description,
-				CreatedAt:   pgr.CreatedAt,
+	for _, row := range pgRows {
+		id := row.PortfolioGroup.ID
+		if _, ok := result[id]; !ok {
+			result[id] = &pacta.PortfolioGroup{
+				ID:          row.PortfolioGroup.ID,
+				Owner:       row.PortfolioGroup.Owner,
+				Name:        row.PortfolioGroup.Name,
+				Description: row.PortfolioGroup.Description,
+				CreatedAt:   row.PortfolioGroup.CreatedAt,
 			}
 		}
-		if pgr.PortfolioMemberID != "" {
-			result[pgr.ID].Members = append(result[pgr.ID].Members, &pacta.PortfolioGroupMembership{
+		if row.PortfolioGroupMembershipPortfolioID != "" {
+			result[id].Members = append(result[id].Members, &pacta.PortfolioGroupMembership{
 				Portfolio: &pacta.Portfolio{
-					ID: pgr.PortfolioMemberID,
+					ID: row.PortfolioGroupMembershipPortfolioID,
 				},
-				CreatedAt: pgr.PortfolioMemberCreatedAt,
+				CreatedAt: row.PortfolioGroupMembershipCreatedAt,
 			})
 		}
 	}
