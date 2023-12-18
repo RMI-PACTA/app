@@ -114,7 +114,7 @@ func (s *Server) DeletePortfolioGroup(ctx context.Context, request api.DeletePor
 func (s *Server) DeletePortfolioGroupMembership(ctx context.Context, request api.DeletePortfolioGroupMembershipRequestObject) (api.DeletePortfolioGroupMembershipResponseObject, error) {
 	// TODO(#12) Implement Authorization
 	pgID := pacta.PortfolioGroupID(request.Body.PortfolioGroupId)
-	pID := pacta.PortfolioID(request.Body.PortfolioGroupId)
+	pID := pacta.PortfolioID(request.Body.PortfolioId)
 	err := s.DB.DeletePortfolioGroupMembership(s.DB.NoTxn(ctx), pgID, pID)
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete portfolio group membership", zap.String("portfolio_group_id", string(pgID)), zap.String("portfolio_id", string(pID)), zap.Error(err))
@@ -127,7 +127,7 @@ func (s *Server) DeletePortfolioGroupMembership(ctx context.Context, request api
 func (s *Server) CreatePortfolioGroupMembership(ctx context.Context, request api.CreatePortfolioGroupMembershipRequestObject) (api.CreatePortfolioGroupMembershipResponseObject, error) {
 	// TODO(#12) Implement Authorization
 	pgID := pacta.PortfolioGroupID(request.Body.PortfolioGroupId)
-	pID := pacta.PortfolioID(request.Body.PortfolioGroupId)
+	pID := pacta.PortfolioID(request.Body.PortfolioId)
 	err := s.DB.CreatePortfolioGroupMembership(s.DB.NoTxn(ctx), pgID, pID)
 	if err != nil {
 		return nil, oapierr.Internal("failed to create portfolio group membership", zap.String("portfolio_group_id", string(pgID)), zap.String("portfolio_id", string(pID)), zap.Error(err))

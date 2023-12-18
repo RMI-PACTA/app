@@ -23,7 +23,7 @@ const portfolioQueryStanza = `
 		portfolio.admin_debug_enabled,
 		portfolio.number_of_rows,
 		portfolio_group_membership.portfolio_group_id,
-		portfolio_group_membership.createdAt,
+		portfolio_group_membership.created_at
 	FROM portfolio
 	LEFT JOIN portfolio_group_membership 
 	ON portfolio_group_membership.portfolio_id = portfolio.id
@@ -42,6 +42,9 @@ func (d *DB) Portfolio(tx db.Tx, id pacta.PortfolioID) (*pacta.Portfolio, error)
 }
 
 func (d *DB) Portfolios(tx db.Tx, ids []pacta.PortfolioID) (map[pacta.PortfolioID]*pacta.Portfolio, error) {
+	if len(ids) == 0 {
+		return make(map[pacta.PortfolioID]*pacta.Portfolio), nil
+	}
 	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, portfolioQueryStanza+`
 		WHERE id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)

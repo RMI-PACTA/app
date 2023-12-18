@@ -34,6 +34,9 @@ const portfolioGroupQueryStanza = `
 `
 
 func (d *DB) PortfolioGroups(tx db.Tx, ids []pacta.PortfolioGroupID) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error) {
+	if len(ids) == 0 {
+		return make(map[pacta.PortfolioGroupID]*pacta.PortfolioGroup), nil
+	}
 	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, portfolioGroupQueryStanza+`
 		WHERE portfolio_group.id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)

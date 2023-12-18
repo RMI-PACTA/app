@@ -1,4 +1,3 @@
-
 {
   "UserToolbar": {},
   "components/CopyToClipboardButton": {
@@ -6,6 +5,10 @@
   },
   "components/DownloadButton": {
     "Downloaded": "Downloaded"
+  },
+  "components/form/EditorField": {
+    "Loading...": "Loading...",
+    "Needs Attention": "Needs Attention"
   },
   "components/form/Field": {
     "Loading": "Loading...",
@@ -57,6 +60,23 @@
     "Subheading": "You aren't authorized to view this page",
     "Technical Error": "Technical Error"
   },
+  "components/portfolio/Editor": {
+    "Administrator Debugging Access Enabled": "Administrator Debugging Access Enabled",
+    "No Administrator Access Enabled": "No Administrator Access Enabled"
+  },
+  "components/portfolio/group/NewModal": {
+    "Discard": "Discard",
+    "New Portfolio Group": "New Portfolio Group",
+    "Save": "Save",
+    "You can do things here like create a portfolio group": "Portfolio groups are a way to organize your portfolios for analysis or recordkeeping. You can create a portfolio group by clicking the button below."
+  },
+  "components/portfolio/group/membership/MenuButton": {
+    "Add all portfolios to group": "Add selected portfolios to group",
+    "Add unselected portfolios to group": "Add selected portfolios to this group",
+    "Create New Group": "Create New Group",
+    "Group Memberships": "Manage Group Memberships",
+    "Remove all portfolios from group": "Remove selected portfolios from this group"
+  },
   "components/standard/Debug": {
     "Debugging Information": "Debugging Information"
   },
@@ -107,6 +127,26 @@
     "Yes Invitations": "This initiative requires an invitation (a unique, one-time code) to join. You can create these invitations below.",
     "You can change": "You can change this behavior on the",
     "edit initiative page": "edit initiative page"
+  },
+  "lib/editor/portfolio/The description of this portfolio - helpful for record keeping, not used for anything besides organization": {
+    "": "TODO - "
+  },
+  "lib/editor/portfolio/The name of this portfolio": {
+    "": "TODO - "
+  },
+  "lib/editor/portfolio/When enabled, this portfolio can be accessed by administrators to help with debugging": {
+    " Only turn this on if you're comfortable with system administrators accessing this data.": "TODO -  Only turn this on if you're comfortable with system administrators accessing this data."
+  },
+  "lib/editor/portfolio_group": {
+    "Created At": "Created At",
+    "Description": "Description",
+    "ID": "ID",
+    "Members": "Members",
+    "Name": "Name"
+  },
+  "lib/editor/utils": {
+    "AllChangesSaved": "All Changes Saved",
+    "CannotSaveWithInvalidFields": "Cannot save with invalid fields"
   },
   "pages/join": {
     "Accept Invitation": "Accept Invitation",

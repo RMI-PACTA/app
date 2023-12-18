@@ -43,7 +43,7 @@ const createEditorPactaVersionFields = (translation: Translation): EditorPactaVe
 
 export const pactaVersionEditor = (pv: PactaVersion, translation: Translation): EditorComputedValues<PactaVersion> => {
   return getEditorComputedValues(
-    'lib/editor/pacta-version',
+    'lib/editor/pacta_version',
     pv,
     createEditorPactaVersionFields,
     translation)

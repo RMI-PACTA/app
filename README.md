@@ -17,7 +17,7 @@ bazel run //scripts:run_server -- --use_azure_auth
 bazel run //scripts:run_db
 
 # In another terminal, run the PACTA server
-bazel run //scripts:run_server
+bazel run //scripts:run_server -- --with_public_endpoint=$USER
 
 # In one last terminal, run the frontend
 cd frontend

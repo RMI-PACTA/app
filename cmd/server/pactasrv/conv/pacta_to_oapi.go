@@ -142,6 +142,17 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 	if err != nil {
 		return nil, oapierr.Internal("portfolioToOAPI: holdingsDateToOAPI failed", zap.Error(err))
 	}
+	memberOfs := []api.PortfolioGroupMembershipPortfolioGroup{}
+	for _, m := range p.MemberOf {
+		pg, err := PortfolioGroupToOAPI(m.PortfolioGroup)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioToOAPI: portfolioGroupToOAPI failed", zap.Error(err))
+		}
+		memberOfs = append(memberOfs, api.PortfolioGroupMembershipPortfolioGroup{
+			CreatedAt:      m.CreatedAt,
+			PortfolioGroup: *pg,
+		})
+	}
 	return &api.Portfolio{
 		Id:                string(p.ID),
 		Name:              p.Name,
@@ -150,6 +161,7 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 		CreatedAt:         p.CreatedAt,
 		NumberOfRows:      p.NumberOfRows,
 		AdminDebugEnabled: p.AdminDebugEnabled,
+		Groups:            &memberOfs,
 	}, nil
 }
 

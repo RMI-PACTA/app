@@ -22,7 +22,8 @@ onMounted(async () => {
   }
 })
 
-const constructIdealMap = (lang: string): Map<string, Map<string, string>> => {
+const constructIdealMap = (lang: string): { map: Map<string, Map<string, string>>, errors: string[] } => {
+  const errors: string[] = []
   const ideal = new Map<string, Map<string, string>>()
 
   const e = existing.value.get(lang)
@@ -36,7 +37,7 @@ const constructIdealMap = (lang: string): Map<string, Map<string, string>> => {
       }
       for (const [key, value] of Object.entries(values as Map<string, string>)) {
         if (m.has(key)) {
-          throw new Error(`Duplicate key ${key} in ${prefix}`)
+          errors.push(`Duplicate key ${key} in ${prefix}`)
         }
         m.set(key, value)
       }
@@ -46,7 +47,7 @@ const constructIdealMap = (lang: string): Map<string, Map<string, string>> => {
   for (const key of missing) {
     const splits = key.split('.')
     if (splits.length < 2) {
-      throw new Error(`Invalid key structure '${key}'`)
+      errors.push(`Invalid key structure '${key}'`)
     }
     const file = splits[0]
     const actualKey = splits.slice(1).join('.')
@@ -56,12 +57,12 @@ const constructIdealMap = (lang: string): Map<string, Map<string, string>> => {
       ideal.set(file, m)
     }
     if (m.has(actualKey)) {
-      throw new Error(`Duplicate key ${actualKey} in ${file}`)
+      errors.push(`Duplicate key ${actualKey} in ${file}`)
     }
     ideal.set(file, m.set(actualKey, `TODO - ${actualKey}`))
   }
 
-  return ideal
+  return { map: ideal, errors }
 }
 const mapToJson = (map: Map<string, Map<string, string>>): string => {
   const obj = Object.fromEntries(
@@ -84,14 +85,17 @@ interface TabValue {
   language: string
   ideal: string
   numMissing: number
+  errors: string[]
 }
 const tabs = computed<TabValue[]>(() => {
   const result: TabValue[] = []
   for (const lang of languages) {
+    const { map, errors } = constructIdealMap(lang)
     result.push({
       language: lang,
-      ideal: mapToJson(constructIdealMap(lang)),
+      ideal: mapToJson(map),
       numMissing: ($missingTranslations.values.value.get(lang) ?? new Set()).size,
+      errors,
     })
   }
   return result
@@ -122,12 +126,30 @@ const tabs = computed<TabValue[]>(() => {
               :file-name="`${tab.language}-${new Date().getTime()}.json`"
             />
           </div>
+          <StandardDebug
+            :label="`Errors (${tab.errors.length})`"
+            :value="tab.errors"
+            always
+          />
+          {{ `Missing ${tab.numMissing} Translation Strings` }}
           <div class="code">
             {{ tab.ideal }}
           </div>
         </div>
       </PVTabPanel>
     </PVTabView>
+    <StandardDebug
+      :value="languages"
+      label="Languages"
+    />
+    <StandardDebug
+      :value="constructIdealMap('en')"
+      label="EN Ideal"
+    />
+    <StandardDebug
+      :value="tabs"
+      label="Tabs"
+    />
   </StandardModal>
 </template>
 

@@ -6,7 +6,7 @@ export type EditorPortfolioFields = EditorFieldsFor<Portfolio>
 export type EditorPortfolioValues = EditorValuesFor<Portfolio>
 
 const createEditorPortfolioFields = (translation: Translation): EditorPortfolioFields => {
-  const tt = (key: string) => translation.t(`lib/editor/portfolio/${key}`)
+  const tt = (key: string) => translation.t(`lib/editor/portfolio.${key}`)
   return {
     id: {
       name: 'id',
@@ -39,6 +39,10 @@ const createEditorPortfolioFields = (translation: Translation): EditorPortfolioF
     numberOfRows: {
       name: 'numberOfRows',
       label: tt('Number of Rows'),
+    },
+    groups: {
+      name: 'groups',
+      label: tt('Groups'),
     },
   }
 }
