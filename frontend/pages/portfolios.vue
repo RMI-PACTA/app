@@ -68,7 +68,7 @@ const activeIndex = computed<number>({
 </script>
 
 <template>
-  <StandardContent>
+  <StandardContent class="portfolios-page">
     <TitleBar :title="tt('Portfolios')" />
     <p>
       TODO(#80) Add Copy Here
@@ -104,20 +104,22 @@ const activeIndex = computed<number>({
 </template>
 
 <style lang="scss">
-.p-datatable.p-datatable-sm {
-  width: 100%;
+.portfolios-page {
+  .p-datatable.p-datatable-sm {
+    width: 100%;
 
-  .p-datatable-row-expansion td {
-    padding: 0 0.5rem;
-  }
+    .p-datatable-row-expansion td {
+      padding: 0 0.5rem;
+    }
 
-  .p-checkbox {
-    width: 1.25rem;
-    height: 1.25rem;
+    .p-checkbox {
+      width: 1.25rem;
+      height: 1.25rem;
 
-    .p-checkbox-box {
-      height: 100%;
-      width: 100%;
+      .p-checkbox-box {
+        height: 100%;
+        width: 100%;
+      }
     }
   }
 }

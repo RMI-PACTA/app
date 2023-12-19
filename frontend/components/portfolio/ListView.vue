@@ -98,7 +98,6 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
       v-model:expanded-rows="expandedRows"
       :value="editorObjects"
       data-key="id"
-      class="portfolio-upload-table"
       size="small"
       sort-field="editorValues.value.createdAt.originalValue"
       :sort-order="-1"
