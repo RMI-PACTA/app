@@ -389,3 +389,12 @@ func mapRowsToIDs[T ~string](name string, rows pgx.Rows) ([]T, error) {
 	}
 	return mapRows(name, rows, fn)
 }
+
+func checkSizesEquivalent(name string, sizes ...int) error {
+	for i := 1; i < len(sizes); i++ {
+		if sizes[i] != sizes[0] {
+			return fmt.Errorf("array_agg at %q results are not the same size: len([%d])=%d but len([%d])=%d", name, i, sizes[i], 0, sizes[0])
+		}
+	}
+	return nil
+}

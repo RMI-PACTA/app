@@ -27,6 +27,9 @@ func (s *Server) ListPortfolios(ctx context.Context, request api.ListPortfoliosR
 	if err := s.populatePortfolioGroupsInPortfolios(ctx, ps); err != nil {
 		return nil, err
 	}
+	if err := s.populateInitiativesInPortfolios(ctx, ps); err != nil {
+		return nil, err
+	}
 	items, err := dereference(conv.PortfoliosToOAPI(ps))
 	if err != nil {
 		return nil, err
@@ -60,6 +63,9 @@ func (s *Server) FindPortfolioById(ctx context.Context, request api.FindPortfoli
 		return nil, err
 	}
 	if err := s.populatePortfolioGroupsInPortfolios(ctx, []*pacta.Portfolio{p}); err != nil {
+		return nil, err
+	}
+	if err := s.populateInitiativesInPortfolios(ctx, []*pacta.Portfolio{p}); err != nil {
 		return nil, err
 	}
 	converted, err := conv.PortfolioToOAPI(p)

@@ -11,19 +11,58 @@ func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 	if i == nil {
 		return nil, oapierr.Internal("initiativeToOAPI: can't convert nil pointer")
 	}
+	pims, err := convAll(i.PortfolioInitiativeMemberships, portfolioInitiativeMembershipToOAPIPortfolio)
+	if err != nil {
+		return nil, oapierr.Internal("initiativeToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
+	}
 	return &api.Initiative{
-		Affiliation:              i.Affiliation,
-		CreatedAt:                i.CreatedAt,
-		Id:                       string(i.ID),
-		InternalDescription:      i.InternalDescription,
-		IsAcceptingNewMembers:    i.IsAcceptingNewMembers,
-		IsAcceptingNewPortfolios: i.IsAcceptingNewPortfolios,
-		Language:                 api.InitiativeLanguage(i.Language),
-		Name:                     i.Name,
-		PactaVersion:             ptr(string(i.PACTAVersion.ID)),
-		PublicDescription:        i.PublicDescription,
-		RequiresInvitationToJoin: i.RequiresInvitationToJoin,
+		Affiliation:                    i.Affiliation,
+		CreatedAt:                      i.CreatedAt,
+		Id:                             string(i.ID),
+		InternalDescription:            i.InternalDescription,
+		IsAcceptingNewMembers:          i.IsAcceptingNewMembers,
+		IsAcceptingNewPortfolios:       i.IsAcceptingNewPortfolios,
+		Language:                       api.InitiativeLanguage(i.Language),
+		Name:                           i.Name,
+		PactaVersion:                   strPtr(i.PACTAVersion.ID),
+		PublicDescription:              i.PublicDescription,
+		RequiresInvitationToJoin:       i.RequiresInvitationToJoin,
+		PortfolioInitiativeMemberships: pims,
 	}, nil
+}
+
+func portfolioInitiativeMembershipToOAPIPortfolio(in *pacta.PortfolioInitiativeMembership) (api.PortfolioInitiativeMembershipPortfolio, error) {
+	var zero api.PortfolioInitiativeMembershipPortfolio
+	out := &api.PortfolioInitiativeMembershipPortfolio{
+		CreatedAt: in.CreatedAt,
+	}
+	if in.AddedBy != nil && in.AddedBy.ID == "" {
+		out.AddedByUserId = strPtr(in.AddedBy.ID)
+	}
+	p, err := PortfolioToOAPI(in.Portfolio)
+	if err != nil {
+		return zero, oapierr.Internal("portfolioInitiativeMembershipToOAPI: portfolioToOAPI failed", zap.Error(err))
+	}
+	out.Portfolio = *p
+	return zero, nil
+}
+
+func portfolioInitiativeMembershipToOAPIInitiative(in *pacta.PortfolioInitiativeMembership) (api.PortfolioInitiativeMembershipInitiative, error) {
+	var zero api.PortfolioInitiativeMembershipInitiative
+	out := api.PortfolioInitiativeMembershipInitiative{
+		CreatedAt: in.CreatedAt,
+	}
+	if in.AddedBy != nil && in.AddedBy.ID == "" {
+		out.AddedByUserId = strPtr(in.AddedBy.ID)
+	}
+	if in.Initiative != nil {
+		i, err := InitiativeToOAPI(in.Initiative)
+		if err != nil {
+			return zero, oapierr.Internal("portfolioInitiativeMembershipToOAPI: initiativeToOAPI failed", zap.Error(err))
+		}
+		out.Initiative = *i
+	}
+	return out, nil
 }
 
 func UserToOAPI(user *pacta.User) (*api.User, error) {
@@ -65,7 +104,7 @@ func InitiativeInvitationToOAPI(i *pacta.InitiativeInvitation) (*api.InitiativeI
 	}
 	var usedBy *string
 	if i.UsedBy != nil {
-		usedBy = ptr(string(i.UsedBy.ID))
+		usedBy = strPtr(i.UsedBy.ID)
 	}
 	return &api.InitiativeInvitation{
 		CreatedAt:    i.CreatedAt,
@@ -142,16 +181,20 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 	if err != nil {
 		return nil, oapierr.Internal("portfolioToOAPI: holdingsDateToOAPI failed", zap.Error(err))
 	}
-	memberOfs := []api.PortfolioGroupMembershipPortfolioGroup{}
-	for _, m := range p.MemberOf {
+	portfolioGroupMemberships := []api.PortfolioGroupMembershipPortfolioGroup{}
+	for _, m := range p.PortfolioGroupMemberships {
 		pg, err := PortfolioGroupToOAPI(m.PortfolioGroup)
 		if err != nil {
 			return nil, oapierr.Internal("portfolioToOAPI: portfolioGroupToOAPI failed", zap.Error(err))
 		}
-		memberOfs = append(memberOfs, api.PortfolioGroupMembershipPortfolioGroup{
+		portfolioGroupMemberships = append(portfolioGroupMemberships, api.PortfolioGroupMembershipPortfolioGroup{
 			CreatedAt:      m.CreatedAt,
 			PortfolioGroup: *pg,
 		})
+	}
+	pims, err := convAll(p.PortfolioInitiativeMemberships, portfolioInitiativeMembershipToOAPIInitiative)
+	if err != nil {
+		return nil, oapierr.Internal("initiativeToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
 	}
 	return &api.Portfolio{
 		Id:                string(p.ID),
@@ -161,7 +204,8 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 		CreatedAt:         p.CreatedAt,
 		NumberOfRows:      p.NumberOfRows,
 		AdminDebugEnabled: p.AdminDebugEnabled,
-		Groups:            &memberOfs,
+		Groups:            &portfolioGroupMemberships,
+		Initiatives:       &pims,
 	}, nil
 }
 
@@ -170,7 +214,7 @@ func PortfolioGroupToOAPI(pg *pacta.PortfolioGroup) (*api.PortfolioGroup, error)
 		return nil, oapierr.Internal("portfolioGroupToOAPI: can't convert nil pointer")
 	}
 	members := []api.PortfolioGroupMembershipPortfolio{}
-	for _, m := range pg.Members {
+	for _, m := range pg.PortfolioGroupMemberships {
 		portfolio, err := PortfolioToOAPI(m.Portfolio)
 		if err != nil {
 			return nil, oapierr.Internal("portfolioGroupToOAPI: portfolioToOAPI failed", zap.Error(err))

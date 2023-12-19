@@ -6,6 +6,10 @@ func ptr[T any](t T) *T {
 	return &t
 }
 
+func strPtr[T ~string](t T) *string {
+	return ptr(string(t))
+}
+
 func ifNil[T any](t *T, fallback T) T {
 	if t == nil {
 		return fallback

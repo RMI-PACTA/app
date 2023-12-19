@@ -23,10 +23,15 @@ func portfolioQueryStanza(where string) string {
 		portfolio.admin_debug_enabled,
 		portfolio.number_of_rows,
 		ARRAY_AGG(portfolio_group_membership.portfolio_group_id),
-		ARRAY_AGG(portfolio_group_membership.created_at)
+		ARRAY_AGG(portfolio_group_membership.created_at),
+		ARRAY_AGG(portfolio_initiative_membership.initiative_id),
+		ARRAY_AGG(portfolio_initiative_membership.added_by_user_id),
+		ARRAY_AGG(portfolio_initiative_membership.created_at)
 	FROM portfolio
 	LEFT JOIN portfolio_group_membership 
 	ON portfolio_group_membership.portfolio_id = portfolio.id
+	LEFT JOIN portfolio_initiative_membership
+	ON portfolio_initiative_membership.portfolio_id = portfolio.id
 	%s
 	GROUP BY portfolio.id;`, where)
 }
@@ -159,8 +164,11 @@ func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, e
 func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 	p := &pacta.Portfolio{Owner: &pacta.Owner{}, Blob: &pacta.Blob{}}
 	hd := pgtype.Timestamptz{}
-	mid := []pgtype.Text{}
-	mca := []pgtype.Timestamptz{}
+	groupsIDs := []pgtype.Text{}
+	groupsCreatedAts := []pgtype.Timestamptz{}
+	initiativesIDs := []pgtype.Text{}
+	initiativesAddedByIDs := []pgtype.Text{}
+	initiativesCreatedAts := []pgtype.Timestamptz{}
 	err := row.Scan(
 		&p.ID,
 		&p.Owner.ID,
@@ -171,8 +179,11 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 		&p.Blob.ID,
 		&p.AdminDebugEnabled,
 		&p.NumberOfRows,
-		&mid,
-		&mca,
+		&groupsIDs,
+		&groupsCreatedAts,
+		&initiativesIDs,
+		&initiativesAddedByIDs,
+		&initiativesCreatedAts,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("scanning into portfolio row: %w", err)
@@ -181,24 +192,49 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 	if err != nil {
 		return nil, fmt.Errorf("decoding holdings date: %w", err)
 	}
-	if len(mid) != len(mca) {
-		return nil, fmt.Errorf("portfolio group membership ids and created ats must be the same length")
+	if err := checkSizesEquivalent("groups", len(groupsIDs), len(groupsCreatedAts)); err != nil {
+		return nil, err
 	}
-	for i := range mid {
-		if !mid[i].Valid && !mca[i].Valid {
+	for i := range groupsIDs {
+		if !groupsIDs[i].Valid && !groupsCreatedAts[i].Valid {
 			continue // skip nulls
 		}
-		if !mid[i].Valid {
+		if !groupsIDs[i].Valid {
 			return nil, fmt.Errorf("portfolio group membership ids must be non-null")
 		}
-		if !mca[i].Valid {
+		if !groupsCreatedAts[i].Valid {
 			return nil, fmt.Errorf("portfolio group membership createdAt must be non-null")
 		}
-		p.MemberOf = append(p.MemberOf, &pacta.PortfolioGroupMembership{
+		p.PortfolioGroupMemberships = append(p.PortfolioGroupMemberships, &pacta.PortfolioGroupMembership{
 			PortfolioGroup: &pacta.PortfolioGroup{
-				ID: pacta.PortfolioGroupID(mid[i].String),
+				ID: pacta.PortfolioGroupID(groupsIDs[i].String),
 			},
-			CreatedAt: mca[i].Time,
+			CreatedAt: groupsCreatedAts[i].Time,
+		})
+	}
+	if err := checkSizesEquivalent("initiatives", len(initiativesIDs), len(initiativesAddedByIDs), len(initiativesCreatedAts)); err != nil {
+		return nil, err
+	}
+	for i := range initiativesIDs {
+		if !initiativesIDs[i].Valid && !initiativesCreatedAts[i].Valid {
+			continue // skip nulls
+		}
+		if !groupsIDs[i].Valid {
+			return nil, fmt.Errorf("portfolio group membership ids must be non-null")
+		}
+		if !groupsCreatedAts[i].Valid {
+			return nil, fmt.Errorf("portfolio group membership createdAt must be non-null")
+		}
+		var addedBy *pacta.User
+		if initiativesAddedByIDs[i].Valid {
+			addedBy = &pacta.User{ID: pacta.UserID(initiativesAddedByIDs[i].String)}
+		}
+		p.PortfolioInitiativeMemberships = append(p.PortfolioInitiativeMemberships, &pacta.PortfolioInitiativeMembership{
+			Initiative: &pacta.Initiative{
+				ID: pacta.InitiativeID(initiativesIDs[i].String),
+			},
+			CreatedAt: groupsCreatedAts[i].Time,
+			AddedBy:   addedBy,
 		})
 	}
 	return p, nil

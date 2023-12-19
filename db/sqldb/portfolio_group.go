@@ -148,7 +148,7 @@ func rowToPortfolioGroup(row rowScanner) (*pacta.PortfolioGroup, error) {
 		if !mca[i].Valid {
 			return nil, fmt.Errorf("portfolio group membership createdAt must be non-null")
 		}
-		p.Members = append(p.Members, &pacta.PortfolioGroupMembership{
+		p.PortfolioGroupMemberships = append(p.PortfolioGroupMemberships, &pacta.PortfolioGroupMembership{
 			Portfolio: &pacta.Portfolio{
 				ID: pacta.PortfolioID(mid[i].String),
 			},

@@ -20,7 +20,7 @@ func (d *DB) CreateSnapshotOfPortfolioGroup(tx db.Tx, pgID pacta.PortfolioGroupI
 		return "", fmt.Errorf("reading portfolio group: %w", err)
 	}
 	ids := []pacta.PortfolioID{}
-	for _, p := range pg.Members {
+	for _, p := range pg.PortfolioGroupMemberships {
 		ids = append(ids, p.Portfolio.ID)
 	}
 	return d.createSnapshot(tx, "", pgID, "", ids)
