@@ -31,10 +31,6 @@ func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 	}, nil
 }
 
-func userIsPopulated(u *pacta.User) bool {
-	return u != nil && u.ID != "" && *u != (pacta.User{ID: u.ID})
-}
-
 func portfolioInitiativeMembershipToOAPIPortfolio(in *pacta.PortfolioInitiativeMembership) (api.PortfolioInitiativeMembershipPortfolio, error) {
 	var zero api.PortfolioInitiativeMembershipPortfolio
 	out := &api.PortfolioInitiativeMembershipPortfolio{
@@ -42,13 +38,6 @@ func portfolioInitiativeMembershipToOAPIPortfolio(in *pacta.PortfolioInitiativeM
 	}
 	if in.AddedBy != nil && in.AddedBy.ID == "" {
 		out.AddedByUserId = ptr(string(in.AddedBy.ID))
-		if userIsPopulated(in.AddedBy) {
-			u, err := UserToOAPI(in.AddedBy)
-			if err != nil {
-				return zero, oapierr.Internal("portfolioInitiativeMembershipToOAPI: userToOAPI failed", zap.Error(err))
-			}
-			out.AddedByUser = u
-		}
 	}
 	p, err := PortfolioToOAPI(in.Portfolio)
 	if err != nil {
@@ -65,13 +54,6 @@ func portfolioInitiativeMembershipToOAPIInitiative(in *pacta.PortfolioInitiative
 	}
 	if in.AddedBy != nil && in.AddedBy.ID == "" {
 		out.AddedByUserId = ptr(string(in.AddedBy.ID))
-		if userIsPopulated(in.AddedBy) {
-			u, err := UserToOAPI(in.AddedBy)
-			if err != nil {
-				return zero, oapierr.Internal("portfolioInitiativeMembershipToOAPI: userToOAPI failed", zap.Error(err))
-			}
-			out.AddedByUser = u
-		}
 	}
 	if in.Initiative != nil {
 		i, err := InitiativeToOAPI(in.Initiative)

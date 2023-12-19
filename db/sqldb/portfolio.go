@@ -23,7 +23,7 @@ func portfolioQueryStanza(where string) string {
 		portfolio.admin_debug_enabled,
 		portfolio.number_of_rows,
 		ARRAY_AGG(portfolio_group_membership.portfolio_group_id),
-		ARRAY_AGG(portfolio_group_membership.created_at)
+		ARRAY_AGG(portfolio_group_membership.created_at),
 		ARRAY_AGG(portfolio_initiative_membership.initiative_id),
 		ARRAY_AGG(portfolio_initiative_membership.added_by_user_id),
 		ARRAY_AGG(portfolio_initiative_membership.created_at)

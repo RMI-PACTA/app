@@ -89,14 +89,14 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 
 	actuals, err = tdb.PortfolioGroups(tx, []pacta.PortfolioGroupID{pg1.ID, pg2.ID})
-	pg1.Members = []*pacta.PortfolioGroupMembership{{
+	pg1.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{{
 		Portfolio: &pacta.Portfolio{ID: p1.ID},
 		CreatedAt: time.Now(),
 	}, {
 		Portfolio: &pacta.Portfolio{ID: p2.ID},
 		CreatedAt: time.Now(),
 	}}
-	pg2.Members = []*pacta.PortfolioGroupMembership{{
+	pg2.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{{
 		Portfolio: &pacta.Portfolio{ID: p1.ID},
 		CreatedAt: time.Now(),
 	}}
@@ -155,8 +155,8 @@ func TestPortfolioGroupMembership(t *testing.T) {
 		if err != nil {
 			t.Fatalf("getting portfolio group: %v", err)
 		}
-		ms := make([]*pacta.Portfolio, len(pg.Members))
-		for i, m := range pg.Members {
+		ms := make([]*pacta.Portfolio, len(pg.PortfolioGroupMemberships))
+		for i, m := range pg.PortfolioGroupMemberships {
 			ms[i] = m.Portfolio
 		}
 		if diff := cmp.Diff(idsOnly, ms, portfolioCmpOpts()); diff != "" {
@@ -197,11 +197,11 @@ func TestPortfolioGroupMembership(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getting portfolio group: %v", err)
 	}
-	pg1.Members = []*pacta.PortfolioGroupMembership{
+	pg1.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{
 		{Portfolio: &pacta.Portfolio{ID: p1.ID}, CreatedAt: time.Now()},
 		{Portfolio: &pacta.Portfolio{ID: p2.ID}, CreatedAt: time.Now()},
 	}
-	pg2.Members = []*pacta.PortfolioGroupMembership{
+	pg2.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{
 		{Portfolio: &pacta.Portfolio{ID: p3.ID}, CreatedAt: time.Now()},
 	}
 	expected := map[pacta.PortfolioGroupID]*pacta.PortfolioGroup{

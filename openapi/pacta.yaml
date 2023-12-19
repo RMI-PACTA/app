@@ -965,8 +965,6 @@ components:
         addedByUserId:
           type: string
           description: the user that added this portfolio to the initiative
-        addedByUser:
-          $ref: '#/components/schemas/User'
         portfolio: 
           $ref: '#/components/schemas/Portfolio'
         createdAt:
@@ -982,8 +980,6 @@ components:
         addedByUserId:
           type: string
           description: the user that added this portfolio to the initiative
-        addedByUser:
-          $ref: '#/components/schemas/User'
         initiative: 
           $ref: '#/components/schemas/Initiative'
         createdAt:
