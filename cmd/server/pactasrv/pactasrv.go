@@ -82,7 +82,7 @@ type DB interface {
 	UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error
 	DeleteIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (pacta.BlobURI, error)
 
-	GetOrCreateOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error)
+	GetOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error)
 
 	PortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) (*pacta.PortfolioGroup, error)
 	PortfolioGroupsByOwner(tx db.Tx, owner pacta.OwnerID) ([]*pacta.PortfolioGroup, error)
@@ -156,7 +156,7 @@ func (s *Server) getUserOwnerID(ctx context.Context) (pacta.OwnerID, error) {
 	if err != nil {
 		return "", err
 	}
-	ownerID, err := s.DB.GetOrCreateOwnerForUser(s.DB.NoTxn(ctx), userID)
+	ownerID, err := s.DB.GetOwnerForUser(s.DB.NoTxn(ctx), userID)
 	if err != nil {
 		return "", oapierr.Internal("failed to find or create owner for user",
 			zap.String("user_id", string(userID)), zap.Error(err))

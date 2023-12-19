@@ -17,11 +17,11 @@ func TestGetOrCreateOwners(t *testing.T) {
 	u := userForTesting(t, tdb)
 	i := initiativeForTesting(t, tdb)
 
-	uo, err := tdb.GetOrCreateOwnerForUser(tx, u.ID)
+	uo, err := tdb.GetOwnerForUser(tx, u.ID)
 	if err != nil {
-		t.Fatalf("creating owner for user: %v", err)
+		t.Fatalf("getting owner for user: %v", err)
 	}
-	uo2, err := tdb.GetOrCreateOwnerForUser(tx, u.ID)
+	uo2, err := tdb.GetOwnerForUser(tx, u.ID)
 	if err != nil {
 		t.Fatalf("creating owner for user: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestReadOwners(t *testing.T) {
 func ownerUserForTesting(t *testing.T, tdb *DB, u *pacta.User) *pacta.Owner {
 	t.Helper()
 	tx := tdb.NoTxn(context.Background())
-	oid, err := tdb.GetOrCreateOwnerForUser(tx, u.ID)
+	oid, err := tdb.GetOwnerForUser(tx, u.ID)
 	if err != nil {
 		t.Fatalf("creating owner for user: %v", err)
 	}

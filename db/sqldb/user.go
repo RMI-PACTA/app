@@ -72,6 +72,10 @@ func (d *DB) GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanis
 		if err != nil {
 			return fmt.Errorf("creating user: %w", err)
 		}
+		_, err = d.createOwner(tx, &pacta.Owner{User: &pacta.User{ID: uID}})
+		if err != nil {
+			return fmt.Errorf("creating owner: %w", err)
+		}
 		u, err = d.User(tx, uID)
 		if err != nil {
 			return fmt.Errorf("reading back created user: %w", err)

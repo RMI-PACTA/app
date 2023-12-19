@@ -70,7 +70,7 @@ func (d *DB) ownerByInitiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Owner, e
 	return nil, db.NotFound(id, "ownerByInitiativeId")
 }
 
-func (d *DB) GetOrCreateOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error) {
+func (d *DB) GetOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error) {
 	var ownerID pacta.OwnerID
 	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
 		owner, err := d.ownerByUser(tx, uID)
@@ -79,13 +79,9 @@ func (d *DB) GetOrCreateOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID,
 			return nil
 		}
 		if !db.IsNotFound(err) {
-			return fmt.Errorf("querying owner by user: %w", err)
+			return fmt.Errorf("user owner not found: %w", err)
 		}
-		ownerID, err = d.createOwner(tx, &pacta.Owner{User: &pacta.User{ID: uID}})
-		if err != nil {
-			return fmt.Errorf("creating owner: %w", err)
-		}
-		return nil
+		return fmt.Errorf("looking up owner: %w", err)
 	})
 	if err != nil {
 		return "", fmt.Errorf("getting or creating owner for initiative: %w", err)
