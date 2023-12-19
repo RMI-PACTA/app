@@ -10,6 +10,7 @@ interface Props {
 interface Emits {
   (e: 'update:visible', value: boolean): void
   (e: 'closed'): void
+  (e: 'opened'): void
 }
 const props = withDefaults(defineProps<Props>(), {
   small: false,
@@ -24,6 +25,7 @@ const visible = computed<boolean>({
 const breakpoints = computed(() => props.small ? smallDialogBreakpoints : dialogBreakpoints)
 
 const onHide = () => { emit('closed') }
+const onShow = () => { emit('opened') }
 </script>
 
 <template>
@@ -36,6 +38,7 @@ const onHide = () => { emit('closed') }
     :draggable="false"
     :breakpoints="breakpoints"
     @hide="onHide"
+    @show="onShow"
   >
     <template #header>
       <div class="flex justify-content-between align-items-center w-full">

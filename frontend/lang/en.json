@@ -1,4 +1,3 @@
-
 {
   "UserToolbar": {},
   "components/CopyToClipboardButton": {
@@ -6,6 +5,10 @@
   },
   "components/DownloadButton": {
     "Downloaded": "Downloaded"
+  },
+  "components/form/EditorField": {
+    "Loading": "Loading...",
+    "Needs Attention": "Needs Attention"
   },
   "components/form/Field": {
     "Loading": "Loading...",
@@ -56,6 +59,50 @@
     "How You Got Here": "It is likely that you have gotten here either by entering in an invalid URL, or by clicking on a link or button that is not set up correctly.",
     "Subheading": "You aren't authorized to view this page",
     "Technical Error": "Technical Error"
+  },
+  "components/portfolio/Editor": {
+    "Administrator Debugging Access Enabled": "Administrator Debugging Access Enabled",
+    "No Administrator Access Enabled": "No Administrator Access Enabled"
+  },
+  "components/portfolio/ListView": {
+    "Created At": "Created At",
+    "Details": "Details",
+    "Groups": "Groups",
+    "How To Run a Report": "How To Run a Report",
+    "Initiatives": "Initiatives",
+    "Memberships": "Groups",
+    "Name": "Name",
+    "Upload New Portfolios": "Upload New Portfolios",
+    "Delete": "Delete",
+    "Editable Properties": "Editable Properties",
+    "Holdings Date": "Holdings Date",
+    "Metadata": "Metadata",
+    "Number of Rows": "Number of Rows",
+    "Save Changes": "Save Changes",
+    "Refresh": "Refresh"
+  },
+  "components/portfolio/group/ListView": {
+    "Created At": "Created At",
+    "Name": "Name",
+    "Number of Members": "Number of Members",
+    "Save Changes": "Save Changes",
+    "Delete": "Delete",
+    "New Portfolio Group": "New Portfolio Group",
+    "How To Run a Report": "How To Run a Report",
+    "Refresh": "Refresh"
+  },
+  "components/portfolio/group/NewModal": {
+    "Discard": "Discard",
+    "New Portfolio Group": "New Portfolio Group",
+    "Save": "Save",
+    "You can do things here like create a portfolio group": "Portfolio groups are a way to organize your portfolios for analysis or recordkeeping. You can create a portfolio group by clicking the button below."
+  },
+  "components/portfolio/group/membership/MenuButton": {
+    "Add all portfolios to group": "Add selected portfolios to group",
+    "Add unselected portfolios to group": "Add selected portfolios to this group",
+    "Create New Group": "Create New Group",
+    "Group Memberships": "Manage Group Memberships",
+    "Remove all portfolios from group": "Remove selected portfolios from this group"
   },
   "components/standard/Debug": {
     "Debugging Information": "Debugging Information"
@@ -108,6 +155,17 @@
     "You can change": "You can change this behavior on the",
     "edit initiative page": "edit initiative page"
   },
+  "lib/editor/portfolio_group": {
+    "Created At": "Created At",
+    "Description": "Description",
+    "ID": "ID",
+    "Members": "Members",
+    "Name": "Name"
+  },
+  "lib/editor/utils": {
+    "AllChangesSaved": "All Changes Saved",
+    "CannotSaveWithInvalidFields": "Cannot save with invalid fields"
+  },
   "pages/join": {
     "Accept Invitation": "Accept Invitation",
     "Join Initiative:": "Join Initiative:",
@@ -118,5 +176,9 @@
     "do-accept": "Do you want to accept this invitation?",
     "if-accept": "If you accept this invitation, you'll be able to add your portfolios to the project, where they will be included in aggregated analysis. You aren't required to accept this invitation if you just want to run the analysis on your own, but joining the initiative may enable you to access internal benefits, like the ability to see the analysis results from the aggregated portfolios.",
     "what-shared": "If you accept X, Y, Z will be whared with the initiative administrators, but A, B, C will not be."
+  },
+  "pages/portfolios": {
+    "Portfolio Groups": "Portfolio Groups",
+    "Portfolios": "Portfolios"
   }
 }

@@ -6,7 +6,7 @@ export type EditorPortfolioFields = EditorFieldsFor<Portfolio>
 export type EditorPortfolioValues = EditorValuesFor<Portfolio>
 
 const createEditorPortfolioFields = (translation: Translation): EditorPortfolioFields => {
-  const tt = (key: string) => translation.t(`lib/editor/portfolio/${key}`)
+  const tt = (key: string) => translation.t(`lib/editor/portfolio.${key}`)
   return {
     id: {
       name: 'id',
@@ -16,21 +16,22 @@ const createEditorPortfolioFields = (translation: Translation): EditorPortfolioF
       name: 'name',
       label: tt('Name'),
       validation: [Validation.NotEmpty],
-      helpText: tt('The name of this portfolio.'),
+      helpText: tt('NameHelpText'),
     },
     description: {
       name: 'description',
       label: tt('Description'),
-      helpText: tt('The description of this portfolio - helpful for record keeping, not used for anything besides organization.'),
+      helpText: tt('DescriptionHelpText'),
     },
     adminDebugEnabled: {
       name: 'adminDebugEnabled',
       label: tt('Admin Debugging Enabled'),
-      helpText: tt('When enabled, this portfolio can be accessed by administrators to help with debugging. Only turn this on if you\'re comfortable with system administrators accessing this data.'),
+      helpText: tt('AdminDebuggingEnabledHelpText'),
     },
     holdingsDate: {
       name: 'holdingsDate',
       label: tt('Holdings Date'),
+      helpText: tt('HoldingsDateHelpText'),
     },
     createdAt: {
       name: 'createdAt',
@@ -39,6 +40,10 @@ const createEditorPortfolioFields = (translation: Translation): EditorPortfolioF
     numberOfRows: {
       name: 'numberOfRows',
       label: tt('Number of Rows'),
+    },
+    groups: {
+      name: 'groups',
+      label: tt('Groups'),
     },
   }
 }

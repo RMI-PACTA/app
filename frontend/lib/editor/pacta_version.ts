@@ -6,7 +6,7 @@ export type EditorPactaVersionFields = EditorFieldsFor<PactaVersion>
 export type EditorPactaVersionValues = EditorValuesFor<PactaVersion>
 
 const createEditorPactaVersionFields = (translation: Translation): EditorPactaVersionFields => {
-  const tt = (key: string) => translation.t(`lib/editor/pacta-version/${key}`)
+  const tt = (key: string) => translation.t(`lib/editor/pacta-version.${key}`)
   return {
     id: {
       name: 'id',
@@ -43,7 +43,7 @@ const createEditorPactaVersionFields = (translation: Translation): EditorPactaVe
 
 export const pactaVersionEditor = (pv: PactaVersion, translation: Translation): EditorComputedValues<PactaVersion> => {
   return getEditorComputedValues(
-    'lib/editor/pacta-version',
+    'lib/editor/pacta_version',
     pv,
     createEditorPactaVersionFields,
     translation)

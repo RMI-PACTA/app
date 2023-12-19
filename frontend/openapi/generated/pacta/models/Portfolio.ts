@@ -4,6 +4,7 @@
 /* eslint-disable */
 
 import type { HoldingsDate } from './HoldingsDate';
+import type { PortfolioGroupMembershipPortfolioGroup } from './PortfolioGroupMembershipPortfolioGroup';
 
 export type Portfolio = {
     /**
@@ -31,5 +32,9 @@ export type Portfolio = {
      * The number of rows in the portfolio
      */
     numberOfRows: number;
+    /**
+     * The list of portfolio groups that this portfolio is a member of
+     */
+    groups?: Array<PortfolioGroupMembershipPortfolioGroup>;
 };
 

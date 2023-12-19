@@ -22,10 +22,10 @@ const props = withDefaults(defineProps<Props>(), {
   helpText: '',
   startHelpTextExpanded: true,
   isLoading: false,
-  loadingLabel: 'Loading...',
+  loadingLabel: undefined,
   hasValidation: false,
   isValid: false,
-  invalidLabel: 'Needs Attention',
+  invalidLabel: undefined,
   validLabel: '',
 })
 

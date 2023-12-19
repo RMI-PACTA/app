@@ -14,12 +14,17 @@ import type { InitiativeInvitationCreate } from '../models/InitiativeInvitationC
 import type { InitiativeUserRelationship } from '../models/InitiativeUserRelationship';
 import type { InitiativeUserRelationshipChanges } from '../models/InitiativeUserRelationshipChanges';
 import type { ListIncompleteUploadsResp } from '../models/ListIncompleteUploadsResp';
+import type { ListPortfolioGroupsResp } from '../models/ListPortfolioGroupsResp';
 import type { ListPortfoliosResp } from '../models/ListPortfoliosResp';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
 import type { Portfolio } from '../models/Portfolio';
 import type { PortfolioChanges } from '../models/PortfolioChanges';
+import type { PortfolioGroup } from '../models/PortfolioGroup';
+import type { PortfolioGroupChanges } from '../models/PortfolioGroupChanges';
+import type { PortfolioGroupCreate } from '../models/PortfolioGroupCreate';
+import type { PortfolioGroupMembershipIds } from '../models/PortfolioGroupMembershipIds';
 import type { StartPortfolioUploadReq } from '../models/StartPortfolioUploadReq';
 import type { StartPortfolioUploadResp } from '../models/StartPortfolioUploadResp';
 import type { User } from '../models/User';
@@ -402,6 +407,133 @@ export class DefaultService {
                 'initiativeId': initiativeId,
                 'userId': userId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Returns the portfolio groups that the user has access to
+     * @returns ListPortfolioGroupsResp
+     * @throws ApiError
+     */
+    public listPortfolioGroups(): CancelablePromise<ListPortfolioGroupsResp> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/portfolio-groups',
+        });
+    }
+
+    /**
+     * Creates a portfolio group
+     * Creates a new portfolio group
+     * @param requestBody Initial portfolio group object properties
+     * @returns PortfolioGroup portfolio group created successfully
+     * @throws ApiError
+     */
+    public createPortfolioGroup(
+        requestBody: PortfolioGroupCreate,
+    ): CancelablePromise<PortfolioGroup> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/portfolio-groups',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Returns a portfolio group by ID
+     * Returns a portfolio group based on a single ID
+     * @param id ID of portfolio group to fetch
+     * @returns PortfolioGroup portfolio group response
+     * @throws ApiError
+     */
+    public findPortfolioGroupById(
+        id: string,
+    ): CancelablePromise<PortfolioGroup> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/portfolio-group/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Updates portfolio group properties
+     * Updates a portfolio group's settable properties
+     * @param id ID of the portfolio group to update
+     * @param requestBody Portfolio Group object properties to update
+     * @returns void
+     * @throws ApiError
+     */
+    public updatePortfolioGroup(
+        id: string,
+        requestBody: PortfolioGroupChanges,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/portfolio-group/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Deletes a portfolio group by ID
+     * deletes a portfolio group based on the ID supplied - note this does not delete the portfolios that are members to this group
+     * @param id ID of portfolio group to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deletePortfolioGroup(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/portfolio-group/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * creates a portfolio group membership
+     * creates a portfolio group membership
+     * @param requestBody Portfolio Group membership to create
+     * @returns void
+     * @throws ApiError
+     */
+    public createPortfolioGroupMembership(
+        requestBody: PortfolioGroupMembershipIds,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PUT',
+            url: '/portfolio-group-membership',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Deletes a portfolio group membership
+     * removes the membership of a portfolio in a portfolio - note this does not delete the portfolio or the portfolio group
+     * @param requestBody Portfolio Group membership to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deletePortfolioGroupMembership(
+        requestBody: PortfolioGroupMembershipIds,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/portfolio-group-membership',
             body: requestBody,
             mediaType: 'application/json',
         });

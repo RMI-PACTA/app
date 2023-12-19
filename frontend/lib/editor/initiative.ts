@@ -6,7 +6,7 @@ export type EditorInitiativeFields = EditorFieldsFor<Initiative>
 export type EditorInitiativeValues = EditorValuesFor<Initiative>
 
 const createEditorInitiativeFields = (translation: Translation): EditorInitiativeFields => {
-  const tt = (key: string) => translation.t(`lib/editor/initiative/${key}`)
+  const tt = (key: string) => translation.t(`lib/editor/initiative.${key}`)
   return {
     id: {
       name: 'id',
