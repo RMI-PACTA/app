@@ -109,7 +109,7 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 
 	expectedP1 := p1.Clone()
-	expectedP1.MemberOf = []*pacta.PortfolioGroupMembership{{
+	expectedP1.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{{
 		PortfolioGroup: &pacta.PortfolioGroup{ID: pg1.ID},
 		CreatedAt:      time.Now(),
 	}, {

@@ -15,7 +15,7 @@ func (s *Server) populatePortfoliosInPortfolioGroups(
 ) error {
 	getFn := func(pg *pacta.PortfolioGroup) ([]*pacta.Portfolio, error) {
 		result := []*pacta.Portfolio{}
-		for _, member := range pg.Members {
+		for _, member := range pg.PortfolioGroupMemberships {
 			result = append(result, member.Portfolio)
 		}
 		return result, nil
@@ -32,13 +32,36 @@ func (s *Server) populatePortfoliosInPortfolioGroups(
 	return nil
 }
 
+func (s *Server) populateInitiativesInPortfolios(
+	ctx context.Context,
+	is []*pacta.Portfolio,
+) error {
+	getFn := func(pg *pacta.Portfolio) ([]*pacta.Initiative, error) {
+		result := []*pacta.Initiative{}
+		for _, member := range pg.PortfolioInitiativeMemberships {
+			result = append(result, member.Initiative)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.InitiativeID) (map[pacta.InitiativeID]*pacta.Initiative, error) {
+		return s.DB.Initiatives(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(p *pacta.Initiative) pacta.InitiativeID {
+		return p.ID
+	}
+	if err := populateAll(is, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating initiatives in portfolios failed", zap.Error(err))
+	}
+	return nil
+}
+
 func (s *Server) populatePortfolioGroupsInPortfolios(
 	ctx context.Context,
 	ts []*pacta.Portfolio,
 ) error {
 	getFn := func(pg *pacta.Portfolio) ([]*pacta.PortfolioGroup, error) {
 		result := []*pacta.PortfolioGroup{}
-		for _, member := range pg.MemberOf {
+		for _, member := range pg.PortfolioGroupMemberships {
 			result = append(result, member.PortfolioGroup)
 		}
 		return result, nil

@@ -371,6 +371,47 @@ paths:
       responses:
         '204':
           description: the relationship changes were applied successfully
+  /initiative/{initiativeId}/portfolio-relationship/{portfolioId}:
+    post:
+      summary: creates an initiative portfolio relationship
+      description: creates a membership relationship between the portfolio and the initiative 
+      operationId: createInitiativePortfolioRelationship
+      parameters:
+        - name: initiativeId
+          in: path
+          description: ID of the initiative
+          required: true
+          schema:
+            type: string
+        - name: portfolioId
+          in: path
+          description: ID of the portfolio 
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: the relationship was created successfully
+    delete:
+      summary: Deletes an initiative:portfolio relationship
+      description: Deletes a given portfolio's relationship with a given initiative
+      operationId: deleteInitiativePortfolioRelationship
+      parameters:
+        - name: initiativeId
+          in: path
+          description: ID of the initiative
+          required: true
+          schema:
+            type: string
+        - name: portfolioId
+          in: path
+          description: ID of the portfolio 
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: the relationship was deleted, if it existed
   /portfolio-groups:
     get:
       summary: Returns the portfolio groups that the user has access to 
@@ -915,6 +956,40 @@ components:
         description:
           type: string
           description: the description of the contents or purpose of the portfolio group
+    PortfolioInitiativeMembershipPortfolio:
+      type: object
+      required:
+        - createdAt
+        - portfolio
+      properties:
+        addedByUserId:
+          type: string
+          description: the user that added this portfolio to the initiative
+        addedByUser:
+          $ref: '#/components/schemas/User'
+        portfolio: 
+          $ref: '#/components/schemas/Portfolio'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this relationship was created
+    PortfolioInitiativeMembershipInitiative:
+      type: object
+      required:
+        - createdAt
+        - initiative 
+      properties:
+        addedByUserId:
+          type: string
+          description: the user that added this portfolio to the initiative
+        addedByUser:
+          $ref: '#/components/schemas/User'
+        initiative: 
+          $ref: '#/components/schemas/Initiative'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this relationship was created
     InitiativeCreate:
       type: object
       required:
@@ -967,6 +1042,7 @@ components:
         - pactaVersionId
         - language
         - createdAt
+        - portfolioInitiativeMemberships
       properties:
         id:
           type: string
@@ -999,6 +1075,11 @@ components:
         pactaVersion:
           type: string
           description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
+        portfolioInitiativeMemberships:
+          type: array
+          description: the list of portfolios that are members of this initiative
+          items: 
+            $ref: '#/components/schemas/PortfolioInitiativeMembershipPortfolio'
         createdAt:
           type: string
           format: date-time
@@ -1328,6 +1409,11 @@ components:
           description: The list of portfolio groups that this portfolio is a member of
           items:
             $ref: '#/components/schemas/PortfolioGroupMembershipPortfolioGroup'
+        initiatives:
+          type: array
+          description: The list of initiatives that this portfolio is a member of
+          items: 
+            $ref: '#/components/schemas/PortfolioInitiativeMembershipInitiative'
     PortfolioChanges:
       type: object
       properties:

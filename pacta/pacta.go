@@ -117,20 +117,20 @@ func (o *User) Clone() *User {
 
 type InitiativeID string
 type Initiative struct {
-	ID                       InitiativeID
-	Name                     string
-	Affiliation              string
-	PublicDescription        string
-	InternalDescription      string
-	RequiresInvitationToJoin bool
-	IsAcceptingNewMembers    bool
-	IsAcceptingNewPortfolios bool
-	PACTAVersion             *PACTAVersion
-	Language                 Language
-	CreatedAt                time.Time
-	UserRelationships        []*InitiativeUserRelationship
-	PortfolioRelationships   []*PortfolioInitiativeMembership
-	Invitations              []*InitiativeInvitation
+	ID                             InitiativeID
+	Name                           string
+	Affiliation                    string
+	PublicDescription              string
+	InternalDescription            string
+	RequiresInvitationToJoin       bool
+	IsAcceptingNewMembers          bool
+	IsAcceptingNewPortfolios       bool
+	PACTAVersion                   *PACTAVersion
+	Language                       Language
+	CreatedAt                      time.Time
+	InitiativeUserRelationships    []*InitiativeUserRelationship
+	PortfolioInitiativeMemberships []*PortfolioInitiativeMembership
+	Invitations                    []*InitiativeInvitation
 }
 
 func (o *Initiative) Clone() *Initiative {
@@ -138,20 +138,20 @@ func (o *Initiative) Clone() *Initiative {
 		return nil
 	}
 	return &Initiative{
-		ID:                       o.ID,
-		Name:                     o.Name,
-		Affiliation:              o.Affiliation,
-		PublicDescription:        o.PublicDescription,
-		InternalDescription:      o.InternalDescription,
-		RequiresInvitationToJoin: o.RequiresInvitationToJoin,
-		IsAcceptingNewMembers:    o.IsAcceptingNewMembers,
-		IsAcceptingNewPortfolios: o.IsAcceptingNewPortfolios,
-		PACTAVersion:             o.PACTAVersion.Clone(),
-		Language:                 o.Language,
-		CreatedAt:                o.CreatedAt,
-		UserRelationships:        cloneAll(o.UserRelationships),
-		PortfolioRelationships:   cloneAll(o.PortfolioRelationships),
-		Invitations:              cloneAll(o.Invitations),
+		ID:                             o.ID,
+		Name:                           o.Name,
+		Affiliation:                    o.Affiliation,
+		PublicDescription:              o.PublicDescription,
+		InternalDescription:            o.InternalDescription,
+		RequiresInvitationToJoin:       o.RequiresInvitationToJoin,
+		IsAcceptingNewMembers:          o.IsAcceptingNewMembers,
+		IsAcceptingNewPortfolios:       o.IsAcceptingNewPortfolios,
+		PACTAVersion:                   o.PACTAVersion.Clone(),
+		Language:                       o.Language,
+		CreatedAt:                      o.CreatedAt,
+		InitiativeUserRelationships:    cloneAll(o.InitiativeUserRelationships),
+		PortfolioInitiativeMemberships: cloneAll(o.PortfolioInitiativeMemberships),
+		Invitations:                    cloneAll(o.Invitations),
 	}
 }
 
@@ -347,16 +347,17 @@ func (o *IncompleteUpload) Clone() *IncompleteUpload {
 
 type PortfolioID string
 type Portfolio struct {
-	ID                PortfolioID
-	Name              string
-	Description       string
-	CreatedAt         time.Time
-	HoldingsDate      *HoldingsDate
-	Owner             *Owner
-	Blob              *Blob
-	AdminDebugEnabled bool
-	NumberOfRows      int
-	MemberOf          []*PortfolioGroupMembership
+	ID                             PortfolioID
+	Name                           string
+	Description                    string
+	CreatedAt                      time.Time
+	HoldingsDate                   *HoldingsDate
+	Owner                          *Owner
+	Blob                           *Blob
+	AdminDebugEnabled              bool
+	NumberOfRows                   int
+	PortfolioGroupMemberships      []*PortfolioGroupMembership
+	PortfolioInitiativeMemberships []*PortfolioInitiativeMembership
 }
 
 func (o *Portfolio) Clone() *Portfolio {
@@ -364,27 +365,28 @@ func (o *Portfolio) Clone() *Portfolio {
 		return nil
 	}
 	return &Portfolio{
-		ID:                o.ID,
-		Name:              o.Name,
-		Description:       o.Description,
-		CreatedAt:         o.CreatedAt,
-		HoldingsDate:      o.HoldingsDate.Clone(),
-		Owner:             o.Owner.Clone(),
-		Blob:              o.Blob.Clone(),
-		AdminDebugEnabled: o.AdminDebugEnabled,
-		NumberOfRows:      o.NumberOfRows,
-		MemberOf:          cloneAll(o.MemberOf),
+		ID:                             o.ID,
+		Name:                           o.Name,
+		Description:                    o.Description,
+		CreatedAt:                      o.CreatedAt,
+		HoldingsDate:                   o.HoldingsDate.Clone(),
+		Owner:                          o.Owner.Clone(),
+		Blob:                           o.Blob.Clone(),
+		AdminDebugEnabled:              o.AdminDebugEnabled,
+		NumberOfRows:                   o.NumberOfRows,
+		PortfolioGroupMemberships:      cloneAll(o.PortfolioGroupMemberships),
+		PortfolioInitiativeMemberships: cloneAll(o.PortfolioInitiativeMemberships),
 	}
 }
 
 type PortfolioGroupID string
 type PortfolioGroup struct {
-	ID          PortfolioGroupID
-	Owner       *Owner
-	Name        string
-	Description string
-	CreatedAt   time.Time
-	Members     []*PortfolioGroupMembership
+	ID                        PortfolioGroupID
+	Owner                     *Owner
+	Name                      string
+	Description               string
+	CreatedAt                 time.Time
+	PortfolioGroupMemberships []*PortfolioGroupMembership
 }
 
 func (o *PortfolioGroup) Clone() *PortfolioGroup {
@@ -392,12 +394,12 @@ func (o *PortfolioGroup) Clone() *PortfolioGroup {
 		return nil
 	}
 	return &PortfolioGroup{
-		ID:          o.ID,
-		Owner:       o.Owner.Clone(),
-		Name:        o.Name,
-		Description: o.Description,
-		CreatedAt:   o.CreatedAt,
-		Members:     cloneAll(o.Members),
+		ID:                        o.ID,
+		Owner:                     o.Owner.Clone(),
+		Name:                      o.Name,
+		Description:               o.Description,
+		CreatedAt:                 o.CreatedAt,
+		PortfolioGroupMemberships: cloneAll(o.PortfolioGroupMemberships),
 	}
 }
 

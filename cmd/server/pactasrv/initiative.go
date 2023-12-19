@@ -93,6 +93,11 @@ func (s *Server) FindInitiativeById(ctx context.Context, request api.FindInitiat
 		}
 		return nil, oapierr.Internal("failed to load initiative", zap.String("initiative_id", request.Id), zap.Error(err))
 	}
+	portfolios, err := s.DB.PortfolioInitiativeMembershipsByInitiative(s.DB.NoTxn(ctx), i.ID)
+	if err != nil {
+		return nil, oapierr.Internal("failed to load portfolios for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+	}
+	i.PortfolioInitiativeMemberships = portfolios
 	resp, err := conv.InitiativeToOAPI(i)
 	if err != nil {
 		return nil, err
