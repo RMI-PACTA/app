@@ -15,6 +15,7 @@ import (
 
 // (GET /incomplete-uploads)
 func (s *Server) ListIncompleteUploads(ctx context.Context, request api.ListIncompleteUploadsRequestObject) (api.ListIncompleteUploadsResponseObject, error) {
+
 	ownerID, err := s.getUserOwnerID(ctx)
 	if err != nil {
 		return nil, err
@@ -66,6 +67,12 @@ func (s *Server) FindIncompleteUploadById(ctx context.Context, request api.FindI
 // Updates incomplete upload properties
 // (PATCH /incomplete-upload/{id})
 func (s *Server) UpdateIncompleteUpload(ctx context.Context, request api.UpdateIncompleteUploadRequestObject) (api.UpdateIncompleteUploadResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("name", request.Body.Name),
+		checkStringLimitMediumPtr("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	id := pacta.IncompleteUploadID(request.Id)
 	_, err := s.checkIncompleteUploadAuthorization(ctx, id)
 	if err != nil {

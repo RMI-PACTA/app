@@ -47,6 +47,13 @@ func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVer
 // Creates a PACTA version
 // (POST /pacta-versions)
 func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) (api.CreatePactaVersionResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmall("name", request.Body.Name),
+		checkStringLimitMedium("digest", request.Body.Digest),
+		checkStringLimitMedium("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	// TODO(#12) Implement Authorization
 	pv, err := conv.PactaVersionCreateFromOAPI(request.Body)
 	if err != nil {
@@ -61,6 +68,13 @@ func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePacta
 // Updates a PACTA version
 // (PATCH /pacta-version/{id})
 func (s *Server) UpdatePactaVersion(ctx context.Context, request api.UpdatePactaVersionRequestObject) (api.UpdatePactaVersionResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("name", request.Body.Name),
+		checkStringLimitMediumPtr("digest", request.Body.Digest),
+		checkStringLimitMediumPtr("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	// TODO(#12) Implement Authorization
 	id := pacta.PACTAVersionID(request.Id)
 	mutations := []db.UpdatePACTAVersionFn{}

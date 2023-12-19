@@ -14,6 +14,15 @@ import (
 // Creates a initiative
 // (POST /initiatives)
 func (s *Server) CreateInitiative(ctx context.Context, request api.CreateInitiativeRequestObject) (api.CreateInitiativeResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmall("id", request.Body.Id),
+		checkStringLimitSmallPtr("affiliation", request.Body.Affiliation),
+		checkStringLimitSmall("name", request.Body.Name),
+		checkStringLimitMediumPtr("internal_description", request.Body.InternalDescription),
+		checkStringLimitMediumPtr("public_description", request.Body.PublicDescription),
+	); err != nil {
+		return nil, err
+	}
 	// TODO(#12) Implement Authorization
 	i, err := conv.InitiativeCreateFromOAPI(request.Body)
 	if err != nil {
@@ -29,6 +38,14 @@ func (s *Server) CreateInitiative(ctx context.Context, request api.CreateInitiat
 // Updates an initiative
 // (PATCH /initiative/{id})
 func (s *Server) UpdateInitiative(ctx context.Context, request api.UpdateInitiativeRequestObject) (api.UpdateInitiativeResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("affiliation", request.Body.Affiliation),
+		checkStringLimitSmallPtr("name", request.Body.Name),
+		checkStringLimitMediumPtr("internal_description", request.Body.InternalDescription),
+		checkStringLimitMediumPtr("public_description", request.Body.PublicDescription),
+	); err != nil {
+		return nil, err
+	}
 	// TODO(#12) Implement Authorization
 	id := pacta.InitiativeID(request.Id)
 	mutations := []db.UpdateInitiativeFn{}
