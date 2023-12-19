@@ -45,8 +45,8 @@ export const getEditorComputedValues = <R> (key: string, r: R, toEFF: ToEFF<R>, 
   const isInvalid = computed(() => invalidFields.value.length > 0)
   const canSave = computed(() => hasChanges.value && !isInvalid.value)
   const { t } = translation
-  const allSaved = t('lib/editor/utils/AllChangesSaved')
-  const cannotSave = t('lib/editor/utils/CannotSaveWithInvalidFields')
+  const allSaved = t('lib/editor/utils.AllChangesSaved')
+  const cannotSave = t('lib/editor/utils.CannotSaveWithInvalidFields')
   const saveTooltip = computed<string | undefined>(() => {
     if (!hasChanges.value) { return allSaved }
     if (isInvalid.value) { return `${cannotSave}: ${invalidFields.value.join(', ')}` }

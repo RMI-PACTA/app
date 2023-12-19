@@ -6,7 +6,7 @@ export type EditorUserFields = EditorFieldsFor<User>
 export type EditorUserValues = EditorValuesFor<User>
 
 const createEditorUserFields = (translation: Translation): EditorUserFields => {
-  const tt = (key: string) => translation.t(`lib/editor/user/${key}`)
+  const tt = (key: string) => translation.t(`lib/editor/user.${key}`)
   return {
     id: {
       name: 'id',

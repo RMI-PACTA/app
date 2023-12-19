@@ -6,7 +6,7 @@ export type EditorIncompleteUploadFields = EditorFieldsFor<IncompleteUpload>
 export type EditorIncompleteUploadValues = EditorValuesFor<IncompleteUpload>
 
 const createEditorIncompleteUploadFields = (translation: Translation): EditorIncompleteUploadFields => {
-  const tt = (key: string) => translation.t(`lib/editor/incomplete_upload/${key}`)
+  const tt = (key: string) => translation.t(`lib/editor/incomplete_upload.${key}`)
   return {
     id: {
       name: 'id',
@@ -56,5 +56,5 @@ const createEditorIncompleteUploadFields = (translation: Translation): EditorInc
 }
 
 export const incompleteUploadEditor = (i: IncompleteUpload, translation: Translation): EditorComputedValues<IncompleteUpload> => {
-  return getEditorComputedValues(`lib/editor/incompleteUpload[${i.id}]`, i, createEditorIncompleteUploadFields, translation)
+  return getEditorComputedValues(`lib/editor/incomplete_upload[${i.id}]`, i, createEditorIncompleteUploadFields, translation)
 }

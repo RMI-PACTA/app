@@ -63,6 +63,9 @@ export const useModal = () => {
     permissionDeniedVisible.value = true
   }
 
+  // newPortfolioGroup
+  const newPortfolioGroupVisible = newModalVisibilityState('newPortfolioGroupVisibile')
+
   const anyBlockingModalOpen = computed(() => anyModalVisible.value || loading.value)
 
   return {
@@ -91,6 +94,9 @@ export const useModal = () => {
     },
     missingTranslations: {
       missingTranslationsVisible,
+    },
+    newPortfolioGroup: {
+      newPortfolioGroupVisible,
     },
   }
 }

@@ -1,169 +1,114 @@
 <script setup lang="ts">
-import { portfolioEditor } from '@/lib/editor'
+const prefix = 'pages/portfolios'
 
-const {
-  humanReadableTimeFromStandardString,
-  humanReadableDateFromStandardString,
-} = useTime()
+const { fromQueryReactive } = useURLParams()
+const { t } = useI18n()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
-const i18n = useI18n()
 
-interface EditorObject extends ReturnType<typeof portfolioEditor> {
-  id: string
-}
+const tt = (s: string) => t(`pages/portfolios.${s}`)
 
-const prefix = 'pages/portfolios'
-const expandedRows = useState<EditorObject[]>(`${prefix}.expandedRows`, () => [])
-const selectedRows = useState<EditorObject[]>(`${prefix}.selectedRows`, () => [])
+const selectedPortfolioIdsQP = fromQueryReactive('pids')
+const selectedPortfolioGroupIdsQP = fromQueryReactive('pgids')
+const activeIndexQP = fromQueryReactive('activeIndex')
 
 const [
-  { data },
+  { data: portfolioData, refresh: refreshPortfoliosApi },
+  { data: portfolioGroupData, refresh: refreshPortfolioGroupsApi },
 ] = await Promise.all([
   useSimpleAsyncData(`${prefix}.portfolios`, () => pactaClient.listPortfolios()),
+  useSimpleAsyncData(`${prefix}.portfolioGroups`, () => pactaClient.listPortfolioGroups()),
 ])
-
-let editorObjects = data.value.items.map((item) => ({ ...portfolioEditor(item, i18n), id: item.id }))
-
-const deletePortfolio = (id: string) => withLoading(
-  () => pactaClient.deletePortfolio(id).then(() => {
-    editorObjects = editorObjects.filter((editorObject) => editorObject.id !== id)
-    expandedRows.value = expandedRows.value.filter((row) => row.id !== id)
-  }),
-  `${prefix}.deletePortfolio`,
-)
-const saveChanges = (id: string) => {
-  const index = editorObjects.findIndex((editorObject) => editorObject.id === id)
-  const eo = presentOrFileBug(editorObjects[index])
-  return withLoading(
-    () => pactaClient.updatePortfolio(id, eo.changes.value)
-      .then(() => pactaClient.findPortfolioById(id))
-      .then((portfolio) => {
-        editorObjects[index] = { ...portfolioEditor(portfolio, i18n), id }
-      }),
-    `${prefix}.saveChanges`,
-  )
+const refreshPortfolios = async () => {
+  await withLoading(async () => {
+    await refreshPortfoliosApi()
+  }, `${prefix}.refreshPortfolios`)
 }
+const refreshPortfolioGroups = async () => {
+  await withLoading(async () => {
+    await refreshPortfolioGroupsApi()
+  }, `${prefix}.refreshPortfolioGroups`)
+}
+const refreshAll = async () => {
+  console.log('refreshing all')
+  await Promise.all([
+    refreshPortfolios(),
+    refreshPortfolioGroups(),
+  ])
+}
+
+const selectedPortfolioIds = computed<string[]>({
+  get: () => (selectedPortfolioIdsQP.value ?? '').split(','),
+  set: (v: string[]) => {
+    if (v.length === 0) {
+      selectedPortfolioIdsQP.value = undefined
+    } else {
+      v.sort()
+      selectedPortfolioIdsQP.value = v.join(',')
+    }
+  },
+})
+const selectedPortfolioGroupIds = computed<string[]>({
+  get: () => (selectedPortfolioGroupIdsQP.value ?? '').split(','),
+  set: (v: string[]) => {
+    if (v.length === 0) {
+      selectedPortfolioGroupIdsQP.value = undefined
+    } else {
+      v.sort()
+      selectedPortfolioGroupIdsQP.value = v.join(',')
+    }
+  },
+})
+const activeIndex = computed<number>({
+  get: () => parseInt(activeIndexQP.value ?? '0'),
+  set: (v: number) => {
+    activeIndexQP.value = v.toString()
+  },
+})
 </script>
 
 <template>
   <StandardContent>
-    <TitleBar title="Portfolios" />
+    <TitleBar :title="tt('Portfolios')" />
     <p>
-      This page shows your logical portfolios.
+      TODO(#80) Add Copy Here
     </p>
-    <PVDataTable
-      v-model:selection="selectedRows"
-      v-model:expanded-rows="expandedRows"
-      :value="editorObjects"
-      data-key="id"
-      class="portfolio-upload-table"
-      size="small"
+    <PVTabView
+      v-model:activeIndex="activeIndex"
+      class="w-full"
     >
-      <PVColumn selection-mode="multiple" />
-      <PVColumn
-        field="editorValues.value.createdAt.originalValue"
-        header="Created At"
-        sortable
+      <PVTabPanel
+        :header="tt('Portfolios')"
       >
-        <template #body="slotProps">
-          {{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}
-        </template>
-      </PVColumn>
-      <PVColumn
-        field="editorValues.value.name.originalValue"
-        sortable
-        header="Name"
-      />
-      <PVColumn
-        expander
-        header="Details"
-      />
-      <template
-        #expansion="slotProps"
+        <PortfolioListView
+          v-model:selected-portfolio-group-ids="selectedPortfolioGroupIds"
+          v-model:selected-portfolio-ids="selectedPortfolioIds"
+          :portfolios="portfolioData.items"
+          :portfolio-groups="portfolioGroupData.items"
+          @refresh="refreshAll"
+        />
+      </PVTabPanel>
+      <PVTabPanel
+        :header="tt('Portfolio Groups')"
       >
-        <div class="surface-100 p-3">
-          <h2 class="mt-0">
-            Metadata
-          </h2>
-          <div class="flex flex-column gap-2 w-fit">
-            <div class="flex gap-2 justify-content-between">
-              <span>Created At</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}</b>
-            </div>
-            <div class="flex gap-2 justify-content-between">
-              <span>Number of Rows</span>
-              <b>{{ slotProps.data.editorValues.value.numberOfRows.originalValue }}</b>
-            </div>
-            <div class="flex gap-2 justify-content-between">
-              <span>Holdings Date</span>
-              <b>{{ humanReadableDateFromStandardString(slotProps.data.editorValues.value.holdingsDate.originalValue.time).value }}</b>
-            </div>
-          </div>
-          <h2 class="mt-5">
-            Editable Properties
-          </h2>
-          <PortfolioEditor
-            v-model:editor-values="slotProps.data.editorValues.value"
-            :editor-fields="slotProps.data.editorFields"
-          />
-          <div class="flex gap-3 justify-content-between">
-            <PVButton
-              icon="pi pi-trash"
-              class="p-button-danger p-button-outlined"
-              label="Delete"
-              @click="() => deletePortfolio(slotProps.data.id)"
-            />
-            <div v-tooltip.bottom="slotProps.data.saveTooltip">
-              <PVButton
-                :disabled="!slotProps.data.canSave.value"
-                label="Save Changes"
-                icon="pi pi-save"
-                icon-pos="right"
-                @click="() => saveChanges(slotProps.data.id)"
-              />
-            </div>
-          </div>
-          <StandardDebug
-            :value="slotProps.data.editorFields.value"
-            label="Editor Fields"
-          />
-          <StandardDebug
-            :value="slotProps.data.editorValues.value"
-            label="Editor Values"
-          />
-        </div>
-      </template>
-    </PVDataTable>
-    <div class="flex flex-wrap gap-3 w-full justify-content-between">
-      <LinkButton
-        class="p-button-outlined"
-        icon="pi pi-arrow-left"
-        to="/upload"
-        label="Upload New Portfolios"
-      />
-      <!-- TODO(grady) Hook this up to something. -->
-      <PVButton
-        class="p-button-outlined"
-        label="How To Run a Report"
-        icon="pi pi-question-circle"
-        icon-pos="right"
-      />
-    </div>
-    <StandardDebug
-      :value="data"
-      label="Editor Objects"
-    />
-  </standardcontent>
+        <PortfolioGroupListView
+          v-model:selected-portfolio-group-ids="selectedPortfolioGroupIds"
+          v-model:selected-portfolio-ids="selectedPortfolioIds"
+          :portfolios="portfolioData.items"
+          :portfolio-groups="portfolioGroupData.items"
+          @refresh="refreshAll"
+        />
+      </PVTabPanel>
+    </PVTabView>
+  </StandardContent>
 </template>
 
 <style lang="scss">
-.portfolio-upload-table.p-datatable.p-datatable-sm {
+.p-datatable.p-datatable-sm {
   width: 100%;
 
   .p-datatable-row-expansion td {
     padding: 0 0.5rem;
-
   }
 
   .p-checkbox {

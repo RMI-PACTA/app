@@ -12,6 +12,21 @@ interface Props {
 }
 const props = withDefaults(defineProps<Props>(), { always: false, label: undefined })
 const label = computed(() => props.label ?? tt('Debugging Information'))
+const valueAsStr = computed(() => JSON.stringify(props.value, createCircularReplacer(), 2))
+
+function createCircularReplacer (): (this: any, key: string, value: any) => any {
+  const seen = new WeakSet()
+  return function (this: any, key: string, value: any) {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '#REF'
+      }
+      seen.add(value)
+    }
+    return value
+  }
+}
+
 </script>
 
 <template>
@@ -27,7 +42,7 @@ const label = computed(() => props.label ?? tt('Debugging Information'))
       <div
         class="code surface-50"
       >
-        {{ JSON.stringify(props.value, null, 2) }}
+        {{ valueAsStr }}
       </div>
     </PVAccordionTab>
   </PVAccordion>
