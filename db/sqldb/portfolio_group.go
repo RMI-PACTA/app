@@ -3,7 +3,6 @@ package sqldb
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
@@ -19,45 +18,53 @@ func (d *DB) PortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) (*pacta.Portfol
 	return exactlyOneFromMap("portfolioGroup", id, pgs)
 }
 
-const portfolioGroupQueryStanza = `
+func portfolioGroupQueryStanza(where string) string {
+	return fmt.Sprintf(`
 	SELECT
 		portfolio_group.id, 
 		portfolio_group.owner_id, 
 		portfolio_group.name, 
 		portfolio_group.description, 
 		portfolio_group.created_at,
-		portfolio_group_membership.portfolio_id,
-		portfolio_group_membership.created_at
+		ARRAY_AGG(portfolio_group_membership.portfolio_id),
+		ARRAY_AGG(portfolio_group_membership.created_at)
 	FROM portfolio_group
 	LEFT JOIN portfolio_group_membership 
 	ON portfolio_group_membership.portfolio_group_id = portfolio_group.id
-`
+	%s
+	GROUP BY portfolio_group.id;`, where)
+}
 
 func (d *DB) PortfolioGroups(tx db.Tx, ids []pacta.PortfolioGroupID) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error) {
 	if len(ids) == 0 {
 		return make(map[pacta.PortfolioGroupID]*pacta.PortfolioGroup), nil
 	}
 	ids = dedupeIDs(ids)
-	rows, err := d.query(tx, portfolioGroupQueryStanza+`
-		WHERE portfolio_group.id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
+	rows, err := d.query(tx, portfolioGroupQueryStanza(`WHERE portfolio_group.id IN `+createWhereInFmt(len(ids))), idsToInterface(ids)...)
 	if err != nil {
 		return nil, fmt.Errorf("querying portfolio_groups: %w", err)
 	}
-	return rowsToPortfolioGroups(rows)
+	pgs, err := rowsToPortfolioGroups(rows)
+	if err != nil {
+		return nil, fmt.Errorf("decoding portfolio_groups: %w", err)
+	}
+	result := make(map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, len(pgs))
+	for _, pg := range pgs {
+		result[pg.ID] = pg
+	}
+	return result, nil
 }
 
 func (d *DB) PortfolioGroupsByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.PortfolioGroup, error) {
-	rows, err := d.query(tx, portfolioGroupQueryStanza+` WHERE portfolio_group.owner_id = $1;`, ownerID)
+	rows, err := d.query(tx, portfolioGroupQueryStanza(`WHERE portfolio_group.owner_id = $1`), ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("querying portfolio_groups: %w", err)
 	}
-	// Note the map interface here is ~required in the deserialization process to track multiple memberships,
-	// so we're not just converting to a map and back.
-	asMap, err := rowsToPortfolioGroups(rows)
+	pgs, err := rowsToPortfolioGroups(rows)
 	if err != nil {
-		return nil, fmt.Errorf("converting rows to portfolio groups: %w", err)
+		return nil, fmt.Errorf("translating rows to portfolio_groups: %w", err)
 	}
-	return valuesFromMap(asMap), nil
+	return pgs, nil
 }
 
 func (d *DB) CreatePortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) (pacta.PortfolioGroupID, error) {
@@ -115,62 +122,44 @@ func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error {
 	})
 }
 
-type portfolioGroupRow struct {
-	PortfolioGroup                      *pacta.PortfolioGroup
-	PortfolioGroupMembershipPortfolioID pacta.PortfolioID
-	PortfolioGroupMembershipCreatedAt   time.Time
-}
-
-func rowToPortfolioGroupRow(row rowScanner) (*portfolioGroupRow, error) {
-	p := &portfolioGroupRow{PortfolioGroup: &pacta.PortfolioGroup{Owner: &pacta.Owner{}}}
-	mi := pgtype.Text{}
-	ca := pgtype.Timestamptz{}
+func rowToPortfolioGroup(row rowScanner) (*pacta.PortfolioGroup, error) {
+	p := &pacta.PortfolioGroup{Owner: &pacta.Owner{}}
+	mid := []pgtype.Text{}
+	mca := []pgtype.Timestamptz{}
 	err := row.Scan(
-		&p.PortfolioGroup.ID,
-		&p.PortfolioGroup.Owner.ID,
-		&p.PortfolioGroup.Name,
-		&p.PortfolioGroup.Description,
-		&p.PortfolioGroup.CreatedAt,
-		&mi,
-		&ca,
+		&p.ID,
+		&p.Owner.ID,
+		&p.Name,
+		&p.Description,
+		&p.CreatedAt,
+		&mid,
+		&mca,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("scanning into portfolio_group row: %w", err)
 	}
-	if mi.Valid {
-		p.PortfolioGroupMembershipPortfolioID = pacta.PortfolioID(mi.String)
-		p.PortfolioGroupMembershipCreatedAt = ca.Time
+	for i := range mid {
+		if !mid[i].Valid && !mca[i].Valid {
+			continue // skip nulls
+		}
+		if !mid[i].Valid {
+			return nil, fmt.Errorf("portfolio group membership ids must be non-null")
+		}
+		if !mca[i].Valid {
+			return nil, fmt.Errorf("portfolio group membership createdAt must be non-null")
+		}
+		p.Members = append(p.Members, &pacta.PortfolioGroupMembership{
+			Portfolio: &pacta.Portfolio{
+				ID: pacta.PortfolioID(mid[i].String),
+			},
+			CreatedAt: mca[i].Time,
+		})
 	}
 	return p, nil
 }
 
-func rowsToPortfolioGroups(rows pgx.Rows) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error) {
-	pgRows, err := mapRows("portfolioGroup", rows, rowToPortfolioGroupRow)
-	if err != nil {
-		return nil, fmt.Errorf("translating rows to portfolio_groups: %w", err)
-	}
-	result := make(map[pacta.PortfolioGroupID]*pacta.PortfolioGroup)
-	for _, row := range pgRows {
-		id := row.PortfolioGroup.ID
-		if _, ok := result[id]; !ok {
-			result[id] = &pacta.PortfolioGroup{
-				ID:          row.PortfolioGroup.ID,
-				Owner:       row.PortfolioGroup.Owner,
-				Name:        row.PortfolioGroup.Name,
-				Description: row.PortfolioGroup.Description,
-				CreatedAt:   row.PortfolioGroup.CreatedAt,
-			}
-		}
-		if row.PortfolioGroupMembershipPortfolioID != "" {
-			result[id].Members = append(result[id].Members, &pacta.PortfolioGroupMembership{
-				Portfolio: &pacta.Portfolio{
-					ID: row.PortfolioGroupMembershipPortfolioID,
-				},
-				CreatedAt: row.PortfolioGroupMembershipCreatedAt,
-			})
-		}
-	}
-	return result, nil
+func rowsToPortfolioGroups(rows pgx.Rows) ([]*pacta.PortfolioGroup, error) {
+	return mapRows("portfolioGroup", rows, rowToPortfolioGroup)
 }
 
 func (d *DB) putPortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) error {
