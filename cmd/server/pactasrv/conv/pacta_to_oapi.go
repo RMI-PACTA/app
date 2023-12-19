@@ -24,7 +24,7 @@ func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 		IsAcceptingNewPortfolios:       i.IsAcceptingNewPortfolios,
 		Language:                       api.InitiativeLanguage(i.Language),
 		Name:                           i.Name,
-		PactaVersion:                   ptr(string(i.PACTAVersion.ID)),
+		PactaVersion:                   strPtr(i.PACTAVersion.ID),
 		PublicDescription:              i.PublicDescription,
 		RequiresInvitationToJoin:       i.RequiresInvitationToJoin,
 		PortfolioInitiativeMemberships: pims,
@@ -37,7 +37,7 @@ func portfolioInitiativeMembershipToOAPIPortfolio(in *pacta.PortfolioInitiativeM
 		CreatedAt: in.CreatedAt,
 	}
 	if in.AddedBy != nil && in.AddedBy.ID == "" {
-		out.AddedByUserId = ptr(string(in.AddedBy.ID))
+		out.AddedByUserId = strPtr(in.AddedBy.ID)
 	}
 	p, err := PortfolioToOAPI(in.Portfolio)
 	if err != nil {
@@ -53,7 +53,7 @@ func portfolioInitiativeMembershipToOAPIInitiative(in *pacta.PortfolioInitiative
 		CreatedAt: in.CreatedAt,
 	}
 	if in.AddedBy != nil && in.AddedBy.ID == "" {
-		out.AddedByUserId = ptr(string(in.AddedBy.ID))
+		out.AddedByUserId = strPtr(in.AddedBy.ID)
 	}
 	if in.Initiative != nil {
 		i, err := InitiativeToOAPI(in.Initiative)
@@ -104,7 +104,7 @@ func InitiativeInvitationToOAPI(i *pacta.InitiativeInvitation) (*api.InitiativeI
 	}
 	var usedBy *string
 	if i.UsedBy != nil {
-		usedBy = ptr(string(i.UsedBy.ID))
+		usedBy = strPtr(i.UsedBy.ID)
 	}
 	return &api.InitiativeInvitation{
 		CreatedAt:    i.CreatedAt,
