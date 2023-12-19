@@ -8,8 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const errorID = "UGC_INPUT_TOO_LARGE"
-
 func checkStringLimitMediumPtr(site string, value *string) error {
 	if value == nil {
 		return nil
@@ -56,7 +54,7 @@ func checkLimit(site string, value int, valueStr string, limit int, limitStr str
 				site,
 				valueStr,
 				limitStr),
-		).WithErrorID(errorID)
+		).WithErrorID("INPUT_EXCEEDS_LIMIT")
 	}
 	return nil
 }
@@ -64,6 +62,9 @@ func checkLimit(site string, value int, valueStr string, limit int, limitStr str
 func formatByteSize(bytes int) string {
 	if bytes <= 0 {
 		return ""
+	}
+	if bytes < 1000 {
+		return fmt.Sprintf("%d %s", bytes, dataSizes[0])
 	}
 	k := 1000.0
 	i := int(math.Floor(math.Log(float64(bytes)) / math.Log(k)))
