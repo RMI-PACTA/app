@@ -28,12 +28,6 @@ const toggleMenu = (event: Event) => {
   presentOrFileBug(overlayPanel.value).toggle(event)
   visible.value = !visible.value
 }
-const hideMenu = () => {
-  visible.value = false
-}
-const showMenu = () => {
-  visible.value = true
-}
 
 const changeMemberships = (portfolioGroupId: string, add: boolean) => {
   return async (event: Event) => {
@@ -48,7 +42,6 @@ const changeMemberships = (portfolioGroupId: string, add: boolean) => {
       severity: 'success',
       group: add ? 'portfolio-group-membership-added' : 'portfolio-group-membership-removed',
     })
-    // toggleMenu(event)
   }
 }
 const changedGroups = () => {
@@ -85,6 +78,8 @@ const groupOptions = computed(() => {
       created: pg.createdAt,
     }
   })
+  // Created is an ISO date time string. This sorts by newest first, without having
+  // to parse the date.
   result.sort((a, b) => a.created < b.created ? 1 : -1)
   return result
 })
@@ -102,8 +97,8 @@ const groupOptions = computed(() => {
     <PVOverlayPanel
       ref="overlayPanel"
       :pt="{ content: { class: 'p-0' } }"
-      @hide="hideMenu"
-      @show="showMenu"
+      @hide="() => { visible = false }"
+      @show="() => { visible = true }"
     >
       <div class="flex flex-column align-items-stretch">
         <div class="font-bold text-xl p-3 border-bottom-1 border-600 flex gap-2 align-items-center">
@@ -126,14 +121,12 @@ const groupOptions = computed(() => {
           >
             <div class="flex justify-content-start align-items-center gap-3">
               <div
-                class="flex-0 border-2 border-round flex justify-content-center align-items-center"
+                class="pseudo-checkbox flex-0 border-2 border-round flex justify-content-center align-items-center"
                 :class="option.icon === 'empty' ? 'bg-white' : 'bg-primary-500 text-white border-primary-500'"
-                style="height: 1.25rem; width: 1.25rem;"
               >
                 <i
                   v-if="option.icon === 'full'"
-                  class="pi pi-check"
-                  style="font-size: 1rem"
+                  class="pi pi-check text-base"
                 />
                 <i
                   v-if="option.icon === 'partial'"
@@ -173,3 +166,12 @@ const groupOptions = computed(() => {
     />
   </div>
 </template>
+
+<style scoped lang="scss">
+// Note, these styles are meant to match the size of the PV checkboxes, which we cannot
+// use directly because of the mixed (dash) state here. They appear to be 1.25rem wide.
+.pseudo-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+</style>

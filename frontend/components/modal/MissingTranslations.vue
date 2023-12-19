@@ -9,16 +9,14 @@ const languages = ['en', 'es', 'fr', 'de']
 const tt = (key: string) => t(`${prefix}.${key}`)
 
 const onOpen = async () => {
-  await withLoading(async () => {
-    await Promise.all(languages.map((lang) => $axios({
-      method: 'get',
-      url: `/_nuxt/lang/${lang}.json`,
-      transformResponse: (res) => res,
-      responseType: 'json',
-    }).then((r) => {
-      existing.value.set(lang, r.data)
-    })))
-  }, `${prefix}.onOpen`)
+  await withLoading(() => Promise.all(languages.map((lang) => $axios({
+    method: 'get',
+    url: `/_nuxt/lang/${lang}.json`,
+    transformResponse: (res) => res,
+    responseType: 'json',
+  }).then((r) => {
+    existing.value.set(lang, r.data)
+  }))), `${prefix}.onOpen`)
 }
 
 const constructIdealMap = (lang: string): { map: Map<string, Map<string, string>>, errors: string[], missing: Set<string> } => {

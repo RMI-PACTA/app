@@ -20,14 +20,10 @@ const [
   useSimpleAsyncData(`${prefix}.portfolioGroups`, () => pactaClient.listPortfolioGroups()),
 ])
 const refreshPortfolios = async () => {
-  await withLoading(async () => {
-    await refreshPortfoliosApi()
-  }, `${prefix}.refreshPortfolios`)
+  await withLoading(refreshPortfoliosApi, `${prefix}.refreshPortfolios`)
 }
 const refreshPortfolioGroups = async () => {
-  await withLoading(async () => {
-    await refreshPortfolioGroupsApi()
-  }, `${prefix}.refreshPortfolioGroups`)
+  await withLoading(refreshPortfolioGroupsApi, `${prefix}.refreshPortfolioGroups`)
 }
 const refreshAll = async () => {
   console.log('refreshing all')
