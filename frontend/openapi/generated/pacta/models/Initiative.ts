@@ -3,6 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { PortfolioInitiativeMembershipPortfolio } from './PortfolioInitiativeMembershipPortfolio';
+
 export type Initiative = {
     /**
      * the human readable identifier for the initiative, can only include alphanumeric characters, dashes and underscores
@@ -44,6 +46,10 @@ export type Initiative = {
      * The pacta model that this initiative should use, if not specified, the default pacta model will be used.
      */
     pactaVersion?: string;
+    /**
+     * the list of portfolios that are members of this initiative
+     */
+    portfolioInitiativeMemberships: Array<PortfolioInitiativeMembershipPortfolio>;
     /**
      * The time at which this initiative was created.
      */

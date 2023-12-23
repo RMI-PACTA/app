@@ -12,6 +12,9 @@ import (
 
 func portfolioQueryStanza(where string) string {
 	return fmt.Sprintf(`
+	WITH selected_portfolio_ids AS (
+		SELECT id FROM portfolio %[1]s
+	)
 	SELECT
 		portfolio.id,
 		portfolio.owner_id,
@@ -22,18 +25,32 @@ func portfolioQueryStanza(where string) string {
 		portfolio.blob_id,
 		portfolio.admin_debug_enabled,
 		portfolio.number_of_rows,
-		ARRAY_AGG(portfolio_group_membership.portfolio_group_id),
-		ARRAY_AGG(portfolio_group_membership.created_at),
-		ARRAY_AGG(portfolio_initiative_membership.initiative_id),
-		ARRAY_AGG(portfolio_initiative_membership.added_by_user_id),
-		ARRAY_AGG(portfolio_initiative_membership.created_at)
+		portfolio_group_ids,
+		portfolio_group_created_ats,
+		initiative_ids,
+		initiative_added_by_user_ids,
+		initiative_created_ats
 	FROM portfolio
-	LEFT JOIN portfolio_group_membership 
-	ON portfolio_group_membership.portfolio_id = portfolio.id
-	LEFT JOIN portfolio_initiative_membership
-	ON portfolio_initiative_membership.portfolio_id = portfolio.id
-	%s
-	GROUP BY portfolio.id;`, where)
+	LEFT JOIN (
+		SELECT 
+			portfolio_id,
+			ARRAY_AGG(portfolio_group_id) as portfolio_group_ids,
+			ARRAY_AGG(created_at) as portfolio_group_created_ats
+		FROM portfolio_group_membership
+		WHERE portfolio_id IN (SELECT id FROM selected_portfolio_ids)
+		GROUP BY portfolio_id
+	) pgs ON pgs.portfolio_id = portfolio.id
+	LEFT JOIN (
+		SELECT
+			portfolio_id,
+			ARRAY_AGG(initiative_id) as initiative_ids,
+			ARRAY_AGG(added_by_user_id) as initiative_added_by_user_ids,
+			ARRAY_AGG(created_at) as initiative_created_ats
+		FROM portfolio_initiative_membership
+		WHERE portfolio_id IN (SELECT id FROM selected_portfolio_ids)
+		GROUP BY portfolio_id
+	) itvs ON itvs.portfolio_id = portfolio.id
+	%[1]s;`, where)
 }
 
 func (d *DB) Portfolio(tx db.Tx, id pacta.PortfolioID) (*pacta.Portfolio, error) {
@@ -215,16 +232,22 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 	if err := checkSizesEquivalent("initiatives", len(initiativesIDs), len(initiativesAddedByIDs), len(initiativesCreatedAts)); err != nil {
 		return nil, err
 	}
+	seenInitiativeIDs := make(map[pacta.InitiativeID]bool)
 	for i := range initiativesIDs {
 		if !initiativesIDs[i].Valid && !initiativesCreatedAts[i].Valid {
 			continue // skip nulls
 		}
-		if !groupsIDs[i].Valid {
-			return nil, fmt.Errorf("portfolio group membership ids must be non-null")
+		if !initiativesIDs[i].Valid {
+			return nil, fmt.Errorf("initiative ids must be non-null")
 		}
-		if !groupsCreatedAts[i].Valid {
-			return nil, fmt.Errorf("portfolio group membership createdAt must be non-null")
+		if !initiativesCreatedAts[i].Valid {
+			return nil, fmt.Errorf("initiative createdAt must be non-null")
 		}
+		id := pacta.InitiativeID(initiativesIDs[i].String)
+		if seenInitiativeIDs[id] {
+			continue // Skip duplicates, see MULTI_LEFT_JOIN note.
+		}
+		seenInitiativeIDs[id] = true
 		var addedBy *pacta.User
 		if initiativesAddedByIDs[i].Valid {
 			addedBy = &pacta.User{ID: pacta.UserID(initiativesAddedByIDs[i].String)}
@@ -233,7 +256,7 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 			Initiative: &pacta.Initiative{
 				ID: pacta.InitiativeID(initiativesIDs[i].String),
 			},
-			CreatedAt: groupsCreatedAts[i].Time,
+			CreatedAt: initiativesCreatedAts[i].Time,
 			AddedBy:   addedBy,
 		})
 	}

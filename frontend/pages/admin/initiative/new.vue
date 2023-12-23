@@ -22,6 +22,7 @@ const defaultInitiative = {
   language: Initiative.language.EN,
   pactaVersion: undefined,
   createdAt: '',
+  portfolioInitiativeMemberships: [],
 }
 const {
   editorFields,

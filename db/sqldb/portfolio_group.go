@@ -138,12 +138,15 @@ func rowToPortfolioGroup(row rowScanner) (*pacta.PortfolioGroup, error) {
 	if err != nil {
 		return nil, fmt.Errorf("scanning into portfolio_group row: %w", err)
 	}
+	if err := checkSizesEquivalent("portfolio group memberhsip", len(mid), len(mca)); err != nil {
+		return nil, err
+	}
 	for i := range mid {
 		if !mid[i].Valid && !mca[i].Valid {
 			continue // skip nulls
 		}
 		if !mid[i].Valid {
-			return nil, fmt.Errorf("portfolio group membership ids must be non-null")
+			return nil, fmt.Errorf("portfolio membership ids must be non-null")
 		}
 		if !mca[i].Valid {
 			return nil, fmt.Errorf("portfolio group membership createdAt must be non-null")
@@ -182,7 +185,7 @@ func (d *DB) CreatePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupI
 			(portfolio_group_id, portfolio_id)
 			VALUES
 			($1, $2)
-		ON CONFLICT (portfolio_group_id, portfolio_id) DO NOTHING;`,
+		ON CONFLICT DO NOTHING;`,
 		pgID, pID)
 	if err != nil {
 		return fmt.Errorf("creating portfolio_group_membership: %w", err)

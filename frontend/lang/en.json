@@ -12,7 +12,20 @@
   },
   "components/form/Field": {
     "Loading": "Loading...",
-    "Required": "Required"
+    "Required": "Required",
+    "Needs Attention": "Needs Attention"
+  },
+  "components/incompleteupload/ListView": {
+    "Created At": "Created At",
+    "Details": "Details",
+    "Name": "Name",
+    "Delete": "Delete",
+    "Editable Properties": "Editable Properties",
+    "Holdings Date": "Holdings Date",
+    "Metadata": "Metadata",
+    "Number of Rows": "Number of Rows",
+    "Save Changes": "Save Changes",
+    "Refresh": "Refresh"
   },
   "components/initiative/Toolbar": {
     "Edit": "Edit",
@@ -64,6 +77,8 @@
     "Administrator Debugging Access Enabled": "Administrator Debugging Access Enabled",
     "No Administrator Access Enabled": "No Administrator Access Enabled"
   },
+
+
   "components/portfolio/ListView": {
     "Created At": "Created At",
     "Details": "Details",
@@ -102,7 +117,25 @@
     "Add unselected portfolios to group": "Add selected portfolios to this group",
     "Create New Group": "Create New Group",
     "Group Memberships": "Manage Group Memberships",
-    "Remove all portfolios from group": "Remove selected portfolios from this group"
+    "Remove all portfolios from group": "Remove selected portfolios from this group",
+    "Added OK Singular": "Added portfolio to group",
+    "Removed OK Singular": "Removed portfolio from group",
+    "Added OK Plural": "Added portfolios to group",
+    "Removed OK Plural": "Removed portfolios from group",
+    "Portfolios": "Portfolios",
+    "Group": "Group"
+  },
+  "components/portfolio/initiative/membership/MenuButton": {
+    "Add all portfolios to initiative": "Add selected portfolios to initiative",
+    "Add unselected portfolios to initiative": "Add selected portfolios to this initiative",
+    "Initiative Memberships": "Select Initaitive Participation",
+    "Remove all portfolios from initiative": "Remove selected portfolios from this initiative",
+    "Added OK Singular": "Added portfolio to initiative",
+    "Removed OK Singular": "Removed portfolio from initiative",
+    "Added OK Plural": "Added portfolios to initiative",
+    "Removed OK Plural": "Removed portfolios from initiative",
+    "Portfolios": "Portfolios",
+    "Initiative": "Initiative"
   },
   "components/standard/Debug": {
     "Debugging Information": "Debugging Information"
@@ -121,7 +154,7 @@
   "components/standard/Nav": {
     "Admin": "Admin",
     "Home": "Home",
-    "My Stuff": "My Stuff",
+    "My Data": "My Data",
     "Sign In": "Sign In",
     "Sign Out": "Sign Out"
   },
@@ -177,8 +210,10 @@
     "if-accept": "If you accept this invitation, you'll be able to add your portfolios to the project, where they will be included in aggregated analysis. You aren't required to accept this invitation if you just want to run the analysis on your own, but joining the initiative may enable you to access internal benefits, like the ability to see the analysis results from the aggregated portfolios.",
     "what-shared": "If you accept X, Y, Z will be whared with the initiative administrators, but A, B, C will not be."
   },
-  "pages/portfolios": {
+  "pages/my-data": {
+    "My Data": "My Data",
     "Portfolio Groups": "Portfolio Groups",
-    "Portfolios": "Portfolios"
+    "Portfolios": "Portfolios",
+    "Incomplete Uploads": "Incomplete Uploads"
   }
 }

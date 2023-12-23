@@ -14,7 +14,7 @@ onMountedWithLoading(() => { /* nothing to do */ }, 'defaultLayout.onMountedWith
       :aria-hidden="anyBlockingModalOpen"
     >
       <main
-        class="px-3 md:px-6 w-full lg:w-10 xl:w-8 mx-auto full-height-minus-header-footer"
+        class="px-3 md:px-6 w-full lg:w-11 xl:w-10 mx-auto full-height-minus-header-footer"
       >
         <NuxtPage />
       </main>
