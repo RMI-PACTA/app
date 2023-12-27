@@ -9,25 +9,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const analyseSelectColumns = `
-	analysis.id,
-	analysis.analysis_type,
-	analysis.owner_id,
-	analysis.pacta_version_id,
-	analysis.portfolio_snapshot_id,
-	analysis.name,
-	analysis.description,
-	analysis.created_at,
-	analysis.ran_at,
-	analysis.completed_at,
-	analysis.failure_code,
-	analysis.failure_message`
+func analysisQuery(where string) string {
+	return fmt.Sprintf(`
+		SELECT
+			analysis.id,
+			analysis.analysis_type,
+			analysis.owner_id,
+			analysis.pacta_version_id,
+			analysis.portfolio_snapshot_id,
+			analysis.name,
+			analysis.description,
+			analysis.created_at,
+			analysis.ran_at,
+			analysis.completed_at,
+			analysis.failure_code,
+			analysis.failure_message,
+			ARRAY_AGG(analysis_artifact.id) AS analysis_artifact_ids
+		FROM
+			analysis
+			LEFT JOIN analysis_artifact 
+			ON analysis_artifact.analysis_id = analysis.id
+		%s
+		GROUP BY analysis.id
+`, where)
+}
 
 func (d *DB) Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error) {
-	rows, err := d.query(tx, `
-		SELECT `+analyseSelectColumns+`
-		FROM analysis 
-		WHERE id = $1;`, id)
+	rows, err := d.query(tx, analysisQuery(`WHERE id = $1`), id)
 	if err != nil {
 		return nil, fmt.Errorf("querying analysis: %w", err)
 	}
@@ -40,10 +48,7 @@ func (d *DB) Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error) {
 
 func (d *DB) Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*pacta.Analysis, error) {
 	ids = dedupeIDs(ids)
-	rows, err := d.query(tx, `
-		SELECT `+analyseSelectColumns+`
-		FROM analysis 
-		WHERE id IN `+createWhereInFmt(len(ids))+`;`, idsToInterface(ids)...)
+	rows, err := d.query(tx, analysisQuery(`WHERE id IN `+createWhereInFmt(len(ids))), idsToInterface(ids)...)
 	if err != nil {
 		return nil, fmt.Errorf("querying analyses: %w", err)
 	}
@@ -56,6 +61,18 @@ func (d *DB) Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*p
 		result[pv.ID] = pv
 	}
 	return result, nil
+}
+
+func (d *DB) AnalysesByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.Analysis, error) {
+	rows, err := d.query(tx, analysisQuery(`WHERE owner_id = $1`), ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("querying analyses: %w", err)
+	}
+	as, err := rowsToAnalyses(rows)
+	if err != nil {
+		return nil, fmt.Errorf("translating rows to analyses: %w", err)
+	}
+	return as, nil
 }
 
 func (d *DB) CreateAnalysis(tx db.Tx, a *pacta.Analysis) (pacta.AnalysisID, error) {
@@ -149,6 +166,7 @@ func rowToAnalysis(row rowScanner) (*pacta.Analysis, error) {
 		aType                       string
 		failureCode, failureMessage pgtype.Text
 		ranAt, completedAt          pgtype.Timestamptz
+		artifactIDs                 []pacta.AnalysisArtifactID
 	)
 	err := row.Scan(
 		&a.ID,
@@ -163,6 +181,7 @@ func rowToAnalysis(row rowScanner) (*pacta.Analysis, error) {
 		&completedAt,
 		&failureCode,
 		&failureMessage,
+		&artifactIDs,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("scanning into analysis: %w", err)
@@ -185,6 +204,9 @@ func rowToAnalysis(row rowScanner) (*pacta.Analysis, error) {
 	}
 	if failureMessage.Valid {
 		a.FailureMessage = failureMessage.String
+	}
+	for _, id := range artifactIDs {
+		a.Artifacts = append(a.Artifacts, &pacta.AnalysisArtifact{ID: id})
 	}
 	return a, nil
 }

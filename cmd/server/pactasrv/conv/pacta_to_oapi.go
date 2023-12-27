@@ -1,11 +1,28 @@
 package conv
 
 import (
+	"fmt"
+
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
 	"go.uber.org/zap"
 )
+
+func LanguageToOAPI(l pacta.Language) (api.Language, error) {
+	switch l {
+	case pacta.Language_DE:
+		return api.De, nil
+	case pacta.Language_ES:
+		return api.Es, nil
+	case pacta.Language_EN:
+		return api.En, nil
+	case pacta.Language_FR:
+		return api.Fr, nil
+	default:
+		return "", fmt.Errorf("unknown language: %q", l)
+	}
+}
 
 func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 	if i == nil {
@@ -15,6 +32,10 @@ func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 	if err != nil {
 		return nil, oapierr.Internal("initiativeToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
 	}
+	lang, err := LanguageToOAPI(i.Language)
+	if err != nil {
+		return nil, oapierr.Internal("initiativeToOAPI: languageToOAPI failed", zap.Error(err))
+	}
 	return &api.Initiative{
 		Affiliation:                    i.Affiliation,
 		CreatedAt:                      i.CreatedAt,
@@ -22,7 +43,7 @@ func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 		InternalDescription:            i.InternalDescription,
 		IsAcceptingNewMembers:          i.IsAcceptingNewMembers,
 		IsAcceptingNewPortfolios:       i.IsAcceptingNewPortfolios,
-		Language:                       api.InitiativeLanguage(i.Language),
+		Language:                       lang,
 		Name:                           i.Name,
 		PactaVersion:                   strPtr(i.PACTAVersion.ID),
 		PublicDescription:              i.PublicDescription,
@@ -69,13 +90,17 @@ func UserToOAPI(user *pacta.User) (*api.User, error) {
 	if user == nil {
 		return nil, oapierr.Internal("userToOAPI: can't convert nil pointer")
 	}
+	lang, err := LanguageToOAPI(user.PreferredLanguage)
+	if err != nil {
+		return nil, oapierr.Internal("userToOAPI: languageToOAPI failed", zap.Error(err))
+	}
 	return &api.User{
 		Admin:             user.Admin,
 		CanonicalEmail:    &user.CanonicalEmail,
 		EnteredEmail:      user.EnteredEmail,
 		Id:                string(user.ID),
 		Name:              user.Name,
-		PreferredLanguage: api.UserPreferredLanguage(user.PreferredLanguage),
+		PreferredLanguage: lang,
 		SuperAdmin:        user.SuperAdmin,
 	}, nil
 }
@@ -147,6 +172,13 @@ func IncompleteUploadsToOAPI(ius []*pacta.IncompleteUpload) ([]*api.IncompleteUp
 	return convAll(ius, IncompleteUploadToOAPI)
 }
 
+func FailureCodeToOAPI(f pacta.FailureCode) (*api.FailureCode, error) {
+	if f == "" {
+		return nil, nil
+	}
+	return ptr(api.FailureCode(f)), nil
+}
+
 func IncompleteUploadToOAPI(iu *pacta.IncompleteUpload) (*api.IncompleteUpload, error) {
 	if iu == nil {
 		return nil, oapierr.Internal("incompleteUploadToOAPI: can't convert nil pointer")
@@ -154,6 +186,10 @@ func IncompleteUploadToOAPI(iu *pacta.IncompleteUpload) (*api.IncompleteUpload, 
 	hd, err := HoldingsDateToOAPI(iu.HoldingsDate)
 	if err != nil {
 		return nil, oapierr.Internal("incompleteUploadToOAPI: holdingsDateToOAPI failed", zap.Error(err))
+	}
+	fc, err := FailureCodeToOAPI(iu.FailureCode)
+	if err != nil {
+		return nil, oapierr.Internal("incompleteUploadToOAPI: failureCodeToOAPI failed", zap.Error(err))
 	}
 	return &api.IncompleteUpload{
 		Id:                string(iu.ID),
@@ -163,7 +199,7 @@ func IncompleteUploadToOAPI(iu *pacta.IncompleteUpload) (*api.IncompleteUpload, 
 		CreatedAt:         iu.CreatedAt,
 		RanAt:             timeToNilable(iu.RanAt),
 		CompletedAt:       timeToNilable(iu.CompletedAt),
-		FailureCode:       stringToNilable(iu.FailureCode),
+		FailureCode:       fc,
 		FailureMessage:    stringToNilable(iu.FailureMessage),
 		AdminDebugEnabled: iu.AdminDebugEnabled,
 	}, nil
@@ -235,4 +271,109 @@ func PortfolioGroupToOAPI(pg *pacta.PortfolioGroup) (*api.PortfolioGroup, error)
 
 func PortfolioGroupsToOAPI(pgs []*pacta.PortfolioGroup) ([]*api.PortfolioGroup, error) {
 	return convAll(pgs, PortfolioGroupToOAPI)
+}
+
+func BlobToOAPI(b *pacta.Blob) (*api.Blob, error) {
+	if b == nil {
+		return nil, oapierr.Internal("blobToOAPI: can't convert nil pointer")
+	}
+	return &api.Blob{
+		Id:        string(b.ID),
+		FileName:  b.FileName,
+		FileType:  api.FileType(b.FileType),
+		CreatedAt: b.CreatedAt,
+	}, nil
+}
+
+func PortfolioSnapshotToOAPI(ps *pacta.PortfolioSnapshot) (*api.PortfolioSnapshot, error) {
+	if ps == nil {
+		return nil, oapierr.Internal("portfolioSnapshotToOAPI: can't convert nil pointer")
+	}
+	portfolioIds := make([]string, len(ps.PortfolioIDs))
+	for i, pid := range ps.PortfolioIDs {
+		portfolioIds[i] = string(pid)
+	}
+	result := &api.PortfolioSnapshot{
+		Id:           string(ps.ID),
+		PortfolioIds: portfolioIds,
+	}
+	if ps.Portfolio != nil {
+		portfolio, err := PortfolioToOAPI(ps.Portfolio)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioSnapshotToOAPI: portfolioToOAPI failed", zap.Error(err))
+		}
+		result.Portfolio = portfolio
+	}
+	if ps.PortfolioGroup != nil {
+		portfolioGroup, err := PortfolioGroupToOAPI(ps.PortfolioGroup)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioSnapshotToOAPI: portfolioGroupToOAPI failed", zap.Error(err))
+		}
+		result.PortfolioGroup = portfolioGroup
+	}
+	if ps.Initiatiative != nil {
+		initiative, err := InitiativeToOAPI(ps.Initiatiative)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioSnapshotToOAPI: initiativeToOAPI failed", zap.Error(err))
+		}
+		result.Initiative = initiative
+	}
+	return result, nil
+}
+
+func AnalysisArtifactToOAPI(aa *pacta.AnalysisArtifact) (*api.AnalysisArtifact, error) {
+	if aa == nil {
+		return nil, oapierr.Internal("analysisArtifactToOAPI: can't convert nil pointer")
+	}
+	blob, err := BlobToOAPI(aa.Blob)
+	if err != nil {
+		return nil, oapierr.Internal("analysisArtifactToOAPI: blobToOAPI failed", zap.Error(err))
+	}
+	return &api.AnalysisArtifact{
+		Id:                string(aa.ID),
+		AdminDebugEnabled: aa.AdminDebugEnabled,
+		SharedToPublic:    aa.AdminDebugEnabled,
+		Blob:              *blob,
+	}, nil
+}
+
+func AnalysisToOAPI(a *pacta.Analysis) (*api.Analysis, error) {
+	if a == nil {
+		return nil, oapierr.Internal("analysisToOAPI: can't convert nil pointer")
+	}
+	aas, err := convAll(a.Artifacts, AnalysisArtifactToOAPI)
+	if err != nil {
+		return nil, oapierr.Internal("analysisToOAPI: analysisArtifactsToOAPI failed", zap.Error(err))
+	}
+	snapshot, err := PortfolioSnapshotToOAPI(a.PortfolioSnapshot)
+	if err != nil {
+		return nil, oapierr.Internal("analysisToOAPI: portfolioSnapshotToOAPI failed", zap.Error(err))
+	}
+	var fc *api.FailureCode
+	if a.FailureCode != "" {
+		fc = ptr(api.FailureCode(a.FailureCode))
+	}
+	var fm *string
+	if a.FailureMessage != "" {
+		fm = ptr(a.FailureMessage)
+	}
+
+	return &api.Analysis{
+		Id:                string(a.ID),
+		AnalysisType:      api.AnalysisType(a.AnalysisType),
+		PactaVersion:      string(a.PACTAVersion.ID),
+		PortfolioSnapshot: *snapshot,
+		Name:              a.Name,
+		Description:       a.Description,
+		CreatedAt:         a.CreatedAt,
+		RanAt:             timeToNilable(a.RanAt),
+		CompletedAt:       timeToNilable(a.CompletedAt),
+		FailureCode:       fc,
+		FailureMessage:    fm,
+		Artifacts:         dereferenceAll(aas),
+	}, nil
+}
+
+func AnalysesToOAPI(as []*pacta.Analysis) ([]*api.Analysis, error) {
+	return convAll(as, AnalysisToOAPI)
 }

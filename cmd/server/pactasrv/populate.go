@@ -78,6 +78,52 @@ func (s *Server) populatePortfolioGroupsInPortfolios(
 	return nil
 }
 
+func (s *Server) populateArtifactsInAnalyses(
+	ctx context.Context,
+	ts ...*pacta.Analysis,
+) error {
+	getFn := func(a *pacta.Analysis) ([]*pacta.AnalysisArtifact, error) {
+		result := []*pacta.AnalysisArtifact{}
+		for _, aa := range a.Artifacts {
+			result = append(result, aa)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.AnalysisArtifactID) (map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact, error) {
+		return s.DB.AnalysisArtifacts(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(a *pacta.AnalysisArtifact) pacta.AnalysisArtifactID {
+		return a.ID
+	}
+	if err := populateAll(ts, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating analysis artifacts in analysis failed", zap.Error(err))
+	}
+	return nil
+}
+
+func (s *Server) populateBlobsInAnalysisArtifacts(
+	ctx context.Context,
+	ts ...*pacta.AnalysisArtifact,
+) error {
+	getFn := func(a *pacta.AnalysisArtifact) ([]*pacta.Blob, error) {
+		result := []*pacta.Blob{}
+		if a.Blob != nil {
+			result = append(result, a.Blob)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error) {
+		return s.DB.Blobs(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(a *pacta.Blob) pacta.BlobID {
+		return a.ID
+	}
+	if err := populateAll(ts, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating blobs in analysis artifacts failed", zap.Error(err))
+	}
+	return nil
+}
+
 // This helper function populates the given targets in the given sources,
 // to allow for generic population of nested data structures.
 // sources = entities that you want to populate sub-entity references in.

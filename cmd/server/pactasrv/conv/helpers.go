@@ -43,3 +43,11 @@ func convAll[I any, O any](is []I, f func(I) (O, error)) ([]O, error) {
 	}
 	return os, nil
 }
+
+func dereferenceAll[T any](ts []*T) []T {
+	result := make([]T, len(ts))
+	for i, t := range ts {
+		result[i] = *t
+	}
+	return result
+}

@@ -49,8 +49,8 @@ func (s *Server) DeletePortfolio(ctx context.Context, request api.DeletePortfoli
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete portfolio", zap.Error(err))
 	}
-	if err := s.deleteBlobs(ctx, asStrs(blobURIs)); err != nil {
-		return nil, oapierr.Internal("failed to delete blob", zap.Error(err))
+	if err := s.deleteBlobs(ctx, blobURIs...); err != nil {
+		return nil, err
 	}
 	return api.DeletePortfolio204Response{}, nil
 }
