@@ -11,6 +11,9 @@ import (
 
 func analysisQuery(where string) string {
 	return fmt.Sprintf(`
+		WITH selected_analysis_ids AS (
+			SELECT id FROM analysis %[1]s
+		)
 		SELECT
 			analysis.id,
 			analysis.analysis_type,
@@ -24,18 +27,23 @@ func analysisQuery(where string) string {
 			analysis.completed_at,
 			analysis.failure_code,
 			analysis.failure_message,
-			ARRAY_AGG(analysis_artifact.id) AS analysis_artifact_ids
+			aas.analysis_artifact_ids
 		FROM
 			analysis
-			LEFT JOIN analysis_artifact 
-			ON analysis_artifact.analysis_id = analysis.id
-		%s
-		GROUP BY analysis.id
+			LEFT JOIN (
+				SELECT 
+					analysis_id,
+					ARRAY_AGG(analysis_artifact.id) AS analysis_artifact_ids
+				FROM analysis_artifact 
+				WHERE analysis_id IN (SELECT id FROM selected_analysis_ids)
+				GROUP BY analysis_id
+			) aas ON aas.analysis_id = analysis.id
+		%[1]s;
 `, where)
 }
 
 func (d *DB) Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error) {
-	rows, err := d.query(tx, analysisQuery(`WHERE id = $1`), id)
+	rows, err := d.query(tx, analysisQuery(`WHERE analysis.id = $1`), id)
 	if err != nil {
 		return nil, fmt.Errorf("querying analysis: %w", err)
 	}
@@ -64,7 +72,7 @@ func (d *DB) Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*p
 }
 
 func (d *DB) AnalysesByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.Analysis, error) {
-	rows, err := d.query(tx, analysisQuery(`WHERE owner_id = $1`), ownerID)
+	rows, err := d.query(tx, analysisQuery(`WHERE analysis.owner_id = $1`), ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("querying analyses: %w", err)
 	}
