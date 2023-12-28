@@ -17,7 +17,8 @@ func (s *Server) ListAuditLogs(ctx context.Context, request api.ListAuditLogsReq
 	if err != nil {
 		return nil, err
 	}
-	// TODO(#12) implement additional authorization, ensuring for example that:
+	// TODO(#12) implement additional authorizations, ensuring for example that:
+	// - every generated query has reasonable limits + only filters by allowed search terms
 	// - the actor is allowed to see the audit logs of the actor_owner, but not of other actor_owners
 	// - initiative admins should be able to see audit logs of the initiative, but not initiative members
 	// - admins should be able to see all

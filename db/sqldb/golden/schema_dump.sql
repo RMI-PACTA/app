@@ -56,7 +56,9 @@ CREATE TYPE public.audit_log_actor_type AS ENUM (
     'USER',
     'ADMIN',
     'SUPER_ADMIN',
-    'SYSTEM'
+    'SYSTEM',
+    'OWNER',
+    'PUBLIC'
 );
 
 
