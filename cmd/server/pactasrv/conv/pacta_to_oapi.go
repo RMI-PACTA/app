@@ -76,7 +76,7 @@ func portfolioInitiativeMembershipToOAPIInitiative(in *pacta.PortfolioInitiative
 	if in.AddedBy != nil && in.AddedBy.ID == "" {
 		out.AddedByUserId = strPtr(in.AddedBy.ID)
 	}
-	if in.Initiative != nil {
+	if in.Initiative != nil && in.Initiative.PACTAVersion != nil {
 		i, err := InitiativeToOAPI(in.Initiative)
 		if err != nil {
 			return zero, oapierr.Internal("portfolioInitiativeMembershipToOAPI: initiativeToOAPI failed", zap.Error(err))

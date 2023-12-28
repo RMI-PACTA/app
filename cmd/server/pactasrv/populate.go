@@ -145,6 +145,9 @@ func populateAll[Source any, TargetID ~string, Target any](
 		}
 		allTargets = append(allTargets, targets...)
 	}
+	if len(allTargets) == 0 {
+		return nil
+	}
 
 	seen := map[TargetID]bool{}
 	uniqueIds := []TargetID{}
@@ -158,7 +161,7 @@ func populateAll[Source any, TargetID ~string, Target any](
 
 	populatedTargets, err := lookupTargetsFn(uniqueIds)
 	if err != nil {
-		return fmt.Errorf("looking up populated: %w", err)
+		return fmt.Errorf("looking up %Ts: %w", allTargets[0], err)
 	}
 	for i, source := range sources {
 		targets, err := getTargetsFn(source)

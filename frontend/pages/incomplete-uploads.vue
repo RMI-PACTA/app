@@ -6,7 +6,7 @@ const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const i18n = useI18n()
 
-const prefix = 'pages/portfolios'
+const prefix = 'pages/my-data'
 const expandedRows = useState(`${prefix}.expandedRows`, () => [])
 
 const [
@@ -21,7 +21,7 @@ const deleteIncompleteUpload = (id: string) => withLoading(
   () => pactaClient.deleteIncompleteUpload(id).then(() => {
     editorObjects = editorObjects.filter((editorObject) => editorObject.id !== id)
   }),
-  `${prefix}.deleteIncompleteUpload`,
+  `${prefix}.deleteIncompleteUpload[${id}]`,
 )
 const saveChanges = (id: string) => {
   const index = editorObjects.findIndex((editorObject) => editorObject.id === id)

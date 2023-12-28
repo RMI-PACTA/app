@@ -23,7 +23,7 @@ func (s *Server) CreateInitiativePortfolioRelationship(ctx context.Context, requ
 		AddedBy:    &pacta.User{ID: userID},
 	})
 	if err != nil {
-		return nil, oapierr.Internal("failed to create initiative", zap.Error(err))
+		return nil, oapierr.Internal("failed to create initiative portfolio membership", zap.Error(err))
 	}
 	return api.CreateInitiativePortfolioRelationship204Response{}, nil
 }
@@ -34,7 +34,7 @@ func (s *Server) DeleteInitiativePortfolioRelationship(ctx context.Context, requ
 	// TODO(#12) Implement Authorization
 	err := s.DB.DeletePortfolioInitiativeMembership(s.DB.NoTxn(ctx), pacta.PortfolioID(request.PortfolioId), pacta.InitiativeID(request.InitiativeId))
 	if err != nil {
-		return nil, oapierr.Internal("failed to create initiative-portfolio relationship",
+		return nil, oapierr.Internal("failed to delete initiative-portfolio relationship",
 			zap.String("initiative_id", request.InitiativeId),
 			zap.String("portfolio_id", request.PortfolioId),
 			zap.Error(err))

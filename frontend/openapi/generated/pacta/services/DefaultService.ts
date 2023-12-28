@@ -413,6 +413,50 @@ export class DefaultService {
     }
 
     /**
+     * creates an initiative portfolio relationship
+     * creates a membership relationship between the portfolio and the initiative
+     * @param initiativeId ID of the initiative
+     * @param portfolioId ID of the portfolio
+     * @returns void
+     * @throws ApiError
+     */
+    public createInitiativePortfolioRelationship(
+        initiativeId: string,
+        portfolioId: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/initiative/{initiativeId}/portfolio-relationship/{portfolioId}',
+            path: {
+                'initiativeId': initiativeId,
+                'portfolioId': portfolioId,
+            },
+        });
+    }
+
+    /**
+     * Deletes an initiative:portfolio relationship
+     * Deletes a given portfolio's relationship with a given initiative
+     * @param initiativeId ID of the initiative
+     * @param portfolioId ID of the portfolio
+     * @returns void
+     * @throws ApiError
+     */
+    public deleteInitiativePortfolioRelationship(
+        initiativeId: string,
+        portfolioId: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/initiative/{initiativeId}/portfolio-relationship/{portfolioId}',
+            path: {
+                'initiativeId': initiativeId,
+                'portfolioId': portfolioId,
+            },
+        });
+    }
+
+    /**
      * Returns the portfolio groups that the user has access to
      * @returns ListPortfolioGroupsResp
      * @throws ApiError

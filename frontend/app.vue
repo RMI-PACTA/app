@@ -4,6 +4,9 @@ import { serializeError } from 'serialize-error'
 const { loading: { clearLoading }, error: { errorModalVisible, error } } = useModal()
 
 const handleError = (err: Error) => {
+  if (process.client) {
+    console.log(err)
+  }
   error.value = serializeError(err)
   errorModalVisible.value = true
   clearLoading()

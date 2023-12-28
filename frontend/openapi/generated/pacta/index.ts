@@ -45,6 +45,8 @@ export type { PortfolioGroupCreate } from './models/PortfolioGroupCreate';
 export type { PortfolioGroupMembershipIds } from './models/PortfolioGroupMembershipIds';
 export type { PortfolioGroupMembershipPortfolio } from './models/PortfolioGroupMembershipPortfolio';
 export type { PortfolioGroupMembershipPortfolioGroup } from './models/PortfolioGroupMembershipPortfolioGroup';
+export type { PortfolioInitiativeMembershipInitiative } from './models/PortfolioInitiativeMembershipInitiative';
+export type { PortfolioInitiativeMembershipPortfolio } from './models/PortfolioInitiativeMembershipPortfolio';
 export type { StartPortfolioUploadReq } from './models/StartPortfolioUploadReq';
 export type { StartPortfolioUploadReqItem } from './models/StartPortfolioUploadReqItem';
 export type { StartPortfolioUploadResp } from './models/StartPortfolioUploadResp';
