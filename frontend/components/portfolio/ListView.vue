@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { portfolioEditor } from '@/lib/editor'
-import { type Portfolio, type PortfolioGroup } from '@/openapi/generated/pacta'
+import { type Portfolio, type PortfolioGroup, type Initiative } from '@/openapi/generated/pacta'
+import { selectedCountSuffix } from '@/lib/selection'
 
 const {
   humanReadableTimeFromStandardString,
@@ -8,12 +9,14 @@ const {
 } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
+const localePath = useLocalePath()
 const i18n = useI18n()
 const { t } = i18n
 
 interface Props {
   portfolios: Portfolio[]
   portfolioGroups: PortfolioGroup[]
+  initiatives: Initiative[]
   selectedPortfolioIds: string[]
   selectedPortfolioGroupIds: string[]
 }
@@ -75,7 +78,7 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
     <div class="flex gap-2 flex-wrap">
       <PVButton
         icon="pi pi-refresh"
-        class="p-button-outlined p-button-secondary"
+        class="p-button-outlined p-button-secondary p-button-sm"
         :label="tt('Refresh')"
         @click="refresh"
       />
@@ -85,11 +88,16 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
         @changed-memberships="refresh"
         @changed-groups="refresh"
       />
+      <PortfolioInitiativeMembershipMenuButton
+        :selected-portfolios="selectedPortfolios"
+        :initiatives="props.initiatives"
+        @changed-memberships="refresh"
+      />
       <PVButton
-        v-if="selectedRows && selectedRows.length > 0"
+        :disabled="!selectedRows || selectedRows.length === 0"
         icon="pi pi-trash"
-        class="p-button-outlined p-button-danger"
-        :label="`${tt('Delete')} (${selectedRows.length})`"
+        class="p-button-outlined p-button-danger p-button-sm"
+        :label="tt('Delete') + selectedCountSuffix(selectedRows)"
         @click="deleteSelected"
       />
     </div>
@@ -122,25 +130,34 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
       >
         <template #body="slotProps">
           <div class="flex flex-column gap-2">
-            <div class="flex gap-1 align-items-center flex-wrap">
+            <div
+              v-if="slotProps.data.editorValues.value.groups.originalValue.length > 0"
+              class="flex gap-1 align-items-center flex-wrap"
+            >
               <span>{{ tt('Groups') }}:</span>
-              <span
+              <LinkButton
                 v-for="membership in slotProps.data.editorValues.value.groups.originalValue"
                 :key="membership.portfolioGroup.id"
-                class="p-tag p-tag-rounded"
-              >
-                {{ membership.portfolioGroup.name }}
-              </span>
+                class="p-button-outlined p-button-xs"
+                icon="pi pi-table"
+                :label="membership.portfolioGroup.name"
+                :to="localePath(`/my-data?tab=pg&pgids=${membership.portfolioGroup.id}`)"
+              />
             </div>
-            <div class="flex gap-2 align-items-center flex-wrap">
+            <div
+              v-if="slotProps.data.editorValues.value.initiatives.originalValue.length > 0"
+              class="flex gap-1 align-items-center flex-wrap"
+            >
               <span>{{ tt('Initiatives') }}:</span>
-              <span
-                v-for="membership in slotProps.data.editorValues.value.memberships"
-                :key="membership"
-                class="p-tag p-tag-rounded"
-              >
-                {{ membership }}
-              </span>
+              <LinkButton
+                v-for="membership in slotProps.data.editorValues.value.initiatives.originalValue"
+                :key="membership.initiative.id"
+                class="p-button-xs"
+                :label="membership.initiative.name"
+                icon="pi pi-arrow-right"
+                icon-pos="right"
+                :to="localePath(`/initiative/${membership.initiative.id}`)"
+              />
             </div>
           </div>
         </template>
@@ -169,6 +186,22 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
               <span>{{ tt('Holdings Date') }}</span>
               <b>{{ humanReadableDateFromStandardString(slotProps.data.editorValues.value.holdingsDate.originalValue.time).value }}</b>
             </div>
+          </div>
+          <h2 class="mt-5">
+            {{ tt('Memberships') }}
+          </h2>
+          <div class="flex flex-column gap-2">
+            <PortfolioGroupMembershipMenuButton
+              :selected-portfolios="[slotProps.data.currentValue.value]"
+              :portfolio-groups="props.portfolioGroups"
+              @changed-memberships="refresh"
+              @changed-groups="refresh"
+            />
+            <PortfolioInitiativeMembershipMenuButton
+              :selected-portfolios="[slotProps.data.currentValue.value]"
+              :initiatives="props.initiatives"
+              @changed-memberships="refresh"
+            />
           </div>
           <h2 class="mt-5">
             {{ tt('Editable Properties') }}

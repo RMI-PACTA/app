@@ -42,8 +42,8 @@ const menuItems = computed(() => {
   }
   if (maybeMe.value) {
     result.push({
-      label: tt('My Stuff'),
-      to: localePath(`/user/${maybeMe.value.id}`),
+      label: tt('My Data'),
+      to: localePath('/my-data'),
     })
   }
   if (isAuthenticated.value) {

@@ -5,6 +5,7 @@
 
 import type { HoldingsDate } from './HoldingsDate';
 import type { PortfolioGroupMembershipPortfolioGroup } from './PortfolioGroupMembershipPortfolioGroup';
+import type { PortfolioInitiativeMembershipInitiative } from './PortfolioInitiativeMembershipInitiative';
 
 export type Portfolio = {
     /**
@@ -36,5 +37,9 @@ export type Portfolio = {
      * The list of portfolio groups that this portfolio is a member of
      */
     groups?: Array<PortfolioGroupMembershipPortfolioGroup>;
+    /**
+     * The list of initiatives that this portfolio is a member of
+     */
+    initiatives?: Array<PortfolioInitiativeMembershipInitiative>;
 };
 

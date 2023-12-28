@@ -14,6 +14,12 @@ bazel run //scripts:run_db
 This will set it up in such a way that it can recieve connections from other
 parts of the stack running locally.
 
+To connect to the locally running database, run:
+
+```
+bazel run //scripts:db_shell
+```
+
 To run tests in this package (which will spin up their own databases, no need to
 have the DB running), run:
 

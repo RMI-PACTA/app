@@ -8,5 +8,6 @@
     <ModalFakeUsers />
     <!-- TODO(grady) Remove This in Production Environments -->
     <ModalMissingTranslations />
+    <PVToast />
   </div>
 </template>
