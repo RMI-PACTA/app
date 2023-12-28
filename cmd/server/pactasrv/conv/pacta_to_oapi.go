@@ -236,3 +236,73 @@ func PortfolioGroupToOAPI(pg *pacta.PortfolioGroup) (*api.PortfolioGroup, error)
 func PortfolioGroupsToOAPI(pgs []*pacta.PortfolioGroup) ([]*api.PortfolioGroup, error) {
 	return convAll(pgs, PortfolioGroupToOAPI)
 }
+
+func auditLogActorTypeToOAPI(i pacta.AuditLogActorType) (api.AuditLogActorType, error) {
+	return api.AuditLogActorType(string(i)), nil
+}
+
+func auditLogActionToOAPI(i pacta.AuditLogAction) (api.AuditLogAction, error) {
+	return api.AuditLogAction(string(i)), nil
+}
+
+func auditLogTargetTypeToOAPI(i pacta.AuditLogTargetType) (api.AuditLogTargetType, error) {
+	return api.AuditLogTargetType(string(i)), nil
+}
+
+func AuditLogToOAPI(al *pacta.AuditLog) (*api.AuditLog, error) {
+	if al == nil {
+		return nil, oapierr.Internal("auditLogToOAPI: can't convert nil pointer")
+	}
+	at, err := auditLogActorTypeToOAPI(al.ActorType)
+	if err != nil {
+		return nil, oapierr.Internal("auditLogToOAPI: auditLogActorTypeToOAPI failed", zap.Error(err))
+	}
+	act, err := auditLogActionToOAPI(al.Action)
+	if err != nil {
+		return nil, oapierr.Internal("auditLogToOAPI: auditLogActionToOAPI failed", zap.Error(err))
+	}
+	ptt, err := auditLogTargetTypeToOAPI(al.PrimaryTargetType)
+	if err != nil {
+		return nil, oapierr.Internal("auditLogToOAPI: auditLogTargetTypeToOAPI failed", zap.Error(err))
+	}
+	var aoi *string
+	if al.ActorOwner != nil {
+		aoi = stringToNilable(al.ActorOwner.ID)
+	}
+	var stt *api.AuditLogTargetType
+	if al.SecondaryTargetType != "" {
+		s, err := auditLogTargetTypeToOAPI(al.SecondaryTargetType)
+		if err != nil {
+			return nil, oapierr.Internal("auditLogToOAPI: auditLogTargetTypeToOAPI failed", zap.Error(err))
+		}
+		stt = &s
+	}
+	var sto *string
+	if al.SecondaryTargetOwner != nil {
+		s := string(al.SecondaryTargetOwner.ID)
+		sto = &s
+	}
+	var sid *string
+	if al.SecondaryTargetID != "" {
+		s := string(al.SecondaryTargetID)
+		sid = &s
+	}
+	return &api.AuditLog{
+		Id:                   string(al.ID),
+		CreatedAt:            al.CreatedAt,
+		ActorType:            at,
+		ActorId:              stringToNilable(al.ActorID),
+		ActorOwnerId:         aoi,
+		Action:               act,
+		PrimaryTargetType:    ptt,
+		PrimaryTargetId:      al.PrimaryTargetID,
+		PrimaryTargetOwner:   string(al.PrimaryTargetOwner.ID),
+		SecondaryTargetType:  stt,
+		SecondaryTargetId:    sid,
+		SecondaryTargetOwner: sto,
+	}, nil
+}
+
+func AuditLogsToOAPI(als []*pacta.AuditLog) ([]*api.AuditLog, error) {
+	return convAll(als, AuditLogToOAPI)
+}

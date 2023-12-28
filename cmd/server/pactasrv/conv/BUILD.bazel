@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/RMI/pacta/cmd/server/pactasrv/conv",
     visibility = ["//visibility:public"],
     deps = [
+        "//db",
         "//oapierr",
         "//openapi:pacta_generated",
         "//pacta",
