@@ -134,7 +134,7 @@ func (c *Client) signBlob(ctx context.Context, uri string, perms *sas.BlobPermis
 	sasQueryParams, err := sas.BlobSignatureValues{
 		Protocol:  sas.ProtocolHTTPS,
 		StartTime: now,
-		// TODO(grady) extract this to a common variable in a sensible way.
+		// TODO(#93) Extract this to a common variable.
 		ExpiryTime:    now.Add(15 * time.Minute),
 		Permissions:   perms.String(),
 		ContainerName: ctr,

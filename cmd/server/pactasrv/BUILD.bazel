@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "pactasrv",
     srcs = [
+        "blobs.go",
         "incomplete_upload.go",
         "initiative.go",
         "initiative_invitation.go",
