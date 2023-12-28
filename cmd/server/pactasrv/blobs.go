@@ -2,6 +2,7 @@ package pactasrv
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/RMI/pacta/db"
@@ -12,7 +13,15 @@ import (
 )
 
 func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobContentRequestObject) (api.AccessBlobContentResponseObject, error) {
-	ownerID, err := s.getUserOwnerID(ctx)
+	actorOwnerID, err := s.getUserOwnerID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	actorUserID, err := getUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	actorIsAdmin, actorIsSuperAdmin, err := s.isAdminOrSuperAdmin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -33,12 +42,31 @@ func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobCo
 	for _, boi := range bois {
 		asMap[boi.BlobID] = boi
 	}
+	auditLogs := []*pacta.AuditLog{}
 	for _, blobID := range blobIDs {
 		boi := asMap[blobID]
-		if boi.OwnerID != ownerID {
-			// TODO(#95) Add AdminDebugEnabled & IsAdmin check here.
+		accessAsOwner := boi.PrimaryTargetOwnerID == actorOwnerID
+		accessAsAdmin := boi.AdminDebugEnabled && actorIsAdmin
+		accessAsSuperAdmin := boi.AdminDebugEnabled && actorIsSuperAdmin
+		al := &pacta.AuditLog{
+			Action:             pacta.AuditLogAction_Download,
+			ActorID:            string(actorUserID),
+			ActorOwner:         &pacta.Owner{ID: actorOwnerID},
+			PrimaryTargetType:  boi.PrimaryTargetType,
+			PrimaryTargetID:    boi.PrimaryTargetID,
+			PrimaryTargetOwner: &pacta.Owner{ID: boi.PrimaryTargetOwnerID},
+		}
+		if accessAsOwner {
+			al.ActorType = pacta.AuditLogActorType_User
+		} else if accessAsAdmin {
+			al.ActorType = pacta.AuditLogActorType_Admin
+		} else if accessAsSuperAdmin {
+			al.ActorType = pacta.AuditLogActorType_SuperAdmin
+		} else {
+			// DENY CASE
 			return nil, err404
 		}
+		auditLogs = append(auditLogs, al)
 	}
 
 	blobs, err := s.DB.Blobs(s.DB.NoTxn(ctx), blobIDs)
@@ -49,7 +77,18 @@ func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobCo
 		return nil, oapierr.Internal("error getting blobs", zap.Error(err), zap.Strings("blob_ids", asStrs(blobIDs)))
 	}
 
-	// TODO(#94) Add Audit Logs here
+	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
+		for i, al := range auditLogs {
+			_, err := s.DB.CreateAuditLog(tx, al)
+			if err != nil {
+				return fmt.Errorf("creating audit log %d/%d: %w", i+1, len(auditLogs), err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, oapierr.Internal("error creating audit logs - no download URLs generated", zap.Error(err), zap.Strings("blob_ids", asStrs(blobIDs)))
+	}
 
 	// Note, we're not parallelizing this because it is probably not nescessary.
 	// The majority use case of this endpoint will be the user clicking a download

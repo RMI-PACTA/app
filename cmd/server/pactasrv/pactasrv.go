@@ -99,6 +99,9 @@ type DB interface {
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
 	DeleteUser(tx db.Tx, id pacta.UserID) error
+
+	CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error)
+	AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.PageInfo, error)
 }
 
 type Blob interface {
@@ -163,6 +166,18 @@ func (s *Server) getUserOwnerID(ctx context.Context) (pacta.OwnerID, error) {
 			zap.String("user_id", string(userID)), zap.Error(err))
 	}
 	return ownerID, nil
+}
+
+func (s *Server) isAdminOrSuperAdmin(ctx context.Context) (bool, bool, error) {
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return false, false, err
+	}
+	user, err := s.DB.User(s.DB.NoTxn(ctx), userID)
+	if err != nil {
+		return false, false, oapierr.Internal("failed to find user", zap.Error(err))
+	}
+	return user.Admin, user.SuperAdmin, nil
 }
 
 func asStrs[T ~string](ts []T) []string {

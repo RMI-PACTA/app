@@ -113,7 +113,9 @@ func (d *DB) BlobOwners(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobOwnerInforma
 	SELECT
 		analysis_artifact.blob_id as blob_id,
 		analysis_artifact.admin_debug_enabled,
-		analysis.owner_id as owner_id
+		analysis.owner_id as owner_id,
+		'ANALYSIS' as primary_target_type,
+		analysis.id as primary_target_id
 	FROM
 		analysis_artifact
 		LEFT JOIN analysis ON analysis_artifact.analysis_id = analysis.id
@@ -123,14 +125,18 @@ func (d *DB) BlobOwners(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobOwnerInforma
 	SELECT
 		blob_id,
 		admin_debug_enabled,
-		owner_id
+		owner_id,
+		'INCOMPLETE_UPLOAD' as  primary_target_type,
+		incomplete_upload.id as primary_target_id
 	FROM incomplete_upload
 	WHERE blob_id IN `+whereInFmt+`
 ) UNION ALL (
 	SELECT
 		blob_id,
 		admin_debug_enabled,
-		owner_id
+		owner_id,
+		'PORTFOLIO' as primary_target_type,
+		portfolio.id as primary_target_id
 	FROM portfolio
 	WHERE blob_id IN `+whereInFmt+`
 );`, idsToInterface(ids)...)
@@ -146,9 +152,15 @@ func (d *DB) BlobOwners(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobOwnerInforma
 		var blobID pacta.BlobID
 		var ade bool
 		var ownerID pacta.OwnerID
-		err := rows.Scan(&blobID, &ade, &ownerID)
+		var ptt string
+		var ptid string
+		err := rows.Scan(&blobID, &ade, &ownerID, &ptt, &ptid)
 		if err != nil {
 			return nil, fmt.Errorf("scanning blob owner: %w", err)
+		}
+		pttParsed, err := pacta.ParseAuditLogTargetType(ptt)
+		if err != nil {
+			return nil, fmt.Errorf("parsing primary target type: %w", err)
 		}
 		if seen[blobID] {
 			return nil, fmt.Errorf("blob %q has multiple owner entries", blobID)
@@ -157,10 +169,15 @@ func (d *DB) BlobOwners(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobOwnerInforma
 		if ownerID == "" {
 			return nil, fmt.Errorf("blob %q has empty owner entry", blobID)
 		}
+		if ptid == "" {
+			return nil, fmt.Errorf("blob %q has empty primary target id", blobID)
+		}
 		result = append(result, &pacta.BlobOwnerInformation{
-			BlobID:            blobID,
-			AdminDebugEnabled: ade,
-			OwnerID:           ownerID,
+			BlobID:               blobID,
+			AdminDebugEnabled:    ade,
+			PrimaryTargetType:    pttParsed,
+			PrimaryTargetID:      ptid,
+			PrimaryTargetOwnerID: ownerID,
 		})
 	}
 

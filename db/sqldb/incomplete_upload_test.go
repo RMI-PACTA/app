@@ -111,9 +111,11 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 		t.Fatalf("reading blob owners: %v", err)
 	}
 	expectedOwners := []*pacta.BlobOwnerInformation{{
-		BlobID:            b.ID,
-		OwnerID:           o2.ID,
-		AdminDebugEnabled: true,
+		BlobID:               b.ID,
+		PrimaryTargetOwnerID: o2.ID,
+		PrimaryTargetType:    "INCOMPLETE_UPLOAD",
+		PrimaryTargetID:      string(iu.ID),
+		AdminDebugEnabled:    true,
 	}}
 	if diff := cmp.Diff(expectedOwners, blobOwners, cmpOpts); diff != "" {
 		t.Errorf("unexpected diff (+got -want): %v", diff)

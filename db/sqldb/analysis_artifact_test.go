@@ -103,11 +103,25 @@ func TestAnalysisArtifacts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reading blob owners: %v", err)
 	}
-	expectedOwners := []*pacta.BlobOwnerInformation{
-		{BlobID: b1.ID, OwnerID: o.ID, AdminDebugEnabled: false},
-		{BlobID: b2.ID, OwnerID: o.ID, AdminDebugEnabled: true},
-		{BlobID: b3.ID, OwnerID: o.ID, AdminDebugEnabled: false},
-	}
+	expectedOwners := []*pacta.BlobOwnerInformation{{
+		BlobID:               b1.ID,
+		PrimaryTargetOwnerID: o.ID,
+		PrimaryTargetType:    "ANALYSIS",
+		PrimaryTargetID:      string(aid),
+		AdminDebugEnabled:    false,
+	}, {
+		BlobID:               b2.ID,
+		PrimaryTargetOwnerID: o.ID,
+		PrimaryTargetType:    "ANALYSIS",
+		PrimaryTargetID:      string(aid),
+		AdminDebugEnabled:    true,
+	}, {
+		BlobID:               b3.ID,
+		PrimaryTargetOwnerID: o.ID,
+		PrimaryTargetType:    "ANALYSIS",
+		PrimaryTargetID:      string(aid),
+		AdminDebugEnabled:    false,
+	}}
 	if diff := cmp.Diff(expectedOwners, blobOwners, cmpOpts); diff != "" {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}

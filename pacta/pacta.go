@@ -261,9 +261,11 @@ func (o *Blob) Clone() *Blob {
 }
 
 type BlobOwnerInformation struct {
-	BlobID            BlobID
-	OwnerID           OwnerID
-	AdminDebugEnabled bool
+	BlobID               BlobID
+	PrimaryTargetType    AuditLogTargetType
+	PrimaryTargetID      string
+	PrimaryTargetOwnerID OwnerID
+	AdminDebugEnabled    bool
 }
 
 func (o *BlobOwnerInformation) Clone() *BlobOwnerInformation {
@@ -271,9 +273,11 @@ func (o *BlobOwnerInformation) Clone() *BlobOwnerInformation {
 		return nil
 	}
 	return &BlobOwnerInformation{
-		BlobID:            o.BlobID,
-		OwnerID:           o.OwnerID,
-		AdminDebugEnabled: o.AdminDebugEnabled,
+		BlobID:               o.BlobID,
+		PrimaryTargetType:    o.PrimaryTargetType,
+		PrimaryTargetID:      o.PrimaryTargetID,
+		PrimaryTargetOwnerID: o.PrimaryTargetOwnerID,
+		AdminDebugEnabled:    o.AdminDebugEnabled,
 	}
 }
 

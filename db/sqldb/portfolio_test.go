@@ -100,9 +100,11 @@ func TestPortfolioCRUD(t *testing.T) {
 		t.Fatalf("reading blob owners: %v", err)
 	}
 	expectedBlobOwners := []*pacta.BlobOwnerInformation{{
-		BlobID:            b.ID,
-		OwnerID:           o2.ID,
-		AdminDebugEnabled: true,
+		BlobID:               b.ID,
+		PrimaryTargetOwnerID: o2.ID,
+		PrimaryTargetType:    "PORTFOLIO",
+		PrimaryTargetID:      string(p.ID),
+		AdminDebugEnabled:    true,
 	}}
 	if diff := cmp.Diff(expectedBlobOwners, blobOwners, portfolioCmpOpts()); diff != "" {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
