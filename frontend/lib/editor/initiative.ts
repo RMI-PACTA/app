@@ -67,6 +67,10 @@ const createEditorInitiativeFields = (translation: Translation): EditorInitiativ
       name: 'createdAt',
       label: tt('Created At'),
     },
+    portfolioInitiativeMemberships: {
+      name: 'portfolioInitiativeMemberships',
+      label: tt('Portfolio Initiative Memberships'),
+    },
   }
 }
 

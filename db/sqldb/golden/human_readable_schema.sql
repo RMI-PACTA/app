@@ -243,6 +243,7 @@ CREATE TABLE portfolio_initiative_membership (
 	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	initiative_id text NOT NULL,
 	portfolio_id text NOT NULL);
+ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_pkey PRIMARY KEY (portfolio_id, initiative_id);
 ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_added_by_user_id_fkey FOREIGN KEY (added_by_user_id) REFERENCES pacta_user(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_initiative_id_fkey FOREIGN KEY (initiative_id) REFERENCES initiative(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_portfolio_id_fkey FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE RESTRICT;

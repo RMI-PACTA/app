@@ -39,16 +39,33 @@ export const useURLParams = () => {
     void router.replace(qs)
   }
 
+  const fromQueryReactive = (key: string): WritableComputedRef<string | undefined> => {
+    return computed({
+      get: () => getVal(router.currentRoute.value.query, key),
+      set: (val: string | undefined) => { setVal(key, val) },
+    })
+  }
+
+  const fromQueryReactiveWithDefault = (key: string, def: string): WritableComputedRef<string> => {
+    const fqr = fromQueryReactive(key)
+    return computed({
+      get: () => fqr.value ?? def,
+      set: (val: string) => {
+        if (val === def) {
+          fqr.value = undefined
+        } else {
+          fqr.value = val
+        }
+      },
+    })
+  }
+
   return {
     fromQuery: (key: string): string | undefined => {
       return getVal(route.query, key)
     },
-    fromQueryReactive: (key: string): WritableComputedRef<string | undefined> => {
-      return computed({
-        get: () => getVal(router.currentRoute.value.query, key),
-        set: (val: string | undefined) => { setVal(key, val) },
-      })
-    },
+    fromQueryReactive,
+    fromQueryReactiveWithDefault,
     fromParams: (key: string): string | undefined => {
       return getVal(route.params, key)
     },

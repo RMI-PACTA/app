@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import type OverlayPanel from 'primevue/overlaypanel'
 import { useToast } from 'primevue/usetoast'
-import { type Portfolio, type PortfolioGroup } from '@/openapi/generated/pacta'
+import { type Portfolio, type Initiative } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
 
 const { t } = useI18n()
 const toast = useToast()
-const { newPortfolioGroup: { newPortfolioGroupVisible } } = useModal()
 const pactaClient = usePACTA()
 
 interface Props {
-  portfolioGroups: PortfolioGroup[]
+  initiatives: Initiative[]
   selectedPortfolios: Portfolio[]
 }
 const props = defineProps<Props>()
 interface Emits {
   (e: 'changed-memberships'): void
-  (e: 'changed-groups'): void
 }
 const emit = defineEmits<Emits>()
 
-const prefix = 'components/portfolio/group/membership/MenuButton'
+const prefix = 'components/portfolio/initiative/membership/MenuButton'
 const tt = (s: string) => t(`${prefix}.${s}`)
 const statePrefix = `${prefix}[${useStateIDGenerator().id()}]`
 const visible = useState<boolean>(`${statePrefix}.visible`, () => false)
@@ -31,15 +29,15 @@ const toggleMenu = (event: Event) => {
   visible.value = !visible.value
 }
 
-const changeMemberships = (portfolioGroupId: string, add: boolean) => {
+const changeMemberships = (initiativeId: string, add: boolean) => {
   return async (event: Event) => {
     const portfolioIds = props.selectedPortfolios.map((portfolio) => portfolio.id)
     if (add) {
-      await Promise.all(portfolioIds.map((portfolioId) => pactaClient.createPortfolioGroupMembership({ portfolioId, portfolioGroupId })))
+      await Promise.all(portfolioIds.map((portfolioId) => pactaClient.createInitiativePortfolioRelationship(initiativeId, portfolioId)))
     } else {
-      await Promise.all(portfolioIds.map((portfolioId) => pactaClient.deletePortfolioGroupMembership({ portfolioId, portfolioGroupId })))
+      await Promise.all(portfolioIds.map((portfolioId) => pactaClient.deleteInitiativePortfolioRelationship(initiativeId, portfolioId)))
     }
-    const pg = presentOrFileBug(props.portfolioGroups.find((pg) => pg.id === portfolioGroupId))
+    const initiative = presentOrFileBug(props.initiatives.find((i) => i.id === initiativeId))
     emit('changed-memberships')
     let summary = ''
     if (add) {
@@ -47,7 +45,7 @@ const changeMemberships = (portfolioGroupId: string, add: boolean) => {
     } else {
       summary = portfolioIds.length > 1 ? tt('Removed OK Plural') : tt('Removed OK Singular')
     }
-    summary += ` "${pg.name}"`
+    summary += ` "${initiative.name}"`
     toast.add({
       severity: add ? 'success' : 'warn',
       summary,
@@ -56,38 +54,34 @@ const changeMemberships = (portfolioGroupId: string, add: boolean) => {
     })
   }
 }
-const changedGroups = () => {
-  emit('changed-groups')
-}
 
 type Icon = 'empty' | 'partial' | 'full'
 
-const groupOptions = computed(() => {
+const initiativeOptions = computed(() => {
   const selected = props.selectedPortfolios
-  const result = props.portfolioGroups.map((pg) => {
-    const isMember = selected.map((portfolio) => (portfolio.groups ?? []).some((pg2) => pg.id === pg2.portfolioGroup.id))
+  const result = props.initiatives.map((initiative) => {
+    const isMember = selected.map((portfolio) => (portfolio.initiatives ?? []).some((initiative2) => initiative.id === initiative2.initiative.id))
     const anySelected = isMember.some(m => m)
     const allSelected = isMember.every(m => m)
     let icon: Icon = 'empty'
     let addIfClick = true
-    let hoverText = tt('Add all portfolios to group')
+    let hoverText = tt('Add all portfolios to initiative')
     if (allSelected) {
       icon = 'full'
       addIfClick = false
-      hoverText = tt('Remove all portfolios from group')
+      hoverText = tt('Remove all portfolios from initiative')
     } else if (anySelected) {
-      // TODO(grady) make a pi-square-minus
       icon = 'partial'
       addIfClick = true
-      hoverText = tt('Add unselected portfolios to group')
+      hoverText = tt('Add unselected portfolios to initiative')
     }
     return {
-      id: pg.id,
-      label: pg.name,
+      id: initiative.id,
+      label: initiative.name,
       icon,
-      cmd: changeMemberships(pg.id, addIfClick),
+      cmd: changeMemberships(initiative.id, addIfClick),
       hoverText,
-      created: pg.createdAt,
+      created: initiative.createdAt,
     }
   })
   // Created is an ISO date time string. This sorts by newest first, without having
@@ -103,8 +97,8 @@ const groupOptions = computed(() => {
       :disabled="!props.selectedPortfolios || props.selectedPortfolios.length === 0"
       class="p-button-sm"
       :class="visible ? '' : 'p-button-outlined'"
-      :label="tt('Group Memberships') + selectedCountSuffix(props.selectedPortfolios)"
-      icon="pi pi-table"
+      :label="tt('Initiative Memberships') + selectedCountSuffix(props.selectedPortfolios)"
+      icon="pi pi-sitemap"
       @click="toggleMenu"
     />
     <PVOverlayPanel
@@ -115,7 +109,7 @@ const groupOptions = computed(() => {
     >
       <div class="flex flex-column align-items-stretch">
         <div class="font-bold text-xl p-3 border-bottom-1 border-600 flex gap-2 align-items-center">
-          <span>{{ tt('Group Memberships') }}</span>
+          <span>{{ tt('Initiative Memberships') }}</span>
           <PVButton
             icon="pi pi-times"
             class="p-button-text px-1 py-0 w-auto h-auto p-button-secondary"
@@ -123,7 +117,7 @@ const groupOptions = computed(() => {
           />
         </div>
         <div
-          v-for="option in groupOptions"
+          v-for="option in initiativeOptions"
           :key="option.id"
           class="border-bottom-1 border-400"
         >
@@ -153,17 +147,8 @@ const groupOptions = computed(() => {
             </div>
           </PVButton>
         </div>
-        <PVButton
-          :label="tt('Create New Group')"
-          icon="pi pi-plus"
-          class="p-button-text align-self-center p-button-secondary"
-          @click="() => newPortfolioGroupVisible = true"
-        />
       </div>
     </PVOverlayPanel>
-    <PortfolioGroupNewModal
-      @created="changedGroups"
-    />
   </div>
 </template>
 

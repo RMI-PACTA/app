@@ -636,6 +636,14 @@ ALTER TABLE ONLY public.portfolio_group
 
 
 --
+-- Name: portfolio_initiative_membership portfolio_initiative_membership_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.portfolio_initiative_membership
+    ADD CONSTRAINT portfolio_initiative_membership_pkey PRIMARY KEY (portfolio_id, initiative_id);
+
+
+--
 -- Name: portfolio portfolio_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 

@@ -45,6 +45,10 @@ const createEditorPortfolioFields = (translation: Translation): EditorPortfolioF
       name: 'groups',
       label: tt('Groups'),
     },
+    initiatives: {
+      name: 'initiatives',
+      label: tt('Initiatives'),
+    },
   }
 }
 

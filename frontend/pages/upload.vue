@@ -6,6 +6,7 @@ import { formatFileSize } from '@/lib/filesize'
 const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const prefix = 'pages/upload'
 const tt = (key: string) => t(`${prefix}.${key}`)
@@ -399,7 +400,7 @@ const cleanUpIncompleteUploads = async () => {
           label="See Uploaded Portfolios"
           icon="pi pi-arrow-right"
           icon-pos="right"
-          to="/portfolios"
+          :to="localePath('/my-data')"
         />
       </div>
     </template>
