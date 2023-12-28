@@ -138,7 +138,7 @@ func rowToPortfolioGroup(row rowScanner) (*pacta.PortfolioGroup, error) {
 	if err != nil {
 		return nil, fmt.Errorf("scanning into portfolio_group row: %w", err)
 	}
-	if err := checkSizesEquivalent("portfolio group memberhsip", len(mid), len(mca)); err != nil {
+	if err := checkSizesEquivalent("portfolio group membership", len(mid), len(mca)); err != nil {
 		return nil, err
 	}
 	for i := range mid {

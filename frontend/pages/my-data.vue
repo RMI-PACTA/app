@@ -1,16 +1,16 @@
 <script setup lang="ts">
 const prefix = 'pages/my-data'
 
-const { fromQueryReactive } = useURLParams()
+const { fromQueryReactiveWithDefault } = useURLParams()
 const { t } = useI18n()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 
 const tt = (s: string) => t(`${prefix}.${s}`)
 
-const selectedPortfolioIdsQP = fromQueryReactive('pids')
-const selectedPortfolioGroupIdsQP = fromQueryReactive('pgids')
-const tabQP = fromQueryReactive('tab')
+const selectedPortfolioIdsQP = fromQueryReactiveWithDefault('pids', '')
+const selectedPortfolioGroupIdsQP = fromQueryReactiveWithDefault('pgids', '')
+const tabQP = fromQueryReactiveWithDefault('tab', 'p')
 
 const [
   { data: incompleteUploadsData, refresh: refreshIncompleteUploadsApi },
@@ -46,26 +46,12 @@ const refreshAll = async () => {
 }
 
 const selectedPortfolioIds = computed<string[]>({
-  get: () => (selectedPortfolioIdsQP.value ?? '').split(','),
-  set: (v: string[]) => {
-    if (v.length === 0) {
-      selectedPortfolioIdsQP.value = undefined
-    } else {
-      v.sort()
-      selectedPortfolioIdsQP.value = v.join(',')
-    }
-  },
+  get: () => selectedPortfolioIdsQP.value.split(','),
+  set: (v: string[]) => { selectedPortfolioIdsQP.value = v.join(',') },
 })
 const selectedPortfolioGroupIds = computed<string[]>({
-  get: () => (selectedPortfolioGroupIdsQP.value ?? '').split(','),
-  set: (v: string[]) => {
-    if (v.length === 0) {
-      selectedPortfolioGroupIdsQP.value = undefined
-    } else {
-      v.sort()
-      selectedPortfolioGroupIdsQP.value = v.join(',')
-    }
-  },
+  get: () => selectedPortfolioGroupIdsQP.value.split(','),
+  set: (v: string[]) => { selectedPortfolioGroupIdsQP.value = v.join(',') },
 })
 interface TabToIndexMap {
   iu: number
@@ -91,7 +77,7 @@ const tabToIndexMap = computed(() => {
 })
 const activeIndex = computed<number>({
   get: () => {
-    const tab = (tabQP.value ?? 'p') as keyof TabToIndexMap
+    const tab = tabQP.value as keyof TabToIndexMap
     const result = tabToIndexMap.value[tab]
     if (result === undefined) {
       console.error(`Unknown tab ${tab}`)

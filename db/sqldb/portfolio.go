@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// Curious why this query uses array aggregation in its nested queries?
+// See https://github.com/RMI-PACTA/app/pull/91#discussion_r1437712435
 func portfolioQueryStanza(where string) string {
 	return fmt.Sprintf(`
 	WITH selected_portfolio_ids AS (
@@ -232,7 +234,6 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 	if err := checkSizesEquivalent("initiatives", len(initiativesIDs), len(initiativesAddedByIDs), len(initiativesCreatedAts)); err != nil {
 		return nil, err
 	}
-	seenInitiativeIDs := make(map[pacta.InitiativeID]bool)
 	for i := range initiativesIDs {
 		if !initiativesIDs[i].Valid && !initiativesCreatedAts[i].Valid {
 			continue // skip nulls
@@ -243,11 +244,6 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 		if !initiativesCreatedAts[i].Valid {
 			return nil, fmt.Errorf("initiative createdAt must be non-null")
 		}
-		id := pacta.InitiativeID(initiativesIDs[i].String)
-		if seenInitiativeIDs[id] {
-			continue // Skip duplicates, see MULTI_LEFT_JOIN note.
-		}
-		seenInitiativeIDs[id] = true
 		var addedBy *pacta.User
 		if initiativesAddedByIDs[i].Valid {
 			addedBy = &pacta.User{ID: pacta.UserID(initiativesAddedByIDs[i].String)}
