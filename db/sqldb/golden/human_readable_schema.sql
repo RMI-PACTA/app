@@ -75,6 +75,7 @@ CREATE TABLE analysis_artifact (
 	id text NOT NULL,
 	shared_to_public boolean NOT NULL);
 ALTER TABLE ONLY analysis_artifact ADD CONSTRAINT analysis_artifact_pkey PRIMARY KEY (id);
+CREATE INDEX analysis_artifact_by_blob_id ON analysis_artifact USING btree (blob_id);
 ALTER TABLE ONLY analysis_artifact ADD CONSTRAINT analysis_artifact_analysis_id_fkey FOREIGN KEY (analysis_id) REFERENCES analysis(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY analysis_artifact ADD CONSTRAINT analysis_artifact_blob_id_fkey FOREIGN KEY (blob_id) REFERENCES blob(id) ON DELETE RESTRICT;
 
@@ -119,6 +120,7 @@ CREATE TABLE incomplete_upload (
 	owner_id text NOT NULL,
 	ran_at timestamp with time zone);
 ALTER TABLE ONLY incomplete_upload ADD CONSTRAINT incomplete_upload_pkey PRIMARY KEY (id);
+CREATE INDEX incomplete_upload_by_blob_id ON incomplete_upload USING btree (blob_id);
 ALTER TABLE ONLY incomplete_upload ADD CONSTRAINT incomplete_upload_blob_id_fkey FOREIGN KEY (blob_id) REFERENCES blob(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY incomplete_upload ADD CONSTRAINT incomplete_upload_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES owner(id) ON DELETE RESTRICT;
 
@@ -212,6 +214,7 @@ CREATE TABLE portfolio (
 	number_of_rows integer,
 	owner_id text NOT NULL);
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_pkey PRIMARY KEY (id);
+CREATE INDEX portfolio_by_blob_id ON portfolio USING btree (blob_id);
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_blob_id_fkey FOREIGN KEY (blob_id) REFERENCES blob(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES owner(id) ON DELETE RESTRICT;
 

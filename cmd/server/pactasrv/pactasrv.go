@@ -35,6 +35,7 @@ type DB interface {
 	CreateBlob(tx db.Tx, b *pacta.Blob) (pacta.BlobID, error)
 	UpdateBlob(tx db.Tx, id pacta.BlobID, mutations ...db.UpdateBlobFn) error
 	DeleteBlob(tx db.Tx, id pacta.BlobID) (pacta.BlobURI, error)
+	BlobOwners(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobOwnerInformation, error)
 
 	InitiativeInvitation(tx db.Tx, id pacta.InitiativeInvitationID) (*pacta.InitiativeInvitation, error)
 	InitiativeInvitationsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeInvitation, error)

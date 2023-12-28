@@ -260,6 +260,23 @@ func (o *Blob) Clone() *Blob {
 	}
 }
 
+type BlobOwnerInformation struct {
+	BlobID            BlobID
+	OwnerID           OwnerID
+	AdminDebugEnabled bool
+}
+
+func (o *BlobOwnerInformation) Clone() *BlobOwnerInformation {
+	if o == nil {
+		return nil
+	}
+	return &BlobOwnerInformation{
+		BlobID:            o.BlobID,
+		OwnerID:           o.OwnerID,
+		AdminDebugEnabled: o.AdminDebugEnabled,
+	}
+}
+
 type OwnerID string
 type Owner struct {
 	ID         OwnerID

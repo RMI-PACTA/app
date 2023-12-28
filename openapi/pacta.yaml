@@ -29,6 +29,26 @@ definitions:
       - de
 basePath: /v1
 paths:
+  /access-blob-content:
+    post:
+      summary: Gives the caller access to the blob 
+      description: Checks whether the user can access the blobs, and if so, returns blob download URLs for each, generating an audit log along the way 
+      operationId: accessBlobContent 
+      requestBody:
+        description: Information about the blobs that are requested 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessBlobContentReq'
+      responses:
+        '200':
+          description: the user can access the blobs, and the access URLs are returned, along with information about their expiration 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessBlobContentResp'
+
   /pacta-version/{id}:
     get:
       summary: Returns a version of the PACTA model by ID
@@ -1306,6 +1326,50 @@ components:
           description: The unique identifier for the uploaded asset
     CompletePortfolioUploadResp:
       type: object
+    AccessBlobContentReq:
+      type: object
+      required:
+        - items 
+      properties:
+        items:
+          type: array
+          items: 
+            $ref: '#/components/schemas/AccessBlobContentReqItem'
+    AccessBlobContentReqItem:
+      type: object
+      required:
+        - blob_id
+      properties:
+        blob_id:
+          type: string
+          description: The id of the blob to request the content for.
+    AccessBlobContentResp:
+      type: object
+      required:
+        - items 
+      properties:
+        items:
+          type: array 
+          description: The list of blob access items, one for each requested blob 
+          items: 
+            $ref: '#/components/schemas/AccessBlobContentRespItem'
+    AccessBlobContentRespItem:
+      type: object
+      required:
+        - blob_id
+        - download_url
+        - expiration_time
+      properties:
+        blob_id:
+          type: string
+          description: The id of the blob to that the content is for.
+        download_url:
+          type: string
+          description: The signed URL where the file can be downloaded from, using GET semantics. 
+        expiration_time:
+          format: date-time
+          type: string
+          description: The time at which the signed URL will expire. 
     HoldingsDate:
       type: object
       required:

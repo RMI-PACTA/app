@@ -99,12 +99,30 @@ func TestAnalysisArtifacts(t *testing.T) {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}
 
+	blobOwners, err := tdb.BlobOwners(tx, []pacta.BlobID{b1.ID, b2.ID, b3.ID})
+	if err != nil {
+		t.Fatalf("reading blob owners: %v", err)
+	}
+	expectedOwners := []*pacta.BlobOwnerInformation{
+		{BlobID: b1.ID, OwnerID: o.ID, AdminDebugEnabled: false},
+		{BlobID: b2.ID, OwnerID: o.ID, AdminDebugEnabled: true},
+		{BlobID: b3.ID, OwnerID: o.ID, AdminDebugEnabled: false},
+	}
+	if diff := cmp.Diff(expectedOwners, blobOwners, cmpOpts); diff != "" {
+		t.Errorf("unexpected diff (+got -want): %v", diff)
+	}
+
 	buris, err := tdb.DeleteAnalysis(tx, aid)
 	if err != nil {
 		t.Fatalf("deleting analysis: %v", err)
 	}
 	if diff := cmp.Diff([]pacta.BlobURI{b1.BlobURI, b2.BlobURI, b3.BlobURI}, buris, cmpOpts); diff != "" {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
+	}
+
+	_, err = tdb.BlobOwners(tx, []pacta.BlobID{b1.ID, b2.ID, b3.ID})
+	if err == nil {
+		t.Fatalf("reading blob owners should have failed but was fine", err)
 	}
 }
 
@@ -115,10 +133,14 @@ func analysisArtifactCmpOpts() cmp.Option {
 	aaLessFn := func(a, b *pacta.AnalysisArtifact) bool {
 		return a.ID < b.ID
 	}
+	boLessFn := func(a, b *pacta.BlobOwnerInformation) bool {
+		return a.BlobID < b.BlobID
+	}
 	return cmp.Options{
 		cmpopts.EquateEmpty(),
 		cmpopts.EquateApproxTime(time.Second),
 		cmpopts.SortSlices(blobURILessFn),
 		cmpopts.SortSlices(aaLessFn),
+		cmpopts.SortSlices(boLessFn),
 	}
 }
