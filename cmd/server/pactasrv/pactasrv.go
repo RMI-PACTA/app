@@ -21,6 +21,7 @@ var (
 
 type TaskRunner interface {
 	ParsePortfolio(ctx context.Context, req *task.ParsePortfolioRequest) (task.ID, task.RunnerID, error)
+	CreateAudit(ctx context.Context, req *task.CreateAuditRequest) (task.ID, task.RunnerID, error)
 	CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, task.RunnerID, error)
 }
 

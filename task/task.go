@@ -19,6 +19,7 @@ type Type string
 const (
 	ParsePortfolio = Type("parse_portfolio")
 	CreateReport   = Type("create_report")
+	CreateAudit    = Type("create_audit")
 )
 
 type ParsePortfolioRequest struct {
@@ -37,8 +38,24 @@ type ParsePortfolioResponse struct {
 	Outputs []*ParsePortfolioResponseItem
 }
 
+type CreateAuditRequest struct {
+	AnalysisID pacta.AnalysisID
+	BlobURIs   []pacta.BlobURI
+}
+
+type CreateAuditResponse struct {
+	TaskID  ID
+	Request *CreateAuditRequest
+}
+
 type CreateReportRequest struct {
-	PortfolioID pacta.PortfolioID
+	AnalysisID pacta.AnalysisID
+	BlobURIs   []pacta.BlobURI
+}
+
+type CreateReportResponse struct {
+	TaskID  ID
+	Request *CreateReportRequest
 }
 
 type EnvVar struct {
