@@ -10,7 +10,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const prefix = 'components/DownloadButton'
+const prefix = 'components/download/Button'
 const tt = (key: string) => t(`${prefix}.${key}`)
 
 const statePrefix = `${prefix}[${useStateIDGenerator().id()}]`
