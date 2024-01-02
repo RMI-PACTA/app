@@ -462,11 +462,11 @@ func (o *PortfolioInitiativeMembership) Clone() *PortfolioInitiativeMembership {
 
 type PortfolioSnapshotID string
 type PortfolioSnapshot struct {
-	ID               PortfolioSnapshotID
-	PortfolioID      PortfolioID
-	PortfolioGroupID PortfolioGroupID
-	InitiatiativeID  InitiativeID
-	PortfolioIDs     []PortfolioID
+	ID             PortfolioSnapshotID
+	PortfolioIDs   []PortfolioID
+	Portfolio      *Portfolio
+	PortfolioGroup *PortfolioGroup
+	Initiatiative  *Initiative
 }
 
 func (o *PortfolioSnapshot) Clone() *PortfolioSnapshot {
@@ -476,11 +476,11 @@ func (o *PortfolioSnapshot) Clone() *PortfolioSnapshot {
 	pids := make([]PortfolioID, len(o.PortfolioIDs))
 	copy(pids, o.PortfolioIDs)
 	return &PortfolioSnapshot{
-		ID:               o.ID,
-		PortfolioID:      o.PortfolioID,
-		PortfolioGroupID: o.PortfolioGroupID,
-		InitiatiativeID:  o.InitiatiativeID,
-		PortfolioIDs:     pids,
+		ID:             o.ID,
+		Portfolio:      o.Portfolio.Clone(),
+		PortfolioGroup: o.PortfolioGroup.Clone(),
+		Initiatiative:  o.Initiatiative.Clone(),
+		PortfolioIDs:   pids,
 	}
 }
 

@@ -107,13 +107,19 @@ func rowToPortfolioSnapshot(row rowScanner) (*pacta.PortfolioSnapshot, error) {
 		PortfolioIDs: stringsToIDs[pacta.PortfolioID](portfolioIDs),
 	}
 	if pID.Valid {
-		ps.PortfolioID = pacta.PortfolioID(pID.String)
+		ps.Portfolio = &pacta.Portfolio{
+			ID: pacta.PortfolioID(pID.String),
+		}
 	}
 	if pgID.Valid {
-		ps.PortfolioGroupID = pacta.PortfolioGroupID(pgID.String)
+		ps.PortfolioGroup = &pacta.PortfolioGroup{
+			ID: pacta.PortfolioGroupID(pgID.String),
+		}
 	}
 	if iID.Valid {
-		ps.InitiatiativeID = pacta.InitiativeID(iID.String)
+		ps.Initiatiative = &pacta.Initiative{
+			ID: pacta.InitiativeID(iID.String),
+		}
 	}
 	return ps, nil
 }

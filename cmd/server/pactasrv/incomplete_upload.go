@@ -23,7 +23,6 @@ func (s *Server) ListIncompleteUploads(ctx context.Context, request api.ListInco
 	if err != nil {
 		return nil, oapierr.Internal("failed to query incomplete uploads", zap.Error(err))
 	}
-	s.Logger.Info("queried incomplete uploads", zap.Int("count", len(ius)), zap.String("owner_id", string(ownerID)))
 	items, err := dereference(conv.IncompleteUploadsToOAPI(ius))
 	if err != nil {
 		return nil, err
@@ -43,8 +42,8 @@ func (s *Server) DeleteIncompleteUpload(ctx context.Context, request api.DeleteI
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete incomplete upload", zap.Error(err))
 	}
-	if err := s.deleteBlobs(ctx, []string{string(blobURI)}); err != nil {
-		return nil, oapierr.Internal("failed to delete blob", zap.Error(err))
+	if err := s.deleteBlobs(ctx, blobURI); err != nil {
+		return nil, err
 	}
 	return api.DeleteIncompleteUpload204Response{}, nil
 }
@@ -71,7 +70,6 @@ func (s *Server) UpdateIncompleteUpload(ctx context.Context, request api.UpdateI
 	if err != nil {
 		return nil, err
 	}
-	// TODO(#12) Implement Authorization
 	mutations := []db.UpdateIncompleteUploadFn{}
 	if request.Body.Name != nil {
 		mutations = append(mutations, db.SetIncompleteUploadName(*request.Body.Name))

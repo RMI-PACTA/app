@@ -27,6 +27,23 @@ definitions:
       - fr
       - es
       - de
+  FileType:
+    type: string
+    enum: &FILE_TYPES
+      - csv
+      - yaml
+      - zip
+      - json 
+      - html 
+  AnalysisType:
+    type: string
+    enum: &ANALYSIS_TYPES
+      - audit 
+      - report
+  FailureCode:
+    type: string
+    enum: &FAILURE_CODES
+      - UNKNOWN
 basePath: /v1
 paths:
   /access-blob-content:
@@ -807,6 +824,125 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompletePortfolioUploadResp'
+  /analyses:
+    get:
+      description: Gets the analyses that the user is the owner of 
+      operationId: listAnalyses
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAnalysesResp'
+  /analysis/{id}:
+    get:
+      summary: Returns an analysis by ID
+      description: Returns an analysis based on a single ID
+      operationId: findAnalysisById
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: analysis response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analysis'
+    patch:
+      summary: Updates writable analysis properties
+      description: Updates an analysis' settable properties
+      operationId: updateAnalysis
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Analayis object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisChanges'
+      responses:
+        '204':
+          description: the changes were applied successfully
+    delete:
+      summary: Deletes an analysis (and its artifacts) by ID
+      description: deletes an analysis based on the ID supplied
+      operationId: deleteAnalysis
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: analysis deleted
+  /analysis-artifact/{id}:
+    patch:
+      summary: Updates writable analysis artifact properties
+      description: Updates an analysis artifact's settable properties
+      operationId: updateAnalysisArtifact
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis artifact to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Analysis artifact's object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisArtifactChanges'
+      responses:
+        '204':
+          description: the changes were applied successfully
+    delete:
+      summary: Deletes an analysis artifact by ID
+      description: deletes an analysis artifact based on the ID supplied
+      operationId: deleteAnalysisArtifact
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis artifact to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: analysis artifact deleted
+  /run-analysis:
+    post:
+      summary: Requests an anslysis be run 
+      description: Creates a snapshot of the requested entity, and starts it running
+      operationId: runAnalysis 
+      requestBody:
+        description: Properties of the analysis to run 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunAnalysisReq'
+      responses:
+        '200':
+          description: information about the requested analysis 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunAnalysisResp'
 components:
   responses:
     Unauthorized:
@@ -855,6 +991,15 @@ components:
     Language:
       type: string
       enum: *LANGUAGES
+    FileType:
+      type: string
+      enum: *FILE_TYPES
+    AnalysisType:
+      type: string
+      enum: *ANALYSIS_TYPES
+    FailureCode:
+      type: string
+      enum: *FAILURE_CODES
     PactaVersionCreate:
       type: object
       required:
@@ -1058,8 +1203,7 @@ components:
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
           description: The language this initiative should be conducted in.
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
         pactaVersion:
           type: string
           description: The id of the PACTA model that this initiative should use, if not specified, the default PACTA model will be used.
@@ -1105,8 +1249,7 @@ components:
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
           description: The language this initiative should be conducted in.
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
         pactaVersion:
           type: string
           description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
@@ -1145,8 +1288,7 @@ components:
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
           description: The language this initiative should be conducted in.
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
         pactaVersion:
           type: string
           description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
@@ -1250,8 +1392,7 @@ components:
           description: Name of the user
         preferredLanguage:
           description: The user's preferred language, if present
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
     UserChanges:
       type: object
       properties:
@@ -1260,8 +1401,7 @@ components:
           description: The new name of the user
         preferredLanguage:
           description: The user's new preferred language
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
         admin:
           type: boolean
           description: Whether the given user is an admin
@@ -1431,8 +1571,8 @@ components:
           format: date-time
           description: The time when the upload was completed
         failureCode:
-          type: string
           description: Code describing the failure, if any
+          $ref: '#/components/schemas/FailureCode'
         failureMessage:
           type: string
           description: Message describing the failure, if any
@@ -1505,6 +1645,142 @@ components:
         adminDebugEnabled:
           type: boolean 
           description: Whether the admin debug mode is enabled for this portfolio
+    PortfolioSnapshot:
+      type: object
+      description: represents an immutable description of a collection of portfolios at a point in time, used to ensure reproducibility and change detection
+      required:
+        - id 
+        - portfolioIds 
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the snapshot 
+        portfolioIds:
+          type: array
+          items:
+            type: string 
+          description: the full set of denormalized portfolios included in this analysis 
+        initiative:
+          description: if populated, this snapshot represents a snapshot of this initiative
+          $ref: '#/components/schemas/Initiative'
+        portfolioGroup:
+          description: if populated, this snapshot represents a snapshot of this portfolio group 
+          $ref: '#/components/schemas/PortfolioGroup'
+        portfolio:
+          description: if populated, this snapshot represents a snapshot of this solitary portfolio 
+          $ref: '#/components/schemas/Portfolio'
+    Blob:
+      type: object
+      required:
+        - id 
+        - fileType 
+        - fileName 
+        - createdAt
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the blob
+        fileName:
+          type: string
+          description: the human meaningful name of the file
+        fileType:
+          description: the type (extension) of the file
+          $ref: '#/components/schemas/FileType'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this blob was created within the system 
+    AnalysisArtifact:
+      type: object
+      required:
+        - id
+        - adminDebugEnabled
+        - sharedToPublic 
+        - blob
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the artifact 
+        adminDebugEnabled:
+          type: boolean 
+          description: Whether the admin debug mode is enabled for this artifact 
+        sharedToPublic:
+          type: boolean 
+          description: Whether this artifact is publicly accessible 
+        blob: 
+          description: Information about the file/artifact itself
+          $ref: '#/components/schemas/Blob'     
+    AnalysisArtifactChanges:
+      type: object
+      properties:
+        adminDebugEnabled:
+          type: boolean 
+          description: Whether the admin debug mode is enabled for this artifact 
+        sharedToPublic:
+          type: boolean 
+          description: Whether this artifact is publicly accessible 
+    Analysis:
+      type: object
+      required:
+        - id
+        - analysisType
+        - pactaVersion
+        - portfolioSnapshot
+        - name
+        - description
+        - createdAt
+        - artifacts
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the analysis
+        analysisType:
+          description: the type of analysis that was run on this object 
+          $ref: '#/components/schemas/AnalysisType'
+        pactaVersion: 
+          type: string
+          description: The pacta model that was used to generate this analysis
+        portfolioSnapshot:
+          description: The snapshot of portfolios that was used to generate this analysis
+          $ref: '#/components/schemas/PortfolioSnapshot' 
+        name:
+          type: string
+          description: the human meaningful name of the analysis, editable by the user
+        description:
+          type: string
+          description: Additional information about the analysis, editable by the user
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this analysis was created
+        ranAt: 
+          type: string
+          format: date-time
+          description: The time at which this analysis was run, if set
+        completedAt: 
+          type: string
+          format: date-time
+          description: The time at which this analysis completed its run (successfully or not), if set 
+        failureCode: 
+          description: The code describing the failure, if any 
+          $ref: '#/components/schemas/FailureCode'
+        failureMessage: 
+          type: string
+          description: The english description of the failure, if any       
+        artifacts:
+          type: array
+          description: The list of artifacts that were generated by this analysis
+          items:
+            $ref: '#/components/schemas/AnalysisArtifact'
+    AnalysisChanges:
+      type: object
+      properties:
+        name:
+          type: string
+          description: the human meaningful name of the analysis, editable by the user
+        description:
+          type: string
+          description: Additional information about the analysis, editable by the user
     ListIncompleteUploadsReq:
       type: object
     ListIncompleteUploadsResp:
@@ -1516,6 +1792,53 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/IncompleteUpload'
+    ListAnalysesReq:
+      type: object
+    ListAnalysesResp:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Analysis'
+    RunAnalysisReq:
+      type: object
+      required:
+        - analysisType
+        - name
+        - description
+      properties:
+        analysisType:
+          description: the type of analysis that should be run
+          $ref: '#/components/schemas/AnalysisType'
+        pactaVersionId:
+          type: string
+          description: The pacta model that should be used to generate this analysis
+        name:
+          type: string
+          description: the human meaningful name of the analysis, editable by the user
+        description:
+          type: string
+          description: Additional information about the analysis, editable by the user
+        portfolioId:
+          type: string
+          description: If populated, this analysis should be run on this portfolio
+        portfolioGroupId:
+          type: string
+          description: If populated, this analysis should be run on this portfolio group
+        initiativeId:
+          type: string
+          description: If populated, this analysis should be run on this initiative
+    RunAnalysisResp:
+      type: object
+      required:
+        - analysisId 
+      properties:
+        analysisId:
+          type: string
+          description: the system assigned unique identifier of the analysis that has been requested 
     ListPortfoliosReq:
       type: object
     ListPortfoliosResp:

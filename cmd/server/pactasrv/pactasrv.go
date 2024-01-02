@@ -83,6 +83,22 @@ type DB interface {
 	UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error
 	DeleteIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (pacta.BlobURI, error)
 
+	CreateAnalysis(tx db.Tx, a *pacta.Analysis) (pacta.AnalysisID, error)
+	UpdateAnalysis(tx db.Tx, id pacta.AnalysisID, mutations ...db.UpdateAnalysisFn) error
+	DeleteAnalysis(tx db.Tx, id pacta.AnalysisID) ([]pacta.BlobURI, error)
+	Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error)
+	Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*pacta.Analysis, error)
+	AnalysesByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.Analysis, error)
+
+	AnalysisArtifacts(tx db.Tx, ids []pacta.AnalysisArtifactID) (map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact, error)
+	AnalysisArtifact(tx db.Tx, id pacta.AnalysisArtifactID) (*pacta.AnalysisArtifact, error)
+	UpdateAnalysisArtifact(tx db.Tx, id pacta.AnalysisArtifactID, mutations ...db.UpdateAnalysisArtifactFn) error
+	DeleteAnalysisArtifact(tx db.Tx, id pacta.AnalysisArtifactID) (pacta.BlobURI, error)
+
+	CreateSnapshotOfPortfolio(tx db.Tx, pID pacta.PortfolioID) (pacta.PortfolioSnapshotID, error)
+	CreateSnapshotOfPortfolioGroup(tx db.Tx, pgID pacta.PortfolioGroupID) (pacta.PortfolioSnapshotID, error)
+	CreateSnapshotOfInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta.PortfolioSnapshotID, error)
+
 	GetOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error)
 
 	PortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) (*pacta.PortfolioGroup, error)
