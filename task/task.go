@@ -43,9 +43,16 @@ type CreateAuditRequest struct {
 	BlobURIs   []pacta.BlobURI
 }
 
+type AnalysisArtifact struct {
+	BlobURI  pacta.BlobURI
+	FileName string
+	FileType pacta.FileType
+}
+
 type CreateAuditResponse struct {
-	TaskID  ID
-	Request *CreateAuditRequest
+	TaskID    ID
+	Request   *CreateAuditRequest
+	Artifacts []*AnalysisArtifact
 }
 
 type CreateReportRequest struct {
@@ -54,8 +61,9 @@ type CreateReportRequest struct {
 }
 
 type CreateReportResponse struct {
-	TaskID  ID
-	Request *CreateReportRequest
+	TaskID    ID
+	Request   *CreateReportRequest
+	Artifacts []*AnalysisArtifact
 }
 
 type EnvVar struct {
