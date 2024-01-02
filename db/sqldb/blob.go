@@ -102,6 +102,93 @@ func (d *DB) DeleteBlob(tx db.Tx, id pacta.BlobID) (pacta.BlobURI, error) {
 	return buri, nil
 }
 
+func (d *DB) BlobContexts(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobContext, error) {
+	ids = dedupeIDs(ids)
+	if len(ids) == 0 {
+		return []*pacta.BlobContext{}, nil
+	}
+	whereInFmt := createWhereInFmt(len(ids))
+	rows, err := d.query(tx, `
+(
+	SELECT
+		analysis_artifact.blob_id as blob_id,
+		analysis_artifact.admin_debug_enabled,
+		analysis.owner_id as owner_id,
+		'ANALYSIS' as primary_target_type,
+		analysis.id as primary_target_id
+	FROM
+		analysis_artifact
+		LEFT JOIN analysis ON analysis_artifact.analysis_id = analysis.id
+	WHERE
+		analysis_artifact.blob_id IN `+whereInFmt+`
+) UNION ALL (
+	SELECT
+		blob_id,
+		admin_debug_enabled,
+		owner_id,
+		'INCOMPLETE_UPLOAD' as  primary_target_type,
+		incomplete_upload.id as primary_target_id
+	FROM incomplete_upload
+	WHERE blob_id IN `+whereInFmt+`
+) UNION ALL (
+	SELECT
+		blob_id,
+		admin_debug_enabled,
+		owner_id,
+		'PORTFOLIO' as primary_target_type,
+		portfolio.id as primary_target_id
+	FROM portfolio
+	WHERE blob_id IN `+whereInFmt+`
+);`, idsToInterface(ids)...)
+	if err != nil {
+		return nil, fmt.Errorf("querying blob owners: %w", err)
+	}
+	defer rows.Close()
+
+	result := []*pacta.BlobContext{}
+	seen := map[pacta.BlobID]bool{}
+
+	for rows.Next() {
+		var blobID pacta.BlobID
+		var ade bool
+		var ownerID pacta.OwnerID
+		var ptt string
+		var ptid string
+		err := rows.Scan(&blobID, &ade, &ownerID, &ptt, &ptid)
+		if err != nil {
+			return nil, fmt.Errorf("scanning blob owner: %w", err)
+		}
+		pttParsed, err := pacta.ParseAuditLogTargetType(ptt)
+		if err != nil {
+			return nil, fmt.Errorf("parsing primary target type: %w", err)
+		}
+		if seen[blobID] {
+			return nil, fmt.Errorf("blob %q has multiple owner entries", blobID)
+		}
+		seen[blobID] = true
+		if ownerID == "" {
+			return nil, fmt.Errorf("blob %q has empty owner entry", blobID)
+		}
+		if ptid == "" {
+			return nil, fmt.Errorf("blob %q has empty primary target id", blobID)
+		}
+		result = append(result, &pacta.BlobContext{
+			BlobID:               blobID,
+			AdminDebugEnabled:    ade,
+			PrimaryTargetType:    pttParsed,
+			PrimaryTargetID:      ptid,
+			PrimaryTargetOwnerID: ownerID,
+		})
+	}
+
+	for _, blobID := range ids {
+		if !seen[blobID] {
+			return nil, db.NotFound(blobID, "blob_id_for_owner")
+		}
+	}
+	return result, nil
+}
+
 func (db *DB) putBlob(tx db.Tx, b *pacta.Blob) error {
 	err := db.exec(tx, `
 		UPDATE blob SET

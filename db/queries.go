@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/RMI/pacta/pacta"
@@ -28,6 +29,32 @@ const (
 	AuditLogQuerySortBy_SecondaryTargetOwnerID AuditLogQuerySortBy = "secondary_target_owner_id"
 )
 
+func ParseAuditLogQuerySortBy(s string) (AuditLogQuerySortBy, error) {
+	switch s {
+	case "created_at":
+		return AuditLogQuerySortBy_CreatedAt, nil
+	case "actor_type":
+		return AuditLogQuerySortBy_ActorType, nil
+	case "actor_id":
+		return AuditLogQuerySortBy_ActorID, nil
+	case "actor_owner_id":
+		return AuditLogQuerySortBy_ActorOwnerID, nil
+	case "primary_target_id":
+		return AuditLogQuerySortBy_PrimaryTargetID, nil
+	case "primary_target_type":
+		return AuditLogQuerySortBy_PrimaryTargetType, nil
+	case "primary_target_owner_id":
+		return AuditLogQuerySortBy_PrimaryTargetOwnerID, nil
+	case "secondary_target_id":
+		return AuditLogQuerySortBy_SecondaryTargetID, nil
+	case "secondary_target_type":
+		return AuditLogQuerySortBy_SecondaryTargetType, nil
+	case "secondary_target_owner_id":
+		return AuditLogQuerySortBy_SecondaryTargetOwnerID, nil
+	}
+	return "", fmt.Errorf("unknown ParseAuditLogActorType: %q", s)
+}
+
 type AuditLogQuerySort struct {
 	By        AuditLogQuerySortBy
 	Ascending bool
@@ -37,7 +64,7 @@ type AuditLogQueryWhere struct {
 	InID            []pacta.AuditLogID
 	MinCreatedAt    time.Time
 	MaxCreatedAt    time.Time
-	InActionType    []pacta.AuditLogAction
+	InAction        []pacta.AuditLogAction
 	InActorType     []pacta.AuditLogActorType
 	InActorID       []string
 	InActorOwnerID  []pacta.OwnerID

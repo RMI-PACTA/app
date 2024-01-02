@@ -10,6 +10,14 @@ func strPtr[T ~string](t T) *string {
 	return ptr(string(t))
 }
 
+func fromStrs[T ~string](ss []string) []T {
+	result := make([]T, len(ss))
+	for i, s := range ss {
+		result[i] = T(s)
+	}
+	return result
+}
+
 func ifNil[T any](t *T, fallback T) T {
 	if t == nil {
 		return fallback

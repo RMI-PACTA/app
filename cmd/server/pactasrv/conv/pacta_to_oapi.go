@@ -377,3 +377,123 @@ func AnalysisToOAPI(a *pacta.Analysis) (*api.Analysis, error) {
 func AnalysesToOAPI(as []*pacta.Analysis) ([]*api.Analysis, error) {
 	return convAll(as, AnalysisToOAPI)
 }
+
+func auditLogActorTypeToOAPI(i pacta.AuditLogActorType) (api.AuditLogActorType, error) {
+	switch i {
+	case pacta.AuditLogActorType_Public:
+		return api.AuditLogActorTypePUBLIC, nil
+	case pacta.AuditLogActorType_Owner:
+		return api.AuditLogActorTypeOWNER, nil
+	case pacta.AuditLogActorType_Admin:
+		return api.AuditLogActorTypeADMIN, nil
+	case pacta.AuditLogActorType_SuperAdmin:
+		return api.AuditLogActorTypeSUPERADMIN, nil
+	case pacta.AuditLogActorType_System:
+		return api.AuditLogActorTypeSYSTEM, nil
+	}
+	return "", oapierr.Internal(fmt.Sprintf("auditLogActorTypeToOAPI: unknown actor type: %q", i))
+}
+
+func auditLogActionToOAPI(i pacta.AuditLogAction) (api.AuditLogAction, error) {
+	switch i {
+	case pacta.AuditLogAction_Create:
+		return api.AuditLogActionCREATE, nil
+	case pacta.AuditLogAction_Update:
+		return api.AuditLogActionUPDATE, nil
+	case pacta.AuditLogAction_Delete:
+		return api.AuditLogActionDELETE, nil
+	case pacta.AuditLogAction_AddTo:
+		return api.AuditLogActionADDTO, nil
+	case pacta.AuditLogAction_RemoveFrom:
+		return api.AuditLogActionREMOVEFROM, nil
+	case pacta.AuditLogAction_EnableAdminDebug:
+		return api.AuditLogActionENABLEADMINDEBUG, nil
+	case pacta.AuditLogAction_DisableAdminDebug:
+		return api.AuditLogActionDISABLEADMINDEBUG, nil
+	case pacta.AuditLogAction_Download:
+		return api.AuditLogActionDOWNLOAD, nil
+	case pacta.AuditLogAction_EnableSharing:
+		return api.AuditLogActionENABLESHARING, nil
+	case pacta.AuditLogAction_DisableSharing:
+		return api.AuditLogActionDISABLESHARING, nil
+	}
+	return "", oapierr.Internal(fmt.Sprintf("auditLogActionToOAPI: unknown action: %q", i))
+}
+
+func auditLogTargetTypeToOAPI(i pacta.AuditLogTargetType) (api.AuditLogTargetType, error) {
+	switch i {
+	case pacta.AuditLogTargetType_User:
+		return api.AuditLogTargetTypeUSER, nil
+	case pacta.AuditLogTargetType_Portfolio:
+		return api.AuditLogTargetTypePORTFOLIO, nil
+	case pacta.AuditLogTargetType_IncompleteUpload:
+		return api.AuditLogTargetTypeINCOMPLETEUPLOAD, nil
+	case pacta.AuditLogTargetType_PortfolioGroup:
+		return api.AuditLogTargetTypePORTFOLIOGROUP, nil
+	case pacta.AuditLogTargetType_Initiative:
+		return api.AuditLogTargetTypeINITIATIVE, nil
+	case pacta.AuditLogTargetType_PACTAVersion:
+		return api.AuditLogTargetTypePACTAVERSION, nil
+	case pacta.AuditLogTargetType_Analysis:
+		return api.AuditLogTargetTypeANALYSIS, nil
+	}
+	return "", oapierr.Internal(fmt.Sprintf("auditLogTargetTypeToOAPI: unknown target type: %q", i))
+}
+
+func AuditLogToOAPI(al *pacta.AuditLog) (*api.AuditLog, error) {
+	if al == nil {
+		return nil, oapierr.Internal("auditLogToOAPI: can't convert nil pointer")
+	}
+	at, err := auditLogActorTypeToOAPI(al.ActorType)
+	if err != nil {
+		return nil, oapierr.Internal("auditLogToOAPI: auditLogActorTypeToOAPI failed", zap.Error(err))
+	}
+	act, err := auditLogActionToOAPI(al.Action)
+	if err != nil {
+		return nil, oapierr.Internal("auditLogToOAPI: auditLogActionToOAPI failed", zap.Error(err))
+	}
+	ptt, err := auditLogTargetTypeToOAPI(al.PrimaryTargetType)
+	if err != nil {
+		return nil, oapierr.Internal("auditLogToOAPI: auditLogTargetTypeToOAPI failed", zap.Error(err))
+	}
+	var aoi *string
+	if al.ActorOwner != nil {
+		aoi = stringToNilable(al.ActorOwner.ID)
+	}
+	var stt *api.AuditLogTargetType
+	if al.SecondaryTargetType != "" {
+		s, err := auditLogTargetTypeToOAPI(al.SecondaryTargetType)
+		if err != nil {
+			return nil, oapierr.Internal("auditLogToOAPI: auditLogTargetTypeToOAPI failed", zap.Error(err))
+		}
+		stt = &s
+	}
+	var sto *string
+	if al.SecondaryTargetOwner != nil {
+		s := string(al.SecondaryTargetOwner.ID)
+		sto = &s
+	}
+	var sid *string
+	if al.SecondaryTargetID != "" {
+		s := string(al.SecondaryTargetID)
+		sid = &s
+	}
+	return &api.AuditLog{
+		Id:                   string(al.ID),
+		CreatedAt:            al.CreatedAt,
+		ActorType:            at,
+		ActorId:              stringToNilable(al.ActorID),
+		ActorOwnerId:         aoi,
+		Action:               act,
+		PrimaryTargetType:    ptt,
+		PrimaryTargetId:      al.PrimaryTargetID,
+		PrimaryTargetOwner:   string(al.PrimaryTargetOwner.ID),
+		SecondaryTargetType:  stt,
+		SecondaryTargetId:    sid,
+		SecondaryTargetOwner: sto,
+	}, nil
+}
+
+func AuditLogsToOAPI(als []*pacta.AuditLog) ([]*api.AuditLog, error) {
+	return convAll(als, AuditLogToOAPI)
+}

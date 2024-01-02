@@ -260,6 +260,27 @@ func (o *Blob) Clone() *Blob {
 	}
 }
 
+type BlobContext struct {
+	BlobID               BlobID
+	PrimaryTargetType    AuditLogTargetType
+	PrimaryTargetID      string
+	PrimaryTargetOwnerID OwnerID
+	AdminDebugEnabled    bool
+}
+
+func (o *BlobContext) Clone() *BlobContext {
+	if o == nil {
+		return nil
+	}
+	return &BlobContext{
+		BlobID:               o.BlobID,
+		PrimaryTargetType:    o.PrimaryTargetType,
+		PrimaryTargetID:      o.PrimaryTargetID,
+		PrimaryTargetOwnerID: o.PrimaryTargetOwnerID,
+		AdminDebugEnabled:    o.AdminDebugEnabled,
+	}
+}
+
 type OwnerID string
 type Owner struct {
 	ID         OwnerID
@@ -602,14 +623,16 @@ func ParseAuditLogAction(s string) (AuditLogAction, error) {
 type AuditLogActorType string
 
 const (
-	AuditLogActorType_User       AuditLogActorType = "USER"
+	AuditLogActorType_Public     AuditLogActorType = "PUBLIC"
+	AuditLogActorType_Owner      AuditLogActorType = "OWNER"
 	AuditLogActorType_Admin      AuditLogActorType = "ADMIN"
 	AuditLogActorType_SuperAdmin AuditLogActorType = "SUPER_ADMIN"
 	AuditLogActorType_System     AuditLogActorType = "SYSTEM"
 )
 
 var AuditLogActorTypeValues = []AuditLogActorType{
-	AuditLogActorType_User,
+	AuditLogActorType_Public,
+	AuditLogActorType_Owner,
 	AuditLogActorType_Admin,
 	AuditLogActorType_SuperAdmin,
 	AuditLogActorType_System,
@@ -617,8 +640,10 @@ var AuditLogActorTypeValues = []AuditLogActorType{
 
 func ParseAuditLogActorType(s string) (AuditLogActorType, error) {
 	switch s {
-	case "USER":
-		return AuditLogActorType_User, nil
+	case "PUBLIC":
+		return AuditLogActorType_Public, nil
+	case "OWNER":
+		return AuditLogActorType_Owner, nil
 	case "ADMIN":
 		return AuditLogActorType_Admin, nil
 	case "SUPER_ADMIN":

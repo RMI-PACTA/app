@@ -1,8 +1,10 @@
 package conv
 
 import (
+	"fmt"
 	"regexp"
 
+	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
@@ -103,5 +105,111 @@ func PortfolioGroupCreateFromOAPI(pg *api.PortfolioGroupCreate, ownerID pacta.Ow
 		Name:        pg.Name,
 		Description: pg.Description,
 		Owner:       &pacta.Owner{ID: ownerID},
+	}, nil
+}
+
+func auditLogActionFromOAPI(i api.AuditLogAction) (pacta.AuditLogAction, error) {
+	return pacta.ParseAuditLogAction(string(i))
+}
+
+func auditLogActorTypeFromOAPI(i api.AuditLogActorType) (pacta.AuditLogActorType, error) {
+	return pacta.ParseAuditLogActorType(string(i))
+}
+
+func auditLogTargetTypeFromOAPI(i api.AuditLogTargetType) (pacta.AuditLogTargetType, error) {
+	return pacta.ParseAuditLogTargetType(string(i))
+}
+
+func auditLogQueryWhereFromOAPI(i api.AuditLogQueryWhere) (*db.AuditLogQueryWhere, error) {
+	result := &db.AuditLogQueryWhere{}
+	if i.InId != nil {
+		result.InID = fromStrs[pacta.AuditLogID](*i.InId)
+	}
+	if i.MinCreatedAt != nil {
+		result.MinCreatedAt = *i.MinCreatedAt
+	}
+	if i.MaxCreatedAt != nil {
+		result.MaxCreatedAt = *i.MaxCreatedAt
+	}
+	if i.InAction != nil {
+		as, err := convAll(*i.InAction, auditLogActionFromOAPI)
+		if err != nil {
+			return nil, fmt.Errorf("converting audit log query where in action: %w", err)
+		}
+		result.InAction = as
+	}
+	if i.InActorType != nil {
+		at, err := convAll(*i.InActorType, auditLogActorTypeFromOAPI)
+		if err != nil {
+			return nil, fmt.Errorf("converting audit log query where in actor type: %w", err)
+		}
+		result.InActorType = at
+	}
+	if i.InActorId != nil {
+		result.InActorID = *i.InActorId
+	}
+	if i.InActorOwnerId != nil {
+		result.InActorOwnerID = fromStrs[pacta.OwnerID](*i.InActorOwnerId)
+	}
+	if i.InTargetType != nil {
+		tt, err := convAll(*i.InTargetType, auditLogTargetTypeFromOAPI)
+		if err != nil {
+			return nil, fmt.Errorf("converting audit log query where in target type: %w", err)
+		}
+		result.InTargetType = tt
+	}
+	if i.InTargetId != nil {
+		result.InTargetID = *i.InTargetId
+	}
+	if i.InTargetOwnerId != nil {
+		result.InTargetOwnerID = fromStrs[pacta.OwnerID](*i.InTargetOwnerId)
+	}
+	return result, nil
+}
+
+func auditLogQuerySortByFromOAPI(i api.AuditLogQuerySortBy) (db.AuditLogQuerySortBy, error) {
+	return db.ParseAuditLogQuerySortBy(string(i))
+}
+
+func auditLogQuerySortFromOAPI(i api.AuditLogQuerySort) (*db.AuditLogQuerySort, error) {
+	by, err := auditLogQuerySortByFromOAPI(i.By)
+	if err != nil {
+		return nil, fmt.Errorf("converting audit log query sort by: %w", err)
+	}
+	return &db.AuditLogQuerySort{
+		By:        by,
+		Ascending: i.Ascending,
+	}, nil
+}
+
+func AuditLogQueryFromOAPI(q *api.AuditLogQueryReq) (*db.AuditLogQuery, error) {
+	limit := 25
+	if q.Limit != nil {
+		limit = *q.Limit
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	cursor := ""
+	if q.Cursor != nil {
+		cursor = *q.Cursor
+	}
+	sorts := []*db.AuditLogQuerySort{}
+	if q.Sorts != nil {
+		ss, err := convAll(*q.Sorts, auditLogQuerySortFromOAPI)
+		if err != nil {
+			return nil, oapierr.BadRequest("error converting audit log query sorts", zap.Error(err))
+		}
+		sorts = ss
+	}
+	wheres, err := convAll(q.Wheres, auditLogQueryWhereFromOAPI)
+	if err != nil {
+		return nil, oapierr.BadRequest("error converting audit log query wheres", zap.Error(err))
+	}
+	return &db.AuditLogQuery{
+		Cursor: db.Cursor(cursor),
+		Limit:  limit,
+		Wheres: wheres,
+		Sorts:  sorts,
 	}, nil
 }

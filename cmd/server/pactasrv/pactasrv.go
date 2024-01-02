@@ -35,6 +35,7 @@ type DB interface {
 	CreateBlob(tx db.Tx, b *pacta.Blob) (pacta.BlobID, error)
 	UpdateBlob(tx db.Tx, id pacta.BlobID, mutations ...db.UpdateBlobFn) error
 	DeleteBlob(tx db.Tx, id pacta.BlobID) (pacta.BlobURI, error)
+	BlobContexts(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobContext, error)
 
 	InitiativeInvitation(tx db.Tx, id pacta.InitiativeInvitationID) (*pacta.InitiativeInvitation, error)
 	InitiativeInvitationsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeInvitation, error)
@@ -114,13 +115,16 @@ type DB interface {
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
 	DeleteUser(tx db.Tx, id pacta.UserID) error
+
+	CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error)
+	AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.PageInfo, error)
 }
 
 type Blob interface {
 	Scheme() blob.Scheme
 
-	SignedUploadURL(ctx context.Context, uri string) (string, error)
-	SignedDownloadURL(ctx context.Context, uri string) (string, error)
+	SignedUploadURL(ctx context.Context, uri string) (string, time.Time, error)
+	SignedDownloadURL(ctx context.Context, uri string) (string, time.Time, error)
 	DeleteBlob(ctx context.Context, uri string) error
 }
 
@@ -180,10 +184,50 @@ func (s *Server) getUserOwnerID(ctx context.Context) (pacta.OwnerID, error) {
 	return ownerID, nil
 }
 
+func (s *Server) isAdminOrSuperAdmin(ctx context.Context) (bool, bool, error) {
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return false, false, err
+	}
+	user, err := s.DB.User(s.DB.NoTxn(ctx), userID)
+	if err != nil {
+		return false, false, oapierr.Internal("failed to find user", zap.Error(err))
+	}
+	return user.Admin, user.SuperAdmin, nil
+}
+
 func asStrs[T ~string](ts []T) []string {
 	result := make([]string, len(ts))
 	for i, t := range ts {
 		result[i] = string(t)
 	}
 	return result
+}
+
+type actorInfo struct {
+	UserID       pacta.UserID
+	OwnerID      pacta.OwnerID
+	IsAdmin      bool
+	IsSuperAdmin bool
+}
+
+func (s *Server) getActorInfoOrFail(ctx context.Context) (*actorInfo, error) {
+	actorUserID, err := getUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	actorOwnerID, err := s.getUserOwnerID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	actorIsAdmin, actorIsSuperAdmin, err := s.isAdminOrSuperAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &actorInfo{
+		UserID:       actorUserID,
+		OwnerID:      actorOwnerID,
+		IsAdmin:      actorIsAdmin,
+		IsSuperAdmin: actorIsSuperAdmin,
+	}, nil
 }

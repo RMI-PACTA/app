@@ -19,7 +19,7 @@ func TestCreateAuditLog(t *testing.T) {
 	cmpOpts := auditLogCmpOpts()
 	al := &pacta.AuditLog{
 		Action:               pacta.AuditLogAction_AddTo,
-		ActorType:            pacta.AuditLogActorType_User,
+		ActorType:            pacta.AuditLogActorType_Owner,
 		ActorID:              "user1",
 		ActorOwner:           &pacta.Owner{ID: "owner1"},
 		PrimaryTargetType:    pacta.AuditLogTargetType_Portfolio,
@@ -88,7 +88,7 @@ func testAuditLogEnumConvertability[E comparable](t *testing.T, writeE func(E, *
 	tx := tdb.NoTxn(ctx)
 	base := &pacta.AuditLog{
 		Action:               pacta.AuditLogAction_AddTo,
-		ActorType:            pacta.AuditLogActorType_User,
+		ActorType:            pacta.AuditLogActorType_Owner,
 		ActorID:              "user1",
 		ActorOwner:           &pacta.Owner{ID: "owner1"},
 		PrimaryTargetType:    pacta.AuditLogTargetType_Portfolio,
@@ -127,7 +127,7 @@ func TestAuditSearch(t *testing.T) {
 	beforeCreation := time.Now()
 	action1 := pacta.AuditLogAction_AddTo
 	action2 := pacta.AuditLogAction_Create
-	actorType1 := pacta.AuditLogActorType_User
+	actorType1 := pacta.AuditLogActorType_Owner
 	actorType2 := pacta.AuditLogActorType_System
 	actorID1 := "user1"
 	actorID2 := "system2"
@@ -177,7 +177,7 @@ func TestAuditSearch(t *testing.T) {
 			expected: []pacta.AuditLogID{alID1, alID2, alID3},
 		}, {
 			name:     "By ActionType",
-			where:    &db.AuditLogQueryWhere{InActionType: []pacta.AuditLogAction{action2}},
+			where:    &db.AuditLogQueryWhere{InAction: []pacta.AuditLogAction{action2}},
 			expected: []pacta.AuditLogID{alID2, alID3},
 		}, {
 			name:     "By ActorType",
@@ -240,7 +240,7 @@ func TestAuditSearch(t *testing.T) {
 				&db.AuditLogQueryWhere{InID: []pacta.AuditLogID{alID1}},
 				&db.AuditLogQueryWhere{MinCreatedAt: beforeCreation},
 				&db.AuditLogQueryWhere{MaxCreatedAt: afterCreation},
-				&db.AuditLogQueryWhere{InActionType: []pacta.AuditLogAction{action1}},
+				&db.AuditLogQueryWhere{InAction: []pacta.AuditLogAction{action1}},
 				&db.AuditLogQueryWhere{InActorType: []pacta.AuditLogActorType{actorType1}},
 				&db.AuditLogQueryWhere{InActorID: []string{actorID1}},
 				&db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
@@ -255,7 +255,7 @@ func TestAuditSearch(t *testing.T) {
 				&db.AuditLogQueryWhere{InID: []pacta.AuditLogID{alID1}},
 				&db.AuditLogQueryWhere{MinCreatedAt: beforeCreation},
 				&db.AuditLogQueryWhere{MaxCreatedAt: afterCreation},
-				&db.AuditLogQueryWhere{InActionType: []pacta.AuditLogAction{action1}},
+				&db.AuditLogQueryWhere{InAction: []pacta.AuditLogAction{action1}},
 				&db.AuditLogQueryWhere{InActorType: []pacta.AuditLogActorType{actorType2}},
 				&db.AuditLogQueryWhere{InActorID: []string{actorID1}},
 				&db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
