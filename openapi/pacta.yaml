@@ -19,31 +19,7 @@ info:
     url: https://mit-license.org/
 servers:
   - url: TODO
-definitions:
-  Language:
-    type: string
-    enum: &LANGUAGES
-      - en
-      - fr
-      - es
-      - de
-  FileType:
-    type: string
-    enum: &FILE_TYPES
-      - csv
-      - yaml
-      - zip
-      - json 
-      - html 
-  AnalysisType:
-    type: string
-    enum: &ANALYSIS_TYPES
-      - audit 
-      - report
-  FailureCode:
-    type: string
-    enum: &FAILURE_CODES
-      - UNKNOWN
+
 basePath: /v1
 paths:
   /access-blob-content:
@@ -990,16 +966,28 @@ components:
   schemas:
     Language:
       type: string
-      enum: *LANGUAGES
+      enum:
+        - Language_EN
+        - Language_FR
+        - Language_ES
+        - Language_DE
     FileType:
       type: string
-      enum: *FILE_TYPES
+      enum:
+        - FileType_CSV
+        - FileType_YAML
+        - FileType_ZIP
+        - FileType_JSON
+        - FileType_HTML
     AnalysisType:
       type: string
-      enum: *ANALYSIS_TYPES
+      enum:
+        - AnalysisType_AUDIT
+        - AnalysisType_REPORT
     FailureCode:
       type: string
-      enum: *FAILURE_CODES
+      enum:
+        - FailureCode_UNKNOWN
     PactaVersionCreate:
       type: object
       required:

@@ -43,7 +43,7 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 		mutations = append(mutations, db.SetUserName(*request.Body.Name))
 	}
 	if request.Body.PreferredLanguage != nil {
-		lang, err := pacta.ParseLanguage(string(*request.Body.PreferredLanguage))
+		lang, err := conv.LanguageFromOAPI(*request.Body.PreferredLanguage)
 		if err != nil {
 			return nil, oapierr.BadRequest("invalid language", zap.Error(err))
 		}

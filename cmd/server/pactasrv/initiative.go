@@ -46,7 +46,7 @@ func (s *Server) UpdateInitiative(ctx context.Context, request api.UpdateInitiat
 		mutations = append(mutations, db.SetInitiativeIsAcceptingNewPortfolios(*b.IsAcceptingNewPortfolios))
 	}
 	if b.Language != nil {
-		lang, err := pacta.ParseLanguage(string(*b.Language))
+		lang, err := conv.LanguageFromOAPI(*b.Language)
 		if err != nil {
 			return nil, oapierr.BadRequest("failed to parse language", zap.Error(err))
 		}

@@ -13,6 +13,20 @@ import (
 
 var initiativeIDRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
+func LanguageFromOAPI(l api.Language) (pacta.Language, error) {
+	switch l {
+	case api.LanguageEN:
+		return pacta.Language_EN, nil
+	case api.LanguageES:
+		return pacta.Language_ES, nil
+	case api.LanguageFR:
+		return pacta.Language_FR, nil
+	case api.LanguageDE:
+		return pacta.Language_DE, nil
+	}
+	return "", oapierr.BadRequest("unknown language", zap.String("language", string(l)))
+}
+
 func InitiativeCreateFromOAPI(i *api.InitiativeCreate) (*pacta.Initiative, error) {
 	if i == nil {
 		return nil, oapierr.BadRequest("InitiativeCreate cannot be nil")
@@ -20,9 +34,9 @@ func InitiativeCreateFromOAPI(i *api.InitiativeCreate) (*pacta.Initiative, error
 	if !initiativeIDRegex.MatchString(i.Id) {
 		return nil, oapierr.BadRequest("id must contain only alphanumeric characters, underscores, and dashes")
 	}
-	lang, err := pacta.ParseLanguage(string(i.Language))
+	lang, err := LanguageFromOAPI(i.Language)
 	if err != nil {
-		return nil, oapierr.BadRequest("failed to parse language", zap.Error(err))
+		return nil, err
 	}
 	var pv *pacta.PACTAVersion
 	if i.PactaVersion != nil {
@@ -109,15 +123,65 @@ func PortfolioGroupCreateFromOAPI(pg *api.PortfolioGroupCreate, ownerID pacta.Ow
 }
 
 func auditLogActionFromOAPI(i api.AuditLogAction) (pacta.AuditLogAction, error) {
-	return pacta.ParseAuditLogAction(string(i))
+	switch i {
+	case api.AuditLogActionCREATE:
+		return pacta.AuditLogAction_Create, nil
+	case api.AuditLogActionUPDATE:
+		return pacta.AuditLogAction_Update, nil
+	case api.AuditLogActionDELETE:
+		return pacta.AuditLogAction_Delete, nil
+	case api.AuditLogActionADDTO:
+		return pacta.AuditLogAction_AddTo, nil
+	case api.AuditLogActionREMOVEFROM:
+		return pacta.AuditLogAction_RemoveFrom, nil
+	case api.AuditLogActionENABLEADMINDEBUG:
+		return pacta.AuditLogAction_EnableAdminDebug, nil
+	case api.AuditLogActionDISABLEADMINDEBUG:
+		return pacta.AuditLogAction_DisableAdminDebug, nil
+	case api.AuditLogActionDOWNLOAD:
+		return pacta.AuditLogAction_Download, nil
+	case api.AuditLogActionENABLESHARING:
+		return pacta.AuditLogAction_EnableSharing, nil
+	case api.AuditLogActionDISABLESHARING:
+		return pacta.AuditLogAction_DisableSharing, nil
+	}
+	return "", oapierr.BadRequest("unknown audit log action", zap.String("audit_log_action", string(i)))
 }
 
 func auditLogActorTypeFromOAPI(i api.AuditLogActorType) (pacta.AuditLogActorType, error) {
-	return pacta.ParseAuditLogActorType(string(i))
+	switch i {
+	case api.AuditLogActorTypePUBLIC:
+		return pacta.AuditLogActorType_Public, nil
+	case api.AuditLogActorTypeOWNER:
+		return pacta.AuditLogActorType_Owner, nil
+	case api.AuditLogActorTypeADMIN:
+		return pacta.AuditLogActorType_Admin, nil
+	case api.AuditLogActorTypeSUPERADMIN:
+		return pacta.AuditLogActorType_SuperAdmin, nil
+	case api.AuditLogActorTypeSYSTEM:
+		return pacta.AuditLogActorType_System, nil
+	}
+	return "", oapierr.BadRequest("unknown audit log actor type", zap.String("audit_log_actor_type", string(i)))
 }
 
 func auditLogTargetTypeFromOAPI(i api.AuditLogTargetType) (pacta.AuditLogTargetType, error) {
-	return pacta.ParseAuditLogTargetType(string(i))
+	switch i {
+	case api.AuditLogTargetTypeUSER:
+		return pacta.AuditLogTargetType_User, nil
+	case api.AuditLogTargetTypePORTFOLIO:
+		return pacta.AuditLogTargetType_Portfolio, nil
+	case api.AuditLogTargetTypeINCOMPLETEUPLOAD:
+		return pacta.AuditLogTargetType_IncompleteUpload, nil
+	case api.AuditLogTargetTypePORTFOLIOGROUP:
+		return pacta.AuditLogTargetType_PortfolioGroup, nil
+	case api.AuditLogTargetTypeINITIATIVE:
+		return pacta.AuditLogTargetType_Initiative, nil
+	case api.AuditLogTargetTypePACTAVERSION:
+		return pacta.AuditLogTargetType_PACTAVersion, nil
+	case api.AuditLogTargetTypeANALYSIS:
+		return pacta.AuditLogTargetType_Analysis, nil
+	}
+	return "", oapierr.BadRequest("unknown audit log target type", zap.String("audit_log_target_type", string(i)))
 }
 
 func auditLogQueryWhereFromOAPI(i api.AuditLogQueryWhere) (*db.AuditLogQueryWhere, error) {
@@ -168,7 +232,29 @@ func auditLogQueryWhereFromOAPI(i api.AuditLogQueryWhere) (*db.AuditLogQueryWher
 }
 
 func auditLogQuerySortByFromOAPI(i api.AuditLogQuerySortBy) (db.AuditLogQuerySortBy, error) {
-	return db.ParseAuditLogQuerySortBy(string(i))
+	switch i {
+	case api.AuditLogQuerySortByCREATEDAT:
+		return db.AuditLogQuerySortBy_CreatedAt, nil
+	case api.AuditLogQuerySortByACTORTYPE:
+		return db.AuditLogQuerySortBy_ActorType, nil
+	case api.AuditLogQuerySortByACTORID:
+		return db.AuditLogQuerySortBy_ActorID, nil
+	case api.AuditLogQuerySortByACTOROWNERID:
+		return db.AuditLogQuerySortBy_ActorOwnerID, nil
+	case api.AuditLogQuerySortByPRIMARYTARGETID:
+		return db.AuditLogQuerySortBy_PrimaryTargetID, nil
+	case api.AuditLogQuerySortByPRIMARYTARGETTYPE:
+		return db.AuditLogQuerySortBy_PrimaryTargetType, nil
+	case api.AuditLogQuerySortByPRIMARYTARGETOWNERID:
+		return db.AuditLogQuerySortBy_PrimaryTargetOwnerID, nil
+	case api.AuditLogQuerySortBySECONDARYTARGETID:
+		return db.AuditLogQuerySortBy_SecondaryTargetID, nil
+	case api.AuditLogQuerySortBySECONDARYTARGETTYPE:
+		return db.AuditLogQuerySortBy_SecondaryTargetType, nil
+	case api.AuditLogQuerySortBySECONDARYTARGETOWNERID:
+		return db.AuditLogQuerySortBy_SecondaryTargetOwnerID, nil
+	}
+	return "", oapierr.BadRequest("unknown audit log query sort by", zap.String("audit_log_query_sort_by", string(i)))
 }
 
 func auditLogQuerySortFromOAPI(i api.AuditLogQuerySort) (*db.AuditLogQuerySort, error) {
