@@ -23,7 +23,9 @@ CREATE TYPE audit_log_actor_type AS ENUM (
     'USER',
     'ADMIN',
     'SUPER_ADMIN',
-    'SYSTEM');
+    'SYSTEM',
+    'OWNER',
+    'PUBLIC');
 CREATE TYPE audit_log_target_type AS ENUM (
     'USER',
     'PORTFOLIO',

@@ -57,7 +57,7 @@ func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobCo
 			PrimaryTargetOwner: &pacta.Owner{ID: boi.PrimaryTargetOwnerID},
 		}
 		if accessAsOwner {
-			al.ActorType = pacta.AuditLogActorType_User
+			al.ActorType = pacta.AuditLogActorType_Owner
 		} else if accessAsAdmin {
 			al.ActorType = pacta.AuditLogActorType_Admin
 		} else if accessAsSuperAdmin {
