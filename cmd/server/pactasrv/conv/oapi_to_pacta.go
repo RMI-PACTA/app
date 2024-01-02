@@ -124,25 +124,25 @@ func PortfolioGroupCreateFromOAPI(pg *api.PortfolioGroupCreate, ownerID pacta.Ow
 
 func auditLogActionFromOAPI(i api.AuditLogAction) (pacta.AuditLogAction, error) {
 	switch i {
-	case api.AuditLogActionCREATE:
+	case api.AuditLogActionCreate:
 		return pacta.AuditLogAction_Create, nil
-	case api.AuditLogActionUPDATE:
+	case api.AuditLogActionUpdate:
 		return pacta.AuditLogAction_Update, nil
-	case api.AuditLogActionDELETE:
+	case api.AuditLogActionDelete:
 		return pacta.AuditLogAction_Delete, nil
-	case api.AuditLogActionADDTO:
+	case api.AuditLogActionAddTo:
 		return pacta.AuditLogAction_AddTo, nil
-	case api.AuditLogActionREMOVEFROM:
+	case api.AuditLogActionRemoveFrom:
 		return pacta.AuditLogAction_RemoveFrom, nil
-	case api.AuditLogActionENABLEADMINDEBUG:
+	case api.AuditLogActionEnableAdminDebug:
 		return pacta.AuditLogAction_EnableAdminDebug, nil
-	case api.AuditLogActionDISABLEADMINDEBUG:
+	case api.AuditLogActionDisableAdminDebug:
 		return pacta.AuditLogAction_DisableAdminDebug, nil
-	case api.AuditLogActionDOWNLOAD:
+	case api.AuditLogActionDownload:
 		return pacta.AuditLogAction_Download, nil
-	case api.AuditLogActionENABLESHARING:
+	case api.AuditLogActionEnableSharing:
 		return pacta.AuditLogAction_EnableSharing, nil
-	case api.AuditLogActionDISABLESHARING:
+	case api.AuditLogActionDisableSharing:
 		return pacta.AuditLogAction_DisableSharing, nil
 	}
 	return "", oapierr.BadRequest("unknown audit log action", zap.String("audit_log_action", string(i)))
@@ -150,15 +150,15 @@ func auditLogActionFromOAPI(i api.AuditLogAction) (pacta.AuditLogAction, error) 
 
 func auditLogActorTypeFromOAPI(i api.AuditLogActorType) (pacta.AuditLogActorType, error) {
 	switch i {
-	case api.AuditLogActorTypePUBLIC:
+	case api.AuditLogActorTypePublic:
 		return pacta.AuditLogActorType_Public, nil
-	case api.AuditLogActorTypeOWNER:
+	case api.AuditLogActorTypeOwner:
 		return pacta.AuditLogActorType_Owner, nil
-	case api.AuditLogActorTypeADMIN:
+	case api.AuditLogActorTypeAdmin:
 		return pacta.AuditLogActorType_Admin, nil
-	case api.AuditLogActorTypeSUPERADMIN:
+	case api.AuditLogActorTypeSuperAdmin:
 		return pacta.AuditLogActorType_SuperAdmin, nil
-	case api.AuditLogActorTypeSYSTEM:
+	case api.AuditLogActorTypeSystem:
 		return pacta.AuditLogActorType_System, nil
 	}
 	return "", oapierr.BadRequest("unknown audit log actor type", zap.String("audit_log_actor_type", string(i)))
@@ -166,19 +166,19 @@ func auditLogActorTypeFromOAPI(i api.AuditLogActorType) (pacta.AuditLogActorType
 
 func auditLogTargetTypeFromOAPI(i api.AuditLogTargetType) (pacta.AuditLogTargetType, error) {
 	switch i {
-	case api.AuditLogTargetTypeUSER:
+	case api.AuditLogTargetTypeUser:
 		return pacta.AuditLogTargetType_User, nil
-	case api.AuditLogTargetTypePORTFOLIO:
+	case api.AuditLogTargetTypePortfolio:
 		return pacta.AuditLogTargetType_Portfolio, nil
-	case api.AuditLogTargetTypeINCOMPLETEUPLOAD:
+	case api.AuditLogTargetTypeIncompleteUpload:
 		return pacta.AuditLogTargetType_IncompleteUpload, nil
-	case api.AuditLogTargetTypePORTFOLIOGROUP:
+	case api.AuditLogTargetTypePortfolioGroup:
 		return pacta.AuditLogTargetType_PortfolioGroup, nil
-	case api.AuditLogTargetTypeINITIATIVE:
+	case api.AuditLogTargetTypeInitiative:
 		return pacta.AuditLogTargetType_Initiative, nil
-	case api.AuditLogTargetTypePACTAVERSION:
+	case api.AuditLogTargetTypePactaVersion:
 		return pacta.AuditLogTargetType_PACTAVersion, nil
-	case api.AuditLogTargetTypeANALYSIS:
+	case api.AuditLogTargetTypeAnalysis:
 		return pacta.AuditLogTargetType_Analysis, nil
 	}
 	return "", oapierr.BadRequest("unknown audit log target type", zap.String("audit_log_target_type", string(i)))
@@ -233,25 +233,25 @@ func auditLogQueryWhereFromOAPI(i api.AuditLogQueryWhere) (*db.AuditLogQueryWher
 
 func auditLogQuerySortByFromOAPI(i api.AuditLogQuerySortBy) (db.AuditLogQuerySortBy, error) {
 	switch i {
-	case api.AuditLogQuerySortByCREATEDAT:
+	case api.AuditLogQuerySortByCreatedAt:
 		return db.AuditLogQuerySortBy_CreatedAt, nil
-	case api.AuditLogQuerySortByACTORTYPE:
+	case api.AuditLogQuerySortByActorType:
 		return db.AuditLogQuerySortBy_ActorType, nil
-	case api.AuditLogQuerySortByACTORID:
+	case api.AuditLogQuerySortByActorId:
 		return db.AuditLogQuerySortBy_ActorID, nil
-	case api.AuditLogQuerySortByACTOROWNERID:
+	case api.AuditLogQuerySortByActorOwnerId:
 		return db.AuditLogQuerySortBy_ActorOwnerID, nil
-	case api.AuditLogQuerySortByPRIMARYTARGETID:
+	case api.AuditLogQuerySortByPrimaryTargetId:
 		return db.AuditLogQuerySortBy_PrimaryTargetID, nil
-	case api.AuditLogQuerySortByPRIMARYTARGETTYPE:
+	case api.AuditLogQuerySortByPrimaryTargetType:
 		return db.AuditLogQuerySortBy_PrimaryTargetType, nil
-	case api.AuditLogQuerySortByPRIMARYTARGETOWNERID:
+	case api.AuditLogQuerySortByPrimaryTargetOwnerId:
 		return db.AuditLogQuerySortBy_PrimaryTargetOwnerID, nil
-	case api.AuditLogQuerySortBySECONDARYTARGETID:
+	case api.AuditLogQuerySortBySecondaryTargetId:
 		return db.AuditLogQuerySortBy_SecondaryTargetID, nil
-	case api.AuditLogQuerySortBySECONDARYTARGETTYPE:
+	case api.AuditLogQuerySortBySecondaryTargetType:
 		return db.AuditLogQuerySortBy_SecondaryTargetType, nil
-	case api.AuditLogQuerySortBySECONDARYTARGETOWNERID:
+	case api.AuditLogQuerySortBySecondaryTargetOwnerId:
 		return db.AuditLogQuerySortBy_SecondaryTargetOwnerID, nil
 	}
 	return "", oapierr.BadRequest("unknown audit log query sort by", zap.String("audit_log_query_sort_by", string(i)))
