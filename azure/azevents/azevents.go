@@ -44,6 +44,8 @@ type DB interface {
 
 	IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, error)
 	UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error
+
+	CreateAnalysisArtifact(tx db.Tx, a *pacta.AnalysisArtifact) (pacta.AnalysisArtifactID, error)
 }
 
 const parsedPortfolioPath = "/events/parsed_portfolio"
@@ -209,7 +211,11 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 
 func (s *Server) RegisterHandlers(r chi.Router) {
 	r.Use(s.verifyWebhook)
-	r.Post(parsedPortfolioPath, func(w http.ResponseWriter, r *http.Request) {
+	r.Post(parsedPortfolioPath, s.handleParsePortfolioResponse())
+}
+
+func (s *Server) handleParsePortfolioResponse() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var reqs []struct {
 			Data            *task.ParsePortfolioResponse `json:"data"`
 			EventType       string                       `json:"eventType"`
@@ -317,7 +323,7 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 			zap.Int("incomplete_upload_count", len(req.Data.Request.IncompleteUploadIDs)),
 			zap.Strings("portfolio_ids", asStrs(portfolioIDs)),
 			zap.Int("portfolio_count", len(portfolioIDs)))
-	})
+	}
 }
 
 func asStrs[T ~string](ts []T) []string {
