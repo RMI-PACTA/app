@@ -1498,7 +1498,7 @@ components:
         - AuditLogAction_UPDATE
         - AuditLogAction_DELETE
         - AuditLogAction_ADD_TO
-        - AuditLogAction_REMOVE_FROMO
+        - AuditLogAction_REMOVE_FROM
         - AuditLogAction_ENABLE_ADMIN_DEBUG
         - AuditLogAction_DISABLE_ADMIN_DEBUG
         - AuditLogAction_DOWNLOAD
@@ -1515,13 +1515,13 @@ components:
     AuditLogTargetType:
       type: string
       enum:
-        - AuditLogActorType_USER
-        - AuditLogActorType_PORTFOLIO
-        - AuditLogActorType_INCOMPLETE_UPLOAD
-        - AuditLogActorType_PORTFOLIO_GROUP
-        - AuditLogActorType_INITIATIVE
-        - AuditLogActorType_PACTA_VERSION
-        - AuditLogActorType_ANALYSIS
+        - AuditLogTargetType_USER
+        - AuditLogTargetType_PORTFOLIO
+        - AuditLogTargetType_INCOMPLETE_UPLOAD
+        - AuditLogTargetType_PORTFOLIO_GROUP
+        - AuditLogTargetType_INITIATIVE
+        - AuditLogTargetType_PACTA_VERSION
+        - AuditLogTargetType_ANALYSIS
     AuditLogQueryWhere:
       type: object
       properties:

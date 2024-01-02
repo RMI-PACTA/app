@@ -1,6 +1,8 @@
 package conv
 
 import (
+	"fmt"
+
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
@@ -238,15 +240,65 @@ func PortfolioGroupsToOAPI(pgs []*pacta.PortfolioGroup) ([]*api.PortfolioGroup, 
 }
 
 func auditLogActorTypeToOAPI(i pacta.AuditLogActorType) (api.AuditLogActorType, error) {
-	return api.AuditLogActorType(string(i)), nil
+	switch i {
+	case pacta.AuditLogActorType_Public:
+		return api.AuditLogActorTypePUBLIC, nil
+	case pacta.AuditLogActorType_Owner:
+		return api.AuditLogActorTypeOWNER, nil
+	case pacta.AuditLogActorType_Admin:
+		return api.AuditLogActorTypeADMIN, nil
+	case pacta.AuditLogActorType_SuperAdmin:
+		return api.AuditLogActorTypeSUPERADMIN, nil
+	case pacta.AuditLogActorType_System:
+		return api.AuditLogActorTypeSYSTEM, nil
+	}
+	return "", oapierr.Internal(fmt.Sprintf("auditLogActorTypeToOAPI: unknown actor type: %q", i))
 }
 
 func auditLogActionToOAPI(i pacta.AuditLogAction) (api.AuditLogAction, error) {
-	return api.AuditLogAction(string(i)), nil
+	switch i {
+	case pacta.AuditLogAction_Create:
+		return api.AuditLogActionCREATE, nil
+	case pacta.AuditLogAction_Update:
+		return api.AuditLogActionUPDATE, nil
+	case pacta.AuditLogAction_Delete:
+		return api.AuditLogActionDELETE, nil
+	case pacta.AuditLogAction_AddTo:
+		return api.AuditLogActionADDTO, nil
+	case pacta.AuditLogAction_RemoveFrom:
+		return api.AuditLogActionREMOVEFROM, nil
+	case pacta.AuditLogAction_EnableAdminDebug:
+		return api.AuditLogActionENABLEADMINDEBUG, nil
+	case pacta.AuditLogAction_DisableAdminDebug:
+		return api.AuditLogActionDISABLEADMINDEBUG, nil
+	case pacta.AuditLogAction_Download:
+		return api.AuditLogActionDOWNLOAD, nil
+	case pacta.AuditLogAction_EnableSharing:
+		return api.AuditLogActionENABLESHARING, nil
+	case pacta.AuditLogAction_DisableSharing:
+		return api.AuditLogActionDISABLESHARING, nil
+	}
+	return "", oapierr.Internal(fmt.Sprintf("auditLogActionToOAPI: unknown action: %q", i))
 }
 
 func auditLogTargetTypeToOAPI(i pacta.AuditLogTargetType) (api.AuditLogTargetType, error) {
-	return api.AuditLogTargetType(string(i)), nil
+	switch i {
+	case pacta.AuditLogTargetType_User:
+		return api.AuditLogTargetTypeUSER, nil
+	case pacta.AuditLogTargetType_Portfolio:
+		return api.AuditLogTargetTypePORTFOLIO, nil
+	case pacta.AuditLogTargetType_IncompleteUpload:
+		return api.AuditLogTargetTypeINCOMPLETEUPLOAD, nil
+	case pacta.AuditLogTargetType_PortfolioGroup:
+		return api.AuditLogTargetTypePORTFOLIOGROUP, nil
+	case pacta.AuditLogTargetType_Initiative:
+		return api.AuditLogTargetTypeINITIATIVE, nil
+	case pacta.AuditLogTargetType_PACTAVersion:
+		return api.AuditLogTargetTypePACTAVERSION, nil
+	case pacta.AuditLogTargetType_Analysis:
+		return api.AuditLogTargetTypeANALYSIS, nil
+	}
+	return "", oapierr.Internal(fmt.Sprintf("auditLogTargetTypeToOAPI: unknown target type: %q", i))
 }
 
 func AuditLogToOAPI(al *pacta.AuditLog) (*api.AuditLog, error) {
