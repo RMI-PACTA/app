@@ -19,31 +19,7 @@ info:
     url: https://mit-license.org/
 servers:
   - url: TODO
-definitions:
-  Language:
-    type: string
-    enum: &LANGUAGES
-      - en
-      - fr
-      - es
-      - de
-  FileType:
-    type: string
-    enum: &FILE_TYPES
-      - csv
-      - yaml
-      - zip
-      - json 
-      - html 
-  AnalysisType:
-    type: string
-    enum: &ANALYSIS_TYPES
-      - audit 
-      - report
-  FailureCode:
-    type: string
-    enum: &FAILURE_CODES
-      - UNKNOWN
+
 basePath: /v1
 paths:
   /access-blob-content:
@@ -990,16 +966,28 @@ components:
   schemas:
     Language:
       type: string
-      enum: *LANGUAGES
+      enum:
+        - LanguageEN
+        - LanguageFR
+        - LanguageES
+        - LanguageDE
     FileType:
       type: string
-      enum: *FILE_TYPES
+      enum:
+        - FileTypeCSV
+        - FileTypeYAML
+        - FileTypeZIP
+        - FileTypeJSON
+        - FileTypeHTML
     AnalysisType:
       type: string
-      enum: *ANALYSIS_TYPES
+      enum:
+        - AnalysisTypeAUDIT
+        - AnalysisTypeREPORT
     FailureCode:
       type: string
-      enum: *FAILURE_CODES
+      enum:
+        - FailureCodeUNKNOWN
     PactaVersionCreate:
       type: object
       required:
@@ -1881,34 +1869,34 @@ components:
     AuditLogAction:
       type: string
       enum:
-        - AuditLogAction_CREATE
-        - AuditLogAction_UPDATE
-        - AuditLogAction_DELETE
-        - AuditLogAction_ADD_TO
-        - AuditLogAction_REMOVE_FROM
-        - AuditLogAction_ENABLE_ADMIN_DEBUG
-        - AuditLogAction_DISABLE_ADMIN_DEBUG
-        - AuditLogAction_DOWNLOAD
-        - AuditLogAction_ENABLE_SHARING
-        - AuditLogAction_DISABLE_SHARING
+        - AuditLogActionCreate
+        - AuditLogActionUpdate
+        - AuditLogActionDelete
+        - AuditLogActionAddTo
+        - AuditLogActionRemoveFrom
+        - AuditLogActionEnableAdminDebug
+        - AuditLogActionDisableAdminDebug
+        - AuditLogActionDownload
+        - AuditLogActionEnableSharing
+        - AuditLogActionDisableSharing
     AuditLogActorType:
       type: string
       enum:
-        - AuditLogActorType_PUBLIC
-        - AuditLogActorType_OWNER
-        - AuditLogActorType_ADMIN
-        - AuditLogActorType_SUPER_ADMIN
-        - AuditLogActorType_SYSTEM
+        - AuditLogActorTypePublic
+        - AuditLogActorTypeOwner
+        - AuditLogActorTypeAdmin
+        - AuditLogActorTypeSuperAdmin
+        - AuditLogActorTypeSystem
     AuditLogTargetType:
       type: string
       enum:
-        - AuditLogTargetType_USER
-        - AuditLogTargetType_PORTFOLIO
-        - AuditLogTargetType_INCOMPLETE_UPLOAD
-        - AuditLogTargetType_PORTFOLIO_GROUP
-        - AuditLogTargetType_INITIATIVE
-        - AuditLogTargetType_PACTA_VERSION
-        - AuditLogTargetType_ANALYSIS
+        - AuditLogTargetTypeUser
+        - AuditLogTargetTypePortfolio
+        - AuditLogTargetTypeIncompleteUpload
+        - AuditLogTargetTypePortfolioGroup
+        - AuditLogTargetTypeInitiative
+        - AuditLogTargetTypePactaVersion
+        - AuditLogTargetTypeAnalysis
     AuditLogQueryWhere:
       type: object
       properties:
@@ -1963,16 +1951,16 @@ components:
     AuditLogQuerySortBy:
       type: string
       enum:
-        - AuditLogQuerySortBy_CREATED_AT
-        - AuditLogQuerySortBy_ACTOR_TYPE
-        - AuditLogQuerySortBy_ACTOR_ID
-        - AuditLogQuerySortBy_ACTOR_OWNER_ID
-        - AuditLogQuerySortBy_PRIMARY_TARGET_ID
-        - AuditLogQuerySortBy_PRIMARY_TARGET_TYPE
-        - AuditLogQuerySortBy_PRIMARY_TARGET_OWNER_ID
-        - AuditLogQuerySortBy_SECONDARY_TARGET_ID
-        - AuditLogQuerySortBy_SECONDARY_TARGET_TYPE
-        - AuditLogQuerySortBy_SECONDARY_TARGET_OWNER_ID
+        - AuditLogQuerySortByCreatedAt
+        - AuditLogQuerySortByActorType
+        - AuditLogQuerySortByActorId
+        - AuditLogQuerySortByActorOwnerId
+        - AuditLogQuerySortByPrimaryTargetId
+        - AuditLogQuerySortByPrimaryTargetType
+        - AuditLogQuerySortByPrimaryTargetOwnerId
+        - AuditLogQuerySortBySecondaryTargetId
+        - AuditLogQuerySortBySecondaryTargetType
+        - AuditLogQuerySortBySecondaryTargetOwnerId
     AuditLogQuerySort:
       type: object
       required:
