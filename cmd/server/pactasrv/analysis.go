@@ -9,6 +9,7 @@ import (
 	"github.com/RMI/pacta/oapierr"
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
+	"github.com/RMI/pacta/task"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -169,7 +170,8 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 		fs := append(fields, zap.String(fmt.Sprintf("%s_id", typeName), string(id)))
 		return oapierr.NotFound(fmt.Sprintf("%s not found", typeName), fs...)
 	}
-	var result pacta.AnalysisID
+	var analysisID pacta.AnalysisID
+	var blobURIs []pacta.BlobURI
 	var endUserErr error
 	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
 		var pvID pacta.PACTAVersionID
@@ -189,6 +191,7 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 		}
 
 		var snapshotID pacta.PortfolioSnapshotID
+		var blobIDs []pacta.BlobID
 		if pID != "" {
 			p, err := s.DB.Portfolio(tx, pID)
 			if err != nil {
@@ -210,6 +213,7 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 				return fmt.Errorf("creating snapshot of portfolio: %w", err)
 			}
 			snapshotID = sID
+			blobIDs = []pacta.BlobID{p.Blob.ID}
 		} else if pgID != "" {
 			pg, err := s.DB.PortfolioGroup(tx, pgID)
 			if err != nil {
@@ -231,23 +235,61 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 				return fmt.Errorf("creating snapshot of portfolio group: %w", err)
 			}
 			snapshotID = sID
+			pids := []pacta.PortfolioID{}
+			for _, pm := range pg.PortfolioGroupMemberships {
+				pids = append(pids, pm.Portfolio.ID)
+			}
+			portfolios, err := s.DB.Portfolios(tx, pids)
+			if err != nil {
+				return fmt.Errorf("looking up portfolios: %w", err)
+			}
+			for _, p := range portfolios {
+				blobIDs = append(blobIDs, p.Blob.ID)
+			}
 		} else if iID != "" {
 			// This crudely tests whether or not a user is a manager of the initiative.
 			if err := s.initiativeDoAuthzAndAuditLog(ctx, iID, pacta.AuditLogAction_Update); err != nil {
 				endUserErr = err
 				return nil
 			}
+			i, err := s.DB.Initiative(tx, iID)
+			if err != nil {
+				if db.IsNotFound(err) {
+					endUserErr = notFoundErr("initiative", string(iID), zap.Error(err))
+					return nil
+				}
+				return fmt.Errorf("looking up initiative: %w", err)
+			}
 			sID, err := s.DB.CreateSnapshotOfInitiative(tx, iID)
 			if err != nil {
 				return fmt.Errorf("creating snapshot of initiative: %w", err)
 			}
 			snapshotID = sID
+			pids := []pacta.PortfolioID{}
+			for _, pm := range i.PortfolioInitiativeMemberships {
+				pids = append(pids, pm.Portfolio.ID)
+			}
+			portfolios, err := s.DB.Portfolios(tx, pids)
+			if err != nil {
+				return fmt.Errorf("looking up portfolios: %w", err)
+			}
+			for _, p := range portfolios {
+				blobIDs = append(blobIDs, p.Blob.ID)
+			}
 		}
 		if snapshotID == "" {
 			return fmt.Errorf("snapshot id is empty, something is wrong in the bizlogic")
 		}
 
-		analysisID, err := s.DB.CreateAnalysis(tx, &pacta.Analysis{
+		blobs, err := s.DB.Blobs(tx, blobIDs)
+		if err != nil {
+			return fmt.Errorf("looking up blobs: %w", err)
+		}
+		for _, blob := range blobs {
+			blobURIs = append(blobURIs, blob.BlobURI)
+		}
+
+		aID, err := s.DB.CreateAnalysis(tx, &pacta.Analysis{
 			AnalysisType:      *analysisType,
 			PortfolioSnapshot: &pacta.PortfolioSnapshot{ID: snapshotID},
 			PACTAVersion:      &pacta.PACTAVersion{ID: pvID},
@@ -269,7 +311,7 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 		}); err != nil {
 			return fmt.Errorf("creating audit log: %w", err)
 		}
-		result = analysisID
+		analysisID = aID
 		return nil
 	})
 	if endUserErr != nil {
@@ -279,9 +321,30 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 		return nil, oapierr.Internal("failed to create analysis", zap.Error(err))
 	}
 
-	// TODO - here this is where we'd kick off the analysis run.
+	switch *analysisType {
+	case pacta.AnalysisType_Audit:
+		taskID, runnerID, err := s.TaskRunner.CreateAudit(ctx, &task.CreateAuditRequest{
+			AnalysisID: analysisID,
+			BlobURIs:   blobURIs,
+		})
+		if err != nil {
+			return nil, oapierr.Internal("failed to create audit task", zap.Error(err))
+		}
+		s.Logger.Info("created audit task", zap.String("task_id", string(taskID)), zap.String("runner_id", string(runnerID)), zap.String("analysis_id", string(analysisID)))
+	case pacta.AnalysisType_Report:
+		taskID, runnerID, err := s.TaskRunner.CreateReport(ctx, &task.CreateReportRequest{
+			AnalysisID: analysisID,
+			BlobURIs:   blobURIs,
+		})
+		if err != nil {
+			return nil, oapierr.Internal("failed to create report task", zap.Error(err))
+		}
+		s.Logger.Info("created report task", zap.String("task_id", string(taskID)), zap.String("runner_id", string(runnerID)), zap.String("analysis_id", string(analysisID)))
+	default:
+		return nil, oapierr.Internal("unknown analysis type", zap.String("analysis_type", string(*analysisType)))
+	}
 
-	return api.RunAnalysis200JSONResponse{AnalysisId: string(result)}, nil
+	return api.RunAnalysis200JSONResponse{AnalysisId: string(analysisID)}, nil
 }
 
 func (s *Server) analysisDoAuthzAndAuditLog(ctx context.Context, analysisID pacta.AnalysisID, action pacta.AuditLogAction) error {
