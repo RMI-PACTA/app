@@ -93,6 +93,8 @@ type DB interface {
 	CreatePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
 	DeletePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
 
+	AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.PageInfo, error)
+
 	GetOrCreateUserByAuthn(tx db.Tx, mech pacta.AuthnMechanism, authnID, email, canonicalEmail string) (*pacta.User, error)
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)

@@ -730,6 +730,25 @@ paths:
       responses:
         '204':
           description: user deleted
+  /audit-logs:
+    post:
+      summary: queries the platform's audit logs
+      description: returns back audit logs that matc the user's query 
+      operationId: listAuditLogs 
+      requestBody:
+        description: A request describing which audit logs should be returned 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditLogQueryReq'
+      responses:
+        '200':
+          description: The audit logs that matched the requested query, if any 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogQueryResp'
   /portfolio-upload:
     post:
       summary: Starts the process of uploading one or more portfolio files
@@ -1472,6 +1491,198 @@ components:
         task_id:
           type: string
           description: The ID of the async task for processing the portfoio
+    AuditLogAction:
+      type: string
+      enum:
+        - AuditLogAction_CREATE
+        - AuditLogAction_UPDATE
+        - AuditLogAction_DELETE
+        - AuditLogAction_ADD_TO
+        - AuditLogAction_REMOVE_FROM
+        - AuditLogAction_ENABLE_ADMIN_DEBUG
+        - AuditLogAction_DISABLE_ADMIN_DEBUG
+        - AuditLogAction_DOWNLOAD
+        - AuditLogAction_ENABLE_SHARING
+        - AuditLogAction_DISABLE_SHARING
+    AuditLogActorType:
+      type: string
+      enum:
+        - AuditLogActorType_PUBLIC
+        - AuditLogActorType_OWNER
+        - AuditLogActorType_ADMIN
+        - AuditLogActorType_SUPER_ADMIN
+        - AuditLogActorType_SYSTEM
+    AuditLogTargetType:
+      type: string
+      enum:
+        - AuditLogTargetType_USER
+        - AuditLogTargetType_PORTFOLIO
+        - AuditLogTargetType_INCOMPLETE_UPLOAD
+        - AuditLogTargetType_PORTFOLIO_GROUP
+        - AuditLogTargetType_INITIATIVE
+        - AuditLogTargetType_PACTA_VERSION
+        - AuditLogTargetType_ANALYSIS
+    AuditLogQueryWhere:
+      type: object
+      properties:
+        inId:
+          type: array
+          description: a list of audit log ids to filter by
+          items: 
+            type: string
+        minCreatedAt:
+          type: string
+          format: date-time 
+          description: a minimum time for audit logs to filter audit logs by 
+        maxCreatedAt:
+          type: string
+          format: date-time 
+          description: a maximum time for audit logs to filter audit logs by 
+        inAction:
+          type: array
+          description: a list of audit log action types to filter audit logs by 
+          items: 
+            $ref: '#/components/schemas/AuditLogAction'
+        inActorType:
+          type: array
+          description: a list of audit log actor types to filter audit logs by 
+          items: 
+            $ref: '#/components/schemas/AuditLogActorType'
+        inActorId:
+          type: array
+          description: a list of actor user ids to filter audit logs by
+          items: 
+            type: string
+        inActorOwnerId:
+          type: array
+          description: a list of actor owner ids to filter audit logs by
+          items: 
+            type: string
+        inTargetType:
+          type: array
+          description: a list of audit log target types to filter audit logs by 
+          items: 
+            $ref: '#/components/schemas/AuditLogTargetType'
+        inTargetId:
+          type: array
+          description: a list of target ids to filter audit logs by 
+          items: 
+            type: string
+        inTargetOwnerId:
+          type: array
+          description: a list of target owner ids to filter audit logs by 
+          items: 
+            type: string
+    AuditLogQuerySortBy:
+      type: string
+      enum:
+        - AuditLogQuerySortBy_CREATED_AT
+        - AuditLogQuerySortBy_ACTOR_TYPE
+        - AuditLogQuerySortBy_ACTOR_ID
+        - AuditLogQuerySortBy_ACTOR_OWNER_ID
+        - AuditLogQuerySortBy_PRIMARY_TARGET_ID
+        - AuditLogQuerySortBy_PRIMARY_TARGET_TYPE
+        - AuditLogQuerySortBy_PRIMARY_TARGET_OWNER_ID
+        - AuditLogQuerySortBy_SECONDARY_TARGET_ID
+        - AuditLogQuerySortBy_SECONDARY_TARGET_TYPE
+        - AuditLogQuerySortBy_SECONDARY_TARGET_OWNER_ID
+    AuditLogQuerySort:
+      type: object
+      required:
+        - by
+        - ascending
+      properties:
+        by:
+          $ref: '#/components/schemas/AuditLogQuerySortBy'
+        ascending:
+          type: boolean
+          description: whether the sort should be ascending or descending
+    AuditLogQueryReq:
+      type: object
+      required:
+        - wheres
+      properties:
+        cursor:
+          type: string
+          description: if provided, continues an existing query at the given point 
+        limit: 
+          type: integer
+          description: if provided, requests this number of records at maximum - default/maximum is 100
+        wheres:
+          type: array 
+          description: the constraints to place on the returned records - this must be set to something which limits it to a scope the user should have access to
+          items: 
+            $ref: '#/components/schemas/AuditLogQueryWhere'
+        sorts:
+          type: array 
+          description: the ordering that the results should be returned in - if empty, an ordering by created at date will be applied 
+          items: 
+            $ref: '#/components/schemas/AuditLogQuerySort'
+    AuditLogQueryResp:
+      type: object
+      required:
+        - auditLogs
+        - cursor
+        - hasNextPage
+      properties:
+        auditLogs:
+          type: array
+          items: 
+            $ref: '#/components/schemas/AuditLog'
+        hasNextPage:
+          type: boolean
+          description: describes whether there are more records to query
+        cursor:
+          type: string
+          description: the parameter to re-request with to continue this query on the next page of results 
+    AuditLog:
+      type: object
+      required:
+        - id
+        - createdAt
+        - actorType
+        - action
+        - primaryTargetType
+        - primaryTargetId
+        - primaryTargetOwner
+      properties:
+        id:
+          type: string
+          description: the unique identifier of a given audit log
+        createdAt:
+          type: string
+          format: date-time
+          description: the time that this audit log was created/the action was undertaken
+        actorType:
+          description: the authority that this actor was acting as when performing this action
+          $ref: '#/components/schemas/AuditLogActorType'
+        actorId:
+          type: string
+          description: the user id of the actor that initiated this action, not populated if the system initiated the action 
+        actorOwnerId:
+          type: string
+          description: the owner id of the actor that initiated this action, not populated if the system initiated the action 
+        action:
+          description: the action that generated this audit log
+          $ref: '#/components/schemas/AuditLogAction'
+        primaryTargetType:
+          description: the object category that this action was performed on
+          $ref: '#/components/schemas/AuditLogTargetType'
+        primaryTargetId:
+          type: string
+          description: the id of the object that this action was performed on 
+        primaryTargetOwner:
+          type: string
+          description: the id of the owner of the primary object this action was performed on 
+        secondaryTargetType:
+          description: the object category of the secondary object (membership partner, typically) that this action was performed on
+          $ref: '#/components/schemas/AuditLogTargetType'
+        secondaryTargetId:
+          type: string
+          description: the id of the secondary object that this action was performed on 
+        secondaryTargetOwner:
+          type: string
+          description: the id of the owner of the secondary object this action was performed on
     Error:
       type: object
       required:

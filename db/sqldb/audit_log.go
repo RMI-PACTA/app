@@ -207,8 +207,8 @@ func auditLogQueryWheresToSQL(qs []*db.AuditLogQueryWhere, args *queryArgs) stri
 		if len(q.InID) > 0 {
 			wheres = append(wheres, eqOrIn("audit_log.id", q.InID, args))
 		}
-		if len(q.InActionType) > 0 {
-			wheres = append(wheres, eqOrIn("audit_log.action", q.InActionType, args))
+		if len(q.InAction) > 0 {
+			wheres = append(wheres, eqOrIn("audit_log.action", q.InAction, args))
 		}
 		if !q.MinCreatedAt.IsZero() {
 			wheres = append(wheres, "audit_log.created_at >= "+args.add(q.MinCreatedAt))
