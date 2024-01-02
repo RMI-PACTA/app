@@ -2,6 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AccessBlobContentReq } from '../models/AccessBlobContentReq';
+import type { AccessBlobContentResp } from '../models/AccessBlobContentResp';
+import type { Analysis } from '../models/Analysis';
+import type { AnalysisArtifactChanges } from '../models/AnalysisArtifactChanges';
+import type { AnalysisChanges } from '../models/AnalysisChanges';
+import type { AuditLogQueryReq } from '../models/AuditLogQueryReq';
+import type { AuditLogQueryResp } from '../models/AuditLogQueryResp';
 import type { CompletePortfolioUploadReq } from '../models/CompletePortfolioUploadReq';
 import type { CompletePortfolioUploadResp } from '../models/CompletePortfolioUploadResp';
 import type { IncompleteUpload } from '../models/IncompleteUpload';
@@ -13,6 +20,7 @@ import type { InitiativeInvitation } from '../models/InitiativeInvitation';
 import type { InitiativeInvitationCreate } from '../models/InitiativeInvitationCreate';
 import type { InitiativeUserRelationship } from '../models/InitiativeUserRelationship';
 import type { InitiativeUserRelationshipChanges } from '../models/InitiativeUserRelationshipChanges';
+import type { ListAnalysesResp } from '../models/ListAnalysesResp';
 import type { ListIncompleteUploadsResp } from '../models/ListIncompleteUploadsResp';
 import type { ListPortfolioGroupsResp } from '../models/ListPortfolioGroupsResp';
 import type { ListPortfoliosResp } from '../models/ListPortfoliosResp';
@@ -25,6 +33,8 @@ import type { PortfolioGroup } from '../models/PortfolioGroup';
 import type { PortfolioGroupChanges } from '../models/PortfolioGroupChanges';
 import type { PortfolioGroupCreate } from '../models/PortfolioGroupCreate';
 import type { PortfolioGroupMembershipIds } from '../models/PortfolioGroupMembershipIds';
+import type { RunAnalysisReq } from '../models/RunAnalysisReq';
+import type { RunAnalysisResp } from '../models/RunAnalysisResp';
 import type { StartPortfolioUploadReq } from '../models/StartPortfolioUploadReq';
 import type { StartPortfolioUploadResp } from '../models/StartPortfolioUploadResp';
 import type { User } from '../models/User';
@@ -36,6 +46,24 @@ import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class DefaultService {
 
     constructor(public readonly httpRequest: BaseHttpRequest) {}
+
+    /**
+     * Gives the caller access to the blob
+     * Checks whether the user can access the blobs, and if so, returns blob download URLs for each, generating an audit log along the way
+     * @param requestBody Information about the blobs that are requested
+     * @returns AccessBlobContentResp the user can access the blobs, and the access URLs are returned, along with information about their expiration
+     * @throws ApiError
+     */
+    public accessBlobContent(
+        requestBody: AccessBlobContentReq,
+    ): CancelablePromise<AccessBlobContentResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/access-blob-content',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
 
     /**
      * Returns a version of the PACTA model by ID
@@ -817,6 +845,24 @@ export class DefaultService {
     }
 
     /**
+     * queries the platform's audit logs
+     * returns back audit logs that matc the user's query
+     * @param requestBody A request describing which audit logs should be returned
+     * @returns AuditLogQueryResp The audit logs that matched the requested query, if any
+     * @throws ApiError
+     */
+    public listAuditLogs(
+        requestBody: AuditLogQueryReq,
+    ): CancelablePromise<AuditLogQueryResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/audit-logs',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
      * Starts the process of uploading one or more portfolio files
      * Creates one or more new incomplete portfolio uploads, and creates upload URLs for the user to put their blobs into.
      * @param requestBody A request describing the portfolios that the user wants to upload
@@ -847,6 +893,139 @@ export class DefaultService {
         return this.httpRequest.request({
             method: 'POST',
             url: '/portfolio-upload:complete',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Gets the analyses that the user is the owner of
+     * @returns ListAnalysesResp
+     * @throws ApiError
+     */
+    public listAnalyses(): CancelablePromise<ListAnalysesResp> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/analyses',
+        });
+    }
+
+    /**
+     * Returns an analysis by ID
+     * Returns an analysis based on a single ID
+     * @param id ID of analysis to fetch
+     * @returns Analysis analysis response
+     * @throws ApiError
+     */
+    public findAnalysisById(
+        id: string,
+    ): CancelablePromise<Analysis> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/analysis/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Updates writable analysis properties
+     * Updates an analysis' settable properties
+     * @param id ID of analysis to update
+     * @param requestBody Analayis object properties to update
+     * @returns void
+     * @throws ApiError
+     */
+    public updateAnalysis(
+        id: string,
+        requestBody: AnalysisChanges,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/analysis/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Deletes an analysis (and its artifacts) by ID
+     * deletes an analysis based on the ID supplied
+     * @param id ID of analysis to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deleteAnalysis(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/analysis/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Updates writable analysis artifact properties
+     * Updates an analysis artifact's settable properties
+     * @param id ID of analysis artifact to update
+     * @param requestBody Analysis artifact's object properties to update
+     * @returns void
+     * @throws ApiError
+     */
+    public updateAnalysisArtifact(
+        id: string,
+        requestBody: AnalysisArtifactChanges,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/analysis-artifact/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Deletes an analysis artifact by ID
+     * deletes an analysis artifact based on the ID supplied
+     * @param id ID of analysis artifact to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deleteAnalysisArtifact(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/analysis-artifact/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Requests an anslysis be run
+     * Creates a snapshot of the requested entity, and starts it running
+     * @param requestBody Properties of the analysis to run
+     * @returns RunAnalysisResp information about the requested analysis
+     * @throws ApiError
+     */
+    public runAnalysis(
+        requestBody: RunAnalysisReq,
+    ): CancelablePromise<RunAnalysisResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/run-analysis',
             body: requestBody,
             mediaType: 'application/json',
         });

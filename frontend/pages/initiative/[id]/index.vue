@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { languageToOption } from '@/lib/language'
+
 const pactaClient = usePACTA()
 const { fromParams } = useURLParams()
 const { humanReadableDateFromStandardString } = useTime()
@@ -38,7 +40,7 @@ const status = computed(() => {
     </div>
     <div class="flex gap-2">
       Language: <LanguageRepresentation
-        :code="initiative.language"
+        :code="languageToOption(initiative.language).code"
         class="inline"
       />
     </div>

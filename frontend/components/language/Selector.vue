@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { type LanguageCode, LanguageOptions } from '@/lib/language'
+import { type LanguageOption, LanguageOptions, languageToOption } from '@/lib/language'
+import { type Language } from '@/openapi/generated/pacta'
 
 interface Props {
-  value: LanguageCode
+  value: Language
 }
 interface Emits {
-  (e: 'update:value', value: LanguageCode): void
+  (e: 'update:value', value: Language): void
 }
 const props = defineProps<Props>()
 const emits = defineEmits<Emits>()
-const value = computed<LanguageCode>({
-  get: () => props.value,
-  set: (v: LanguageCode) => { emits('update:value', v) },
+const model = computed<LanguageOption>({
+  get: () => languageToOption(props.value),
+  set: (v: LanguageOption) => { emits('update:value', v.language) },
 })
 </script>
 
 <template>
   <PVDropdown
-    v-model="value"
+    v-model="model"
     option-label="label"
     option-value="code"
     :options="LanguageOptions"
