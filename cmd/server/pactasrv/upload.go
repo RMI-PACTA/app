@@ -60,7 +60,7 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 	for i := range request.Body.Items {
 		id := uuid.NewString()
 		uri := blob.Join(s.Blob.Scheme(), s.PorfolioUploadURI, id)
-		signed, err := s.Blob.SignedUploadURL(ctx, uri)
+		signed, _, err := s.Blob.SignedUploadURL(ctx, uri)
 		if err != nil {
 			return nil, oapierr.Internal("failed to sign blob URI", zap.String("uri", uri), zap.Error(err))
 		}

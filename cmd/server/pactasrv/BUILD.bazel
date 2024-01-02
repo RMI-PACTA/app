@@ -4,6 +4,7 @@ go_library(
     name = "pactasrv",
     srcs = [
         "audit_logs.go",
+        "blobs.go",
         "incomplete_upload.go",
         "initiative.go",
         "initiative_invitation.go",

@@ -260,6 +260,27 @@ func (o *Blob) Clone() *Blob {
 	}
 }
 
+type BlobContext struct {
+	BlobID               BlobID
+	PrimaryTargetType    AuditLogTargetType
+	PrimaryTargetID      string
+	PrimaryTargetOwnerID OwnerID
+	AdminDebugEnabled    bool
+}
+
+func (o *BlobContext) Clone() *BlobContext {
+	if o == nil {
+		return nil
+	}
+	return &BlobContext{
+		BlobID:               o.BlobID,
+		PrimaryTargetType:    o.PrimaryTargetType,
+		PrimaryTargetID:      o.PrimaryTargetID,
+		PrimaryTargetOwnerID: o.PrimaryTargetOwnerID,
+		AdminDebugEnabled:    o.AdminDebugEnabled,
+	}
+}
+
 type OwnerID string
 type Owner struct {
 	ID         OwnerID

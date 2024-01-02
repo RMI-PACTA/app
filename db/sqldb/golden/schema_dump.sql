@@ -678,6 +678,20 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: analysis_artifact_by_blob_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX analysis_artifact_by_blob_id ON public.analysis_artifact USING btree (blob_id);
+
+
+--
+-- Name: incomplete_upload_by_blob_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX incomplete_upload_by_blob_id ON public.incomplete_upload USING btree (blob_id);
+
+
+--
 -- Name: owner_by_initiative_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -689,6 +703,13 @@ CREATE INDEX owner_by_initiative_id ON public.owner USING btree (initiative_id);
 --
 
 CREATE INDEX owner_by_user_id ON public.owner USING btree (user_id);
+
+
+--
+-- Name: portfolio_by_blob_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX portfolio_by_blob_id ON public.portfolio USING btree (blob_id);
 
 
 --

@@ -106,12 +106,32 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 		t.Fatalf("mismatch (-want +got):\n%s", diff)
 	}
 
+	blobContexts, err := tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
+	if err != nil {
+		t.Fatalf("reading blob owners: %v", err)
+	}
+	expectedBCs := []*pacta.BlobContext{{
+		BlobID:               b.ID,
+		PrimaryTargetOwnerID: o2.ID,
+		PrimaryTargetType:    "INCOMPLETE_UPLOAD",
+		PrimaryTargetID:      string(iu.ID),
+		AdminDebugEnabled:    true,
+	}}
+	if diff := cmp.Diff(expectedBCs, blobContexts, cmpOpts); diff != "" {
+		t.Errorf("unexpected diff (+got -want): %v", diff)
+	}
+
 	buris, err := tdb.DeleteIncompleteUpload(tx, iu.ID)
 	if err != nil {
 		t.Fatalf("deleting incompleteUpload: %v", err)
 	}
 	if diff := cmp.Diff(b.BlobURI, buris); diff != "" {
 		t.Fatalf("blob uri mismatch (-want +got):\n%s", diff)
+	}
+
+	_, err = tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
+	if err == nil {
+		t.Fatalf("reading blob owners should have failed but was fine", err)
 	}
 }
 
