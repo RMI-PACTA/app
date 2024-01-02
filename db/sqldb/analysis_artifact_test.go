@@ -99,11 +99,11 @@ func TestAnalysisArtifacts(t *testing.T) {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}
 
-	blobOwners, err := tdb.BlobOwners(tx, []pacta.BlobID{b1.ID, b2.ID, b3.ID})
+	blobContexts, err := tdb.BlobContexts(tx, []pacta.BlobID{b1.ID, b2.ID, b3.ID})
 	if err != nil {
 		t.Fatalf("reading blob owners: %v", err)
 	}
-	expectedOwners := []*pacta.BlobOwnerInformation{{
+	expectedBCs := []*pacta.BlobContext{{
 		BlobID:               b1.ID,
 		PrimaryTargetOwnerID: o.ID,
 		PrimaryTargetType:    "ANALYSIS",
@@ -122,7 +122,7 @@ func TestAnalysisArtifacts(t *testing.T) {
 		PrimaryTargetID:      string(aid),
 		AdminDebugEnabled:    false,
 	}}
-	if diff := cmp.Diff(expectedOwners, blobOwners, cmpOpts); diff != "" {
+	if diff := cmp.Diff(expectedBCs, blobContexts, cmpOpts); diff != "" {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}
 
@@ -134,7 +134,7 @@ func TestAnalysisArtifacts(t *testing.T) {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}
 
-	_, err = tdb.BlobOwners(tx, []pacta.BlobID{b1.ID, b2.ID, b3.ID})
+	_, err = tdb.BlobContexts(tx, []pacta.BlobID{b1.ID, b2.ID, b3.ID})
 	if err == nil {
 		t.Fatalf("reading blob owners should have failed but was fine", err)
 	}
@@ -147,7 +147,7 @@ func analysisArtifactCmpOpts() cmp.Option {
 	aaLessFn := func(a, b *pacta.AnalysisArtifact) bool {
 		return a.ID < b.ID
 	}
-	boLessFn := func(a, b *pacta.BlobOwnerInformation) bool {
+	boLessFn := func(a, b *pacta.BlobContext) bool {
 		return a.BlobID < b.BlobID
 	}
 	return cmp.Options{

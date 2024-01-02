@@ -102,10 +102,10 @@ func (d *DB) DeleteBlob(tx db.Tx, id pacta.BlobID) (pacta.BlobURI, error) {
 	return buri, nil
 }
 
-func (d *DB) BlobOwners(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobOwnerInformation, error) {
+func (d *DB) BlobContexts(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobContext, error) {
 	ids = dedupeIDs(ids)
 	if len(ids) == 0 {
-		return []*pacta.BlobOwnerInformation{}, nil
+		return []*pacta.BlobContext{}, nil
 	}
 	whereInFmt := createWhereInFmt(len(ids))
 	rows, err := d.query(tx, `
@@ -145,7 +145,7 @@ func (d *DB) BlobOwners(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobOwnerInforma
 	}
 	defer rows.Close()
 
-	result := []*pacta.BlobOwnerInformation{}
+	result := []*pacta.BlobContext{}
 	seen := map[pacta.BlobID]bool{}
 
 	for rows.Next() {
@@ -172,7 +172,7 @@ func (d *DB) BlobOwners(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobOwnerInforma
 		if ptid == "" {
 			return nil, fmt.Errorf("blob %q has empty primary target id", blobID)
 		}
-		result = append(result, &pacta.BlobOwnerInformation{
+		result = append(result, &pacta.BlobContext{
 			BlobID:               blobID,
 			AdminDebugEnabled:    ade,
 			PrimaryTargetType:    pttParsed,

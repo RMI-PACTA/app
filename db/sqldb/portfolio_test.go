@@ -95,18 +95,18 @@ func TestPortfolioCRUD(t *testing.T) {
 		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
 	}
 
-	blobOwners, err := tdb.BlobOwners(tx, []pacta.BlobID{b.ID})
+	blobContexts, err := tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
 	if err != nil {
 		t.Fatalf("reading blob owners: %v", err)
 	}
-	expectedBlobOwners := []*pacta.BlobOwnerInformation{{
+	expectedBlobContexts := []*pacta.BlobContext{{
 		BlobID:               b.ID,
 		PrimaryTargetOwnerID: o2.ID,
 		PrimaryTargetType:    "PORTFOLIO",
 		PrimaryTargetID:      string(p.ID),
 		AdminDebugEnabled:    true,
 	}}
-	if diff := cmp.Diff(expectedBlobOwners, blobOwners, portfolioCmpOpts()); diff != "" {
+	if diff := cmp.Diff(expectedBlobContexts, blobContexts, portfolioCmpOpts()); diff != "" {
 		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}
 
@@ -118,7 +118,7 @@ func TestPortfolioCRUD(t *testing.T) {
 		t.Fatalf("blob uri mismatch (-want +got):\n%s", diff)
 	}
 
-	_, err = tdb.BlobOwners(tx, []pacta.BlobID{b.ID})
+	_, err = tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
 	if err == nil {
 		t.Fatalf("reading blob owners should have failed but was fine", err)
 	}
