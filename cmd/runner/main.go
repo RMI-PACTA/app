@@ -383,7 +383,7 @@ func createReportReq() (*task.CreateReportRequest, error) {
 }
 
 func (h *handler) createAudit(ctx context.Context, taskID task.ID, req *task.CreateAuditRequest) error {
-	return fmt.Errorf("not implemented")
+	return errors.New("not implemented")
 }
 
 func (h *handler) createReport(ctx context.Context, taskID task.ID, req *task.CreateReportRequest) error {

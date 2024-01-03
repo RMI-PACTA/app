@@ -226,23 +226,28 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 
 func (s *Server) RegisterHandlers(r chi.Router) {
 	r.Use(s.verifyWebhook)
-	r.Post(parsedPortfolioPath, s.handleParsePortfolioResponse())
-	r.Post(createdAuditPath, s.handleCreatedAuditResponse())
-	r.Post(createdReportPath, s.handleCreatedReportResponse())
+	r.Post(parsedPortfolioPath, handleEventGrid(s, s.handleParsePortfolio))
+	r.Post(createdAuditPath, handleEventGrid(s, s.handleCreatedAuditResponse))
+	r.Post(createdReportPath, handleEventGrid(s, s.handleCreatedReportResponse))
 }
 
-func (s *Server) handleParsePortfolioResponse() http.HandlerFunc {
+type eventGridTask[TaskType any] struct {
+	Data            *TaskType `json:"data"`
+	EventType       string    `json:"eventType"`
+	ID              string    `json:"id"`
+	Subject         string    `json:"subject"`
+	DataVersion     string    `json:"dataVersion"`
+	MetadataVersion string    `json:"metadataVersion"`
+	EventTime       time.Time `json:"eventTime"`
+	Topic           string    `json:"topic"`
+}
+
+func handleEventGrid[TaskType any](
+	s *Server,
+	doHandleFn func(task eventGridTask[TaskType], w http.ResponseWriter),
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var reqs []struct {
-			Data            *task.ParsePortfolioResponse `json:"data"`
-			EventType       string                       `json:"eventType"`
-			ID              string                       `json:"id"`
-			Subject         string                       `json:"subject"`
-			DataVersion     string                       `json:"dataVersion"`
-			MetadataVersion string                       `json:"metadataVersion"`
-			EventTime       time.Time                    `json:"eventTime"`
-			Topic           string                       `json:"topic"`
-		}
+		var reqs []eventGridTask[TaskType]
 		if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
 			s.logger.Error("failed to parse webhook request body", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -254,233 +259,169 @@ func (s *Server) handleParsePortfolioResponse() http.HandlerFunc {
 			return
 		}
 		req := reqs[0]
-
 		if req.Data == nil {
 			s.logger.Error("webhook response had no payload", zap.String("event_grid_id", req.ID))
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
-		if len(req.Data.Outputs) == 0 {
-			s.logger.Error("webhook response had no processed portfolios", zap.String("event_grid_id", req.ID))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		portfolioIDs := []pacta.PortfolioID{}
-		var ranAt time.Time
-		now := s.now()
-		// We use a background context here rather than the one from the request so that it cannot be cancelled upstream.
-		err := s.db.Transactional(context.Background(), func(tx db.Tx) error {
-			incompleteUploads, err := s.db.IncompleteUploads(tx, req.Data.Request.IncompleteUploadIDs)
-			if err != nil {
-				return fmt.Errorf("reading incomplete uploads: %w", err)
-			}
-			if len(incompleteUploads) == 0 {
-				return fmt.Errorf("no incomplete uploads found for ids: %v", req.Data.Request.IncompleteUploadIDs)
-			}
-			var holdingsDate *pacta.HoldingsDate
-			var ownerID pacta.OwnerID
-			for _, iu := range incompleteUploads {
-				if ownerID == "" {
-					ownerID = iu.Owner.ID
-				} else if ownerID != iu.Owner.ID {
-					return fmt.Errorf("multiple owners found for incomplete uploads: %+v", incompleteUploads)
-				}
-				if iu.HoldingsDate == nil {
-					return fmt.Errorf("incomplete upload %s had no holdings date", iu.ID)
-				}
-				if holdingsDate == nil {
-					holdingsDate = iu.HoldingsDate
-				} else if *holdingsDate != *iu.HoldingsDate {
-					return fmt.Errorf("multiple holdings dates found for incomplete uploads: %+v", incompleteUploads)
-				}
-				if iu.RanAt.After(ranAt) {
-					ranAt = iu.RanAt
-				}
-			}
-			for i, output := range req.Data.Outputs {
-				blobID, err := s.db.CreateBlob(tx, &output.Blob)
-				if err != nil {
-					return fmt.Errorf("creating blob %d: %w", i, err)
-				}
-				portfolioID, err := s.db.CreatePortfolio(tx, &pacta.Portfolio{
-					Owner:        &pacta.Owner{ID: ownerID},
-					Name:         output.Blob.FileName,
-					NumberOfRows: output.LineCount,
-					Blob:         &pacta.Blob{ID: blobID},
-					HoldingsDate: holdingsDate,
-				})
-				if err != nil {
-					return fmt.Errorf("creating portfolio %d: %w", i, err)
-				}
-				portfolioIDs = append(portfolioIDs, portfolioID)
-			}
-			for id, iu := range incompleteUploads {
-				err := s.db.UpdateIncompleteUpload(
-					tx,
-					iu.ID,
-					db.SetIncompleteUploadCompletedAt(now))
-				if err != nil {
-					return fmt.Errorf("updating incomplete upload %q: %w", id, err)
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			s.logger.Error("failed to save response to database", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		s.logger.Info("parsed portfolio",
-			zap.String("task_id", string(req.Data.TaskID)),
-			zap.Duration("run_time", now.Sub(ranAt)),
-			zap.Strings("incomplete_upload_ids", asStrs(req.Data.Request.IncompleteUploadIDs)),
-			zap.Int("incomplete_upload_count", len(req.Data.Request.IncompleteUploadIDs)),
-			zap.Strings("portfolio_ids", asStrs(portfolioIDs)),
-			zap.Int("portfolio_count", len(portfolioIDs)))
+		doHandleFn(req, w)
 	}
 }
 
-func (s *Server) handleCreatedAuditResponse() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var reqs []struct {
-			Data            *task.CreateAuditResponse `json:"data"`
-			EventType       string                    `json:"eventType"`
-			ID              string                    `json:"id"`
-			Subject         string                    `json:"subject"`
-			DataVersion     string                    `json:"dataVersion"`
-			MetadataVersion string                    `json:"metadataVersion"`
-			EventTime       time.Time                 `json:"eventTime"`
-			Topic           string                    `json:"topic"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
-			s.logger.Error("failed to parse webhook request body", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		if len(reqs) != 1 {
-			s.logger.Error("webhook response had unexpected number of events", zap.Int("event_count", len(reqs)))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		req := reqs[0]
-
-		if req.Data == nil {
-			s.logger.Error("webhook response had no payload", zap.String("event_grid_id", req.ID))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		var ranAt time.Time
-		now := s.now()
-		// We use a background context here rather than the one from the request so that it cannot be cancelled upstream.
-		err := s.db.Transactional(context.Background(), func(tx db.Tx) error {
-			for _, artifact := range req.Data.Artifacts {
-				blobID, err := s.db.CreateBlob(tx, &pacta.Blob{
-					FileName: artifact.FileName,
-					FileType: artifact.FileType,
-					BlobURI:  artifact.BlobURI,
-				})
-				if err != nil {
-					return fmt.Errorf("creating blob: %w", err)
-				}
-				_, err = s.db.CreateAnalysisArtifact(tx, &pacta.AnalysisArtifact{
-					Blob:       &pacta.Blob{ID: blobID},
-					AnalysisID: req.Data.Request.AnalysisID,
-				})
-				if err != nil {
-					return fmt.Errorf("creating analysis artifact: %w", err)
-				}
-			}
-			err := s.db.UpdateAnalysis(tx, req.Data.Request.AnalysisID, db.SetAnalysisCompletedAt(now))
-			if err != nil {
-				return fmt.Errorf("updating analysis: %w", err)
-			}
-			return nil
-		})
-		if err != nil {
-			s.logger.Error("failed to save analysis response to database", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		s.logger.Info("audit completed",
-			zap.String("task_id", string(req.Data.TaskID)),
-			zap.Duration("run_time", now.Sub(ranAt)),
-			zap.String("analysis_id", string(req.Data.Request.AnalysisID)))
+func (s *Server) handleParsePortfolio(task eventGridTask[task.ParsePortfolioResponse], w http.ResponseWriter) {
+	resp := task.Data
+	if len(resp.Outputs) == 0 {
+		s.logger.Error("webhook response had no processed portfolios", zap.String("event_grid_id", task.ID))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
+
+	portfolioIDs := []pacta.PortfolioID{}
+	var ranAt time.Time
+	now := s.now()
+	// We use a background context here rather than the one from the request so that it cannot be cancelled upstream.
+	err := s.db.Transactional(context.Background(), func(tx db.Tx) error {
+		incompleteUploads, err := s.db.IncompleteUploads(tx, resp.Request.IncompleteUploadIDs)
+		if err != nil {
+			return fmt.Errorf("reading incomplete uploads: %w", err)
+		}
+		if len(incompleteUploads) == 0 {
+			return fmt.Errorf("no incomplete uploads found for ids: %v", resp.Request.IncompleteUploadIDs)
+		}
+		var holdingsDate *pacta.HoldingsDate
+		var ownerID pacta.OwnerID
+		for _, iu := range incompleteUploads {
+			if ownerID == "" {
+				ownerID = iu.Owner.ID
+			} else if ownerID != iu.Owner.ID {
+				return fmt.Errorf("multiple owners found for incomplete uploads: %+v", incompleteUploads)
+			}
+			if iu.HoldingsDate == nil {
+				return fmt.Errorf("incomplete upload %s had no holdings date", iu.ID)
+			}
+			if holdingsDate == nil {
+				holdingsDate = iu.HoldingsDate
+			} else if *holdingsDate != *iu.HoldingsDate {
+				return fmt.Errorf("multiple holdings dates found for incomplete uploads: %+v", incompleteUploads)
+			}
+			if iu.RanAt.After(ranAt) {
+				ranAt = iu.RanAt
+			}
+		}
+		for i, output := range resp.Outputs {
+			blobID, err := s.db.CreateBlob(tx, &output.Blob)
+			if err != nil {
+				return fmt.Errorf("creating blob %d: %w", i, err)
+			}
+			portfolioID, err := s.db.CreatePortfolio(tx, &pacta.Portfolio{
+				Owner:        &pacta.Owner{ID: ownerID},
+				Name:         output.Blob.FileName,
+				NumberOfRows: output.LineCount,
+				Blob:         &pacta.Blob{ID: blobID},
+				HoldingsDate: holdingsDate,
+			})
+			if err != nil {
+				return fmt.Errorf("creating portfolio %d: %w", i, err)
+			}
+			portfolioIDs = append(portfolioIDs, portfolioID)
+		}
+		for iuid, iu := range incompleteUploads {
+			err := s.db.UpdateIncompleteUpload(
+				tx,
+				iu.ID,
+				db.SetIncompleteUploadCompletedAt(now))
+			if err != nil {
+				return fmt.Errorf("updating incomplete upload %s: %w", iuid, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		s.logger.Error("failed to save response to database", zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	s.logger.Info("parsed portfolio",
+		zap.String("task_id", string(resp.TaskID)),
+		zap.Duration("run_time", now.Sub(ranAt)),
+		zap.Strings("incomplete_upload_ids", asStrs(resp.Request.IncompleteUploadIDs)),
+		zap.Int("incomplete_upload_count", len(resp.Request.IncompleteUploadIDs)),
+		zap.Strings("portfolio_ids", asStrs(portfolioIDs)),
+		zap.Int("portfolio_count", len(portfolioIDs)))
 }
 
-func (s *Server) handleCreatedReportResponse() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var reqs []struct {
-			Data            *task.CreateReportResponse `json:"data"`
-			EventType       string                     `json:"eventType"`
-			ID              string                     `json:"id"`
-			Subject         string                     `json:"subject"`
-			DataVersion     string                     `json:"dataVersion"`
-			MetadataVersion string                     `json:"metadataVersion"`
-			EventTime       time.Time                  `json:"eventTime"`
-			Topic           string                     `json:"topic"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
-			s.logger.Error("failed to parse webhook request body", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		if len(reqs) != 1 {
-			s.logger.Error("webhook response had unexpected number of events", zap.Int("event_count", len(reqs)))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		req := reqs[0]
+func (s *Server) handleCreatedAuditResponse(task eventGridTask[task.CreateAuditResponse], w http.ResponseWriter) {
+	s.handleCompletedAnalysis(
+		pacta.AnalysisType_Audit,
+		task.Data.Request.AnalysisID,
+		task.ID,
+		task.Data.Artifacts,
+		w)
+}
 
-		if req.Data == nil {
-			s.logger.Error("webhook response had no payload", zap.String("event_grid_id", req.ID))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
+func (s *Server) handleCreatedReportResponse(task eventGridTask[task.CreateReportResponse], w http.ResponseWriter) {
+	s.handleCompletedAnalysis(
+		pacta.AnalysisType_Report,
+		task.Data.Request.AnalysisID,
+		task.ID,
+		task.Data.Artifacts,
+		w)
+}
 
-		var ranAt time.Time
-		now := s.now()
-		// We use a background context here rather than the one from the request so that it cannot be cancelled upstream.
-		err := s.db.Transactional(context.Background(), func(tx db.Tx) error {
-			for _, artifact := range req.Data.Artifacts {
-				blobID, err := s.db.CreateBlob(tx, &pacta.Blob{
-					FileName: artifact.FileName,
-					FileType: artifact.FileType,
-					BlobURI:  artifact.BlobURI,
-				})
-				if err != nil {
-					return fmt.Errorf("creating blob: %w", err)
-				}
-				_, err = s.db.CreateAnalysisArtifact(tx, &pacta.AnalysisArtifact{
-					Blob:       &pacta.Blob{ID: blobID},
-					AnalysisID: req.Data.Request.AnalysisID,
-				})
-				if err != nil {
-					return fmt.Errorf("creating analysis artifact: %w", err)
-				}
-			}
-			err := s.db.UpdateAnalysis(tx, req.Data.Request.AnalysisID, db.SetAnalysisCompletedAt(now))
-			if err != nil {
-				return fmt.Errorf("updating analysis: %w", err)
-			}
-			return nil
-		})
+func (s *Server) handleCompletedAnalysis(
+	analysisType pacta.AnalysisType,
+	analysisID pacta.AnalysisID,
+	taskID string,
+	artifacts []*task.AnalysisArtifact,
+	w http.ResponseWriter) {
+	var ranAt time.Time
+	now := s.now()
+	// We use a background context here rather than the one from the request so that it cannot be cancelled upstream.
+	err := s.db.Transactional(context.Background(), func(tx db.Tx) error {
+		a, err := s.db.Analysis(tx, analysisID)
 		if err != nil {
-			s.logger.Error("failed to save analysis response to database", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			return fmt.Errorf("reading analysis: %w", err)
 		}
-
-		s.logger.Info("report completed",
-			zap.String("task_id", string(req.Data.TaskID)),
-			zap.Duration("run_time", now.Sub(ranAt)),
-			zap.String("analysis_id", string(req.Data.Request.AnalysisID)))
+		if a.AnalysisType != analysisType {
+			return fmt.Errorf("analysis type mismatch: %q != %q", a.AnalysisType, analysisType)
+		}
+		ranAt = a.RanAt
+		for _, artifact := range artifacts {
+			blobID, err := s.db.CreateBlob(tx, &pacta.Blob{
+				FileName: artifact.FileName,
+				FileType: artifact.FileType,
+				BlobURI:  artifact.BlobURI,
+			})
+			if err != nil {
+				return fmt.Errorf("creating blob: %w", err)
+			}
+			_, err = s.db.CreateAnalysisArtifact(tx, &pacta.AnalysisArtifact{
+				Blob:       &pacta.Blob{ID: blobID},
+				AnalysisID: analysisID,
+			})
+			if err != nil {
+				return fmt.Errorf("creating analysis artifact: %w", err)
+			}
+		}
+		err = s.db.UpdateAnalysis(tx, analysisID, db.SetAnalysisCompletedAt(now))
+		if err != nil {
+			return fmt.Errorf("updating analysis: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		s.logger.Error("failed to save analysis response to database", zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
+
+	s.logger.Info("analysis completed",
+		zap.String("analysis_type", string(analysisType)),
+		zap.String("task_id", string(taskID)),
+		zap.Duration("run_time", now.Sub(ranAt)),
+		zap.String("analysis_id", string(analysisID)))
 }
 
 func asStrs[T ~string](ts []T) []string {

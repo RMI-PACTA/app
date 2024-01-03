@@ -35,6 +35,7 @@ fi
 SOPS_DATA="$(sops -d "${ROOT}/secrets/local.enc.json")"
 LOCAL_DOCKER_CREDS="$(echo $SOPS_DATA | jq .localdocker)"
 
+# TODO(#116) Set up multiple webhooks, one for each task type.
 WEBHOOK_CREDS="$(echo $SOPS_DATA | jq .webhook)"
 TOPIC_ID="$(echo $WEBHOOK_CREDS | jq -r .topic_id)"
 WEBHOOK_PATH="/events/parsed_portfolio"
