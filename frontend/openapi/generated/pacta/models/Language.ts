@@ -4,8 +4,8 @@
 /* eslint-disable */
 
 export enum Language {
-    EN = 'en',
-    FR = 'fr',
-    ES = 'es',
-    DE = 'de',
+    LANGUAGE_EN = 'LanguageEN',
+    LANGUAGE_FR = 'LanguageFR',
+    LANGUAGE_ES = 'LanguageES',
+    LANGUAGE_DE = 'LanguageDE',
 }

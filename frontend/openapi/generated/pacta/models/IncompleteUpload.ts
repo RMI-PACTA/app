@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { FailureCode } from './FailureCode';
 import type { HoldingsDate } from './HoldingsDate';
 
 export type IncompleteUpload = {
@@ -34,7 +35,7 @@ export type IncompleteUpload = {
     /**
      * Code describing the failure, if any
      */
-    failureCode?: string;
+    failureCode?: FailureCode;
     /**
      * Message describing the failure, if any
      */

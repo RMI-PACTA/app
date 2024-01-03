@@ -3,6 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Language } from './Language';
+
 export type User = {
     /**
      * Unique id of the user
@@ -31,21 +33,6 @@ export type User = {
     /**
      * The user's preferred language, if present
      */
-    preferredLanguage: User.preferredLanguage;
+    preferredLanguage: Language;
 };
-
-export namespace User {
-
-    /**
-     * The user's preferred language, if present
-     */
-    export enum preferredLanguage {
-        EN = 'en',
-        FR = 'fr',
-        ES = 'es',
-        DE = 'de',
-    }
-
-
-}
 
