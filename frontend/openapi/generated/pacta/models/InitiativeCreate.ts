@@ -3,6 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Language } from './Language';
+
 export type InitiativeCreate = {
     /**
      * the human readable identifier for the initiative, can only include alphanumeric characters, dashes and underscores
@@ -39,25 +41,10 @@ export type InitiativeCreate = {
     /**
      * The language this initiative should be conducted in.
      */
-    language: InitiativeCreate.language;
+    language: Language;
     /**
      * The id of the PACTA model that this initiative should use, if not specified, the default PACTA model will be used.
      */
     pactaVersion?: string;
 };
-
-export namespace InitiativeCreate {
-
-    /**
-     * The language this initiative should be conducted in.
-     */
-    export enum language {
-        EN = 'en',
-        FR = 'fr',
-        ES = 'es',
-        DE = 'de',
-    }
-
-
-}
 

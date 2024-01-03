@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Initiative } from '@/openapi/generated/pacta'
+import { Language } from '@/openapi/generated/pacta'
 import { initiativeEditor } from '@/lib/editor'
 
 const localePath = useLocalePath()
@@ -19,7 +19,7 @@ const defaultInitiative = {
   requiresInvitationToJoin: false,
   isAcceptingNewMembers: false,
   isAcceptingNewPortfolios: false,
-  language: Initiative.language.EN,
+  language: Language.LANGUAGE_EN,
   pactaVersion: undefined,
   createdAt: '',
   portfolioInitiativeMemberships: [],

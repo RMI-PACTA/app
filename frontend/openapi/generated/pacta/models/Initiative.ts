@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Language } from './Language';
 import type { PortfolioInitiativeMembershipPortfolio } from './PortfolioInitiativeMembershipPortfolio';
 
 export type Initiative = {
@@ -41,7 +42,7 @@ export type Initiative = {
     /**
      * The language this initiative should be conducted in.
      */
-    language: Initiative.language;
+    language: Language;
     /**
      * The pacta model that this initiative should use, if not specified, the default pacta model will be used.
      */
@@ -55,19 +56,4 @@ export type Initiative = {
      */
     createdAt: string;
 };
-
-export namespace Initiative {
-
-    /**
-     * The language this initiative should be conducted in.
-     */
-    export enum language {
-        EN = 'en',
-        FR = 'fr',
-        ES = 'es',
-        DE = 'de',
-    }
-
-
-}
 

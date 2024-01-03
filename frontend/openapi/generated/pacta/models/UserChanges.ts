@@ -3,6 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Language } from './Language';
+
 export type UserChanges = {
     /**
      * The new name of the user
@@ -11,7 +13,7 @@ export type UserChanges = {
     /**
      * The user's new preferred language
      */
-    preferredLanguage?: UserChanges.preferredLanguage;
+    preferredLanguage?: Language;
     /**
      * Whether the given user is an admin
      */
@@ -21,19 +23,4 @@ export type UserChanges = {
      */
     superAdmin?: boolean;
 };
-
-export namespace UserChanges {
-
-    /**
-     * The user's new preferred language
-     */
-    export enum preferredLanguage {
-        EN = 'en',
-        FR = 'fr',
-        ES = 'es',
-        DE = 'de',
-    }
-
-
-}
 
