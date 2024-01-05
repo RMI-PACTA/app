@@ -452,6 +452,8 @@ func auditLogActionToOAPI(i pacta.AuditLogAction) (api.AuditLogAction, error) {
 		return api.AuditLogActionEnableSharing, nil
 	case pacta.AuditLogAction_DisableSharing:
 		return api.AuditLogActionDisableSharing, nil
+	case pacta.AuditLogAction_TransferOwnership:
+		return api.AuditLogActionTransferOwnership, nil
 	}
 	return "", oapierr.Internal(fmt.Sprintf("auditLogActionToOAPI: unknown action: %q", i))
 }

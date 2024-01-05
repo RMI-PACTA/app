@@ -60,9 +60,12 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 // (DELETE /user/{id})
 func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestObject) (api.DeleteUserResponseObject, error) {
 	// TODO(#12) Implement Authorization
-	err := s.DB.DeleteUser(s.DB.NoTxn(ctx), pacta.UserID(request.Id))
+	blobURIs, err := s.DB.DeleteUser(s.DB.NoTxn(ctx), pacta.UserID(request.Id))
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete user", zap.Error(err))
+	}
+	if err := s.deleteBlobs(ctx, blobURIs...); err != nil {
+		return nil, err
 	}
 	return api.DeleteUser204Response{}, nil
 }

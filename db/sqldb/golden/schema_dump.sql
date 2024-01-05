@@ -42,7 +42,8 @@ CREATE TYPE public.audit_log_action AS ENUM (
     'DISABLE_ADMIN_DEBUG',
     'DOWNLOAD',
     'ENABLE_SHARING',
-    'DISABLE_SHARING'
+    'DISABLE_SHARING',
+    'TRANSFER_OWNERSHIP'
 );
 
 

@@ -112,6 +112,64 @@ func (d *DB) GetOrCreateOwnerForInitiative(tx db.Tx, iID pacta.InitiativeID) (pa
 	return ownerID, nil
 }
 
+func (d *DB) DeleteOwner(tx db.Tx, oID pacta.OwnerID) ([]pacta.BlobURI, error) {
+	var buris []pacta.BlobURI
+	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		portfolios, err := d.PortfoliosByOwner(tx, oID)
+		if err != nil {
+			return fmt.Errorf("getting portfolios for owner: %w", err)
+		}
+		for _, portfolio := range portfolios {
+			newBuris, err := d.DeletePortfolio(tx, portfolio.ID)
+			if err != nil {
+				return fmt.Errorf("deleting portfolio: %w", err)
+			}
+			buris = append(buris, newBuris...)
+		}
+		analyses, err := d.AnalysesByOwner(tx, oID)
+		if err != nil {
+			return fmt.Errorf("getting analyses for owner: %w", err)
+		}
+		for _, analysis := range analyses {
+			newBuris, err := d.DeleteAnalysis(tx, analysis.ID)
+			if err != nil {
+				return fmt.Errorf("deleting analysis: %w", err)
+			}
+			buris = append(buris, newBuris...)
+		}
+		pgroups, err := d.PortfolioGroupsByOwner(tx, oID)
+		if err != nil {
+			return fmt.Errorf("getting portfolio groups for owner: %w", err)
+		}
+		for _, pgroup := range pgroups {
+			err := d.DeletePortfolioGroup(tx, pgroup.ID)
+			if err != nil {
+				return fmt.Errorf("deleting portfolio group: %w", err)
+			}
+		}
+		incompleteUploads, err := d.IncompleteUploadsByOwner(tx, oID)
+		if err != nil {
+			return fmt.Errorf("getting incomplete uploads for owner: %w", err)
+		}
+		for _, iu := range incompleteUploads {
+			newBuri, err := d.DeleteIncompleteUpload(tx, iu.ID)
+			if err != nil {
+				return fmt.Errorf("deleting incomplete upload: %w", err)
+			}
+			buris = append(buris, newBuri)
+		}
+		err = d.exec(tx, `DELETE FROM owner WHERE id = $1;`, oID)
+		if err != nil {
+			return fmt.Errorf("deleting actual owner: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("deleting owner: %w", err)
+	}
+	return buris, nil
+}
+
 func (d *DB) createOwner(tx db.Tx, o *pacta.Owner) (pacta.OwnerID, error) {
 	if err := validateOwnerForCreation(o); err != nil {
 		return "", fmt.Errorf("validating owner for creation: %w", err)
@@ -183,5 +241,3 @@ func validateOwnerForCreation(o *pacta.Owner) error {
 	}
 	return nil
 }
-
-// TODO(grady) take on owner deletion

@@ -136,6 +136,21 @@ paths:
       responses:
         '204':
           description: pacta version created successfully
+  /admin/merge-users:
+    post:
+      summary: Merges two users together
+      description: Merges two users together
+      operationId: mergeUsers
+      requestBody:
+        description: a request describing the two users to merge 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeUsersRequest'
+      responses:
+        '204':
+          description: the user changes were applied successfully
   /initiative/{id}:
     get:
       summary: Returns an initiative by ID
@@ -1879,6 +1894,7 @@ components:
         - AuditLogActionDownload
         - AuditLogActionEnableSharing
         - AuditLogActionDisableSharing
+        - AuditLogActionTransferOwnership
     AuditLogActorType:
       type: string
       enum:
@@ -2058,6 +2074,18 @@ components:
         secondaryTargetOwner:
           type: string
           description: the id of the owner of the secondary object this action was performed on
+    MergeUsersRequest:
+      type: object
+      required:
+        - fromUserId
+        - toUserId
+      properties:
+        fromUserId:
+          type: string
+          description: the user id of the user to merge records from, and to be deleted after the merge 
+        toUserId:
+          type: string
+          description: the user id of the user to recieve merged records and to exist after the merge 
     Error:
       type: object
       required:

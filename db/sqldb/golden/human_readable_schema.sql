@@ -18,7 +18,8 @@ CREATE TYPE audit_log_action AS ENUM (
     'DISABLE_ADMIN_DEBUG',
     'DOWNLOAD',
     'ENABLE_SHARING',
-    'DISABLE_SHARING');
+    'DISABLE_SHARING',
+    'TRANSFER_OWNERSHIP');
 CREATE TYPE audit_log_actor_type AS ENUM (
     'USER',
     'ADMIN',

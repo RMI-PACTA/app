@@ -135,7 +135,7 @@ func TestAuditSearch(t *testing.T) {
 	actorOwner2 := &pacta.Owner{ID: "owner2"}
 	targetType1 := pacta.AuditLogTargetType_Portfolio
 	targetType2 := pacta.AuditLogTargetType_IncompleteUpload
-	targetID1 := "portfolio-1"
+	targetID1 := actorID1
 	targetID2 := "incomplete-upload-2"
 	targetOwner1 := &pacta.Owner{ID: "owner3"}
 	targetOwner2 := &pacta.Owner{ID: "owner4"}
@@ -222,7 +222,7 @@ func TestAuditSearch(t *testing.T) {
 				for i, a := range auditLogs {
 					actual[i] = a.ID
 				}
-				if diff := cmp.Diff(c.expected, actual, sortAuditLogIDs()); diff != "" {
+				if diff := cmp.Diff(c.expected, actual, auditLogIDCmpOpts()); diff != "" {
 					t.Errorf("unexpected diff:\n%s", diff)
 				}
 			})
@@ -279,11 +279,93 @@ func TestAuditSearch(t *testing.T) {
 				for i, a := range auditLogs {
 					actual[i] = a.ID
 				}
-				if diff := cmp.Diff(c.expected, actual, sortAuditLogIDs()); diff != "" {
+				if diff := cmp.Diff(c.expected, actual, auditLogIDCmpOpts()); diff != "" {
 					t.Errorf("unexpected diff:\n%s", diff)
 				}
 			})
 		}
+	})
+
+	t.Run("Audit Log Transfers", func(t *testing.T) {
+		assertWithWhere := func(where *db.AuditLogQueryWhere, expected ...pacta.AuditLogID) {
+			t.Helper()
+			auditLogs, _, err := tdb.AuditLogs(tx, &db.AuditLogQuery{
+				Limit:  10,
+				Wheres: []*db.AuditLogQueryWhere{where},
+			})
+			if err != nil {
+				t.Fatalf("getting audit logs: %v", err)
+			}
+			actual := make([]pacta.AuditLogID, len(auditLogs))
+			for i, a := range auditLogs {
+				actual[i] = a.ID
+			}
+			if diff := cmp.Diff(expected, actual, auditLogIDCmpOpts()); diff != "" {
+				t.Errorf("unexpected diff:\n%s", diff)
+			}
+		}
+		assertActorOwner := func(actorOwner pacta.OwnerID, expected ...pacta.AuditLogID) {
+			t.Helper()
+			assertWithWhere(&db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner}}, expected...)
+		}
+		assertTargetOwner := func(targetOwner pacta.OwnerID, expected ...pacta.AuditLogID) {
+			t.Helper()
+			assertWithWhere(&db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner}}, expected...)
+		}
+		assertActorUser := func(user string, expected ...pacta.AuditLogID) {
+			t.Helper()
+			assertWithWhere(&db.AuditLogQueryWhere{InActorID: []string{user}}, expected...)
+		}
+		assertTarget := func(targetID string, expected ...pacta.AuditLogID) {
+			t.Helper()
+			assertWithWhere(&db.AuditLogQueryWhere{InTargetID: []string{targetID}}, expected...)
+		}
+
+		// Check initial state
+		assertActorOwner(actorOwner1.ID, alID1)
+		assertActorOwner(actorOwner2.ID, alID2, alID3)
+		assertTargetOwner(targetOwner1.ID, alID1, alID3)
+		assertTargetOwner(targetOwner2.ID, alID2, alID3)
+		assertActorUser(actorID1, alID1)
+		assertActorUser(actorID2, alID2, alID3)
+		assertTarget(actorID1, alID1)
+		assertTarget(actorID2)
+
+		// Transferring audit logs from Actor1 => Actor2, and ActorOwner1 => ActorOwner2
+		numTransferred, err := tdb.TransferAuditLogOwnership(tx, pacta.UserID(actorID1), pacta.UserID(actorID2), actorOwner1.ID, actorOwner2.ID)
+		if err != nil {
+			t.Fatalf("transferring audit log ownership: %v", err)
+		}
+		if numTransferred != 1 {
+			t.Fatalf("expected 1 audit logs to be transferred, got %d", numTransferred)
+		}
+		assertActorOwner(actorOwner1.ID)
+		assertActorOwner(actorOwner2.ID, alID1, alID2, alID3)
+		assertTargetOwner(targetOwner1.ID, alID1, alID3)
+		assertTargetOwner(targetOwner2.ID, alID2, alID3)
+		assertActorUser(actorID1)
+		assertActorUser(actorID2, alID1, alID2, alID3)
+		assertTarget(actorID1)
+		assertTarget(actorID2, alID1)
+
+		// Transferring when empty should be fine.
+		numTransferred, err = tdb.TransferAuditLogOwnership(tx, pacta.UserID(actorID1), pacta.UserID(actorID2), actorOwner1.ID, actorOwner2.ID)
+		if err != nil {
+			t.Fatalf("transferring audit log ownership: %v", err)
+		}
+		if numTransferred != 0 {
+			t.Fatalf("expected 0 audit logs to be transferred, got %d", numTransferred)
+		}
+
+		numTransferred, err = tdb.TransferAuditLogOwnership(tx, pacta.UserID("a random user id"), pacta.UserID(actorID2), targetOwner1.ID, targetOwner2.ID)
+		if err != nil {
+			t.Fatalf("transferring audit log ownership: %v", err)
+		}
+		if numTransferred != 2 {
+			t.Fatalf("expected 1 audit logs to be transferred, got %d", numTransferred)
+		}
+		assertTargetOwner(targetOwner1.ID)
+		assertTargetOwner(targetOwner2.ID, alID1, alID2, alID3)
 	})
 }
 
@@ -294,8 +376,11 @@ func auditLogCmpOpts() cmp.Option {
 	}
 }
 
-func sortAuditLogIDs() cmp.Option {
-	return cmpopts.SortSlices(func(a, b pacta.AuditLogID) bool {
-		return string(a) < string(b)
-	})
+func auditLogIDCmpOpts() cmp.Option {
+	return cmp.Options{
+		cmpopts.SortSlices(func(a, b pacta.AuditLogID) bool {
+			return string(a) < string(b)
+		}),
+		cmpopts.EquateEmpty(),
+	}
 }
