@@ -160,13 +160,16 @@ func (d *DB) DeleteUser(tx db.Tx, id pacta.UserID) ([]pacta.BlobURI, error) {
 	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
 		userOwnerID, err := d.GetOwnerForUser(tx, id)
 		if err != nil {
-			return fmt.Errorf("getting owner for user: %w", err)
+			if !db.IsNotFound(err) {
+				return fmt.Errorf("getting owner for user: %w", err)
+			}
+		} else {
+			newBuris, err := d.DeleteOwner(tx, userOwnerID)
+			if err != nil {
+				return fmt.Errorf("deleting owner: %w", err)
+			}
+			buris = append(buris, newBuris...)
 		}
-		newBuris, err := d.DeleteOwner(tx, userOwnerID)
-		if err != nil {
-			return fmt.Errorf("deleting owner: %w", err)
-		}
-		buris = append(buris, newBuris...)
 		err = d.exec(tx, `DELETE FROM initiative_invitation WHERE used_by_user_id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting initiative_invitation rows: %w", err)
