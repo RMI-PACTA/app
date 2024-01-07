@@ -2,6 +2,7 @@ package pactasrv
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/RMI/pacta/cmd/server/pactasrv/conv"
 	"github.com/RMI/pacta/db"
@@ -14,7 +15,10 @@ import (
 // Returns a version of the PACTA model by ID
 // (GET /pacta-version/{id})
 func (s *Server) FindPactaVersionById(ctx context.Context, request api.FindPactaVersionByIdRequestObject) (api.FindPactaVersionByIdResponseObject, error) {
-	// TODO(#12) Implement Authorization
+	id := pacta.PACTAVersionID(request.Id)
+	if err := s.pactaVersionAuthz(ctx, id, pacta.AuditLogAction_ReadMetadata); err != nil {
+		return nil, err
+	}
 	pv, err := s.DB.PACTAVersion(s.DB.NoTxn(ctx), pacta.PACTAVersionID(request.Id))
 	if err != nil {
 		if db.IsNotFound(err) {
@@ -32,7 +36,7 @@ func (s *Server) FindPactaVersionById(ctx context.Context, request api.FindPacta
 // Returns all versions of the PACTA model
 // (GET /pacta-versions)
 func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVersionsRequestObject) (api.ListPactaVersionsResponseObject, error) {
-	// TODO(#12) Implement Authorization
+	// No Authorization - Public
 	pvs, err := s.DB.PACTAVersions(s.DB.NoTxn(ctx))
 	if err != nil {
 		return nil, oapierr.Internal("failed to list pacta versions", zap.Error(err))
@@ -47,13 +51,28 @@ func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVer
 // Creates a PACTA version
 // (POST /pacta-versions)
 func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) (api.CreatePactaVersionResponseObject, error) {
-	// TODO(#12) Implement Authorization
+	actorInfo, err := s.getActorInfoOrFail(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var auditLogActorType pacta.AuditLogActorType
+	if actorInfo.IsAdmin {
+		auditLogActorType = pacta.AuditLogActorType_Admin
+	} else if actorInfo.IsSuperAdmin {
+		auditLogActorType = pacta.AuditLogActorType_SuperAdmin
+	} else {
+		return nil, oapierr.Forbidden("only admins and super admins can create initiatives")
+	}
 	pv, err := conv.PactaVersionCreateFromOAPI(request.Body)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.DB.CreatePACTAVersion(s.DB.NoTxn(ctx), pv); err != nil {
+	pvID, err := s.DB.CreatePACTAVersion(s.DB.NoTxn(ctx), pv)
+	if err != nil {
 		return nil, oapierr.Internal("failed to create pacta version", zap.Error(err))
+	}
+	if err := s.auditLogForCreateEvent(ctx, actorInfo, auditLogActorType, pacta.AuditLogTargetType_PACTAVersion, string(pvID)); err != nil {
+		return nil, err
 	}
 	return api.CreatePactaVersion204Response{}, nil
 }
@@ -61,8 +80,10 @@ func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePacta
 // Updates a PACTA version
 // (PATCH /pacta-version/{id})
 func (s *Server) UpdatePactaVersion(ctx context.Context, request api.UpdatePactaVersionRequestObject) (api.UpdatePactaVersionResponseObject, error) {
-	// TODO(#12) Implement Authorization
 	id := pacta.PACTAVersionID(request.Id)
+	if err := s.pactaVersionAuthz(ctx, id, pacta.AuditLogAction_Update); err != nil {
+		return nil, err
+	}
 	mutations := []db.UpdatePACTAVersionFn{}
 	b := request.Body
 	if b.Description != nil {
@@ -85,8 +106,10 @@ func (s *Server) UpdatePactaVersion(ctx context.Context, request api.UpdatePacta
 // Deletes a pacta version by ID
 // (DELETE /pacta-version/{id})
 func (s *Server) DeletePactaVersion(ctx context.Context, request api.DeletePactaVersionRequestObject) (api.DeletePactaVersionResponseObject, error) {
-	// TODO(#12) Implement Authorization
 	id := pacta.PACTAVersionID(request.Id)
+	if err := s.pactaVersionAuthz(ctx, id, pacta.AuditLogAction_Delete); err != nil {
+		return nil, err
+	}
 	err := s.DB.DeletePACTAVersion(s.DB.NoTxn(ctx), id)
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete pacta version", zap.String("pacta_version_id", string(id)), zap.Error(err))
@@ -97,11 +120,37 @@ func (s *Server) DeletePactaVersion(ctx context.Context, request api.DeletePacta
 // Marks this version of the PACTA model as the default
 // (POST /pacta-version/{id}/set-default)
 func (s *Server) MarkPactaVersionAsDefault(ctx context.Context, request api.MarkPactaVersionAsDefaultRequestObject) (api.MarkPactaVersionAsDefaultResponseObject, error) {
-	// TODO(#12) Implement Authorization
 	id := pacta.PACTAVersionID(request.Id)
+	if err := s.pactaVersionAuthz(ctx, id, pacta.AuditLogAction_Update); err != nil {
+		return nil, err
+	}
 	err := s.DB.SetDefaultPACTAVersion(s.DB.NoTxn(ctx), id)
 	if err != nil {
 		return nil, oapierr.Internal("failed to set default pacta version", zap.String("pacta_version_id", string(id)), zap.Error(err))
 	}
 	return api.MarkPactaVersionAsDefault204Response{}, nil
+}
+
+func (s *Server) pactaVersionAuthz(ctx context.Context, pvID pacta.PACTAVersionID, action pacta.AuditLogAction) error {
+	actorInfo, err := s.getActorInfoOrAnon(ctx)
+	if err != nil {
+		return err
+	}
+	as := &authzStatus{
+		primaryTargetID:      string(pvID),
+		primaryTargetType:    pacta.AuditLogTargetType_PACTAVersion,
+		primaryTargetOwnerID: systemOwnedEntityOwner,
+		actorInfo:            actorInfo,
+		action:               action,
+	}
+	switch action {
+	case pacta.AuditLogAction_ReadMetadata:
+		as.isAuthorized = true
+		as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Public)
+	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_Update:
+		as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
+	default:
+		return fmt.Errorf("unknown action %q for pacta_version authz", action)
+	}
+	return s.auditLogIfAuthorizedOrFail(ctx, as)
 }

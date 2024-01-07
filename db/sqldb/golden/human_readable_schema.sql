@@ -18,7 +18,8 @@ CREATE TYPE audit_log_action AS ENUM (
     'DISABLE_ADMIN_DEBUG',
     'DOWNLOAD',
     'ENABLE_SHARING',
-    'DISABLE_SHARING');
+    'DISABLE_SHARING',
+    'READ_METADATA');
 CREATE TYPE audit_log_actor_type AS ENUM (
     'USER',
     'ADMIN',
@@ -33,7 +34,9 @@ CREATE TYPE audit_log_target_type AS ENUM (
     'INITIATIVE',
     'PACTA_VERSION',
     'ANALYSIS',
-    'INCOMPLETE_UPLOAD');
+    'INCOMPLETE_UPLOAD',
+    'INITIATIVE_INVITATION',
+    'ANALYSIS_ARTIFACT');
 CREATE TYPE authn_mechanism AS ENUM (
     'EMAIL_AND_PASS');
 CREATE TYPE failure_code AS ENUM (

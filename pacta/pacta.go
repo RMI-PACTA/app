@@ -579,6 +579,7 @@ const (
 	AuditLogAction_Download          AuditLogAction = "DOWNLOAD"
 	AuditLogAction_EnableSharing     AuditLogAction = "ENABLE_SHARING"
 	AuditLogAction_DisableSharing    AuditLogAction = "DISABLE_SHARING"
+	AuditLogAction_ReadMetadata      AuditLogAction = "READ_METADATA"
 )
 
 var AuditLogActionValues = []AuditLogAction{
@@ -592,6 +593,7 @@ var AuditLogActionValues = []AuditLogAction{
 	AuditLogAction_Download,
 	AuditLogAction_EnableSharing,
 	AuditLogAction_DisableSharing,
+	AuditLogAction_ReadMetadata,
 }
 
 func ParseAuditLogAction(s string) (AuditLogAction, error) {
@@ -616,6 +618,8 @@ func ParseAuditLogAction(s string) (AuditLogAction, error) {
 		return AuditLogAction_EnableSharing, nil
 	case "DISABLE_SHARING":
 		return AuditLogAction_DisableSharing, nil
+	case "READ_METADATA":
+		return AuditLogAction_ReadMetadata, nil
 	}
 	return "", fmt.Errorf("unknown AuditLogAction: %q", s)
 }
@@ -657,13 +661,15 @@ func ParseAuditLogActorType(s string) (AuditLogActorType, error) {
 type AuditLogTargetType string
 
 const (
-	AuditLogTargetType_User             AuditLogTargetType = "USER"
-	AuditLogTargetType_Portfolio        AuditLogTargetType = "PORTFOLIO"
-	AuditLogTargetType_IncompleteUpload AuditLogTargetType = "INCOMPLETE_UPLOAD"
-	AuditLogTargetType_PortfolioGroup   AuditLogTargetType = "PORTFOLIO_GROUP"
-	AuditLogTargetType_Initiative       AuditLogTargetType = "INITIATIVE"
-	AuditLogTargetType_PACTAVersion     AuditLogTargetType = "PACTA_VERSION"
-	AuditLogTargetType_Analysis         AuditLogTargetType = "ANALYSIS"
+	AuditLogTargetType_User                 AuditLogTargetType = "USER"
+	AuditLogTargetType_Portfolio            AuditLogTargetType = "PORTFOLIO"
+	AuditLogTargetType_IncompleteUpload     AuditLogTargetType = "INCOMPLETE_UPLOAD"
+	AuditLogTargetType_PortfolioGroup       AuditLogTargetType = "PORTFOLIO_GROUP"
+	AuditLogTargetType_Initiative           AuditLogTargetType = "INITIATIVE"
+	AuditLogTargetType_InitiativeInvitation AuditLogTargetType = "INITIATIVE_INVITATION"
+	AuditLogTargetType_PACTAVersion         AuditLogTargetType = "PACTA_VERSION"
+	AuditLogTargetType_Analysis             AuditLogTargetType = "ANALYSIS"
+	AuditLogTargetType_AnalysisArtifact     AuditLogTargetType = "ANALYSIS_ARTIFACT"
 )
 
 var AuditLogTargetTypeValues = []AuditLogTargetType{
@@ -672,8 +678,10 @@ var AuditLogTargetTypeValues = []AuditLogTargetType{
 	AuditLogTargetType_IncompleteUpload,
 	AuditLogTargetType_PortfolioGroup,
 	AuditLogTargetType_Initiative,
+	AuditLogTargetType_InitiativeInvitation,
 	AuditLogTargetType_PACTAVersion,
 	AuditLogTargetType_Analysis,
+	AuditLogTargetType_AnalysisArtifact,
 }
 
 func ParseAuditLogTargetType(s string) (AuditLogTargetType, error) {
@@ -688,10 +696,14 @@ func ParseAuditLogTargetType(s string) (AuditLogTargetType, error) {
 		return AuditLogTargetType_PortfolioGroup, nil
 	case "INITIATIVE":
 		return AuditLogTargetType_Initiative, nil
+	case "INITIATIVE_INVITATION":
+		return AuditLogTargetType_InitiativeInvitation, nil
 	case "PACTA_VERSION":
 		return AuditLogTargetType_PACTAVersion, nil
 	case "ANALYSIS":
 		return AuditLogTargetType_Analysis, nil
+	case "ANALYSIS_ARTIFACT":
+		return AuditLogTargetType_AnalysisArtifact, nil
 	}
 	return "", fmt.Errorf("unknown AuditLogTargetType: %q", s)
 }

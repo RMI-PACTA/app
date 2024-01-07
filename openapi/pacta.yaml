@@ -1879,6 +1879,7 @@ components:
         - AuditLogActionDownload
         - AuditLogActionEnableSharing
         - AuditLogActionDisableSharing
+        - AuditLogActionReadMetadata
     AuditLogActorType:
       type: string
       enum:
@@ -1895,8 +1896,10 @@ components:
         - AuditLogTargetTypeIncompleteUpload
         - AuditLogTargetTypePortfolioGroup
         - AuditLogTargetTypeInitiative
+        - AuditLogTargetTypeInitiativeInvitation
         - AuditLogTargetTypePactaVersion
         - AuditLogTargetTypeAnalysis
+        - AuditLogTargetTypeAnalysisArtifact
     AuditLogQueryWhere:
       type: object
       properties:

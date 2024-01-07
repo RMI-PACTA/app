@@ -90,6 +90,7 @@ func TestSchemaHistory(t *testing.T) {
 		{ID: 6, Version: 6}, // 0006_initiative_primary_key
 		{ID: 7, Version: 7}, // 0007_audit_log_actor_type
 		{ID: 8, Version: 8}, // 0008_indexes_on_blob_ids
+		{ID: 9, Version: 9}, // 0009_audit_log_enum_values
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {
