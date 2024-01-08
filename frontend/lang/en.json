@@ -73,12 +73,14 @@
     "Subheading": "You aren't authorized to view this page",
     "Technical Error": "Technical Error"
   },
-  "components/portfolio/Editor": {
+  "components/AdminDebugEnabledToggleButton": {
     "Administrator Debugging Access Enabled": "Administrator Debugging Access Enabled",
-    "No Administrator Access Enabled": "No Administrator Access Enabled"
+    "No Administrator Access Enabled": "No Administrator Access Enabled",
+    "Modal Heading": "Administrator Debugging Access",
+    "Modal Subheading": "Exercise caution - this changes who can see the data that you upload",
+    "Ack": "I Understand",
+    "Cancel": "Never Mind"
   },
-
-
   "components/portfolio/ListView": {
     "Created At": "Created At",
     "Details": "Details",
