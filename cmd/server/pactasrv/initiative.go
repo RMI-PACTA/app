@@ -2,6 +2,7 @@ package pactasrv
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/RMI/pacta/cmd/server/pactasrv/conv"
 	"github.com/RMI/pacta/db"
@@ -117,4 +118,78 @@ func (s *Server) ListInitiatives(ctx context.Context, request api.ListInitiative
 		return nil, err
 	}
 	return api.ListInitiatives200JSONResponse(result), nil
+}
+
+// Returns all of the portfolios that are participating in the initiative
+// (GET /initiative/{id}/all-data)
+func (s *Server) AllInitiativeData(ctx context.Context, request api.AllInitiativeDataRequestObject) (api.AllInitiativeDataResponseObject, error) {
+	actorInfo, err := s.getActorInfoOrFail(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// TODO(#12) Implement Authorization, along the lines of #121
+	i, err := s.DB.Initiative(s.DB.NoTxn(ctx), pacta.InitiativeID(request.Id))
+	if err != nil {
+		if db.IsNotFound(err) {
+			return nil, oapierr.NotFound("initiative not found", zap.String("initiative_id", request.Id))
+		}
+		return nil, oapierr.Internal("failed to load initiative", zap.String("initiative_id", request.Id), zap.Error(err))
+	}
+	portfolioMembers, err := s.DB.PortfolioInitiativeMembershipsByInitiative(s.DB.NoTxn(ctx), i.ID)
+	if err != nil {
+		return nil, oapierr.Internal("failed to load portfolio memberships for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+	}
+	portfolioIDs := []pacta.PortfolioID{}
+	for _, pm := range portfolioMembers {
+		portfolioIDs = append(portfolioIDs, pm.Portfolio.ID)
+	}
+	portfolios, err := s.DB.Portfolios(s.DB.NoTxn(ctx), portfolioIDs)
+	if err != nil {
+		return nil, oapierr.Internal("failed to load portfolios for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+	}
+	if err := s.populateBlobsInPortfolios(ctx, values(portfolios)...); err != nil {
+		return nil, err
+	}
+	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
+		for _, p := range portfolios {
+			_, err := s.DB.CreateAuditLog(tx, &pacta.AuditLog{
+				Action:               pacta.AuditLogAction_Download,
+				ActorType:            pacta.AuditLogActorType_Admin, // TODO(#12) When merging with #121, use the actor type from authorization
+				ActorID:              string(actorInfo.UserID),
+				ActorOwner:           &pacta.Owner{ID: actorInfo.OwnerID},
+				PrimaryTargetType:    pacta.AuditLogTargetType_Portfolio,
+				PrimaryTargetID:      string(p.ID),
+				PrimaryTargetOwner:   p.Owner,
+				SecondaryTargetType:  pacta.AuditLogTargetType_Initiative,
+				SecondaryTargetID:    string(i.ID),
+				SecondaryTargetOwner: &pacta.Owner{ID: "SYSTEM"}, // TODO(#12) When merging with #121, use the const type.
+			})
+			if err != nil {
+				return fmt.Errorf("creating audit log: %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, oapierr.Internal("failed to create audit logs nescessary to return download urls", zap.Error(err))
+	}
+
+	// Note, it is likely this code will need to be parallelized in the future - initiatives may eventually become large.
+	// However, since this action is unlikely to be taken frequently, and will only be taken by admins, getting the experience
+	// perfect here is not a priority.
+	response := api.InitiativeAllData{}
+	for _, portfolio := range portfolios {
+		url, expiryTime, err := s.Blob.SignedDownloadURL(ctx, string(portfolio.Blob.BlobURI))
+		if err != nil {
+			return nil, oapierr.Internal("error getting signed download url", zap.Error(err), zap.String("blob_uri", string(portfolio.Blob.BlobURI)))
+		}
+		response.Items = append(response.Items, api.InitiativeAllDataPortfolioItem{
+			Name:           portfolio.Name,
+			BlobId:         string(portfolio.Blob.BlobURI),
+			DownloadUrl:    url,
+			ExpirationTime: expiryTime,
+		})
+	}
+
+	return api.AllInitiativeData200JSONResponse(response), nil
 }

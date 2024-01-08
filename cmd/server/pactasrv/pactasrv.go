@@ -163,6 +163,16 @@ func dereference[T any](ts []*T, e error) ([]T, error) {
 	return result, nil
 }
 
+func values[K comparable, V any](m map[K]*V) []*V {
+	result := make([]*V, len(m))
+	i := 0
+	for _, v := range m {
+		result[i] = v
+		i++
+	}
+	return result
+}
+
 func getUserID(ctx context.Context) (pacta.UserID, error) {
 	userID, err := session.UserIDFromContext(ctx)
 	if err != nil {
