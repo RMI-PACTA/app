@@ -132,7 +132,7 @@ func (s *Server) UpdateAnalysisArtifact(ctx context.Context, request api.UpdateA
 // Requests an anslysis be run
 // (POST /run-analysis)
 func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequestObject) (api.RunAnalysisResponseObject, error) {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 }
 
 func (s *Server) analysisDoAuthzAndAuditLog(ctx context.Context, analysisID pacta.AnalysisID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}
@@ -314,7 +314,7 @@ func (s *Server) analysisDoAuthzAndAuditLog(ctx context.Context, analysisID pact
 }
 
 func (s *Server) analysisArtifactDoAuthzAndAuditLog(ctx context.Context, aaID pacta.AnalysisArtifactID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}

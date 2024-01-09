@@ -60,7 +60,7 @@ func (s *Server) ListPortfolioGroups(ctx context.Context, request api.ListPortfo
 // Creates a portfolio group
 // (POST /portfolio-groups)
 func (s *Server) CreatePortfolioGroup(ctx context.Context, request api.CreatePortfolioGroupRequestObject) (api.CreatePortfolioGroupResponseObject, error) {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (s *Server) CreatePortfolioGroupMembership(ctx context.Context, request api
 }
 
 func (s *Server) portfolioGroupAuthz(ctx context.Context, pgID pacta.PortfolioGroupID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (s *Server) portfolioGroupAuthz(ctx context.Context, pgID pacta.PortfolioGr
 }
 
 func (s *Server) portfolioGroupMembershipAuthz(ctx context.Context, pgID pacta.PortfolioGroupID, action pacta.AuditLogAction, pID pacta.PortfolioID) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}

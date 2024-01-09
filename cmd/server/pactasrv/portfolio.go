@@ -110,7 +110,7 @@ func (s *Server) UpdatePortfolio(ctx context.Context, request api.UpdatePortfoli
 }
 
 func (s *Server) portfolioDoAuthzAndAuditLog(ctx context.Context, pID pacta.PortfolioID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}

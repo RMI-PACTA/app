@@ -53,7 +53,7 @@ func (s *Server) DeleteInitiativePortfolioRelationship(ctx context.Context, requ
 }
 
 func (s *Server) initiativePortfolioRelationshipDoAuthzAndAuditLog(ctx context.Context, iID pacta.InitiativeID, pID pacta.PortfolioID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}

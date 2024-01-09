@@ -51,7 +51,7 @@ func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVer
 // Creates a PACTA version
 // (POST /pacta-versions)
 func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) (api.CreatePactaVersionResponseObject, error) {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}

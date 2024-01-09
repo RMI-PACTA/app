@@ -580,6 +580,7 @@ const (
 	AuditLogAction_EnableSharing     AuditLogAction = "ENABLE_SHARING"
 	AuditLogAction_DisableSharing    AuditLogAction = "DISABLE_SHARING"
 	AuditLogAction_ReadMetadata      AuditLogAction = "READ_METADATA"
+	AuditLogAction_TransferOwnership AuditLogAction = "TRANSFER_OWNERSHIP"
 )
 
 var AuditLogActionValues = []AuditLogAction{
@@ -594,6 +595,7 @@ var AuditLogActionValues = []AuditLogAction{
 	AuditLogAction_EnableSharing,
 	AuditLogAction_DisableSharing,
 	AuditLogAction_ReadMetadata,
+	AuditLogAction_TransferOwnership,
 }
 
 func ParseAuditLogAction(s string) (AuditLogAction, error) {
@@ -620,6 +622,8 @@ func ParseAuditLogAction(s string) (AuditLogAction, error) {
 		return AuditLogAction_DisableSharing, nil
 	case "READ_METADATA":
 		return AuditLogAction_ReadMetadata, nil
+	case "TRANSFER_OWNERSHIP":
+		return AuditLogAction_TransferOwnership, nil
 	}
 	return "", fmt.Errorf("unknown AuditLogAction: %q", s)
 }

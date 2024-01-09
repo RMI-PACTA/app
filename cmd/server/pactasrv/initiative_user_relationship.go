@@ -96,7 +96,7 @@ func (s *Server) UpdateInitiativeUserRelationship(ctx context.Context, request a
 }
 
 func (s *Server) initiativeUserRelationshipDoAuthzAndAuditLog(ctx context.Context, iID pacta.InitiativeID, targetUserID pacta.UserID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}

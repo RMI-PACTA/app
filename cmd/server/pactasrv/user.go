@@ -69,9 +69,12 @@ func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestOb
 	if err := s.userDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Delete); err != nil {
 		return nil, err
 	}
-	err := s.DB.DeleteUser(s.DB.NoTxn(ctx), id)
+	blobURIs, err := s.DB.DeleteUser(s.DB.NoTxn(ctx), pacta.UserID(request.Id))
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete user", zap.Error(err))
+	}
+	if err := s.deleteBlobs(ctx, blobURIs...); err != nil {
+		return nil, err
 	}
 	return api.DeleteUser204Response{}, nil
 }
@@ -142,7 +145,7 @@ func (s *Server) UserAuthenticationFollowup(ctx context.Context, _request api.Us
 }
 
 func (s *Server) userDoAuthzAndAuditLog(ctx context.Context, targetUserID pacta.UserID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}

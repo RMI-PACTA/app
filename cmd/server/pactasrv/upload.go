@@ -20,7 +20,7 @@ import (
 // (POST /portfolio-upload)
 func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPortfolioUploadRequestObject) (api.StartPortfolioUploadResponseObject, error) {
 	// TODO(#71) Implement basic limits
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 // Called after uploads of portfolios to cloud storage are complete.
 // (POST /portfolio-upload:complete)
 func (s *Server) CompletePortfolioUpload(ctx context.Context, request api.CompletePortfolioUploadRequestObject) (api.CompletePortfolioUploadResponseObject, error) {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}

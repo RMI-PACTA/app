@@ -135,7 +135,7 @@ func (s *Server) ListInitiativeInvitations(ctx context.Context, request api.List
 }
 
 func (s *Server) userIsInitiativeManagerOrAdmin(ctx context.Context, iID pacta.InitiativeID) (bool, error) {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -155,7 +155,7 @@ func (s *Server) userIsInitiativeManagerOrAdmin(ctx context.Context, iID pacta.I
 }
 
 func (s *Server) initiativeInvitationDoAuthzAndAuditLog(ctx context.Context, iID pacta.InitiativeID, iiID pacta.InitiativeInvitationID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}

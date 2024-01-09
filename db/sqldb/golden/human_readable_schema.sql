@@ -19,6 +19,7 @@ CREATE TYPE audit_log_action AS ENUM (
     'DOWNLOAD',
     'ENABLE_SHARING',
     'DISABLE_SHARING',
+    'TRANSFER_OWNERSHIP',
     'READ_METADATA');
 CREATE TYPE audit_log_actor_type AS ENUM (
     'USER',
@@ -178,6 +179,13 @@ ALTER TABLE ONLY owner ADD CONSTRAINT owner_initiative_id_fkey FOREIGN KEY (init
 ALTER TABLE ONLY owner ADD CONSTRAINT owner_user_id_fkey FOREIGN KEY (user_id) REFERENCES pacta_user(id) ON DELETE RESTRICT;
 
 
+CREATE TABLE owner_merges (
+	actor_user_id text NOT NULL,
+	from_owner_id text NOT NULL,
+	merged_at timestamp with time zone DEFAULT now() NOT NULL,
+	to_owner_id text NOT NULL);
+
+
 CREATE TABLE pacta_user (
 	admin boolean NOT NULL,
 	authn_id text NOT NULL,
@@ -272,4 +280,11 @@ CREATE TABLE schema_migrations_history (
 	id integer NOT NULL,
 	version bigint NOT NULL);
 ALTER SEQUENCE schema_migrations_history_id_seq OWNED BY schema_migrations_history.id;
+
+
+CREATE TABLE user_merges (
+	actor_user_id text NOT NULL,
+	from_user_id text NOT NULL,
+	merged_at timestamp with time zone DEFAULT now() NOT NULL,
+	to_user_id text NOT NULL);
 ALTER TABLE ONLY schema_migrations ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);

@@ -100,7 +100,7 @@ func (s *Server) UpdateIncompleteUpload(ctx context.Context, request api.UpdateI
 }
 
 func (s *Server) incompleteUploadDoAuthzAndAuditLog(ctx context.Context, iuID pacta.IncompleteUploadID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return err
 	}

@@ -146,6 +146,8 @@ func auditLogActionFromOAPI(i api.AuditLogAction) (pacta.AuditLogAction, error) 
 		return pacta.AuditLogAction_DisableSharing, nil
 	case api.AuditLogActionReadMetadata:
 		return pacta.AuditLogAction_ReadMetadata, nil
+	case api.AuditLogActionTransferOwnership:
+		return pacta.AuditLogAction_TransferOwnership, nil
 	}
 	return "", oapierr.BadRequest("unknown audit log action", zap.String("audit_log_action", string(i)))
 }
