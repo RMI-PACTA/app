@@ -79,7 +79,7 @@
     "Modal Heading": "Administrator Debugging Access",
     "Modal Subheading": "Exercise caution - this changes who can see the data that you upload",
     "Ack": "I Understand",
-    "Cancel": "Never Mind"
+    "No Ack": "Nevermind"
   },
   "components/portfolio/ListView": {
     "Created At": "Created At",

@@ -33,7 +33,6 @@ const ack = () => {
   model.value = true
 }
 const noAck = () => {
-  everAcked.value = false
   model.value = false
 }
 
