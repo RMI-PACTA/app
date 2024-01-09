@@ -1,0 +1,33 @@
+{
+  "composites": {
+    "exclude_files": {
+      "external/org_golang_google_protobuf/internal/impl/.*": "allow unkeyed fields on offending third-party code"
+    }
+  },
+  "copylocks": {
+    "exclude_files": {
+      "external/org_golang_google_protobuf/internal/impl/.*": "disable copylocks check on offending third-party code"
+    }
+  },
+  "nilness": {
+    "exclude_files": {
+      "external/.*": "enforce no nilness only on first-party code"
+    }
+  },
+  "shadow": {
+    "exclude_files": {
+      ".*": "disable the shadowing check on all code, because it's fine"
+    }
+  },
+  "unreachable": {
+    "exclude_files": {
+      "external/.*": "enforce no unreachable paths only on first-party code"
+    }
+  },
+  "unsafeptr": {
+    "exclude_files": {
+      "external/org_golang_x_sys/unix/.*": "disable unsafe pointer check on offending third-party code",
+      "external/com_github_mailru_easyjson/jlexer/.*": "disable unsafe pointer check on offending third-party code"
+    }
+  }
+}
