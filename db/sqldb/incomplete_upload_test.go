@@ -46,7 +46,7 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 
 	ius, err := tdb.IncompleteUploads(tx, []pacta.IncompleteUploadID{iu.ID, iu.ID, "nonsense"})
 	if err != nil {
-		t.Fatalf("reading incomplete_uploads: %w", err)
+		t.Fatalf("reading incomplete_uploads: %v", err)
 	}
 	if diff := cmp.Diff(map[pacta.IncompleteUploadID]*pacta.IncompleteUpload{iu.ID: iu}, ius, cmpOpts); diff != "" {
 		t.Fatalf("incomplete_upload mismatch (-want +got):\n%s", diff)
@@ -131,7 +131,7 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 
 	_, err = tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
 	if err == nil {
-		t.Fatalf("reading blob owners should have failed but was fine", err)
+		t.Fatal("reading blob owners should have failed but was fine")
 	}
 }
 

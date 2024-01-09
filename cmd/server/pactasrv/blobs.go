@@ -2,7 +2,6 @@ package pactasrv
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/oapierr"
@@ -12,7 +11,7 @@ import (
 )
 
 func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobContentRequestObject) (api.AccessBlobContentResponseObject, error) {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +21,7 @@ func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobCo
 		blobIDs = append(blobIDs, pacta.BlobID(item.BlobId))
 	}
 	err404 := oapierr.NotFound("blob not found", zap.Strings("blob_ids", asStrs(blobIDs)))
-	bos, err := s.DB.BlobContexts(s.DB.NoTxn(ctx), blobIDs)
+	bcs, err := s.DB.BlobContexts(s.DB.NoTxn(ctx), blobIDs)
 	if err != nil {
 		if db.IsNotFound(err) {
 			return nil, err404
@@ -30,15 +29,15 @@ func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobCo
 		return nil, oapierr.Internal("error getting blob owners", zap.Error(err), zap.Strings("blob_ids", asStrs(blobIDs)))
 	}
 	asMap := map[pacta.BlobID]*pacta.BlobContext{}
-	for _, boi := range bos {
-		asMap[boi.BlobID] = boi
+	for _, bc := range bcs {
+		asMap[bc.BlobID] = bc
 	}
 	auditLogs := []*pacta.AuditLog{}
 	for _, blobID := range blobIDs {
-		boi := asMap[blobID]
-		accessAsOwner := boi.PrimaryTargetOwnerID == actorInfo.OwnerID
-		accessAsAdmin := boi.AdminDebugEnabled && actorInfo.IsAdmin
-		accessAsSuperAdmin := boi.AdminDebugEnabled && actorInfo.IsSuperAdmin
+		bc := asMap[blobID]
+		accessAsOwner := bc.PrimaryTargetOwnerID == actorInfo.OwnerID
+		accessAsAdmin := bc.AdminDebugEnabled && actorInfo.IsAdmin
+		accessAsSuperAdmin := bc.AdminDebugEnabled && actorInfo.IsSuperAdmin
 		var actorType pacta.AuditLogActorType
 		if accessAsOwner {
 			actorType = pacta.AuditLogActorType_Owner
@@ -55,9 +54,9 @@ func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobCo
 			ActorID:            string(actorInfo.UserID),
 			ActorOwner:         &pacta.Owner{ID: actorInfo.OwnerID},
 			ActorType:          actorType,
-			PrimaryTargetType:  boi.PrimaryTargetType,
-			PrimaryTargetID:    boi.PrimaryTargetID,
-			PrimaryTargetOwner: &pacta.Owner{ID: boi.PrimaryTargetOwnerID},
+			PrimaryTargetType:  bc.PrimaryTargetType,
+			PrimaryTargetID:    bc.PrimaryTargetID,
+			PrimaryTargetOwner: &pacta.Owner{ID: bc.PrimaryTargetOwnerID},
 		})
 	}
 
@@ -69,16 +68,7 @@ func (s *Server) AccessBlobContent(ctx context.Context, request api.AccessBlobCo
 		return nil, oapierr.Internal("error getting blobs", zap.Error(err), zap.Strings("blob_ids", asStrs(blobIDs)))
 	}
 
-	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
-		for i, al := range auditLogs {
-			_, err := s.DB.CreateAuditLog(tx, al)
-			if err != nil {
-				return fmt.Errorf("creating audit log %d/%d: %w", i+1, len(auditLogs), err)
-			}
-		}
-		return nil
-	})
-	if err != nil {
+	if err = s.DB.CreateAuditLogs(s.DB.NoTxn(ctx), auditLogs); err != nil {
 		return nil, oapierr.Internal("error creating audit logs - no download URLs generated", zap.Error(err), zap.Strings("blob_ids", asStrs(blobIDs)))
 	}
 

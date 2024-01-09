@@ -293,13 +293,13 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 				}
 				portfolioIDs = append(portfolioIDs, portfolioID)
 			}
-			for i, iu := range incompleteUploads {
+			for id, iu := range incompleteUploads {
 				err := s.db.UpdateIncompleteUpload(
 					tx,
 					iu.ID,
 					db.SetIncompleteUploadCompletedAt(now))
 				if err != nil {
-					return fmt.Errorf("updating incomplete upload %d: %w", i, err)
+					return fmt.Errorf("updating incomplete upload %q: %w", id, err)
 				}
 			}
 			return nil

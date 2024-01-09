@@ -136,6 +136,25 @@ paths:
       responses:
         '204':
           description: pacta version created successfully
+  /admin/merge-users:
+    post:
+      summary: Merges two users together
+      description: Merges two users together
+      operationId: mergeUsers
+      requestBody:
+        description: a request describing the two users to merge 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeUsersReq'
+      responses:
+        '200':
+          description: the users were merged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MergeUsersResp'
   /initiative/{id}:
     get:
       summary: Returns an initiative by ID
@@ -189,6 +208,24 @@ paths:
       responses:
         '204':
           description: initiative deleted successfully
+  /initiative/{id}/all-data:
+    get:
+      summary: Returns all of the portfolios that are participating in the initiative 
+      operationId: allInitiativeData 
+      parameters:
+        - name: id
+          in: path
+          description: ID of the initiative to fetch data for
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: the initiative data 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiativeAllData'
   /initiatives:
     get:
       summary: Returns all initiatives
@@ -1280,6 +1317,37 @@ components:
         pactaVersion:
           type: string
           description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
+    InitiativeAllData:
+      type: object
+      required:
+        - items 
+      properties:
+        items:
+          type: array
+          description: the list of portfolios that are members of this initiative
+          items: 
+            $ref: '#/components/schemas/InitiativeAllDataPortfolioItem'
+    InitiativeAllDataPortfolioItem:
+      type: object
+      required:
+        - name 
+        - blobId
+        - downloadUrl
+        - expirationTime 
+      properties:
+        name:
+          type: string
+          description: the name of the portfolio
+        blobId:
+          type: string
+          description: the id of the blob of the portfolio, which can be used to start a new partial download if the first download times out 
+        downloadUrl:
+          type: string
+          description: the url to download the portfolio
+        expirationTime:
+          type: string
+          format: date-time
+          description: the time at which the download url will expire
     InitiativeInvitationCreate:
       type: object
       required:
@@ -1879,6 +1947,8 @@ components:
         - AuditLogActionDownload
         - AuditLogActionEnableSharing
         - AuditLogActionDisableSharing
+        - AuditLogActionReadMetadata
+        - AuditLogActionTransferOwnership
     AuditLogActorType:
       type: string
       enum:
@@ -1895,8 +1965,10 @@ components:
         - AuditLogTargetTypeIncompleteUpload
         - AuditLogTargetTypePortfolioGroup
         - AuditLogTargetTypeInitiative
+        - AuditLogTargetTypeInitiativeInvitation
         - AuditLogTargetTypePactaVersion
         - AuditLogTargetTypeAnalysis
+        - AuditLogTargetTypeAnalysisArtifact
     AuditLogQueryWhere:
       type: object
       properties:
@@ -2058,6 +2130,42 @@ components:
         secondaryTargetOwner:
           type: string
           description: the id of the owner of the secondary object this action was performed on
+    MergeUsersReq:
+      type: object
+      required:
+        - fromUserId
+        - toUserId
+      properties:
+        fromUserId:
+          type: string
+          description: the user id of the user to merge records from, and to be deleted after the merge 
+        toUserId:
+          type: string
+          description: the user id of the user to recieve merged records and to exist after the merge 
+    MergeUsersResp:
+      type: object
+      required:
+        - incompleteUploadCount
+        - analysisCount
+        - portfolioCount
+        - portfolioGroupCount
+        - auditLogsCreated
+      properties:
+        incompleteUploadCount:
+          type: integer
+          description: the number of incomplete uploads that were transferred to the new user 
+        analysisCount:
+          type: integer
+          description: the number of analyses that were transferred to the new user
+        portfolioCount:
+          type: integer
+          description: the number of portfolios that were transferred to the new user
+        portfolioGroupCount:
+          type: integer
+          description: the number of portfolio groups that were transferred to the new user
+        auditLogsCreated:
+          type: integer
+          description: the number of audit logs that were created to record the merge
     Error:
       type: object
       required:

@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestcreateUser(t *testing.T) {
+func TestCreateUser(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
@@ -42,7 +42,7 @@ func TestcreateUser(t *testing.T) {
 	// Read by Authn
 	actual, err = tdb.UserByAuthn(tx, u.AuthnMechanism, u.AuthnID)
 	if err != nil {
-		t.Fatalf("getting user by authn: %w", err)
+		t.Fatalf("getting user by authn: %v", err)
 	}
 	if diff := cmp.Diff(u, actual, userCmpOpts()); diff != "" {
 		t.Fatalf("unexpected diff (-want +got)\n%s", diff)
@@ -51,7 +51,7 @@ func TestcreateUser(t *testing.T) {
 	// Read by id list
 	aMap, err := tdb.Users(tx, []pacta.UserID{"somenonsense", userID})
 	if err != nil {
-		t.Fatalf("getting users: %w", err)
+		t.Fatalf("getting users: %v", err)
 	}
 	eMap := map[pacta.UserID]*pacta.User{userID: u}
 	if diff := cmp.Diff(eMap, aMap, userCmpOpts()); diff != "" {
@@ -93,7 +93,7 @@ func TestcreateUser(t *testing.T) {
 	u5.CanonicalEmail = "canonical email 5"
 	_, err = tdb.createUser(tx, u5)
 	if err != nil {
-		t.Fatal("expected success but got: %w", err)
+		t.Fatalf("expected success but got: %v", err)
 	}
 }
 
@@ -218,7 +218,7 @@ func TestDeleteUser(t *testing.T) {
 	userID, err0 := tdb.createUser(tx, u)
 	noErrDuringSetup(t, err0)
 
-	err := tdb.DeleteUser(tx, userID)
+	_, err := tdb.DeleteUser(tx, userID)
 	if err != nil {
 		t.Fatalf("deleting user: %v", err)
 	}
@@ -238,7 +238,7 @@ func TestDeleteUser(t *testing.T) {
 	// Read by id list
 	aMap, err := tdb.Users(tx, []pacta.UserID{"somenonsense", userID, "something else"})
 	if err != nil {
-		t.Fatalf("getting users: %w", err)
+		t.Fatalf("getting users: %v", err)
 	}
 	eMap := map[pacta.UserID]*pacta.User{}
 	if diff := cmp.Diff(eMap, aMap, userCmpOpts()); diff != "" {

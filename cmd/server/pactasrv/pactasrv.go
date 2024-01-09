@@ -45,7 +45,7 @@ type DB interface {
 
 	InitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID) (*pacta.InitiativeUserRelationship, error)
 	InitiativeUserRelationshipsByUser(tx db.Tx, uid pacta.UserID) ([]*pacta.InitiativeUserRelationship, error)
-	InitiativeUserRelationshipsByInitiatives(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error)
+	InitiativeUserRelationshipsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error)
 	PutInitiativeUserRelationship(tx db.Tx, iur *pacta.InitiativeUserRelationship) error
 	UpdateInitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID, mutations ...db.UpdateInitiativeUserRelationshipFn) error
 
@@ -114,10 +114,14 @@ type DB interface {
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
-	DeleteUser(tx db.Tx, id pacta.UserID) error
+	DeleteUser(tx db.Tx, id pacta.UserID) ([]pacta.BlobURI, error)
 
 	CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error)
+	CreateAuditLogs(tx db.Tx, as []*pacta.AuditLog) error
 	AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.PageInfo, error)
+
+	RecordUserMerge(tx db.Tx, fromUserID, toUserID, actorUserID pacta.UserID) error
+	RecordOwnerMerge(tx db.Tx, fromUserID, toUserID pacta.OwnerID, actorUserID pacta.UserID) error
 }
 
 type Blob interface {
@@ -161,6 +165,20 @@ func dereference[T any](ts []*T, e error) ([]T, error) {
 		result[i] = *t
 	}
 	return result, nil
+}
+
+func ptr[T any](t T) *T {
+	return &t
+}
+
+func values[K comparable, V any](m map[K]*V) []*V {
+	result := make([]*V, len(m))
+	i := 0
+	for _, v := range m {
+		result[i] = v
+		i++
+	}
+	return result
 }
 
 func getUserID(ctx context.Context) (pacta.UserID, error) {
@@ -211,23 +229,37 @@ type actorInfo struct {
 	IsSuperAdmin bool
 }
 
-func (s *Server) getActorInfoOrFail(ctx context.Context) (*actorInfo, error) {
+var anonymousActorInfo = actorInfo{}
+
+func (s *Server) getActorInfoOrErrIfAnon(ctx context.Context) (actorInfo, error) {
 	actorUserID, err := getUserID(ctx)
 	if err != nil {
-		return nil, err
+		return anonymousActorInfo, err
 	}
 	actorOwnerID, err := s.getUserOwnerID(ctx)
 	if err != nil {
-		return nil, err
+		return anonymousActorInfo, err
 	}
 	actorIsAdmin, actorIsSuperAdmin, err := s.isAdminOrSuperAdmin(ctx)
 	if err != nil {
-		return nil, err
+		return anonymousActorInfo, err
 	}
-	return &actorInfo{
+	return actorInfo{
 		UserID:       actorUserID,
 		OwnerID:      actorOwnerID,
 		IsAdmin:      actorIsAdmin,
 		IsSuperAdmin: actorIsSuperAdmin,
 	}, nil
+}
+
+func (s *Server) getActorInfoOrAnon(ctx context.Context) (actorInfo, error) {
+	_, err := getUserID(ctx)
+	if err != nil {
+		return anonymousActorInfo, nil
+	}
+	// We expect an early return in the conditional above if the user doesn't exist
+	// so the rest of this behaves just like getActorInfoOrErrIfAnon. Additionally, the
+	// geUserID check doesn't access the database, so we don't need to worry about
+	// duplicate queries.
+	return s.getActorInfoOrErrIfAnon(ctx)
 }

@@ -101,6 +101,29 @@ func (s *Server) populateArtifactsInAnalyses(
 	return nil
 }
 
+func (s *Server) populateBlobsInPortfolios(
+	ctx context.Context,
+	ps ...*pacta.Portfolio,
+) error {
+	getFn := func(p *pacta.Portfolio) ([]*pacta.Blob, error) {
+		result := []*pacta.Blob{}
+		if p.Blob != nil {
+			result = append(result, p.Blob)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error) {
+		return s.DB.Blobs(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(a *pacta.Blob) pacta.BlobID {
+		return a.ID
+	}
+	if err := populateAll(ps, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating blobs in portfolios failed", zap.Error(err))
+	}
+	return nil
+}
+
 func (s *Server) populateBlobsInAnalysisArtifacts(
 	ctx context.Context,
 	ts ...*pacta.AnalysisArtifact,

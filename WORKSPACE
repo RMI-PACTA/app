@@ -37,7 +37,10 @@ go_dependencies()
 
 oapi_dependencies()
 go_rules_dependencies()
-go_register_toolchains(version = "1.20.6")
+go_register_toolchains(
+  nogo = "@//:nogo",
+  version = "1.20.6"
+)
 gazelle_dependencies()
 
 http_archive(

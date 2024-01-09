@@ -42,7 +42,9 @@ CREATE TYPE public.audit_log_action AS ENUM (
     'DISABLE_ADMIN_DEBUG',
     'DOWNLOAD',
     'ENABLE_SHARING',
-    'DISABLE_SHARING'
+    'DISABLE_SHARING',
+    'TRANSFER_OWNERSHIP',
+    'READ_METADATA'
 );
 
 
@@ -75,7 +77,9 @@ CREATE TYPE public.audit_log_target_type AS ENUM (
     'INITIATIVE',
     'PACTA_VERSION',
     'ANALYSIS',
-    'INCOMPLETE_UPLOAD'
+    'INCOMPLETE_UPLOAD',
+    'INITIATIVE_INVITATION',
+    'ANALYSIS_ARTIFACT'
 );
 
 
@@ -318,6 +322,20 @@ CREATE TABLE public.owner (
 ALTER TABLE public.owner OWNER TO postgres;
 
 --
+-- Name: owner_merges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.owner_merges (
+    from_owner_id text NOT NULL,
+    to_owner_id text NOT NULL,
+    actor_user_id text NOT NULL,
+    merged_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.owner_merges OWNER TO postgres;
+
+--
 -- Name: pacta_user; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -477,6 +495,20 @@ ALTER TABLE public.schema_migrations_history_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.schema_migrations_history_id_seq OWNED BY public.schema_migrations_history.id;
 
+
+--
+-- Name: user_merges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.user_merges (
+    from_user_id text NOT NULL,
+    to_user_id text NOT NULL,
+    actor_user_id text NOT NULL,
+    merged_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.user_merges OWNER TO postgres;
 
 --
 -- Name: schema_migrations_history id; Type: DEFAULT; Schema: public; Owner: postgres
