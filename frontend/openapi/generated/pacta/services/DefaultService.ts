@@ -14,6 +14,7 @@ import type { CompletePortfolioUploadResp } from '../models/CompletePortfolioUpl
 import type { IncompleteUpload } from '../models/IncompleteUpload';
 import type { IncompleteUploadChanges } from '../models/IncompleteUploadChanges';
 import type { Initiative } from '../models/Initiative';
+import type { InitiativeAllData } from '../models/InitiativeAllData';
 import type { InitiativeChanges } from '../models/InitiativeChanges';
 import type { InitiativeCreate } from '../models/InitiativeCreate';
 import type { InitiativeInvitation } from '../models/InitiativeInvitation';
@@ -227,6 +228,24 @@ export class DefaultService {
         return this.httpRequest.request({
             method: 'DELETE',
             url: '/initiative/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Returns all of the portfolios that are participating in the initiative
+     * @param id ID of the initiative to fetch data for
+     * @returns InitiativeAllData the initiative data
+     * @throws ApiError
+     */
+    public allInitiativeData(
+        id: string,
+    ): CancelablePromise<InitiativeAllData> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiative/{id}/all-data',
             path: {
                 'id': id,
             },

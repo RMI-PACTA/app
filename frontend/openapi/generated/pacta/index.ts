@@ -39,6 +39,8 @@ export type { HoldingsDate } from './models/HoldingsDate';
 export type { IncompleteUpload } from './models/IncompleteUpload';
 export type { IncompleteUploadChanges } from './models/IncompleteUploadChanges';
 export type { Initiative } from './models/Initiative';
+export type { InitiativeAllData } from './models/InitiativeAllData';
+export type { InitiativeAllDataPortfolioItem } from './models/InitiativeAllDataPortfolioItem';
 export type { InitiativeChanges } from './models/InitiativeChanges';
 export type { InitiativeCreate } from './models/InitiativeCreate';
 export type { InitiativeInvitation } from './models/InitiativeInvitation';

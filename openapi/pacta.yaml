@@ -208,6 +208,24 @@ paths:
       responses:
         '204':
           description: initiative deleted successfully
+  /initiative/{id}/all-data:
+    get:
+      summary: Returns all of the portfolios that are participating in the initiative 
+      operationId: allInitiativeData 
+      parameters:
+        - name: id
+          in: path
+          description: ID of the initiative to fetch data for
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: the initiative data 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiativeAllData'
   /initiatives:
     get:
       summary: Returns all initiatives
@@ -1299,6 +1317,37 @@ components:
         pactaVersion:
           type: string
           description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
+    InitiativeAllData:
+      type: object
+      required:
+        - items 
+      properties:
+        items:
+          type: array
+          description: the list of portfolios that are members of this initiative
+          items: 
+            $ref: '#/components/schemas/InitiativeAllDataPortfolioItem'
+    InitiativeAllDataPortfolioItem:
+      type: object
+      required:
+        - name 
+        - blobId
+        - downloadUrl
+        - expirationTime 
+      properties:
+        name:
+          type: string
+          description: the name of the portfolio
+        blobId:
+          type: string
+          description: the id of the blob of the portfolio, which can be used to start a new partial download if the first download times out 
+        downloadUrl:
+          type: string
+          description: the url to download the portfolio
+        expirationTime:
+          type: string
+          format: date-time
+          description: the time at which the download url will expire
     InitiativeInvitationCreate:
       type: object
       required:
