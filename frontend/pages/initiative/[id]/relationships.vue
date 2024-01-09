@@ -34,7 +34,7 @@ const changeMembership = (userId: string, member: boolean | undefined, manager: 
     await pactaClient.updateInitiativeUserRelationship(
       id,
       userId,
-      { member },
+      { member, manager },
     )
     await refreshRelationships()
   }, 'initiative/relationships/changeMembership')
