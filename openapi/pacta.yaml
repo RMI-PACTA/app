@@ -136,6 +136,25 @@ paths:
       responses:
         '204':
           description: pacta version created successfully
+  /admin/merge-users:
+    post:
+      summary: Merges two users together
+      description: Merges two users together
+      operationId: mergeUsers
+      requestBody:
+        description: a request describing the two users to merge 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeUsersReq'
+      responses:
+        '200':
+          description: the users were merged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MergeUsersResp'
   /initiative/{id}:
     get:
       summary: Returns an initiative by ID
@@ -1928,6 +1947,7 @@ components:
         - AuditLogActionDownload
         - AuditLogActionEnableSharing
         - AuditLogActionDisableSharing
+        - AuditLogActionTransferOwnership
     AuditLogActorType:
       type: string
       enum:
@@ -2107,6 +2127,42 @@ components:
         secondaryTargetOwner:
           type: string
           description: the id of the owner of the secondary object this action was performed on
+    MergeUsersReq:
+      type: object
+      required:
+        - fromUserId
+        - toUserId
+      properties:
+        fromUserId:
+          type: string
+          description: the user id of the user to merge records from, and to be deleted after the merge 
+        toUserId:
+          type: string
+          description: the user id of the user to recieve merged records and to exist after the merge 
+    MergeUsersResp:
+      type: object
+      required:
+        - incompleteUploadCount
+        - analysisCount
+        - portfolioCount
+        - portfolioGroupCount
+        - auditLogsCreated
+      properties:
+        incompleteUploadCount:
+          type: integer
+          description: the number of incomplete uploads that were transferred to the new user 
+        analysisCount:
+          type: integer
+          description: the number of analyses that were transferred to the new user
+        portfolioCount:
+          type: integer
+          description: the number of portfolios that were transferred to the new user
+        portfolioGroupCount:
+          type: integer
+          description: the number of portfolio groups that were transferred to the new user
+        auditLogsCreated:
+          type: integer
+          description: the number of audit logs that were created to record the merge
     Error:
       type: object
       required:
