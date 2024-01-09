@@ -114,10 +114,14 @@ type DB interface {
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
-	DeleteUser(tx db.Tx, id pacta.UserID) error
+	DeleteUser(tx db.Tx, id pacta.UserID) ([]pacta.BlobURI, error)
 
 	CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error)
+	CreateAuditLogs(tx db.Tx, as []*pacta.AuditLog) error
 	AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.PageInfo, error)
+
+	RecordUserMerge(tx db.Tx, fromUserID, toUserID, actorUserID pacta.UserID) error
+	RecordOwnerMerge(tx db.Tx, fromUserID, toUserID pacta.OwnerID, actorUserID pacta.UserID) error
 }
 
 type Blob interface {
@@ -161,6 +165,16 @@ func dereference[T any](ts []*T, e error) ([]T, error) {
 		result[i] = *t
 	}
 	return result, nil
+}
+
+func values[K comparable, V any](m map[K]*V) []*V {
+	result := make([]*V, len(m))
+	i := 0
+	for _, v := range m {
+		result[i] = v
+		i++
+	}
+	return result
 }
 
 func getUserID(ctx context.Context) (pacta.UserID, error) {
@@ -211,7 +225,7 @@ type actorInfo struct {
 	IsSuperAdmin bool
 }
 
-func (s *Server) getActorInfoOrFail(ctx context.Context) (*actorInfo, error) {
+func (s *Server) getactorInfoOrErrIfAnon(ctx context.Context) (*actorInfo, error) {
 	actorUserID, err := getUserID(ctx)
 	if err != nil {
 		return nil, err

@@ -72,10 +72,6 @@ func (d *DB) GetOrCreateUserByAuthn(tx db.Tx, authnMechanism pacta.AuthnMechanis
 		if err != nil {
 			return fmt.Errorf("creating user: %w", err)
 		}
-		_, err = d.createOwner(tx, &pacta.Owner{User: &pacta.User{ID: uID}})
-		if err != nil {
-			return fmt.Errorf("creating owner: %w", err)
-		}
 		u, err = d.User(tx, uID)
 		if err != nil {
 			return fmt.Errorf("reading back created user: %w", err)
@@ -119,14 +115,24 @@ func (d *DB) createUser(tx db.Tx, u *pacta.User) (pacta.UserID, error) {
 		pl.String = string(u.PreferredLanguage)
 	}
 	id := pacta.UserID(d.randomID(userIDNamespace))
-	err := d.exec(tx, `
-		INSERT INTO pacta_user 
-			(id, authn_mechanism, authn_id, entered_email, canonical_email, admin, super_admin, name, preferred_language)
-			VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9);
-		`, id, u.AuthnMechanism, u.AuthnID, u.EnteredEmail, u.CanonicalEmail, false, false, u.Name, pl)
+	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
+		err := d.exec(tx, `
+			INSERT INTO pacta_user 
+				(id, authn_mechanism, authn_id, entered_email, canonical_email, admin, super_admin, name, preferred_language)
+				VALUES
+				($1, $2, $3, $4, $5, $6, $7, $8, $9);
+			`, id, u.AuthnMechanism, u.AuthnID, u.EnteredEmail, u.CanonicalEmail, false, false, u.Name, pl)
+		if err != nil {
+			return fmt.Errorf("creating pacta_user row for %q: %w", id, err)
+		}
+		_, err = d.createOwner(tx, &pacta.Owner{User: &pacta.User{ID: id}})
+		if err != nil {
+			return fmt.Errorf("creating owner: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return "", fmt.Errorf("creating pacta_user row for %q: %w", id, err)
+		return "", fmt.Errorf("creating user: %w", err)
 	}
 	return id, nil
 }
@@ -155,19 +161,39 @@ func (d *DB) UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn)
 	return nil
 }
 
-func (d *DB) DeleteUser(tx db.Tx, id pacta.UserID) error {
+func (d *DB) DeleteUser(tx db.Tx, id pacta.UserID) ([]pacta.BlobURI, error) {
+	buris := []pacta.BlobURI{}
 	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
-		// TODO(grady) add entity deletions here
-		err := d.exec(tx, `DELETE FROM pacta_user WHERE id = $1;`, id)
+		userOwnerID, err := d.GetOwnerForUser(tx, id)
 		if err != nil {
-			return fmt.Errorf("deleting user: %w", err)
+			if !db.IsNotFound(err) {
+				return fmt.Errorf("getting owner for user: %w", err)
+			}
+		} else {
+			newBuris, err := d.DeleteOwner(tx, userOwnerID)
+			if err != nil {
+				return fmt.Errorf("deleting owner: %w", err)
+			}
+			buris = append(buris, newBuris...)
+		}
+		err = d.exec(tx, `DELETE FROM initiative_invitation WHERE used_by_user_id = $1;`, id)
+		if err != nil {
+			return fmt.Errorf("deleting initiative_invitation rows: %w", err)
+		}
+		err = d.exec(tx, `UPDATE portfolio_initiative_membership SET added_by_user_id = NULL WHERE added_by_user_id = $1;`, id)
+		if err != nil {
+			return fmt.Errorf("clearing portfolio_initiative_membership.added_by_user_id: %w", err)
+		}
+		err = d.exec(tx, `DELETE FROM pacta_user WHERE id = $1;`, id)
+		if err != nil {
+			return fmt.Errorf("deleting actual user: %w", err)
 		}
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("performing initiative deletion: %w", err)
+		return nil, fmt.Errorf("performing user deletion: %w", err)
 	}
-	return nil
+	return buris, nil
 }
 
 func (d *DB) putUser(tx db.Tx, u *pacta.User) error {
