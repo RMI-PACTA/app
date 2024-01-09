@@ -127,9 +127,9 @@ func (s *Server) initiativeUserRelationshipDoAuthzAndAuditLog(ctx context.Contex
 		primaryTargetID:        string(iID),
 		primaryTargetType:      pacta.AuditLogTargetType_Initiative,
 		primaryTargetOwnerID:   systemOwnedEntityOwner,
-		secondaryTargetID:      ptr(string(targetUserID)),
-		secondaryTargetType:    ptr(pacta.AuditLogTargetType_User),
-		secondaryTargetOwnerID: ptr(targetOwnerID),
+		secondaryTargetID:      string(targetUserID),
+		secondaryTargetType:    pacta.AuditLogTargetType_User,
+		secondaryTargetOwnerID: targetOwnerID,
 		actorInfo:              actorInfo,
 		action:                 action,
 	}

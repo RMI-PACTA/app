@@ -13,9 +13,9 @@ type authzStatus struct {
 	primaryTargetType    pacta.AuditLogTargetType
 	primaryTargetOwnerID pacta.OwnerID
 
-	secondaryTargetID      *string
-	secondaryTargetType    *pacta.AuditLogTargetType
-	secondaryTargetOwnerID *pacta.OwnerID
+	secondaryTargetID      string
+	secondaryTargetType    pacta.AuditLogTargetType
+	secondaryTargetOwnerID pacta.OwnerID
 
 	actorInfo actorInfo
 
@@ -61,10 +61,10 @@ func (as *authzStatus) ToAuditLog() (*pacta.AuditLog, error) {
 		PrimaryTargetID:    as.primaryTargetID,
 		PrimaryTargetOwner: &pacta.Owner{ID: as.primaryTargetOwnerID},
 	}
-	if as.secondaryTargetType != nil {
-		result.SecondaryTargetType = *as.secondaryTargetType
-		result.SecondaryTargetID = *as.secondaryTargetID
-		result.SecondaryTargetOwner = &pacta.Owner{ID: *as.secondaryTargetOwnerID}
+	if as.secondaryTargetType != "" {
+		result.SecondaryTargetType = as.secondaryTargetType
+		result.SecondaryTargetID = as.secondaryTargetID
+		result.SecondaryTargetOwner = &pacta.Owner{ID: as.secondaryTargetOwnerID}
 	}
 	return result, nil
 }
@@ -127,13 +127,7 @@ func allowIfAdminOrOwner(actorInfo actorInfo, targetOwnerID pacta.OwnerID) (bool
 	if actorInfo.OwnerID == targetOwnerID {
 		return true, ptr(pacta.AuditLogActorType_Owner)
 	}
-	if actorInfo.IsAdmin {
-		return true, ptr(pacta.AuditLogActorType_Admin)
-	}
-	if actorInfo.IsSuperAdmin {
-		return true, ptr(pacta.AuditLogActorType_SuperAdmin)
-	}
-	return false, nil
+	return allowIfAdmin(actorInfo)
 }
 
 const systemOwnedEntityOwner = "SYSTEM-OWNED"

@@ -338,9 +338,9 @@ func (s *Server) analysisArtifactDoAuthzAndAuditLog(ctx context.Context, aaID pa
 		primaryTargetID:        string(aID),
 		primaryTargetType:      pacta.AuditLogTargetType_Analysis,
 		primaryTargetOwnerID:   analysis.Owner.ID,
-		secondaryTargetID:      ptr(string(aaID)),
-		secondaryTargetType:    ptr(pacta.AuditLogTargetType_AnalysisArtifact),
-		secondaryTargetOwnerID: ptr(analysis.Owner.ID),
+		secondaryTargetID:      string(aaID),
+		secondaryTargetType:    pacta.AuditLogTargetType_AnalysisArtifact,
+		secondaryTargetOwnerID: analysis.Owner.ID,
 		actorInfo:              actorInfo,
 		action:                 action,
 	}

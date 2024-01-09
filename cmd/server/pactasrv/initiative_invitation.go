@@ -165,8 +165,8 @@ func (s *Server) initiativeInvitationDoAuthzAndAuditLog(ctx context.Context, iID
 	}
 	actorIsInitiativeManager := false
 	for _, iur := range iurs {
-		if iur.User.ID == actorInfo.UserID && iur.Manager {
-			actorIsInitiativeManager = true
+		if iur.User.ID == actorInfo.UserID {
+			actorIsInitiativeManager = iur.Manager
 			break
 		}
 	}
@@ -178,9 +178,9 @@ func (s *Server) initiativeInvitationDoAuthzAndAuditLog(ctx context.Context, iID
 		action:               action,
 	}
 	if iiID != "" {
-		as.secondaryTargetID = ptr(string(iiID))
-		as.secondaryTargetType = ptr(pacta.AuditLogTargetType_InitiativeInvitation)
-		as.secondaryTargetOwnerID = ptr(pacta.OwnerID(systemOwnedEntityOwner))
+		as.secondaryTargetID = string(iiID)
+		as.secondaryTargetType = pacta.AuditLogTargetType_InitiativeInvitation
+		as.secondaryTargetOwnerID = pacta.OwnerID(systemOwnedEntityOwner)
 	}
 	switch action {
 	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_ReadMetadata:

@@ -201,9 +201,9 @@ func (s *Server) portfolioGroupMembershipAuthz(ctx context.Context, pgID pacta.P
 		primaryTargetID:        string(pgID),
 		primaryTargetType:      pacta.AuditLogTargetType_PortfolioGroup,
 		primaryTargetOwnerID:   pg.Owner.ID,
-		secondaryTargetID:      ptr(string(pID)),
-		secondaryTargetType:    ptr(pacta.AuditLogTargetType_Portfolio),
-		secondaryTargetOwnerID: ptr(p.Owner.ID),
+		secondaryTargetID:      string(pID),
+		secondaryTargetType:    pacta.AuditLogTargetType_Portfolio,
+		secondaryTargetOwnerID: p.Owner.ID,
 		actorInfo:              actorInfo,
 		action:                 action,
 	}
