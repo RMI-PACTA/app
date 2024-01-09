@@ -2,7 +2,6 @@ package pactasrv
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/RMI/pacta/cmd/server/pactasrv/conv"
 	"github.com/RMI/pacta/db"
@@ -123,7 +122,7 @@ func (s *Server) ListInitiatives(ctx context.Context, request api.ListInitiative
 // Returns all of the portfolios that are participating in the initiative
 // (GET /initiative/{id}/all-data)
 func (s *Server) AllInitiativeData(ctx context.Context, request api.AllInitiativeDataRequestObject) (api.AllInitiativeDataResponseObject, error) {
-	actorInfo, err := s.getActorInfoOrFail(ctx)
+	actorInfo, err := s.getactorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -150,27 +149,22 @@ func (s *Server) AllInitiativeData(ctx context.Context, request api.AllInitiativ
 	if err := s.populateBlobsInPortfolios(ctx, values(portfolios)...); err != nil {
 		return nil, err
 	}
-	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
-		for _, p := range portfolios {
-			_, err := s.DB.CreateAuditLog(tx, &pacta.AuditLog{
-				Action:               pacta.AuditLogAction_Download,
-				ActorType:            pacta.AuditLogActorType_Admin, // TODO(#12) When merging with #121, use the actor type from authorization
-				ActorID:              string(actorInfo.UserID),
-				ActorOwner:           &pacta.Owner{ID: actorInfo.OwnerID},
-				PrimaryTargetType:    pacta.AuditLogTargetType_Portfolio,
-				PrimaryTargetID:      string(p.ID),
-				PrimaryTargetOwner:   p.Owner,
-				SecondaryTargetType:  pacta.AuditLogTargetType_Initiative,
-				SecondaryTargetID:    string(i.ID),
-				SecondaryTargetOwner: &pacta.Owner{ID: "SYSTEM"}, // TODO(#12) When merging with #121, use the const type.
-			})
-			if err != nil {
-				return fmt.Errorf("creating audit log: %w", err)
-			}
-		}
-		return nil
-	})
-	if err != nil {
+	auditLogs := []*pacta.AuditLog{}
+	for _, p := range portfolios {
+		auditLogs = append(auditLogs, &pacta.AuditLog{
+			Action:               pacta.AuditLogAction_Download,
+			ActorType:            pacta.AuditLogActorType_Admin, // TODO(#12) When merging with #121, use the actor type from authorization
+			ActorID:              string(actorInfo.UserID),
+			ActorOwner:           &pacta.Owner{ID: actorInfo.OwnerID},
+			PrimaryTargetType:    pacta.AuditLogTargetType_Portfolio,
+			PrimaryTargetID:      string(p.ID),
+			PrimaryTargetOwner:   p.Owner,
+			SecondaryTargetType:  pacta.AuditLogTargetType_Initiative,
+			SecondaryTargetID:    string(i.ID),
+			SecondaryTargetOwner: &pacta.Owner{ID: "SYSTEM"}, // TODO(#12) When merging with #121, use the const type.
+		})
+	}
+	if err := s.DB.CreateAuditLogs(s.DB.NoTxn(ctx), auditLogs); err != nil {
 		return nil, oapierr.Internal("failed to create audit logs nescessary to return download urls", zap.Error(err))
 	}
 
