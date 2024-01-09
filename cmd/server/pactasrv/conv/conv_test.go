@@ -26,14 +26,14 @@ func testEnumConvertability[A comparable, B any](t *testing.T, as []A, aToB func
 	for _, a := range as {
 		b, err := aToB(a)
 		if err != nil {
-			t.Fatalf("converting from %T %q: %w", a, a, err)
+			t.Fatalf("converting from %T %v: %v", a, a, err)
 		}
 		a2, err := bToA(b)
 		if err != nil {
-			t.Fatalf("converting from %T %q: %w", b, b, err)
+			t.Fatalf("converting from %T %v: %v", b, b, err)
 		}
 		if a != a2 {
-			t.Errorf("conversion from %T %q to %T %q and back failed, returned %q", a, a, b, b, a2)
+			t.Errorf("conversion from %T %v to %T %v and back failed, returned %v", a, a, b, b, a2)
 		}
 	}
 }

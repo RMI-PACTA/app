@@ -23,7 +23,7 @@ func TestParseFileType(t *testing.T) {
 	for _, c := range otherCases {
 		ft, err := ParseFileType(filepath.Ext(c))
 		if err != nil {
-			t.Errorf("expected successful parse, got %w", err)
+			t.Errorf("expected successful parse, got %v", err)
 		}
 		if ft != FileType_JSON {
 			t.Errorf("expected JSON, got %v", ft)

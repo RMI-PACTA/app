@@ -136,7 +136,7 @@ func TestAnalysisArtifacts(t *testing.T) {
 
 	_, err = tdb.BlobContexts(tx, []pacta.BlobID{b1.ID, b2.ID, b3.ID})
 	if err == nil {
-		t.Fatalf("reading blob owners should have failed but was fine", err)
+		t.Fatal("reading blob owners should have failed but was fine")
 	}
 }
 

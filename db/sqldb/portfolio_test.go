@@ -46,7 +46,7 @@ func TestPortfolioCRUD(t *testing.T) {
 
 	ps, err := tdb.Portfolios(tx, []pacta.PortfolioID{p.ID, p.ID})
 	if err != nil {
-		t.Fatalf("reading portfolios: %w", err)
+		t.Fatalf("reading portfolios: %v", err)
 	}
 	if diff := cmp.Diff(map[pacta.PortfolioID]*pacta.Portfolio{p.ID: p}, ps, portfolioCmpOpts()); diff != "" {
 		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
@@ -82,14 +82,14 @@ func TestPortfolioCRUD(t *testing.T) {
 	}
 	pls, err := tdb.PortfoliosByOwner(tx, o2.ID)
 	if err != nil {
-		t.Fatalf("reading portfolios: %w", err)
+		t.Fatalf("reading portfolios: %v", err)
 	}
 	if diff := cmp.Diff([]*pacta.Portfolio{p}, pls, portfolioCmpOpts()); diff != "" {
 		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
 	}
 	pls, err = tdb.PortfoliosByOwner(tx, o1.ID)
 	if err != nil {
-		t.Fatalf("reading portfolios: %w", err)
+		t.Fatalf("reading portfolios: %v", err)
 	}
 	if diff := cmp.Diff([]*pacta.Portfolio{}, pls, portfolioCmpOpts()); diff != "" {
 		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
@@ -120,7 +120,7 @@ func TestPortfolioCRUD(t *testing.T) {
 
 	_, err = tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
 	if err == nil {
-		t.Fatalf("reading blob owners should have failed but was fine", err)
+		t.Fatal("reading blob owners should have failed but was fine")
 	}
 }
 

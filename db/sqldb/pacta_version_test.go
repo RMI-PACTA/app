@@ -196,7 +196,7 @@ func TestPACTAVersionDeletion(t *testing.T) {
 	// Read by id list
 	m, err := tdb.PACTAVersions(tx)
 	if err != nil {
-		t.Fatalf("getting pacta_versions: %w", err)
+		t.Fatalf("getting pacta_versions: %v", err)
 	}
 	if diff := cmp.Diff(m, []*pacta.PACTAVersion{}, pactaVersionCmpOpts()); diff != "" {
 		t.Fatalf("unexpected diff (-want +got)\n%s", diff)

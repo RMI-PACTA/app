@@ -28,7 +28,7 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 	pgID1, err := tdb.CreatePortfolioGroup(tx, pg1)
 	if err != nil {
-		t.Fatalf("creating portfolio group: %w", err)
+		t.Fatalf("creating portfolio group: %v", err)
 	}
 	pg1.CreatedAt = time.Now()
 	pg1.ID = pgID1
@@ -39,7 +39,7 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 	pgID2, err := tdb.CreatePortfolioGroup(tx, pg2)
 	if err != nil {
-		t.Fatalf("creating portfolio group: %w", err)
+		t.Fatalf("creating portfolio group: %v", err)
 	}
 	pg2.CreatedAt = time.Now()
 	pg2.ID = pgID2
@@ -249,7 +249,7 @@ func portfolioGroupForTesting(t *testing.T, tdb *DB, owner *pacta.Owner) *pacta.
 	}
 	pgID, err := tdb.CreatePortfolioGroup(tx, pg)
 	if err != nil {
-		t.Fatalf("creating portfolio group: %w", err)
+		t.Fatalf("creating portfolio group: %v", err)
 	}
 	pg.ID = pgID
 	pg.CreatedAt = time.Now()
