@@ -1947,6 +1947,7 @@ components:
         - AuditLogActionDownload
         - AuditLogActionEnableSharing
         - AuditLogActionDisableSharing
+        - AuditLogActionReadMetadata
         - AuditLogActionTransferOwnership
     AuditLogActorType:
       type: string
@@ -1964,8 +1965,10 @@ components:
         - AuditLogTargetTypeIncompleteUpload
         - AuditLogTargetTypePortfolioGroup
         - AuditLogTargetTypeInitiative
+        - AuditLogTargetTypeInitiativeInvitation
         - AuditLogTargetTypePactaVersion
         - AuditLogTargetTypeAnalysis
+        - AuditLogTargetTypeAnalysisArtifact
     AuditLogQueryWhere:
       type: object
       properties:

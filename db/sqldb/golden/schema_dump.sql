@@ -43,7 +43,8 @@ CREATE TYPE public.audit_log_action AS ENUM (
     'DOWNLOAD',
     'ENABLE_SHARING',
     'DISABLE_SHARING',
-    'TRANSFER_OWNERSHIP'
+    'TRANSFER_OWNERSHIP',
+    'READ_METADATA'
 );
 
 
@@ -76,7 +77,9 @@ CREATE TYPE public.audit_log_target_type AS ENUM (
     'INITIATIVE',
     'PACTA_VERSION',
     'ANALYSIS',
-    'INCOMPLETE_UPLOAD'
+    'INCOMPLETE_UPLOAD',
+    'INITIATIVE_INVITATION',
+    'ANALYSIS_ARTIFACT'
 );
 
 

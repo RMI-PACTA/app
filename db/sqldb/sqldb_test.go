@@ -82,15 +82,16 @@ func TestSchemaHistory(t *testing.T) {
 	})
 
 	want := []versionHistory{
-		{ID: 1, Version: 1}, // 0001_create_schema_migrations_history
-		{ID: 2, Version: 2}, // 0002_create_user_table
-		{ID: 3, Version: 3}, // 0003_domain_types
-		{ID: 4, Version: 4}, // 0004_audit_log_tweaks
-		{ID: 5, Version: 5}, // 0005_json_blob_type
-		{ID: 6, Version: 6}, // 0006_initiative_primary_key
-		{ID: 7, Version: 7}, // 0007_audit_log_actor_type
-		{ID: 8, Version: 8}, // 0008_indexes_on_blob_ids
-		{ID: 9, Version: 9}, // 0009_support_user_merge
+		{ID: 1, Version: 1},   // 0001_create_schema_migrations_history
+		{ID: 2, Version: 2},   // 0002_create_user_table
+		{ID: 3, Version: 3},   // 0003_domain_types
+		{ID: 4, Version: 4},   // 0004_audit_log_tweaks
+		{ID: 5, Version: 5},   // 0005_json_blob_type
+		{ID: 6, Version: 6},   // 0006_initiative_primary_key
+		{ID: 7, Version: 7},   // 0007_audit_log_actor_type
+		{ID: 8, Version: 8},   // 0008_indexes_on_blob_ids
+		{ID: 9, Version: 9},   // 0009_support_user_merge
+		{ID: 10, Version: 10}, // 0010_audit_log_enum_values
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {

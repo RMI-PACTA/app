@@ -15,7 +15,7 @@ import (
 // (POST /admin/merge-users)
 func (s *Server) MergeUsers(ctx context.Context, request api.MergeUsersRequestObject) (api.MergeUsersResponseObject, error) {
 	req := request.Body
-	actorUserInfo, err := s.getactorInfoOrErrIfAnon(ctx)
+	actorUserInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}

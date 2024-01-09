@@ -452,6 +452,8 @@ func auditLogActionToOAPI(i pacta.AuditLogAction) (api.AuditLogAction, error) {
 		return api.AuditLogActionEnableSharing, nil
 	case pacta.AuditLogAction_DisableSharing:
 		return api.AuditLogActionDisableSharing, nil
+	case pacta.AuditLogAction_ReadMetadata:
+		return api.AuditLogActionReadMetadata, nil
 	case pacta.AuditLogAction_TransferOwnership:
 		return api.AuditLogActionTransferOwnership, nil
 	}
@@ -470,10 +472,14 @@ func auditLogTargetTypeToOAPI(i pacta.AuditLogTargetType) (api.AuditLogTargetTyp
 		return api.AuditLogTargetTypePortfolioGroup, nil
 	case pacta.AuditLogTargetType_Initiative:
 		return api.AuditLogTargetTypeInitiative, nil
+	case pacta.AuditLogTargetType_InitiativeInvitation:
+		return api.AuditLogTargetTypeInitiativeInvitation, nil
 	case pacta.AuditLogTargetType_PACTAVersion:
 		return api.AuditLogTargetTypePactaVersion, nil
 	case pacta.AuditLogTargetType_Analysis:
 		return api.AuditLogTargetTypeAnalysis, nil
+	case pacta.AuditLogTargetType_AnalysisArtifact:
+		return api.AuditLogTargetTypeAnalysisArtifact, nil
 	}
 	return "", oapierr.Internal(fmt.Sprintf("auditLogTargetTypeToOAPI: unknown target type: %q", i))
 }

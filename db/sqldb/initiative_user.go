@@ -47,7 +47,7 @@ func (d *DB) InitiativeUserRelationshipsByUser(tx db.Tx, uid pacta.UserID) ([]*p
 	return iurs, nil
 }
 
-func (d *DB) InitiativeUserRelationshipsByInitiatives(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error) {
+func (d *DB) InitiativeUserRelationshipsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error) {
 	rows, err := d.query(tx, `
 		SELECT `+initiativeUserRelationshipSelectColumns+`
 		FROM initiative_user_relationship 

@@ -34,8 +34,7 @@ func (s *Server) ListAnalyses(ctx context.Context, request api.ListAnalysesReque
 // (DELETE /analysis/{id})
 func (s *Server) DeleteAnalysis(ctx context.Context, request api.DeleteAnalysisRequestObject) (api.DeleteAnalysisResponseObject, error) {
 	id := pacta.AnalysisID(request.Id)
-	_, err := s.checkAnalysisAuthorization(ctx, id)
-	if err != nil {
+	if err := s.analysisDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Delete); err != nil {
 		return nil, err
 	}
 	blobURIs, err := s.DB.DeleteAnalysis(s.DB.NoTxn(ctx), id)
@@ -51,9 +50,13 @@ func (s *Server) DeleteAnalysis(ctx context.Context, request api.DeleteAnalysisR
 // Returns an analysis by ID
 // (GET /analysis/{id})
 func (s *Server) FindAnalysisById(ctx context.Context, request api.FindAnalysisByIdRequestObject) (api.FindAnalysisByIdResponseObject, error) {
-	a, err := s.checkAnalysisAuthorization(ctx, pacta.AnalysisID(request.Id))
-	if err != nil {
+	id := pacta.AnalysisID(request.Id)
+	if err := s.analysisDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_ReadMetadata); err != nil {
 		return nil, err
+	}
+	a, err := s.DB.Analysis(s.DB.NoTxn(ctx), id)
+	if err != nil {
+		return nil, oapierr.Internal("failed to query analysis", zap.Error(err))
 	}
 	if err := s.populateArtifactsInAnalyses(ctx, a); err != nil {
 		return nil, err
@@ -72,8 +75,7 @@ func (s *Server) FindAnalysisById(ctx context.Context, request api.FindAnalysisB
 // (PATCH /analysis/{id})
 func (s *Server) UpdateAnalysis(ctx context.Context, request api.UpdateAnalysisRequestObject) (api.UpdateAnalysisResponseObject, error) {
 	id := pacta.AnalysisID(request.Id)
-	_, err := s.checkAnalysisAuthorization(ctx, id)
-	if err != nil {
+	if err := s.analysisDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
 		return nil, err
 	}
 	mutations := []db.UpdateAnalysisFn{}
@@ -83,47 +85,17 @@ func (s *Server) UpdateAnalysis(ctx context.Context, request api.UpdateAnalysisR
 	if request.Body.Description != nil {
 		mutations = append(mutations, db.SetAnalysisDescription(*request.Body.Description))
 	}
-	err = s.DB.UpdateAnalysis(s.DB.NoTxn(ctx), id, mutations...)
-	if err != nil {
+	if err := s.DB.UpdateAnalysis(s.DB.NoTxn(ctx), id, mutations...); err != nil {
 		return nil, oapierr.Internal("failed to update analysis", zap.Error(err))
 	}
 	return api.UpdateAnalysis204Response{}, nil
-}
-
-func (s *Server) checkAnalysisAuthorization(ctx context.Context, id pacta.AnalysisID) (*pacta.Analysis, error) {
-	actorOwnerID, err := s.getUserOwnerID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	// Extracted to a common variable so that we return the same response for not found and unauthorized.
-	notFoundErr := func(fields ...zapcore.Field) error {
-		fs := append(fields, zap.String("analysis_id", string(id)))
-		return oapierr.NotFound("analysis not found", fs...)
-	}
-	a, err := s.DB.Analysis(s.DB.NoTxn(ctx), id)
-	if err != nil {
-		if db.IsNotFound(err) {
-			return nil, notFoundErr(zap.Error(err))
-		}
-		return nil, oapierr.Internal(
-			"failed to look up analysis",
-			zap.Error(err))
-	}
-	if a.Owner.ID != actorOwnerID {
-		return nil, notFoundErr(
-			zap.Error(fmt.Errorf("analysis does not belong to user")),
-			zap.String("owner_id", string(a.Owner.ID)),
-			zap.String("actor_id", string(actorOwnerID)))
-	}
-	return a, nil
 }
 
 // Deletes an analysis artifact by ID
 // (DELETE /analysis-artifact/{id})
 func (s *Server) DeleteAnalysisArtifact(ctx context.Context, request api.DeleteAnalysisArtifactRequestObject) (api.DeleteAnalysisArtifactResponseObject, error) {
 	id := pacta.AnalysisArtifactID(request.Id)
-	err := s.checkAnalysisArtifactAuthorization(ctx, id)
-	if err != nil {
+	if err := s.analysisArtifactDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Delete); err != nil {
 		return nil, err
 	}
 	blobURI, err := s.DB.DeleteAnalysisArtifact(s.DB.NoTxn(ctx), id)
@@ -140,8 +112,7 @@ func (s *Server) DeleteAnalysisArtifact(ctx context.Context, request api.DeleteA
 // (PATCH /analysis-artifact/{id})
 func (s *Server) UpdateAnalysisArtifact(ctx context.Context, request api.UpdateAnalysisArtifactRequestObject) (api.UpdateAnalysisArtifactResponseObject, error) {
 	id := pacta.AnalysisArtifactID(request.Id)
-	err := s.checkAnalysisArtifactAuthorization(ctx, id)
-	if err != nil {
+	if err := s.analysisArtifactDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
 		return nil, err
 	}
 	mutations := []db.UpdateAnalysisArtifactFn{}
@@ -151,53 +122,17 @@ func (s *Server) UpdateAnalysisArtifact(ctx context.Context, request api.UpdateA
 	if request.Body.SharedToPublic != nil {
 		mutations = append(mutations, db.SetAnalysisArtifactSharedToPublic(*request.Body.SharedToPublic))
 	}
-	err = s.DB.UpdateAnalysisArtifact(s.DB.NoTxn(ctx), id, mutations...)
+	err := s.DB.UpdateAnalysisArtifact(s.DB.NoTxn(ctx), id, mutations...)
 	if err != nil {
 		return nil, oapierr.Internal("failed to update analysis artifact", zap.Error(err))
 	}
 	return api.UpdateAnalysisArtifact204Response{}, nil
 }
 
-func (s *Server) checkAnalysisArtifactAuthorization(ctx context.Context, id pacta.AnalysisArtifactID) error {
-	actorOwnerID, err := s.getUserOwnerID(ctx)
-	if err != nil {
-		return err
-	}
-	// Extracted to a common variable so that we return the same response for not found and unauthorized.
-	notFoundErr := func(fields ...zapcore.Field) error {
-		fs := append(fields, zap.String("analysis_artifact_id", string(id)))
-		return oapierr.NotFound("analysis artifact not found", fs...)
-	}
-	aa, err := s.DB.AnalysisArtifact(s.DB.NoTxn(ctx), id)
-	if err != nil {
-		if db.IsNotFound(err) {
-			return notFoundErr(zap.Error(err))
-		}
-		return oapierr.Internal("failed to look up analysis artifact", zap.String("analysis_artifact_id", string(id)), zap.Error(err))
-	}
-	a, err := s.DB.Analysis(s.DB.NoTxn(ctx), aa.AnalysisID)
-	if err != nil {
-		if db.IsNotFound(err) {
-			return notFoundErr(zap.Error(err))
-		}
-		return oapierr.Internal("failed to look up analysis for analysis artifact",
-			zap.String("analysis_id", string(aa.AnalysisID)),
-			zap.Error(err))
-	}
-	if a.Owner.ID != actorOwnerID {
-		return notFoundErr(
-			zap.Error(fmt.Errorf("analysis artifact does not belong to user")),
-			zap.String("owner_id", string(a.Owner.ID)),
-			zap.String("actor_id", string(actorOwnerID)),
-			zap.String("analysis_id", string(aa.AnalysisID)))
-	}
-	return nil
-}
-
 // Requests an anslysis be run
 // (POST /run-analysis)
 func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequestObject) (api.RunAnalysisResponseObject, error) {
-	ownerID, err := s.getUserOwnerID(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -263,11 +198,11 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 				}
 				return fmt.Errorf("looking up portfolio: %w", err)
 			}
-			if p.Owner.ID != ownerID {
+			if p.Owner.ID != actorInfo.OwnerID {
 				endUserErr = notFoundErr("portfolio", string(pID),
 					zap.Error(fmt.Errorf("portfolio does not belong to user")),
 					zap.String("portfolio_owner_id", string(p.Owner.ID)),
-					zap.String("actor_owner_id", string(ownerID)))
+					zap.String("actor_owner_id", string(actorInfo.OwnerID)))
 				return nil
 			}
 			sID, err := s.DB.CreateSnapshotOfPortfolio(tx, pID)
@@ -284,11 +219,11 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 				}
 				return fmt.Errorf("looking up portfolio_group: %w", err)
 			}
-			if pg.Owner.ID != ownerID {
+			if pg.Owner.ID != actorInfo.OwnerID {
 				endUserErr = notFoundErr("portfolio_group", string(pgID),
 					zap.Error(fmt.Errorf("portfolio group does not belong to user")),
 					zap.String("pg_owner_id", string(pg.Owner.ID)),
-					zap.String("actor_owner_id", string(ownerID)))
+					zap.String("actor_owner_id", string(actorInfo.OwnerID)))
 				return nil
 			}
 			sID, err := s.DB.CreateSnapshotOfPortfolioGroup(tx, pgID)
@@ -297,15 +232,11 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 			}
 			snapshotID = sID
 		} else if iID != "" {
-			_, err := s.DB.Initiative(tx, iID)
-			if err != nil {
-				if db.IsNotFound(err) {
-					endUserErr = notFoundErr("initiative", string(iID), zap.Error(err))
-					return nil
-				}
-				return fmt.Errorf("looking up initiative: %w", err)
+			// This crudely tests whether or not a user is a manager of the initiative.
+			if err := s.initiativeDoAuthzAndAuditLog(ctx, iID, pacta.AuditLogAction_Update); err != nil {
+				endUserErr = err
+				return nil
 			}
-			// TODO(#12) Implement Authorization Here
 			sID, err := s.DB.CreateSnapshotOfInitiative(tx, iID)
 			if err != nil {
 				return fmt.Errorf("creating snapshot of initiative: %w", err)
@@ -320,12 +251,23 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 			AnalysisType:      *analysisType,
 			PortfolioSnapshot: &pacta.PortfolioSnapshot{ID: snapshotID},
 			PACTAVersion:      &pacta.PACTAVersion{ID: pvID},
-			Owner:             &pacta.Owner{ID: ownerID},
+			Owner:             &pacta.Owner{ID: actorInfo.OwnerID},
 			Name:              request.Body.Name,
 			Description:       request.Body.Description,
 		})
 		if err != nil {
 			return fmt.Errorf("creating analysis: %w", err)
+		}
+		if _, err := s.DB.CreateAuditLog(tx, &pacta.AuditLog{
+			ActorType:          pacta.AuditLogActorType_Owner,
+			ActorID:            string(actorInfo.UserID),
+			ActorOwner:         &pacta.Owner{ID: actorInfo.OwnerID},
+			Action:             pacta.AuditLogAction_Create,
+			PrimaryTargetType:  pacta.AuditLogTargetType_Analysis,
+			PrimaryTargetID:    string(analysisID),
+			PrimaryTargetOwner: &pacta.Owner{ID: actorInfo.OwnerID},
+		}); err != nil {
+			return fmt.Errorf("creating audit log: %w", err)
 		}
 		result = analysisID
 		return nil
@@ -340,4 +282,89 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 	// TODO - here this is where we'd kick off the analysis run.
 
 	return api.RunAnalysis200JSONResponse{AnalysisId: string(result)}, nil
+}
+
+func (s *Server) analysisDoAuthzAndAuditLog(ctx context.Context, analysisID pacta.AnalysisID, action pacta.AuditLogAction) error {
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return err
+	}
+	analysis, err := s.DB.Analysis(s.DB.NoTxn(ctx), analysisID)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return notFoundOrUnauthorized(actorInfo, action, pacta.AuditLogTargetType_Analysis, analysisID)
+		}
+		return oapierr.Internal("querying analysis for authz failed", zap.Error(err))
+	}
+	as := &authzStatus{
+		primaryTargetID:      string(analysisID),
+		primaryTargetType:    pacta.AuditLogTargetType_Analysis,
+		primaryTargetOwnerID: analysis.Owner.ID,
+		actorInfo:            actorInfo,
+		action:               action,
+	}
+	switch action {
+	case pacta.AuditLogAction_Update, pacta.AuditLogAction_Delete, pacta.AuditLogAction_ReadMetadata:
+		as.isAuthorized, as.authorizedAsActorType = allowIfAdminOrOwner(actorInfo, analysis.Owner.ID)
+	default:
+		return fmt.Errorf("unknown action %q for analysis authz", action)
+
+	}
+	return s.auditLogIfAuthorizedOrFail(ctx, as)
+}
+
+func (s *Server) analysisArtifactDoAuthzAndAuditLog(ctx context.Context, aaID pacta.AnalysisArtifactID, action pacta.AuditLogAction) error {
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return err
+	}
+	artifact, err := s.DB.AnalysisArtifact(s.DB.NoTxn(ctx), aaID)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return notFoundOrUnauthorized(actorInfo, action, pacta.AuditLogTargetType_AnalysisArtifact, aaID)
+		}
+		return oapierr.Internal("failed to look up analysis artifact", zap.String("analysis_artifact_id", string(aaID)), zap.Error(err))
+	}
+	aID := artifact.AnalysisID
+	analysis, err := s.DB.Analysis(s.DB.NoTxn(ctx), aID)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return notFoundOrUnauthorized(actorInfo, action, pacta.AuditLogTargetType_AnalysisArtifact, aaID)
+		}
+		return oapierr.Internal("failed to look up analysis for analysis artifact", zap.String("analysis_id", string(aID)), zap.Error(err))
+	}
+
+	as := &authzStatus{
+		primaryTargetID:        string(aID),
+		primaryTargetType:      pacta.AuditLogTargetType_Analysis,
+		primaryTargetOwnerID:   analysis.Owner.ID,
+		secondaryTargetID:      string(aaID),
+		secondaryTargetType:    pacta.AuditLogTargetType_AnalysisArtifact,
+		secondaryTargetOwnerID: analysis.Owner.ID,
+		actorInfo:              actorInfo,
+		action:                 action,
+	}
+	switch action {
+	case pacta.AuditLogAction_Download:
+		if actorInfo.OwnerID == analysis.Owner.ID {
+			as.isAuthorized, as.authorizedAsActorType = true, ptr(pacta.AuditLogActorType_Owner)
+		} else if artifact.SharedToPublic {
+			as.isAuthorized, as.authorizedAsActorType = true, ptr(pacta.AuditLogActorType_Public)
+		} else if artifact.AdminDebugEnabled {
+			as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
+		} else {
+			as.isAuthorized, as.authorizedAsActorType = false, nil
+		}
+	case pacta.AuditLogAction_EnableAdminDebug,
+		pacta.AuditLogAction_DisableAdminDebug,
+		pacta.AuditLogAction_EnableSharing,
+		pacta.AuditLogAction_DisableSharing:
+		as.isAuthorized, as.authorizedAsActorType = allowIfOwner(actorInfo, analysis.Owner.ID)
+	case pacta.AuditLogAction_Update,
+		pacta.AuditLogAction_Delete:
+		as.isAuthorized, as.authorizedAsActorType = allowIfAdminOrOwner(actorInfo, analysis.Owner.ID)
+	default:
+		return fmt.Errorf("unknown action %q for analysis_artifact authz", action)
+	}
+	return s.auditLogIfAuthorizedOrFail(ctx, as)
 }

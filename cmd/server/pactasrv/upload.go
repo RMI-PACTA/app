@@ -19,13 +19,12 @@ import (
 // Starts the process of uploading one or more portfolio files
 // (POST /portfolio-upload)
 func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPortfolioUploadRequestObject) (api.StartPortfolioUploadResponseObject, error) {
-	// TODO(#12) Implement Authorization
 	// TODO(#71) Implement basic limits
-	ownerID, err := s.getUserOwnerID(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
-	owner := &pacta.Owner{ID: ownerID}
+	owner := &pacta.Owner{ID: actorInfo.OwnerID}
 	holdingsDate, err := conv.HoldingsDateFromOAPI(&request.Body.HoldingsDate)
 	if err != nil {
 		return nil, err
@@ -86,6 +85,18 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 				return fmt.Errorf("creating incomplete upload %d: %w", i, err)
 			}
 			respItems[i].IncompleteUploadId = string(iuid)
+			_, err = s.DB.CreateAuditLog(tx, &pacta.AuditLog{
+				Action:             pacta.AuditLogAction_Create,
+				ActorID:            string(actorInfo.UserID),
+				ActorOwner:         owner,
+				ActorType:          pacta.AuditLogActorType_Owner,
+				PrimaryTargetType:  pacta.AuditLogTargetType_IncompleteUpload,
+				PrimaryTargetID:    string(iuid),
+				PrimaryTargetOwner: owner,
+			})
+			if err != nil {
+				return fmt.Errorf("creating audit log %d: %w", i, err)
+			}
 		}
 		return nil
 	})
@@ -99,11 +110,10 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 // Called after uploads of portfolios to cloud storage are complete.
 // (POST /portfolio-upload:complete)
 func (s *Server) CompletePortfolioUpload(ctx context.Context, request api.CompletePortfolioUploadRequestObject) (api.CompletePortfolioUploadResponseObject, error) {
-	ownerID, err := s.getUserOwnerID(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// TODO (#12) Implement Authorization
 	ids := []pacta.IncompleteUploadID{}
 	for _, item := range request.Body.Items {
 		ids = append(ids, pacta.IncompleteUploadID(item.IncompleteUploadId))
@@ -121,11 +131,11 @@ func (s *Server) CompletePortfolioUpload(ctx context.Context, request api.Comple
 		blobIDs := []pacta.BlobID{}
 		for _, id := range ids {
 			iu := ius[id]
-			if iu == nil || iu.Owner == nil || iu.Owner.ID != ownerID {
+			if iu == nil || iu.Owner == nil || iu.Owner.ID != actorInfo.OwnerID {
 				return oapierr.NotFound(
 					fmt.Sprintf("incomplete upload %s does not belong to user", id),
 					zap.String("incomplete_upload_id", string(id)),
-					zap.String("owner_id", string(ownerID)),
+					zap.String("owner_id", string(actorInfo.OwnerID)),
 				)
 			}
 			blobIDs = append(blobIDs, iu.Blob.ID)

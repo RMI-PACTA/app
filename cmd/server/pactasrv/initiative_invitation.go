@@ -16,9 +16,11 @@ import (
 // Creates an initiative invitation
 // (POST /initiative-invitation)
 func (s *Server) CreateInitiativeInvitation(ctx context.Context, request api.CreateInitiativeInvitationRequestObject) (api.CreateInitiativeInvitationResponseObject, error) {
-	// TODO(#12) Implement Authorization
 	ii, err := conv.InitiativeInvitationFromOAPI(request.Body)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.initiativeInvitationDoAuthzAndAuditLog(ctx, ii.Initiative.ID, ii.ID, pacta.AuditLogAction_Create); err != nil {
 		return nil, err
 	}
 	id, err := s.DB.CreateInitiativeInvitation(s.DB.NoTxn(ctx), ii)
@@ -38,8 +40,15 @@ func (s *Server) CreateInitiativeInvitation(ctx context.Context, request api.Cre
 // Deletes an initiative invitation by id
 // (DELETE /initiative-invitation/{id})
 func (s *Server) DeleteInitiativeInvitation(ctx context.Context, request api.DeleteInitiativeInvitationRequestObject) (api.DeleteInitiativeInvitationResponseObject, error) {
-	// TODO(#12) Implement Authorization
-	err := s.DB.DeleteInitiativeInvitation(s.DB.NoTxn(ctx), pacta.InitiativeInvitationID(request.Id))
+	iiID := pacta.InitiativeInvitationID(request.Id)
+	ii, err := s.DB.InitiativeInvitation(s.DB.NoTxn(ctx), iiID)
+	if err != nil {
+		return nil, oapierr.Internal("failed to retrieve initiative invitation", zap.Error(err))
+	}
+	if err := s.initiativeInvitationDoAuthzAndAuditLog(ctx, ii.Initiative.ID, iiID, pacta.AuditLogAction_Delete); err != nil {
+		return nil, err
+	}
+	err = s.DB.DeleteInitiativeInvitation(s.DB.NoTxn(ctx), pacta.InitiativeInvitationID(request.Id))
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete initiative invitation", zap.Error(err))
 	}
@@ -49,8 +58,8 @@ func (s *Server) DeleteInitiativeInvitation(ctx context.Context, request api.Del
 // Returns the initiative invitation from this id, if it exists
 // (GET /initiative-invitation/{id})
 func (s *Server) GetInitiativeInvitation(ctx context.Context, request api.GetInitiativeInvitationRequestObject) (api.GetInitiativeInvitationResponseObject, error) {
-	// TODO(#12) Implement Authorization
-	ii, err := s.DB.InitiativeInvitation(s.DB.NoTxn(ctx), pacta.InitiativeInvitationID(request.Id))
+	iiID := pacta.InitiativeInvitationID(request.Id)
+	ii, err := s.DB.InitiativeInvitation(s.DB.NoTxn(ctx), iiID)
 	if err != nil {
 		return nil, oapierr.Internal("failed to retrieve initiative invitation", zap.Error(err))
 	}
@@ -110,8 +119,11 @@ func (s *Server) ClaimInitiativeInvitation(ctx context.Context, request api.Clai
 // Returns all initiative invitations associated with the initiative
 // (GET /initiative/{id}/invitations)
 func (s *Server) ListInitiativeInvitations(ctx context.Context, request api.ListInitiativeInvitationsRequestObject) (api.ListInitiativeInvitationsResponseObject, error) {
-	// TODO(#12) Implement Authorization
-	iis, err := s.DB.InitiativeInvitationsByInitiative(s.DB.NoTxn(ctx), pacta.InitiativeID(request.Id))
+	id := pacta.InitiativeID(request.Id)
+	if err := s.initiativeInvitationDoAuthzAndAuditLog(ctx, id, "", pacta.AuditLogAction_ReadMetadata); err != nil {
+		return nil, err
+	}
+	iis, err := s.DB.InitiativeInvitationsByInitiative(s.DB.NoTxn(ctx), id)
 	if err != nil {
 		return nil, oapierr.Internal("failed to list initiative invitations", zap.Error(err))
 	}
@@ -120,4 +132,66 @@ func (s *Server) ListInitiativeInvitations(ctx context.Context, request api.List
 		return nil, err
 	}
 	return api.ListInitiativeInvitations200JSONResponse(result), nil
+}
+
+func (s *Server) userIsInitiativeManagerOrAdmin(ctx context.Context, iID pacta.InitiativeID) (bool, error) {
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return false, err
+	}
+	if actorInfo.IsAdmin || actorInfo.IsSuperAdmin {
+		return true, nil
+	}
+	iurs, err := s.DB.InitiativeUserRelationshipsByInitiative(s.DB.NoTxn(ctx), iID)
+	if err != nil {
+		return false, oapierr.Internal("failed to list initiative user relationships", zap.Error(err))
+	}
+	for _, iur := range iurs {
+		if iur.User.ID == actorInfo.UserID && iur.Manager {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (s *Server) initiativeInvitationDoAuthzAndAuditLog(ctx context.Context, iID pacta.InitiativeID, iiID pacta.InitiativeInvitationID, action pacta.AuditLogAction) error {
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return err
+	}
+	iurs, err := s.DB.InitiativeUserRelationshipsByInitiative(s.DB.NoTxn(ctx), iID)
+	if err != nil {
+		return oapierr.Internal("failed to list initiative user relationships", zap.Error(err))
+	}
+	actorIsInitiativeManager := false
+	for _, iur := range iurs {
+		if iur.User.ID == actorInfo.UserID {
+			actorIsInitiativeManager = iur.Manager
+			break
+		}
+	}
+	as := &authzStatus{
+		primaryTargetID:      string(iID),
+		primaryTargetType:    pacta.AuditLogTargetType_Initiative,
+		primaryTargetOwnerID: systemOwnedEntityOwner,
+		actorInfo:            actorInfo,
+		action:               action,
+	}
+	if iiID != "" {
+		as.secondaryTargetID = string(iiID)
+		as.secondaryTargetType = pacta.AuditLogTargetType_InitiativeInvitation
+		as.secondaryTargetOwnerID = pacta.OwnerID(systemOwnedEntityOwner)
+	}
+	switch action {
+	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_ReadMetadata:
+		if actorIsInitiativeManager {
+			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Owner)
+			as.isAuthorized = true
+		} else {
+			as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
+		}
+	default:
+		return fmt.Errorf("unknown action %q for initiative_invitation authz", action)
+	}
+	return s.auditLogIfAuthorizedOrFail(ctx, as)
 }

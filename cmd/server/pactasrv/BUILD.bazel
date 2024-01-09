@@ -6,6 +6,7 @@ go_library(
         "admin.go",
         "analysis.go",
         "audit_logs.go",
+        "authz.go",
         "blobs.go",
         "incomplete_upload.go",
         "initiative.go",
