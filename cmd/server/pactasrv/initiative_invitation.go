@@ -183,7 +183,7 @@ func (s *Server) initiativeInvitationDoAuthzAndAuditLog(ctx context.Context, iID
 		as.secondaryTargetOwnerID = pacta.OwnerID(systemOwnedEntityOwner)
 	}
 	switch action {
-	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_ReadMetadata:
+	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_ReadMetadata, pacta.AuditLogAction_Create:
 		if actorIsInitiativeManager {
 			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Owner)
 			as.isAuthorized = true

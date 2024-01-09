@@ -20,7 +20,7 @@ const {
   saveTooltip,
   canSave,
 } = initiativeEditor(presentOrCheckURL(data.value, 'no initiative in response'), i18n)
-const tt = (key: string) => t(`pages/initiative/id/${key}`)
+const tt = (key: string) => t(`pages/initiative/id.${key}`)
 
 const deleteInitiative = () => withLoading(
   () => pactaClient.deleteInitiative(id)
@@ -48,7 +48,7 @@ const saveChanges = () => withLoading(
         @click="deleteInitiative"
       />
       <LinkButton
-        label="Discard Changes"
+        :label="tt('Discard Changes')"
         icon="pi pi-arrow-left"
         class="p-button-secondary p-button-outlined"
         :to="localePath('/admin/initiative')"

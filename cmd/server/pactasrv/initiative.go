@@ -241,7 +241,7 @@ func (s *Server) initiativeDoAuthzAndAuditLog(ctx context.Context, iID pacta.Ini
 		action:               action,
 	}
 	switch action {
-	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_Create, pacta.AuditLogAction_ReadMetadata:
+	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_Create, pacta.AuditLogAction_ReadMetadata, pacta.AuditLogAction_Update:
 		if userIsInitiativeManager {
 			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Owner)
 			as.isAuthorized = true
@@ -249,7 +249,7 @@ func (s *Server) initiativeDoAuthzAndAuditLog(ctx context.Context, iID pacta.Ini
 			as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
 		}
 	default:
-		return fmt.Errorf("unknown action %q for initiative_invitation authz", action)
+		return fmt.Errorf("unknown action %q for initiative authz", action)
 	}
 	return s.auditLogIfAuthorizedOrFail(ctx, as)
 }

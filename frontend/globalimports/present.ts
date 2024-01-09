@@ -1,25 +1,19 @@
 import { createErrorWithRemediation, Remediation } from '@/lib/error'
 
 export const present = <T>(t: T | undefined | null, r: Remediation, cause?: string): T => {
-  const stack = new Error().stack
-  if (cause === undefined && stack !== undefined) {
-    cause = stack.split('\n').find((line, i) => !line.includes('present.ts') && i > 1)
+  if (t !== undefined && t !== null) {
+    return t
   }
-  if (t === undefined) {
-    throw createErrorWithRemediation({
-      name: 'present error',
-      message: 'expected to be present but was undefined',
-      cause,
-    }, r)
+  const desc = t === undefined ? 'undefined' : 'null'
+  let msg = `expected present but was ${desc}`
+  if (cause) {
+    msg += `: ${cause}`
   }
-  if (t === null) {
-    throw createErrorWithRemediation({
-      name: 'present error',
-      message: 'expected to be present but was null',
-      cause,
-    }, r)
+  const offendingLine = (new Error().stack ?? '').split('\n').find((line: string, i: number) => i > 0 && !line.includes('present.ts'))
+  if (offendingLine) {
+    msg += `@ ${offendingLine}`
   }
-  return t
+  throw createErrorWithRemediation(new Error(msg), r)
 }
 
 export const presentOrSuggestReload = <T>(t: T | undefined | null, cause?: string): T => present(t, Remediation.Reload, cause)

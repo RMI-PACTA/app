@@ -75,6 +75,10 @@ const initiativeOptions = computed(() => {
       addIfClick = true
       hoverText = tt('Add unselected portfolios to initiative')
     }
+    const disabled = !initiative.isAcceptingNewPortfolios
+    if (disabled) {
+      hoverText = tt('Initiative is closed to new portfolios')
+    }
     return {
       id: initiative.id,
       label: initiative.name,
@@ -82,6 +86,7 @@ const initiativeOptions = computed(() => {
       cmd: changeMemberships(initiative.id, addIfClick),
       hoverText,
       created: initiative.createdAt,
+      disabled,
     }
   })
   // Created is an ISO date time string. This sorts by newest first, without having
@@ -119,11 +124,12 @@ const initiativeOptions = computed(() => {
         <div
           v-for="option in initiativeOptions"
           :key="option.id"
+          v-tooltip="option.hoverText"
           class="border-bottom-1 border-400"
         >
           <PVButton
-            v-tooltip="option.hoverText"
             class="text-left p-button-text w-full"
+            :disabled="option.disabled"
             @click="option.cmd"
           >
             <div class="flex justify-content-start align-items-center gap-3">
