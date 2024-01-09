@@ -12,6 +12,7 @@ go_library(
         "initiative.go",
         "initiative_invitation.go",
         "initiative_user.go",
+        "merge.go",
         "owner.go",
         "pacta_version.go",
         "portfolio.go",

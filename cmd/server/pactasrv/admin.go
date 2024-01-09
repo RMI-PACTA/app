@@ -15,23 +15,28 @@ import (
 // (POST /admin/merge-users)
 func (s *Server) MergeUsers(ctx context.Context, request api.MergeUsersRequestObject) (api.MergeUsersResponseObject, error) {
 	req := request.Body
-	actorUserInfo, err := s.getActorInfoOrFail(ctx)
+	actorUserInfo, err := s.getactorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
+	fieldsIfErr := []zap.Field{
+		zap.String("actor_user_id", string(actorUserInfo.UserID)),
+		zap.String("from_user_id", req.FromUserId),
+		zap.String("to_user_id", req.ToUserId),
+	}
 	if !actorUserInfo.IsAdmin && !actorUserInfo.IsSuperAdmin {
-		return nil, oapierr.Forbidden("only admins can merge users",
-			zap.String("actor_user_id", string(actorUserInfo.UserID)),
-			zap.String("from_user_id", req.FromUserId),
-			zap.String("to_user_id", req.ToUserId))
+		return nil, oapierr.Forbidden("only admins can merge users", fieldsIfErr...)
 	}
 
 	sourceUID := pacta.UserID(req.FromUserId)
 	destUID := pacta.UserID(req.ToUserId)
+	if sourceUID == destUID {
+		return nil, oapierr.BadRequest("cannot merge user into themselves", fieldsIfErr...)
+	}
 
 	var (
-		numIncompleteUploads, numAnalyses, numPortfolios, numPortfolioGroups, numAuditLogs, numAuditLogsCreated int
-		buris                                                                                                   []pacta.BlobURI
+		numIncompleteUploads, numAnalyses, numPortfolios, numPortfolioGroups, numAuditLogsCreated int
+		buris                                                                                     []pacta.BlobURI
 	)
 
 	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
@@ -44,16 +49,16 @@ func (s *Server) MergeUsers(ctx context.Context, request api.MergeUsersRequestOb
 			return fmt.Errorf("failed to get owner for destination user: %w", err)
 		}
 
-		// Note we do an audit log transfer FIRST so that we don't transfer the audit logs generated from the transfer itself.
-		nal, err := s.DB.TransferAuditLogOwnership(tx, sourceUID, destUID, sourceOwner, destOwner)
-		if err != nil {
-			return fmt.Errorf("failed to transfer audit log ownership: %w", err)
+		if err = s.DB.RecordUserMerge(tx, sourceUID, destUID, actorUserInfo.UserID); err != nil {
+			return fmt.Errorf("failed to record user merge: %w", err)
 		}
-		numAuditLogs = nal
+		if err = s.DB.RecordOwnerMerge(tx, sourceOwner, destOwner, actorUserInfo.UserID); err != nil {
+			return fmt.Errorf("failed to record owner merge: %w", err)
+		}
 
-		auditLogsToCreate := []pacta.AuditLog{}
+		auditLogsToCreate := []*pacta.AuditLog{}
 		addAuditLog := func(t pacta.AuditLogTargetType, id string) {
-			auditLogsToCreate = append(auditLogsToCreate, pacta.AuditLog{
+			auditLogsToCreate = append(auditLogsToCreate, &pacta.AuditLog{
 				Action:               pacta.AuditLogAction_TransferOwnership,
 				ActorType:            pacta.AuditLogActorType_Admin,
 				ActorID:              string(actorUserInfo.UserID),
@@ -74,7 +79,7 @@ func (s *Server) MergeUsers(ctx context.Context, request api.MergeUsersRequestOb
 		for i, upload := range incompleteUploads {
 			err := s.DB.UpdateIncompleteUpload(tx, upload.ID, db.SetIncompleteUploadOwner(destOwner))
 			if err != nil {
-				return fmt.Errorf("failed to update upload owner %d/%d: %w", i, len(incompleteUploads), err)
+				return fmt.Errorf("failed to update upload owner %d/%d: %w", i+1, len(incompleteUploads), err)
 			}
 			addAuditLog(pacta.AuditLogTargetType_IncompleteUpload, string(upload.ID))
 		}
@@ -87,7 +92,7 @@ func (s *Server) MergeUsers(ctx context.Context, request api.MergeUsersRequestOb
 		for i, analysis := range analyses {
 			err := s.DB.UpdateAnalysis(tx, analysis.ID, db.SetAnalysisOwner(destOwner))
 			if err != nil {
-				return fmt.Errorf("failed to update analysis owner %d/%d: %w", i, len(analyses), err)
+				return fmt.Errorf("failed to update analysis owner %d/%d: %w", i+1, len(analyses), err)
 			}
 			addAuditLog(pacta.AuditLogTargetType_Analysis, string(analysis.ID))
 		}
@@ -100,7 +105,7 @@ func (s *Server) MergeUsers(ctx context.Context, request api.MergeUsersRequestOb
 		for i, portfolio := range portfolios {
 			err := s.DB.UpdatePortfolio(tx, portfolio.ID, db.SetPortfolioOwner(destOwner))
 			if err != nil {
-				return fmt.Errorf("failed to update portfolio owner %d/%d: %w", i, len(portfolios), err)
+				return fmt.Errorf("failed to update portfolio owner %d/%d: %w", i+1, len(portfolios), err)
 			}
 			addAuditLog(pacta.AuditLogTargetType_Portfolio, string(portfolio.ID))
 		}
@@ -113,31 +118,32 @@ func (s *Server) MergeUsers(ctx context.Context, request api.MergeUsersRequestOb
 		for i, portfolioGroup := range portfolioGroups {
 			err := s.DB.UpdatePortfolioGroup(tx, portfolioGroup.ID, db.SetPortfolioGroupOwner(destOwner))
 			if err != nil {
-				return fmt.Errorf("failed to update portfolio group owner %d/%d: %w", i, len(portfolioGroups), err)
+				return fmt.Errorf("failed to update portfolio group owner %d/%d: %w", i+1, len(portfolioGroups), err)
 			}
 			addAuditLog(pacta.AuditLogTargetType_PortfolioGroup, string(portfolioGroup.ID))
 		}
 		numPortfolioGroups = len(portfolioGroups)
 
-		for _, auditLog := range auditLogsToCreate {
-			_, err := s.DB.CreateAuditLog(tx, &auditLog)
-			if err != nil {
-				return fmt.Errorf("failed to create audit log: %w", err)
-			}
+		if err := s.DB.CreateAuditLogs(tx, auditLogsToCreate); err != nil {
+			return fmt.Errorf("failed to create audit logs: %w", err)
 		}
 		numAuditLogsCreated = len(auditLogsToCreate)
 
-		// Now that we've transferred all the audit logs, we can delete the user.
-		newBuris, err := s.DB.DeleteUser(tx, sourceUID)
+		// Now that we've transferred all the entities, we can delete the user.
+		deletedUserBuris, err := s.DB.DeleteUser(tx, sourceUID)
 		if err != nil {
 			return fmt.Errorf("failed to delete user: %w", err)
 		}
-		buris = append(buris, newBuris...)
+		if len(deletedUserBuris) > 0 {
+			// Note in this case we won't commit the transaction, so this data won't be orphaned.
+			return fmt.Errorf("failed to delete user: user still has blobs: %v", deletedUserBuris)
+		}
 
 		return nil
 	})
 	if err != nil {
-		return nil, oapierr.Internal("failed to merge users", zap.Error(err), zap.String("actor_user_id", string(actorUserInfo.UserID)), zap.String("from_user_id", req.FromUserId), zap.String("to_user_id", req.ToUserId))
+		fieldsIfErr := append(fieldsIfErr, zap.Error(err))
+		return nil, oapierr.Internal("failed to merge users", fieldsIfErr...)
 	}
 
 	if err := s.deleteBlobs(ctx, buris...); err != nil {
@@ -148,12 +154,17 @@ func (s *Server) MergeUsers(ctx context.Context, request api.MergeUsersRequestOb
 		zap.String("actor_user_id", string(actorUserInfo.UserID)),
 		zap.String("from_user_id", req.FromUserId),
 		zap.String("to_user_id", req.ToUserId),
-		zap.Int("num_audit_logs_transferred", numAuditLogs),
 		zap.Int("num_incomplete_uploads", numIncompleteUploads),
 		zap.Int("num_analyses", numAnalyses),
 		zap.Int("num_portfolios", numPortfolios),
 		zap.Int("num_portfolio_groups", numPortfolioGroups),
 		zap.Int("num_audit_logs_created", numAuditLogsCreated),
 	)
-	return api.MergeUsers204Response{}, nil
+	return api.MergeUsers200JSONResponse{
+		AuditLogsCreated:      numAuditLogsCreated,
+		IncompleteUploadCount: numIncompleteUploads,
+		PortfolioCount:        numPortfolios,
+		PortfolioGroupCount:   numPortfolioGroups,
+		AnalysisCount:         numAnalyses,
+	}, nil
 }

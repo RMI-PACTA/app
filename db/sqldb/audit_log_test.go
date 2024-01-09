@@ -237,31 +237,31 @@ func TestAuditSearch(t *testing.T) {
 		}{{
 			name: "All Match",
 			where: []*db.AuditLogQueryWhere{
-				&db.AuditLogQueryWhere{InID: []pacta.AuditLogID{alID1}},
-				&db.AuditLogQueryWhere{MinCreatedAt: beforeCreation},
-				&db.AuditLogQueryWhere{MaxCreatedAt: afterCreation},
-				&db.AuditLogQueryWhere{InAction: []pacta.AuditLogAction{action1}},
-				&db.AuditLogQueryWhere{InActorType: []pacta.AuditLogActorType{actorType1}},
-				&db.AuditLogQueryWhere{InActorID: []string{actorID1}},
-				&db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
-				&db.AuditLogQueryWhere{InTargetType: []pacta.AuditLogTargetType{targetType1}},
-				&db.AuditLogQueryWhere{InTargetID: []string{targetID1}},
-				&db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
+				{InID: []pacta.AuditLogID{alID1}},
+				{MinCreatedAt: beforeCreation},
+				{MaxCreatedAt: afterCreation},
+				{InAction: []pacta.AuditLogAction{action1}},
+				{InActorType: []pacta.AuditLogActorType{actorType1}},
+				{InActorID: []string{actorID1}},
+				{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
+				{InTargetType: []pacta.AuditLogTargetType{targetType1}},
+				{InTargetID: []string{targetID1}},
+				{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
 			},
 			expected: []pacta.AuditLogID{alID1},
 		}, {
 			name: "One Does not Match",
 			where: []*db.AuditLogQueryWhere{
-				&db.AuditLogQueryWhere{InID: []pacta.AuditLogID{alID1}},
-				&db.AuditLogQueryWhere{MinCreatedAt: beforeCreation},
-				&db.AuditLogQueryWhere{MaxCreatedAt: afterCreation},
-				&db.AuditLogQueryWhere{InAction: []pacta.AuditLogAction{action1}},
-				&db.AuditLogQueryWhere{InActorType: []pacta.AuditLogActorType{actorType2}},
-				&db.AuditLogQueryWhere{InActorID: []string{actorID1}},
-				&db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
-				&db.AuditLogQueryWhere{InTargetType: []pacta.AuditLogTargetType{targetType1}},
-				&db.AuditLogQueryWhere{InTargetID: []string{targetID1}},
-				&db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
+				{InID: []pacta.AuditLogID{alID1}},
+				{MinCreatedAt: beforeCreation},
+				{MaxCreatedAt: afterCreation},
+				{InAction: []pacta.AuditLogAction{action1}},
+				{InActorType: []pacta.AuditLogActorType{actorType2}},
+				{InActorID: []string{actorID1}},
+				{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
+				{InTargetType: []pacta.AuditLogTargetType{targetType1}},
+				{InTargetID: []string{targetID1}},
+				{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
 			},
 			expected: []pacta.AuditLogID{},
 		}}
@@ -285,87 +285,169 @@ func TestAuditSearch(t *testing.T) {
 			})
 		}
 	})
+}
 
-	t.Run("Audit Log Transfers", func(t *testing.T) {
-		assertWithWhere := func(where *db.AuditLogQueryWhere, expected ...pacta.AuditLogID) {
-			t.Helper()
-			auditLogs, _, err := tdb.AuditLogs(tx, &db.AuditLogQuery{
-				Limit:  10,
-				Wheres: []*db.AuditLogQueryWhere{where},
+func TestAuditSearchAfterMerge(t *testing.T) {
+	action1 := pacta.AuditLogAction_AddTo
+	action2 := pacta.AuditLogAction_Create
+	actorType1 := pacta.AuditLogActorType_Owner
+	actorType2 := pacta.AuditLogActorType_System
+	actorID1 := "user1"
+	actorID2 := "user2"
+	actorOwner1 := &pacta.Owner{ID: "owner1"}
+	actorOwner2 := &pacta.Owner{ID: "owner2"}
+	targetType1 := pacta.AuditLogTargetType_Portfolio
+	targetType2 := pacta.AuditLogTargetType_IncompleteUpload
+	targetID1 := actorID1
+	targetID2 := "incomplete-upload-2"
+	targetOwner1 := &pacta.Owner{ID: "owner3"}
+	targetOwner2 := &pacta.Owner{ID: "owner4"}
+
+	ctx := context.Background()
+	tdb := createDBForTesting(t)
+	tx := tdb.NoTxn(ctx)
+
+	alID1, err0 := tdb.CreateAuditLog(tx, &pacta.AuditLog{ActorType: actorType1, ActorID: actorID1, ActorOwner: actorOwner1, Action: action1, PrimaryTargetType: targetType1, PrimaryTargetID: targetID2, PrimaryTargetOwner: targetOwner2})
+	alID2, err1 := tdb.CreateAuditLog(tx, &pacta.AuditLog{ActorType: actorType2, ActorID: actorID2, ActorOwner: actorOwner2, Action: action2, PrimaryTargetType: targetType2, PrimaryTargetID: targetID1, PrimaryTargetOwner: targetOwner1})
+	alID3, err2 := tdb.CreateAuditLog(tx, &pacta.AuditLog{ActorType: actorType2, ActorID: actorID2, ActorOwner: actorOwner2, Action: action2, PrimaryTargetType: targetType2, PrimaryTargetID: "something", PrimaryTargetOwner: targetOwner1, SecondaryTargetType: targetType2, SecondaryTargetID: targetID2, SecondaryTargetOwner: targetOwner2})
+	noErrDuringSetup(t, err0, err1, err2)
+
+	t.Run("Pre-Merge Tests", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			where    *db.AuditLogQueryWhere
+			expected []pacta.AuditLogID
+		}{{
+			name:     "By ActorID 1",
+			where:    &db.AuditLogQueryWhere{InActorID: []string{actorID1}},
+			expected: []pacta.AuditLogID{alID1},
+		}, {
+			name:     "By ActorID 2",
+			where:    &db.AuditLogQueryWhere{InActorID: []string{actorID2}},
+			expected: []pacta.AuditLogID{alID2, alID3},
+		}, {
+			name:     "By ActorOwnerID 1",
+			where:    &db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
+			expected: []pacta.AuditLogID{alID1},
+		}, {
+			name:     "By ActorOwnerID 2",
+			where:    &db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner2.ID}},
+			expected: []pacta.AuditLogID{alID2, alID3},
+		}, {
+			name:     "By TargetID = ActorID 1",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{actorID1}},
+			expected: []pacta.AuditLogID{alID2},
+		}, {
+			name:     "By TargetID = ActorID 2",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{actorID2}},
+			expected: []pacta.AuditLogID{},
+		}, {
+			name:     "By TargetID = Something Else",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{targetID2}},
+			expected: []pacta.AuditLogID{alID1, alID3},
+		}, {
+			name:     "By TargetOwnerID 1",
+			where:    &db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
+			expected: []pacta.AuditLogID{alID2, alID3},
+		}, {
+			name:     "By TargetOwnerID 2",
+			where:    &db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner2.ID}},
+			expected: []pacta.AuditLogID{alID1, alID3},
+		}}
+
+		for i, c := range cases {
+			t.Run(fmt.Sprintf("case %d: %q", i, c.name), func(t *testing.T) {
+				auditLogs, _, err := tdb.AuditLogs(tx, &db.AuditLogQuery{
+					Limit:  10,
+					Wheres: []*db.AuditLogQueryWhere{c.where},
+				})
+				if err != nil {
+					t.Fatalf("getting audit logs: %v", err)
+				}
+				actual := make([]pacta.AuditLogID, len(auditLogs))
+				for i, a := range auditLogs {
+					actual[i] = a.ID
+				}
+				if diff := cmp.Diff(c.expected, actual, auditLogIDCmpOpts()); diff != "" {
+					t.Errorf("unexpected diff:\n%s", diff)
+				}
 			})
-			if err != nil {
-				t.Fatalf("getting audit logs: %v", err)
-			}
-			actual := make([]pacta.AuditLogID, len(auditLogs))
-			for i, a := range auditLogs {
-				actual[i] = a.ID
-			}
-			if diff := cmp.Diff(expected, actual, auditLogIDCmpOpts()); diff != "" {
-				t.Errorf("unexpected diff:\n%s", diff)
-			}
 		}
-		assertActorOwner := func(actorOwner pacta.OwnerID, expected ...pacta.AuditLogID) {
-			t.Helper()
-			assertWithWhere(&db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner}}, expected...)
-		}
-		assertTargetOwner := func(targetOwner pacta.OwnerID, expected ...pacta.AuditLogID) {
-			t.Helper()
-			assertWithWhere(&db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner}}, expected...)
-		}
-		assertActorUser := func(user string, expected ...pacta.AuditLogID) {
-			t.Helper()
-			assertWithWhere(&db.AuditLogQueryWhere{InActorID: []string{user}}, expected...)
-		}
-		assertTarget := func(targetID string, expected ...pacta.AuditLogID) {
-			t.Helper()
-			assertWithWhere(&db.AuditLogQueryWhere{InTargetID: []string{targetID}}, expected...)
-		}
+	})
 
-		// Check initial state
-		assertActorOwner(actorOwner1.ID, alID1)
-		assertActorOwner(actorOwner2.ID, alID2, alID3)
-		assertTargetOwner(targetOwner1.ID, alID1, alID3)
-		assertTargetOwner(targetOwner2.ID, alID2, alID3)
-		assertActorUser(actorID1, alID1)
-		assertActorUser(actorID2, alID2, alID3)
-		assertTarget(actorID1, alID1)
-		assertTarget(actorID2)
+	t.Run("Executing Merges", func(t *testing.T) {
+		if err := tdb.RecordUserMerge(tx, pacta.UserID(actorID1), pacta.UserID(actorID2), "some-admin-owner"); err != nil {
+			t.Fatalf("merging users: %v", err)
+		}
+		if err := tdb.RecordUserMerge(tx, pacta.UserID(actorID1), pacta.UserID(actorID2), "some-admin-owner"); err != nil {
+			t.Fatalf("merging users duplicatively should be fine: %v", err)
+		}
+		if err := tdb.RecordOwnerMerge(tx, actorOwner1.ID, actorOwner2.ID, "some-admin-owner"); err != nil {
+			t.Fatalf("merging owners: %v", err)
+		}
+	})
 
-		// Transferring audit logs from Actor1 => Actor2, and ActorOwner1 => ActorOwner2
-		numTransferred, err := tdb.TransferAuditLogOwnership(tx, pacta.UserID(actorID1), pacta.UserID(actorID2), actorOwner1.ID, actorOwner2.ID)
-		if err != nil {
-			t.Fatalf("transferring audit log ownership: %v", err)
-		}
-		if numTransferred != 1 {
-			t.Fatalf("expected 1 audit logs to be transferred, got %d", numTransferred)
-		}
-		assertActorOwner(actorOwner1.ID)
-		assertActorOwner(actorOwner2.ID, alID1, alID2, alID3)
-		assertTargetOwner(targetOwner1.ID, alID1, alID3)
-		assertTargetOwner(targetOwner2.ID, alID2, alID3)
-		assertActorUser(actorID1)
-		assertActorUser(actorID2, alID1, alID2, alID3)
-		assertTarget(actorID1)
-		assertTarget(actorID2, alID1)
+	t.Run("Post-Merge Tests", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			where    *db.AuditLogQueryWhere
+			expected []pacta.AuditLogID
+		}{{
+			name:     "By ActorID 1",
+			where:    &db.AuditLogQueryWhere{InActorID: []string{actorID1}},
+			expected: []pacta.AuditLogID{alID1, alID2, alID3},
+		}, {
+			name:     "By ActorID 2",
+			where:    &db.AuditLogQueryWhere{InActorID: []string{actorID2}},
+			expected: []pacta.AuditLogID{alID1, alID2, alID3},
+		}, {
+			name:     "By ActorOwnerID 1",
+			where:    &db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
+			expected: []pacta.AuditLogID{alID1, alID2, alID3},
+		}, {
+			name:     "By ActorOwnerID 2",
+			where:    &db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner2.ID}},
+			expected: []pacta.AuditLogID{alID1, alID2, alID3},
+		}, {
+			name:     "By TargetID = ActorID 1",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{actorID1}},
+			expected: []pacta.AuditLogID{alID2},
+		}, {
+			name:     "By TargetID = ActorID 2",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{actorID2}},
+			expected: []pacta.AuditLogID{alID2},
+		}, {
+			name:     "By TargetID = Something Else",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{targetID2}},
+			expected: []pacta.AuditLogID{alID1, alID3},
+		}, {
+			name:     "By TargetOwnerID 1",
+			where:    &db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
+			expected: []pacta.AuditLogID{alID2, alID3},
+		}, {
+			name:     "By TargetOwnerID 2",
+			where:    &db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner2.ID}},
+			expected: []pacta.AuditLogID{alID1, alID3},
+		}}
 
-		// Transferring when empty should be fine.
-		numTransferred, err = tdb.TransferAuditLogOwnership(tx, pacta.UserID(actorID1), pacta.UserID(actorID2), actorOwner1.ID, actorOwner2.ID)
-		if err != nil {
-			t.Fatalf("transferring audit log ownership: %v", err)
+		for i, c := range cases {
+			t.Run(fmt.Sprintf("case %d: %q", i, c.name), func(t *testing.T) {
+				auditLogs, _, err := tdb.AuditLogs(tx, &db.AuditLogQuery{
+					Limit:  10,
+					Wheres: []*db.AuditLogQueryWhere{c.where},
+				})
+				if err != nil {
+					t.Fatalf("getting audit logs: %v", err)
+				}
+				actual := make([]pacta.AuditLogID, len(auditLogs))
+				for i, a := range auditLogs {
+					actual[i] = a.ID
+				}
+				if diff := cmp.Diff(c.expected, actual, auditLogIDCmpOpts()); diff != "" {
+					t.Errorf("unexpected diff:\n%s", diff)
+				}
+			})
 		}
-		if numTransferred != 0 {
-			t.Fatalf("expected 0 audit logs to be transferred, got %d", numTransferred)
-		}
-
-		numTransferred, err = tdb.TransferAuditLogOwnership(tx, pacta.UserID("a random user id"), pacta.UserID(actorID2), targetOwner1.ID, targetOwner2.ID)
-		if err != nil {
-			t.Fatalf("transferring audit log ownership: %v", err)
-		}
-		if numTransferred != 2 {
-			t.Fatalf("expected 1 audit logs to be transferred, got %d", numTransferred)
-		}
-		assertTargetOwner(targetOwner1.ID)
-		assertTargetOwner(targetOwner2.ID, alID1, alID2, alID3)
 	})
 }
 

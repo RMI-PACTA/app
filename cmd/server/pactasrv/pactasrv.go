@@ -117,8 +117,11 @@ type DB interface {
 	DeleteUser(tx db.Tx, id pacta.UserID) ([]pacta.BlobURI, error)
 
 	CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error)
+	CreateAuditLogs(tx db.Tx, as []*pacta.AuditLog) error
 	AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.PageInfo, error)
-	TransferAuditLogOwnership(tx db.Tx, sourceUserID, destUserID pacta.UserID, sourceOwnerID, destOwnerID pacta.OwnerID) (int, error)
+
+	RecordUserMerge(tx db.Tx, fromUserID, toUserID, actorUserID pacta.UserID) error
+	RecordOwnerMerge(tx db.Tx, fromUserID, toUserID pacta.OwnerID, actorUserID pacta.UserID) error
 }
 
 type Blob interface {
@@ -212,7 +215,7 @@ type actorInfo struct {
 	IsSuperAdmin bool
 }
 
-func (s *Server) getActorInfoOrFail(ctx context.Context) (*actorInfo, error) {
+func (s *Server) getactorInfoOrErrIfAnon(ctx context.Context) (*actorInfo, error) {
 	actorUserID, err := getUserID(ctx)
 	if err != nil {
 		return nil, err

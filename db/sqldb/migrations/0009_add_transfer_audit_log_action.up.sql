@@ -1,5 +1,0 @@
-BEGIN;
-
-ALTER TYPE audit_log_action ADD VALUE 'TRANSFER_OWNERSHIP'; 
-
-COMMIT;

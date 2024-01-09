@@ -35,6 +35,10 @@ func (d *DB) AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.Pa
 	if err != nil {
 		return nil, nil, fmt.Errorf("converting cursor to offset: %w", err)
 	}
+	q, err = d.expandAuditLogQueryToAccountForMerges(tx, q)
+	if err != nil {
+		return nil, nil, fmt.Errorf("expanding audit_log query to account for merges: %w", err)
+	}
 	sql, args, err := auditLogQuery(q)
 	if err != nil {
 		return nil, nil, fmt.Errorf("building audit_log query: %w", err)
@@ -55,8 +59,42 @@ func (d *DB) AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.Pa
 }
 
 func (d *DB) CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error) {
+	sql, args, id, err := d.buildCreateAuditLogQuery(tx, a)
+	if err != nil {
+		return "", err
+	}
+	err = d.exec(tx, sql, args...)
+	if err != nil {
+		return "", fmt.Errorf("creating audit_log row: %w", err)
+	}
+	return id, nil
+}
+
+func (d *DB) CreateAuditLogs(tx db.Tx, als []*pacta.AuditLog) error {
+	if len(als) == 0 {
+		return nil
+	}
+	if len(als) == 1 {
+		_, err := d.CreateAuditLog(tx, als[0])
+		return err
+	}
+	batch := &pgx.Batch{}
+	for _, al := range als {
+		sql, args, _, err := d.buildCreateAuditLogQuery(tx, al)
+		if err != nil {
+			return fmt.Errorf("building batch audit_log updates: %w", err)
+		}
+		batch.Queue(sql, args...)
+	}
+	if err := d.ExecBatch(tx, batch); err != nil {
+		return fmt.Errorf("batch creating audit_logs: %w", err)
+	}
+	return nil
+}
+
+func (d *DB) buildCreateAuditLogQuery(tx db.Tx, a *pacta.AuditLog) (string, []interface{}, pacta.AuditLogID, error) {
 	if err := validateAuditLogForCreation(a); err != nil {
-		return "", fmt.Errorf("validating audit_log for creation: %w", err)
+		return "", nil, "", fmt.Errorf("validating audit_log for creation: %w", err)
 	}
 	id := pacta.AuditLogID(d.randomID(auditLogIDNamespace))
 	ownerFn := func(o *pacta.Owner) pgtype.Text {
@@ -70,7 +108,7 @@ func (d *DB) CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, erro
 		stt.Valid = true
 		stt.String = string(a.SecondaryTargetType)
 	}
-	err := d.exec(tx, `
+	sql := `
 		INSERT INTO audit_log 
 			(
 				id, action, actor_type, actor_id, actor_owner_id,
@@ -79,77 +117,13 @@ func (d *DB) CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, erro
 			)
 			VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
-	`, id, a.Action, a.ActorType, a.ActorID, ownerFn(a.ActorOwner),
+	`
+	args := []interface{}{
+		id, a.Action, a.ActorType, a.ActorID, ownerFn(a.ActorOwner),
 		a.PrimaryTargetType, a.PrimaryTargetID, ownerFn(a.PrimaryTargetOwner),
-		stt, a.SecondaryTargetID, ownerFn(a.SecondaryTargetOwner))
-	if err != nil {
-		return "", fmt.Errorf("creating audit_log row: %w", err)
+		stt, a.SecondaryTargetID, ownerFn(a.SecondaryTargetOwner),
 	}
-	return id, nil
-}
-
-func (d *DB) TransferAuditLogOwnership(tx db.Tx, sourceUserID, destUserID pacta.UserID, sourceOwnerID, destOwnerID pacta.OwnerID) (int, error) {
-	auditLogsUpdated := -1
-	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
-		countLogsReferencingSource := func() (int, error) {
-			row := d.queryRow(tx, `
-			SELECT 
-				COUNT(*)
-			FROM audit_log
-			WHERE 
-				actor_id = $1 OR
-				primary_target_id = $1 OR
-				secondary_target_id = $1 OR
-				actor_owner_id = $2 OR
-				primary_target_owner_id = $2 OR
-				secondary_target_owner_id = $2;`, sourceUserID, sourceOwnerID)
-			n := -1
-			if err := row.Scan(&n); err != nil {
-				return -1, fmt.Errorf("scanning audit_log count: %w", err)
-			}
-			return n, nil
-		}
-		alu, err := countLogsReferencingSource()
-		if err != nil {
-			return fmt.Errorf("counting audit_logs referencing source user: %w", err)
-		}
-		auditLogsUpdated = alu
-
-		userIDStatements := []string{
-			`UPDATE audit_log SET actor_id = $2 WHERE actor_id = $1;`,
-			`UPDATE audit_log SET primary_target_id = $2 WHERE primary_target_id = $1;`,
-			`UPDATE audit_log SET secondary_target_id = $2 WHERE secondary_target_id = $1;`,
-		}
-		for i, userIDStatement := range userIDStatements {
-			if err := d.exec(tx, userIDStatement, sourceUserID, destUserID); err != nil {
-				return fmt.Errorf("user id statement %d/%d: %w", i, len(userIDStatements), err)
-			}
-		}
-		ownerIDStatements := []string{
-			`UPDATE audit_log SET actor_owner_id = $2 WHERE actor_owner_id = $1;`,
-			`UPDATE audit_log SET primary_target_owner_id = $2 WHERE primary_target_owner_id = $1;`,
-			`UPDATE audit_log SET secondary_target_owner_id = $2 WHERE secondary_target_owner_id = $1;`,
-		}
-		for i, ownerIDStatement := range ownerIDStatements {
-			if err := d.exec(tx, ownerIDStatement, sourceOwnerID, destOwnerID); err != nil {
-				return fmt.Errorf("owner id statement %d/%d: %w", i, len(ownerIDStatements), err)
-			}
-		}
-		// We do this defensive coding WITHIN the transaction, because we don't want to leave dangling audit-logs.
-		// If something is being returned here we should abort the proposed merge/transfer of accounts, and fix the logic first.
-		stillReferenced, err := countLogsReferencingSource()
-		if err != nil {
-			return fmt.Errorf("counting audit_logs referencing source user: %w", err)
-		}
-		if stillReferenced != 0 {
-			return fmt.Errorf("%d audit_logs still reference source user after transfer", stillReferenced)
-		}
-		return nil
-	})
-	if err != nil {
-		return -1, fmt.Errorf("transferring audit_log ownership: %w", err)
-	}
-	return auditLogsUpdated, nil
+	return sql, args, id, nil
 }
 
 func rowsToAuditLogs(rows pgx.Rows) ([]*pacta.AuditLog, error) {

@@ -1,5 +1,8 @@
 BEGIN;
 
+DROP TABLE owner_merges;
+DROP TABLE user_merges;
+
 -- There isn't a way to delete a value from an enum, so this is the workaround
 -- https://stackoverflow.com/a/56777227/17909149
 

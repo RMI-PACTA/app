@@ -90,6 +90,7 @@ type DBConn interface {
 	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
 	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 }
 
 func (d *DB) withConn(tx db.Tx, fn func(*ctxtx, DBConn) error) error {
@@ -139,6 +140,24 @@ func (d *DB) exec(tx db.Tx, sql string, args ...interface{}) error {
 		return err
 	})
 	return err
+}
+
+func (d *DB) ExecBatch(tx db.Tx, batch *pgx.Batch) error {
+	return d.withConn(tx, func(c *ctxtx, conn DBConn) error {
+		batchResults := conn.SendBatch(c.ctx, batch)
+		defer batchResults.Close()
+		n := batch.Len()
+		for i := 0; i < n; i++ {
+			_, err := batchResults.Exec()
+			if err != nil {
+				return fmt.Errorf("batch op %d/%d failed: %w", i+1, n, err)
+			}
+		}
+		if err := batchResults.Close(); err != nil {
+			return fmt.Errorf("closing batch results: %w", err)
+		}
+		return nil
+	})
 }
 
 type rowScanner interface {
@@ -388,6 +407,30 @@ func mapRowsToIDs[T ~string](name string, rows pgx.Rows) ([]T, error) {
 		return t, nil
 	}
 	return mapRows(name, rows, fn)
+}
+
+func asSet[T comparable](ts []T) map[T]bool {
+	result := map[T]bool{}
+	for _, t := range ts {
+		result[t] = true
+	}
+	return result
+}
+
+func keys[K comparable, V any](m map[K]V) []K {
+	result := []K{}
+	for k := range m {
+		result = append(result, k)
+	}
+	return result
+}
+
+func asStrs[S ~string](ss []S) []string {
+	result := make([]string, len(ss))
+	for i, s := range ss {
+		result[i] = string(s)
+	}
+	return result
 }
 
 func checkSizesEquivalent(name string, sizes ...int) error {
