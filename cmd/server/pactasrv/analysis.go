@@ -2,6 +2,7 @@ package pactasrv
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/RMI/pacta/cmd/server/pactasrv/conv"
@@ -130,49 +131,39 @@ func (s *Server) UpdateAnalysisArtifact(ctx context.Context, request api.UpdateA
 	return api.UpdateAnalysisArtifact204Response{}, nil
 }
 
-// Requests an anslysis be run
+// Requests an analysis be run
 // (POST /run-analysis)
 func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequestObject) (api.RunAnalysisResponseObject, error) {
 	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	analysisType, err := conv.AnalysisTypeFromOAPI(&request.Body.AnalysisType)
 	if err != nil {
 		return nil, err
 	}
 
-	found := 0
-	var iID pacta.InitiativeID
-	var pgID pacta.PortfolioGroupID
-	var pID pacta.PortfolioID
+	var ais []entityForAnalysis
 	if request.Body.InitiativeId != nil {
-		iID = pacta.InitiativeID(*request.Body.InitiativeId)
-		found++
+		ais = append(ais, initiativeAnalysis{iID: pacta.InitiativeID(*request.Body.InitiativeId), s: s})
 	}
 	if request.Body.PortfolioGroupId != nil {
-		pgID = pacta.PortfolioGroupID(*request.Body.PortfolioGroupId)
-		found++
+		ais = append(ais, portfolioGroupAnalysis{pgID: pacta.PortfolioGroupID(*request.Body.PortfolioGroupId), s: s})
 	}
 	if request.Body.PortfolioId != nil {
-		pID = pacta.PortfolioID(*request.Body.PortfolioId)
-		found++
+		ais = append(ais, portfolioAnalysis{pID: pacta.PortfolioID(*request.Body.PortfolioId), s: s})
 	}
-	if found == 0 {
+	if len(ais) == 0 {
 		return nil, oapierr.BadRequest("one of initiative_id, portfolio_group_id, or portfolio_id is required")
 	}
-	if found > 1 {
+	if len(ais) > 1 {
 		return nil, oapierr.BadRequest("only one of initiative_id, portfolio_group_id, or portfolio_id may be set")
 	}
+	ai := ais[0]
 
-	// Allows consistent handling between NOT FOUND and UNAUTHORIZED.
-	notFoundErr := func(typeName string, id string, fields ...zapcore.Field) error {
-		fs := append(fields, zap.String(fmt.Sprintf("%s_id", typeName), string(id)))
-		return oapierr.NotFound(fmt.Sprintf("%s not found", typeName), fs...)
-	}
 	var analysisID pacta.AnalysisID
 	var blobURIs []pacta.BlobURI
-	var endUserErr error
 	err = s.DB.Transactional(ctx, func(tx db.Tx) error {
 		var pvID pacta.PACTAVersionID
 		if request.Body.PactaVersionId == nil {
@@ -185,100 +176,19 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 			pvID = pacta.PACTAVersionID(*request.Body.PactaVersionId)
 			_, err := s.DB.PACTAVersion(tx, pvID)
 			if err != nil {
-				endUserErr = oapierr.BadRequest("pacta_version_id is invalid", zap.Error(err), zap.String("pacta_version_id", string(pvID)))
-				return nil
+				return oapierr.BadRequest("pacta_version_id is invalid", zap.Error(err), zap.String("pacta_version_id", string(pvID)))
 			}
 		}
 
 		var snapshotID pacta.PortfolioSnapshotID
 		var blobIDs []pacta.BlobID
-		if pID != "" {
-			p, err := s.DB.Portfolio(tx, pID)
-			if err != nil {
-				if db.IsNotFound(err) {
-					endUserErr = notFoundErr("portfolio", string(pID), zap.Error(err))
-					return nil
-				}
-				return fmt.Errorf("looking up portfolio: %w", err)
-			}
-			if p.Owner.ID != actorInfo.OwnerID {
-				endUserErr = notFoundErr("portfolio", string(pID),
-					zap.Error(fmt.Errorf("portfolio does not belong to user")),
-					zap.String("portfolio_owner_id", string(p.Owner.ID)),
-					zap.String("actor_owner_id", string(actorInfo.OwnerID)))
-				return nil
-			}
-			sID, err := s.DB.CreateSnapshotOfPortfolio(tx, pID)
-			if err != nil {
-				return fmt.Errorf("creating snapshot of portfolio: %w", err)
-			}
-			snapshotID = sID
-			blobIDs = []pacta.BlobID{p.Blob.ID}
-		} else if pgID != "" {
-			pg, err := s.DB.PortfolioGroup(tx, pgID)
-			if err != nil {
-				if db.IsNotFound(err) {
-					endUserErr = notFoundErr("portfolio_group", string(pgID), zap.Error(err))
-					return nil
-				}
-				return fmt.Errorf("looking up portfolio_group: %w", err)
-			}
-			if pg.Owner.ID != actorInfo.OwnerID {
-				endUserErr = notFoundErr("portfolio_group", string(pgID),
-					zap.Error(fmt.Errorf("portfolio group does not belong to user")),
-					zap.String("pg_owner_id", string(pg.Owner.ID)),
-					zap.String("actor_owner_id", string(actorInfo.OwnerID)))
-				return nil
-			}
-			sID, err := s.DB.CreateSnapshotOfPortfolioGroup(tx, pgID)
-			if err != nil {
-				return fmt.Errorf("creating snapshot of portfolio group: %w", err)
-			}
-			snapshotID = sID
-			pids := []pacta.PortfolioID{}
-			for _, pm := range pg.PortfolioGroupMemberships {
-				pids = append(pids, pm.Portfolio.ID)
-			}
-			portfolios, err := s.DB.Portfolios(tx, pids)
-			if err != nil {
-				return fmt.Errorf("looking up portfolios: %w", err)
-			}
-			for _, p := range portfolios {
-				blobIDs = append(blobIDs, p.Blob.ID)
-			}
-		} else if iID != "" {
-			// This crudely tests whether or not a user is a manager of the initiative.
-			if err := s.initiativeDoAuthzAndAuditLog(ctx, iID, pacta.AuditLogAction_Update); err != nil {
-				endUserErr = err
-				return nil
-			}
-			i, err := s.DB.Initiative(tx, iID)
-			if err != nil {
-				if db.IsNotFound(err) {
-					endUserErr = notFoundErr("initiative", string(iID), zap.Error(err))
-					return nil
-				}
-				return fmt.Errorf("looking up initiative: %w", err)
-			}
-			sID, err := s.DB.CreateSnapshotOfInitiative(tx, iID)
-			if err != nil {
-				return fmt.Errorf("creating snapshot of initiative: %w", err)
-			}
-			snapshotID = sID
-			pids := []pacta.PortfolioID{}
-			for _, pm := range i.PortfolioInitiativeMemberships {
-				pids = append(pids, pm.Portfolio.ID)
-			}
-			portfolios, err := s.DB.Portfolios(tx, pids)
-			if err != nil {
-				return fmt.Errorf("looking up portfolios: %w", err)
-			}
-			for _, p := range portfolios {
-				blobIDs = append(blobIDs, p.Blob.ID)
-			}
+		if err := ai.checkAuth(ctx, tx); err != nil {
+			return err
 		}
-		if snapshotID == "" {
-			return fmt.Errorf("snapshot id is empty, something is wrong in the bizlogic")
+
+		snapshotID, blobIDs, err := ai.createSnapshot(tx)
+		if err != nil {
+			return err
 		}
 
 		blobs, err := s.DB.Blobs(tx, blobIDs)
@@ -314,10 +224,11 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 		analysisID = aID
 		return nil
 	})
-	if endUserErr != nil {
-		return nil, endUserErr
-	}
 	if err != nil {
+		e := &oapierr.Error{}
+		if errors.As(err, &e) {
+			return nil, e
+		}
 		return nil, oapierr.Internal("failed to create analysis", zap.Error(err))
 	}
 
@@ -345,6 +256,148 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 	}
 
 	return api.RunAnalysis200JSONResponse{AnalysisId: string(analysisID)}, nil
+}
+
+// This name is awkward, but it just encapsulates things we can run an analysis
+// on that represent one or more underlying portfolios.
+type entityForAnalysis interface {
+	checkAuth(context.Context, db.Tx) error
+	createSnapshot(db.Tx) (pacta.PortfolioSnapshotID, []pacta.BlobID, error)
+}
+
+type portfolioAnalysis struct {
+	pID pacta.PortfolioID
+	s   *Server
+
+	p *pacta.Portfolio
+}
+
+// Allows consistent handling between NOT FOUND and UNAUTHORIZED.
+func notFoundErr[T ~string](typeName string, id T, fields ...zapcore.Field) error {
+	fs := append(fields, zap.String(fmt.Sprintf("%s_id", typeName), string(id)))
+	return oapierr.NotFound(fmt.Sprintf("%s not found", typeName), fs...)
+}
+
+func (pa portfolioAnalysis) checkAuth(ctx context.Context, tx db.Tx) error {
+	actorInfo, err := pa.s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return err
+	}
+	p, err := pa.s.DB.Portfolio(tx, pa.pID)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return notFoundErr("portfolio", pa.pID, zap.Error(err))
+		}
+		return fmt.Errorf("looking up portfolio: %w", err)
+	}
+	if p.Owner.ID != actorInfo.OwnerID {
+		return notFoundErr("portfolio", pa.pID,
+			zap.Error(fmt.Errorf("portfolio does not belong to user")),
+			zap.String("portfolio_owner_id", string(p.Owner.ID)),
+			zap.String("actor_owner_id", string(actorInfo.OwnerID)))
+	}
+	pa.p = p
+	return nil
+}
+
+func (pa portfolioAnalysis) createSnapshot(tx db.Tx) (pacta.PortfolioSnapshotID, []pacta.BlobID, error) {
+	sID, err := pa.s.DB.CreateSnapshotOfPortfolio(tx, pa.pID)
+	if err != nil {
+		return "", nil, fmt.Errorf("creating snapshot of portfolio: %w", err)
+	}
+	return sID, []pacta.BlobID{pa.p.Blob.ID}, nil
+}
+
+type portfolioGroupAnalysis struct {
+	pgID pacta.PortfolioGroupID
+	s    *Server
+
+	pg *pacta.PortfolioGroup
+}
+
+func (pga portfolioGroupAnalysis) checkAuth(ctx context.Context, tx db.Tx) error {
+	actorInfo, err := pga.s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return err
+	}
+	pg, err := pga.s.DB.PortfolioGroup(tx, pga.pgID)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return notFoundErr("portfolio_group", pga.pgID, zap.Error(err))
+		}
+		return fmt.Errorf("looking up portfolio_group: %w", err)
+	}
+	if pg.Owner.ID != actorInfo.OwnerID {
+		return notFoundErr("portfolio_group", pga.pgID,
+			zap.Error(fmt.Errorf("portfolio group does not belong to user")),
+			zap.String("pg_owner_id", string(pg.Owner.ID)),
+			zap.String("actor_owner_id", string(actorInfo.OwnerID)))
+	}
+	pga.pg = pg
+	return nil
+}
+
+func (pga portfolioGroupAnalysis) createSnapshot(tx db.Tx) (pacta.PortfolioSnapshotID, []pacta.BlobID, error) {
+	sID, err := pga.s.DB.CreateSnapshotOfPortfolioGroup(tx, pga.pgID)
+	if err != nil {
+		return "", nil, fmt.Errorf("creating snapshot of portfolio group: %w", err)
+	}
+	pids := []pacta.PortfolioID{}
+	for _, pm := range pga.pg.PortfolioGroupMemberships {
+		pids = append(pids, pm.Portfolio.ID)
+	}
+	portfolios, err := pga.s.DB.Portfolios(tx, pids)
+	if err != nil {
+		return "", nil, fmt.Errorf("looking up portfolios: %w", err)
+	}
+	var blobIDs []pacta.BlobID
+	for _, p := range portfolios {
+		blobIDs = append(blobIDs, p.Blob.ID)
+	}
+	return sID, blobIDs, nil
+}
+
+type initiativeAnalysis struct {
+	iID pacta.InitiativeID
+	s   *Server
+
+	i *pacta.Initiative
+}
+
+func (ia initiativeAnalysis) checkAuth(ctx context.Context, tx db.Tx) error {
+	// This crudely tests whether or not a user is a manager of the initiative.
+	if err := ia.s.initiativeDoAuthzAndAuditLog(ctx, ia.iID, pacta.AuditLogAction_Update); err != nil {
+		return err
+	}
+	i, err := ia.s.DB.Initiative(tx, ia.iID)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return notFoundErr("initiative", ia.iID, zap.Error(err))
+		}
+		return fmt.Errorf("looking up initiative: %w", err)
+	}
+	ia.i = i
+	return nil
+}
+
+func (ia initiativeAnalysis) createSnapshot(tx db.Tx) (pacta.PortfolioSnapshotID, []pacta.BlobID, error) {
+	sID, err := ia.s.DB.CreateSnapshotOfInitiative(tx, ia.iID)
+	if err != nil {
+		return "", nil, fmt.Errorf("creating snapshot of initiative: %w", err)
+	}
+	pids := []pacta.PortfolioID{}
+	for _, pm := range ia.i.PortfolioInitiativeMemberships {
+		pids = append(pids, pm.Portfolio.ID)
+	}
+	portfolios, err := ia.s.DB.Portfolios(tx, pids)
+	if err != nil {
+		return "", nil, fmt.Errorf("looking up portfolios: %w", err)
+	}
+	var blobIDs []pacta.BlobID
+	for _, p := range portfolios {
+		blobIDs = append(blobIDs, p.Blob.ID)
+	}
+	return sID, blobIDs, nil
 }
 
 func (s *Server) analysisDoAuthzAndAuditLog(ctx context.Context, analysisID pacta.AnalysisID, action pacta.AuditLogAction) error {

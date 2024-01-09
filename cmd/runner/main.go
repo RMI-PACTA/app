@@ -326,7 +326,7 @@ func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.
 			EventType:   to.Ptr("parse-portfolio-complete"),
 			EventTime:   to.Ptr(time.Now()),
 			ID:          to.Ptr(string(taskID)),
-			Subject:     to.Ptr("subject"),
+			Subject:     to.Ptr(string(taskID)),
 		},
 	}
 

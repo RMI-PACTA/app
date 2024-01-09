@@ -231,8 +231,12 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 	r.Post(createdReportPath, handleEventGrid(s, s.handleCreatedReportResponse))
 }
 
-type eventGridTask[TaskType any] struct {
-	Data            *TaskType `json:"data"`
+type TaskData interface {
+	task.ParsePortfolioResponse | task.CreateAuditResponse | task.CreateReportResponse
+}
+
+type eventGridTask[T TaskData] struct {
+	Data            *T        `json:"data"`
 	EventType       string    `json:"eventType"`
 	ID              string    `json:"id"`
 	Subject         string    `json:"subject"`
@@ -242,12 +246,12 @@ type eventGridTask[TaskType any] struct {
 	Topic           string    `json:"topic"`
 }
 
-func handleEventGrid[TaskType any](
+func handleEventGrid[T TaskData](
 	s *Server,
-	doHandleFn func(task eventGridTask[TaskType], w http.ResponseWriter),
+	doHandleFn func(task eventGridTask[T], w http.ResponseWriter),
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var reqs []eventGridTask[TaskType]
+		var reqs []eventGridTask[T]
 		if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
 			s.logger.Error("failed to parse webhook request body", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -302,7 +306,8 @@ func (s *Server) handleParsePortfolio(task eventGridTask[task.ParsePortfolioResp
 			}
 			if holdingsDate == nil {
 				holdingsDate = iu.HoldingsDate
-			} else if *holdingsDate != *iu.HoldingsDate {
+			} else if iu.HoldingsDate != nil && *holdingsDate != *iu.HoldingsDate {
+				// Question for Grady: can iu.HoldingsDate ever be nil?
 				return fmt.Errorf("multiple holdings dates found for incomplete uploads: %+v", incompleteUploads)
 			}
 			if iu.RanAt.After(ranAt) {
