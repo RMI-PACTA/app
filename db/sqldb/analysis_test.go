@@ -53,7 +53,7 @@ func TestAnalysisCRUD(t *testing.T) {
 
 	ius, err := tdb.Analyses(tx, []pacta.AnalysisID{iu.ID, iu.ID, "nonsense"})
 	if err != nil {
-		t.Fatalf("reading analysiss: %w", err)
+		t.Fatalf("reading analysiss: %v", err)
 	}
 	if diff := cmp.Diff(map[pacta.AnalysisID]*pacta.Analysis{iu.ID: iu}, ius, cmpOpts); diff != "" {
 		t.Fatalf("analysis mismatch (-want +got):\n%s", diff)
