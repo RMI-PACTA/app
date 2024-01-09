@@ -218,7 +218,7 @@ func TestDeleteUser(t *testing.T) {
 	userID, err0 := tdb.createUser(tx, u)
 	noErrDuringSetup(t, err0)
 
-	err := tdb.DeleteUser(tx, userID)
+	_, err := tdb.DeleteUser(tx, userID)
 	if err != nil {
 		t.Fatalf("deleting user: %v", err)
 	}
