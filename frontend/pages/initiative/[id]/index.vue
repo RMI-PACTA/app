@@ -34,7 +34,7 @@ const status = computed(() => {
 const isAMember = computed(() => {
   const mm = maybeMe.value
   if (!mm) return false
-  return relationships.value.some((r) => r.userId === mm.id && r.manager)
+  return relationships.value.some((r) => r.userId === mm.id && r.member)
 })
 const canJoin = computed(() => {
   const i = initiative.value
