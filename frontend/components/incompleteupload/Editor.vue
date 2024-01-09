@@ -4,11 +4,6 @@ import {
   type EditorIncompleteUploadValues as EditorValues,
 } from '@/lib/editor'
 
-const prefix = 'components/incompleteupload/Editor'
-
-const { t } = useI18n()
-const tt = (key: string) => t(`${prefix}.${key}`)
-
 interface Props {
   editorValues: EditorValues
   editorFields: EditorFields
@@ -49,10 +44,8 @@ const evs = computed({
       :editor-field="efs.adminDebugEnabled"
       :editor-value="evs.adminDebugEnabled"
     >
-      <ExplicitInputSwitch
+      <AdminDebugEnabledToggleButton
         v-model:value="evs.adminDebugEnabled.currentValue"
-        :on-label="tt('Administrator Debugging Access Enabled')"
-        :off-label="tt('No Administrator Access Enabled')"
       />
     </FormEditorField>
   </div>
