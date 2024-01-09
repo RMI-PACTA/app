@@ -12,7 +12,7 @@ const language = computed(() => {
   if (!code) {
     code = 'en'
   }
-  return presentOrFileBug(LanguageOptions.find((l) => l.code === code))
+  return presentOrFileBug(LanguageOptions.find((l) => l.code === code), `Language ${code} not found`)
 })
 </script>
 

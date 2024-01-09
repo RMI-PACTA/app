@@ -12,7 +12,9 @@ const props = defineProps<Props>()
 const emits = defineEmits<Emits>()
 const model = computed<LanguageOption>({
   get: () => languageToOption(props.value),
-  set: (v: LanguageOption) => { emits('update:value', v.language) },
+  set: (v: LanguageOption) => {
+    emits('update:value', v.language)
+  },
 })
 </script>
 
@@ -20,11 +22,10 @@ const model = computed<LanguageOption>({
   <PVDropdown
     v-model="model"
     option-label="label"
-    option-value="code"
     :options="LanguageOptions"
   >
     <template #value="slotProps">
-      <LanguageRepresentation :code="slotProps.value" />
+      <LanguageRepresentation :code="slotProps.value.code" />
     </template>
     <template #option="slotProps">
       <LanguageRepresentation :code="slotProps.option.code" />

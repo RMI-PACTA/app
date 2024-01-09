@@ -123,7 +123,7 @@ func (s *Server) initiativePortfolioRelationshipDoAuthzAndAuditLog(ctx context.C
 			as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
 		}
 	default:
-		return fmt.Errorf("unknown action %q for initiative_invitation authz", action)
+		return fmt.Errorf("unknown action %q for initiative_portfolio_relationship authz", action)
 	}
 	return s.auditLogIfAuthorizedOrFail(ctx, as)
 }
