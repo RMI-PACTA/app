@@ -33,9 +33,7 @@ type Config struct {
 	// prevent random unauthenticated internet requests from triggering webhooks.
 	AllowedAuthSecrets []string
 
-	ParsedPortfolioTopicName string
-	CreatedAuditTopicName    string
-	CreatedReportTopicName   string
+	TopicName string
 }
 
 type DB interface {
@@ -53,9 +51,7 @@ type DB interface {
 	CreateAnalysisArtifact(tx db.Tx, a *pacta.AnalysisArtifact) (pacta.AnalysisArtifactID, error)
 }
 
-const parsedPortfolioPath = "/events/parsed_portfolio"
-const createdAuditPath = "/events/created_audit"
-const createdReportPath = "/events/created_report"
+const eventPath = "/events"
 
 func (c *Config) validate() error {
 	if c.Logger == nil {
@@ -70,14 +66,8 @@ func (c *Config) validate() error {
 	if len(c.AllowedAuthSecrets) == 0 {
 		return errors.New("no auth secrets were given")
 	}
-	if c.ParsedPortfolioTopicName == "" {
-		return errors.New("no parsed portfolio topic name given")
-	}
-	if c.CreatedAuditTopicName == "" {
-		return errors.New("no created audit topic name given")
-	}
-	if c.CreatedReportTopicName == "" {
-		return errors.New("no created report topic name given")
+	if c.TopicName == "" {
+		return errors.New("no event grid topic name given")
 	}
 	if c.DB == nil {
 		return errors.New("no DB was given")
@@ -96,7 +86,7 @@ type Server struct {
 
 	subscription  string
 	resourceGroup string
-	pathToTopic   map[string]string
+	topic         string
 	db            DB
 	now           func() time.Time
 }
@@ -113,11 +103,7 @@ func NewServer(cfg *Config) (*Server, error) {
 		resourceGroup:      cfg.ResourceGroup,
 		db:                 cfg.DB,
 		now:                cfg.Now,
-		pathToTopic: map[string]string{
-			parsedPortfolioPath: cfg.ParsedPortfolioTopicName,
-			createdAuditPath:    cfg.CreatedAuditTopicName,
-			createdReportPath:   cfg.CreatedReportTopicName,
-		},
+		topic:              cfg.TopicName,
 	}, nil
 }
 
@@ -132,8 +118,7 @@ func (s *Server) findValidAuthSecret(auth string) (int, bool) {
 
 func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		topic, ok := s.pathToTopic[r.URL.Path]
-		if !ok {
+		if r.URL.Path != eventPath {
 			s.logger.Error("no topic found for path", zap.String("path", r.URL.Path))
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
@@ -203,7 +188,7 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
-		fullTopic := path.Join("/subscriptions", s.subscription, "resourceGroups", s.resourceGroup, "providers/Microsoft.EventGrid/topics", topic)
+		fullTopic := path.Join("/subscriptions", s.subscription, "resourceGroups", s.resourceGroup, "providers/Microsoft.EventGrid/topics", s.topic)
 		// We lowercase these because *sometimes* the request comes from Azure with
 		// "microsoft.eventgrid" instead of "Microsoft.EventGrid". This is exceptionally
 		// annoying.
@@ -226,57 +211,78 @@ func (s *Server) verifyWebhook(next http.Handler) http.Handler {
 
 func (s *Server) RegisterHandlers(r chi.Router) {
 	r.Use(s.verifyWebhook)
-	r.Post(parsedPortfolioPath, handleEventGrid(s, s.handleParsePortfolio))
-	r.Post(createdAuditPath, handleEventGrid(s, s.handleCreatedAuditResponse))
-	r.Post(createdReportPath, handleEventGrid(s, s.handleCreatedReportResponse))
+	r.Post(eventPath, s.handleEventGrid)
 }
 
 type TaskData interface {
 	task.ParsePortfolioResponse | task.CreateAuditResponse | task.CreateReportResponse
 }
 
-type eventGridTask[T TaskData] struct {
-	Data            *T        `json:"data"`
-	EventType       string    `json:"eventType"`
-	ID              string    `json:"id"`
-	Subject         string    `json:"subject"`
-	DataVersion     string    `json:"dataVersion"`
-	MetadataVersion string    `json:"metadataVersion"`
-	EventTime       time.Time `json:"eventTime"`
-	Topic           string    `json:"topic"`
+type eventGridTask struct {
+	Data            json.RawMessage `json:"data"`
+	EventType       string          `json:"eventType"`
+	ID              string          `json:"id"`
+	Subject         string          `json:"subject"`
+	DataVersion     string          `json:"dataVersion"`
+	MetadataVersion string          `json:"metadataVersion"`
+	EventTime       time.Time       `json:"eventTime"`
+	Topic           string          `json:"topic"`
 }
 
-func handleEventGrid[T TaskData](
-	s *Server,
-	doHandleFn func(task eventGridTask[T], w http.ResponseWriter),
-) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var reqs []eventGridTask[T]
-		if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
-			s.logger.Error("failed to parse webhook request body", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		if len(reqs) != 1 {
-			s.logger.Error("webhook response had unexpected number of events", zap.Int("event_count", len(reqs)))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		req := reqs[0]
-		if req.Data == nil {
-			s.logger.Error("webhook response had no payload", zap.String("event_grid_id", req.ID))
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
+func (s *Server) handleEventGrid(w http.ResponseWriter, r *http.Request) {
+	var reqs []eventGridTask
+	if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
+		s.logger.Error("failed to parse webhook request body", zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	if len(reqs) != 1 {
+		s.logger.Error("webhook response had unexpected number of events", zap.Int("event_count", len(reqs)))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	req := reqs[0]
+	if req.Data == nil {
+		s.logger.Error("webhook response had no payload", zap.String("event_grid_id", req.ID))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
-		doHandleFn(req, w)
+	switch req.EventType {
+	case "parsed-portfolio":
+		var resp task.ParsePortfolioResponse
+		if err := json.Unmarshal(req.Data, &resp); err != nil {
+			s.logger.Error("failed to parse event data as ParsePortfolioResponse", zap.String("event_grid_id", req.ID), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		s.handleParsedPortfolio(req.ID, &resp, w)
+	case "created-audit":
+		var resp task.CreateAuditResponse
+		if err := json.Unmarshal(req.Data, &resp); err != nil {
+			s.logger.Error("failed to parse event data as CreateAuditResponse", zap.String("event_grid_id", req.ID), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		s.handleCreatedAudit(req.ID, &resp, w)
+	case "created-report":
+		var resp task.CreateReportResponse
+		if err := json.Unmarshal(req.Data, &resp); err != nil {
+			s.logger.Error("failed to parse event data as CreateReportResponse", zap.String("event_grid_id", req.ID), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		s.handleCreatedReport(req.ID, &resp, w)
+	default:
+		s.logger.Error("unexpected event type", zap.String("event_grid_id", req.ID), zap.String("event_type", req.EventType))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 }
 
-func (s *Server) handleParsePortfolio(task eventGridTask[task.ParsePortfolioResponse], w http.ResponseWriter) {
-	resp := task.Data
+func (s *Server) handleParsedPortfolio(id string, resp *task.ParsePortfolioResponse, w http.ResponseWriter) {
 	if len(resp.Outputs) == 0 {
-		s.logger.Error("webhook response had no processed portfolios", zap.String("event_grid_id", task.ID))
+		s.logger.Error("webhook response had no processed portfolios", zap.String("event_grid_id", id))
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -357,21 +363,21 @@ func (s *Server) handleParsePortfolio(task eventGridTask[task.ParsePortfolioResp
 		zap.Int("portfolio_count", len(portfolioIDs)))
 }
 
-func (s *Server) handleCreatedAuditResponse(task eventGridTask[task.CreateAuditResponse], w http.ResponseWriter) {
+func (s *Server) handleCreatedAudit(id string, resp *task.CreateAuditResponse, w http.ResponseWriter) {
 	s.handleCompletedAnalysis(
 		pacta.AnalysisType_Audit,
-		task.Data.Request.AnalysisID,
-		task.ID,
-		task.Data.Artifacts,
+		resp.Request.AnalysisID,
+		id,
+		resp.Artifacts,
 		w)
 }
 
-func (s *Server) handleCreatedReportResponse(task eventGridTask[task.CreateReportResponse], w http.ResponseWriter) {
+func (s *Server) handleCreatedReport(id string, resp *task.CreateReportResponse, w http.ResponseWriter) {
 	s.handleCompletedAnalysis(
 		pacta.AnalysisType_Report,
-		task.Data.Request.AnalysisID,
-		task.ID,
-		task.Data.Artifacts,
+		resp.Request.AnalysisID,
+		id,
+		resp.Artifacts,
 		w)
 }
 
