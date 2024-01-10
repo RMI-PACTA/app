@@ -64,9 +64,9 @@ func run(args []string) error {
 		env      = fs.String("env", "", "The environment that we're running in.")
 		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the secret configuration. Can only be used when running locally.")
 
-		azEventSubscription         = fs.String("azure_event_subscription", "", "The Azure Subscription ID to allow webhook registrations from")
-		azEventResourceGroup        = fs.String("azure_event_resource_group", "", "The Azure resource group to allow webhook registrations from")
-		azEventParsedPortfolioTopic = fs.String("azure_event_parsed_portfolio_topic", "", "The name of the topic for webhooks about parsed portfolios")
+		azEventSubscription  = fs.String("azure_event_subscription", "", "The Azure Subscription ID to allow webhook registrations from")
+		azEventResourceGroup = fs.String("azure_event_resource_group", "", "The Azure resource group to allow webhook registrations from")
+		azEventTopic         = fs.String("azure_event_topic", "", "The name of the topic for webhooks about ecosystem updates, like parsed portfolios or created reports/audits.")
 
 		// Only when running locally because the Dockerized runner can't use local `az` CLI credentials
 		localDockerTenantID     = fs.String("local_docker_tenant_id", "", "The Azure Tenant ID the localdocker service principal lives in")
@@ -287,13 +287,13 @@ func run(args []string) error {
 	})
 
 	eventSrv, err := azevents.NewServer(&azevents.Config{
-		Logger:                   logger,
-		AllowedAuthSecrets:       strings.Split(*azEventWebhookSecrets, ","),
-		Subscription:             *azEventSubscription,
-		ResourceGroup:            *azEventResourceGroup,
-		ParsedPortfolioTopicName: *azEventParsedPortfolioTopic,
-		DB:                       db,
-		Now:                      time.Now,
+		Logger:             logger,
+		AllowedAuthSecrets: strings.Split(*azEventWebhookSecrets, ","),
+		Subscription:       *azEventSubscription,
+		ResourceGroup:      *azEventResourceGroup,
+		TopicName:          *azEventTopic,
+		DB:                 db,
+		Now:                time.Now,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init Azure Event Grid handler: %w", err)
