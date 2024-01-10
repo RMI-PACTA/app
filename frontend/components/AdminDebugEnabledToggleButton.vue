@@ -31,6 +31,7 @@ const model = computed({
 const ack = () => {
   everAcked.value = true
   model.value = true
+  visible.value = false
 }
 const noAck = () => {
   model.value = false
@@ -68,7 +69,7 @@ const visible = newModalVisibilityState('AdminDebugEnabledWarning')
         <PVButton
           :label="tt('Ack')"
           icon="pi pi-arrow-right"
-          class="p-button-secondary"
+          icon-pos="right"
           @click="ack"
         />
       </div>

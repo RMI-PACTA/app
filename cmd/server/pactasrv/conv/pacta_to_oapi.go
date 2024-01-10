@@ -90,9 +90,13 @@ func UserToOAPI(user *pacta.User) (*api.User, error) {
 	if user == nil {
 		return nil, oapierr.Internal("userToOAPI: can't convert nil pointer")
 	}
-	lang, err := LanguageToOAPI(user.PreferredLanguage)
-	if err != nil {
-		return nil, oapierr.Internal("userToOAPI: languageToOAPI failed", zap.Error(err))
+	var lang api.Language
+	if user.PreferredLanguage != "" {
+		l, err := LanguageToOAPI(user.PreferredLanguage)
+		if err != nil {
+			return nil, oapierr.Internal("userToOAPI: languageToOAPI failed", zap.Error(err))
+		}
+		lang = l
 	}
 	return &api.User{
 		Admin:             user.Admin,

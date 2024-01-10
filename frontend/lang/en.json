@@ -1,5 +1,4 @@
 {
-  "UserToolbar": {},
   "components/CopyToClipboardButton": {
     "Copied": "Copied"
   },
@@ -62,6 +61,38 @@
     "Sign Out": "Sign Out",
     "Subheading": "Quickly switch between profiles for testing."
   },
+  "components/initiative/Editor": {
+    "Accepting New Members": "Accepting New Members",
+    "Accepting New Portfolios": "Accepting New Portfolios",
+    "Anyone Can Join": "Anyone Can Join",
+    "Closed To New Members": "Closed To New Members",
+    "Closed To New Portfolios": "Closed To New Portfolios",
+    "Requires Invitation To Join": "Requires Invitation To Join"
+  },
+  "lib/editor/initiative": {
+    "Accepting New Members": "Accepting New Members",
+    "Accepting New Portfolios": "Accepting New Portfolios",
+    "Affiliation": "Affiliation",
+    "AffiliationHelpText": "An optional description of the organization or entity that is hosting this initiative.",
+    "Created At": "Created At",
+    "ID": "ID",
+    "IDHelpText": "This is the immutable unique identifier for the initiative. It can only contain alphanumeric characters, underscores, and dashes. This value will be shown in URLs, but will typically not be user visible.",
+    "Internal Description": "Internal Description",
+    "Language": "Language",
+    "Name": "Name",
+    "PACTA Version": "PACTA Version",
+    "Portfolio Initiative Memberships": "Portfolio Initiative Memberships",
+    "Public Description": "Public Description",
+    "Requires Invitation to Join": "Requires Invitation to Join",
+    "InternalDescriptionHelpText": "The description of the initiative that will be shown to members of the inititiative. Newlines will be respected.",
+    "PublicDescriptionHelpText": "The description of the initiative that will be shown to the public. Newlines will be respected.",
+    "NameHelpText": "The name of the PACTA initiative.",
+    "LanguageHelpText": "What language should reports have when they are generated for this initiative?",
+    "PactaVersionHelpText": "What version of the PACTA algorithm should this initiative use to generate reports?",
+    "RequiresInvitationToJoin": "When disabled, anyone can join this initiative. When enabled, initiative administrators can mint invitation codes that they can share with folks to allow them to join the project.",
+    "AcceptingNewPortfoliosHelpText": "When enabled, initiative members can add new portfolios to the initiative.",
+    "AcceptingNewMembersHelpText": "When enabled, new members can join the project through the joining mechanism selected above."
+  },
   "components/modal/MissingTranslations": {
     "Copy to Clipboard": "Copy to Clipboard",
     "Download File": "Download File"
@@ -76,8 +107,8 @@
   "components/AdminDebugEnabledToggleButton": {
     "Administrator Debugging Access Enabled": "Administrator Debugging Access Enabled",
     "No Administrator Access Enabled": "No Administrator Access Enabled",
-    "Modal Heading": "Administrator Debugging Access",
-    "Modal Subheading": "Exercise caution - this changes who can see the data that you upload",
+    "ModalHeading": "Administrator Debugging Access",
+    "ModalSubheading": "Exercise caution - this changes who can see the data that you upload",
     "Ack": "I Understand",
     "No Ack": "Nevermind"
   },
@@ -130,7 +161,8 @@
   "components/portfolio/initiative/membership/MenuButton": {
     "Add all portfolios to initiative": "Add selected portfolios to initiative",
     "Add unselected portfolios to initiative": "Add selected portfolios to this initiative",
-    "Initiative Memberships": "Select Initaitive Participation",
+    "Initiative Memberships": "Select Initiative Participation",
+    "Initiative is closed to new portfolios": "Initiative is closed to new portfolios",
     "Remove all portfolios from initiative": "Remove selected portfolios from this initiative",
     "Added OK Singular": "Added portfolio to initiative",
     "Removed OK Singular": "Removed portfolio from initiative",
@@ -190,6 +222,17 @@
     "You can change": "You can change this behavior on the",
     "edit initiative page": "edit initiative page"
   },
+  "lib/editor/portfolio": {
+    "Created At": "Created At",
+    "ID": "ID",
+    "Members": "Members",
+    "Name": "Name",
+    "NameHelpText": "A name for the portfolio - this is only for organization and reference - it doesn't impact analysis.",
+    "Description": "Description",
+    "DescriptionHelpText": "The description is optional, but can be used to provide additional context for the portfolio.",
+    "Admin Debugging Enabled": "Admin Debugging Enabled",
+    "AdminDebuggingEnabledHelpText": "If enabled, this content of this portfolio will be accessible to administrators. When disabled, only you, the owner of this content, can access it."
+  },
   "lib/editor/portfolio_group": {
     "Created At": "Created At",
     "Description": "Description",
@@ -217,5 +260,49 @@
     "Portfolio Groups": "Portfolio Groups",
     "Portfolios": "Portfolios",
     "Incomplete Uploads": "Incomplete Uploads"
+  },
+  "pages/initiative/invitations": {
+    "Yes Invitations": "This initiative requires an invitation (a unique, one-time code) to join. You can create and manage these invitations below.",
+    "You Can Change": "You can change this behavior on the edit page by changing the requirement for an invitation to join the initiative.",
+    "Unused": "Unused",
+    "Used At": "Used At",
+    "Create Initiative Invitations":"Create Initiative Invitations",
+    "Invitation Code": "Invitation Code",
+    "Copy Code": "Copy Code",
+    "Copy Share URL": "Copy Share URL",
+    "User Profile": "User Profile",
+    "Export": "Export",
+    "Revoke All Unused": "Revoke All Unused",
+    "Revoke": "Revoke",
+    "Create Header": "Create New Invitations",
+    "Create Subheader": "Invitiations are one-time-codes that enable the user to join the initiative.",
+    "New Invitations": "New Invitations",
+    "New Invitations Help": "Create new invitations by entering new values in the box below. If you don't care what the invitation codes look like you can press the randomize button to generate random ones. You can create as many invitations as you want, but each invitation can only be used once. Invitation codes must only contain alphanumeric characters (a-z, A-Z, 0-9), underscores and dashes. You can create multiple invitations at once by separating them with tabs, commas, newlines, or spaces.",
+    "Generate Random": "Generate Random",
+    "Cancel": "Cancel"
+  },
+  "pages/initiative/relationships": {
+    "Actions": "Actions",
+    "Make Manager": "Make Manager",
+    "Member": "Member",
+    "Remove From Initiative": "Remove From Initiative",
+    "Role": "Role",
+    "Updated At": "Updated At",
+    "User ID": "User ID",
+    "View User": "View User"
+  },
+  "pages/initiative/id": {
+    "Delete":"Delete",
+    "Save Changes": "Save Changes",
+    "Discard Changes": "Discard Changes"
+  },
+  "pages/upload": {
+    "Cleaning Up": "Cleaning Up",
+    "Done": "Done",
+    "Selected": "Selected",
+    "Uploaded": "Uploaded",
+    "Uploading": "Uploading",
+    "Validating": "Validating",
+    "Waiting": "Waiting"
   }
 }
