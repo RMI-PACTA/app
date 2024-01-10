@@ -69,6 +69,9 @@
     "Closed To New Portfolios": "Closed To New Portfolios",
     "Requires Invitation To Join": "Requires Invitation To Join"
   },
+  "composables/useTime": {
+    "today": "Today"
+  },
   "lib/editor/initiative": {
     "Accepting New Members": "Accepting New Members",
     "Accepting New Portfolios": "Accepting New Portfolios",
