@@ -40,7 +40,7 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
       header-class="surface-800"
     >
       <div
-        class="code surface-50"
+        class="code-block surface-50"
       >
         {{ valueAsStr }}
       </div>
@@ -52,14 +52,6 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
   .standard-debug.p-accordion {
     width: fit-content;
     display: inline-block;
-
-    .code {
-      display: inline-block;
-      font-size: 0.75rem;
-      line-height: 0.75rem;
-      white-space: pre-wrap;
-      font-family: monospace;
-    }
 
     .p-accordion-header .p-accordion-header-link {
       gap: 1rem;

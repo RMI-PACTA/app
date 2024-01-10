@@ -67,6 +67,8 @@ func run(args []string) error {
 		azEventSubscription         = fs.String("azure_event_subscription", "", "The Azure Subscription ID to allow webhook registrations from")
 		azEventResourceGroup        = fs.String("azure_event_resource_group", "", "The Azure resource group to allow webhook registrations from")
 		azEventParsedPortfolioTopic = fs.String("azure_event_parsed_portfolio_topic", "", "The name of the topic for webhooks about parsed portfolios")
+		azCreatedAuditTopic         = fs.String("azure_event_created_audit_topic", "", "The name of the topic for webhooks about completed audits")
+		azCreatedReportTopic        = fs.String("azure_event_created_report_topic", "", "The name of the topic for webhooks about completed audits")
 
 		// Only when running locally because the Dockerized runner can't use local `az` CLI credentials
 		localDockerTenantID     = fs.String("local_docker_tenant_id", "", "The Azure Tenant ID the localdocker service principal lives in")
@@ -292,6 +294,8 @@ func run(args []string) error {
 		Subscription:             *azEventSubscription,
 		ResourceGroup:            *azEventResourceGroup,
 		ParsedPortfolioTopicName: *azEventParsedPortfolioTopic,
+		CreatedAuditTopicName:    *azCreatedAuditTopic,
+		CreatedReportTopicName:   *azCreatedReportTopic,
 		DB:                       db,
 		Now:                      time.Now,
 	})
