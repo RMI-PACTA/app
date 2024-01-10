@@ -13,5 +13,8 @@ export const LanguageOptions: LanguageOption[] = [
 ]
 
 export const languageToOption = (language: Language): LanguageOption => {
-  return presentOrFileBug(LanguageOptions.find(option => option.language === language))
+  return presentOrFileBug(
+    LanguageOptions.find(option => option.language === language),
+    `languageToOption not found: '${language}'`,
+  )
 }

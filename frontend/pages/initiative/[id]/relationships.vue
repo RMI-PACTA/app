@@ -4,6 +4,9 @@ const { fromParams } = useURLParams()
 const localePath = useLocalePath()
 const { humanReadableTimeFromStandardString } = useTime()
 const { loading: { withLoading } } = useModal()
+const { t } = useI18n()
+
+const tt = (key: string) => t(`pages/initiative/relationships.${key}`)
 
 const [
   pactaClient,
@@ -50,56 +53,64 @@ const removeMember = (userId: string) => { void changeMembership(userId, false, 
     class="align-self-stretch"
   >
     <PVColumn
-      header="User ID"
+      :header="tt('User ID')"
       field="userId"
       sortable
     >
       <template #body="slotProps">
-        <LinkButton
-          label="View User"
-          class="p-button-xs p-button-outlined"
-          :to="localePath(`/user/${slotProps.data.id}`)"
-          icon="pi pi-external-link"
-          icon-pos="right"
-        />
+        <div class="flex flex-column gap-1">
+          {{ slotProps.data.userId }}
+          <LinkButton
+            :label="tt('View User')"
+            class="p-button-xs p-button-outlined"
+            :to="localePath(`/user/${slotProps.data.userId}`)"
+            icon="pi pi-external-link"
+            icon-pos="right"
+          />
+        </div>
       </template>
     </PVColumn>
     <PVColumn
-      header="Updated At"
+      :header="tt('Updated At')"
       field="updatedAt"
       sortable
     >
       <template #body="slotProps">
-        {{ humanReadableTimeFromStandardString(slotProps.data.updatedAt) }}
+        {{ humanReadableTimeFromStandardString(slotProps.data.updatedAt).value }}
       </template>
     </PVColumn>
     <PVColumn
-      header="Manager"
+      :header="tt('Role')"
       field="manager"
       sortable
-    />
+    >
+      <template #body="slotProps">
+        <span v-if="slotProps.data.manager">{{ tt('Manager') }}</span>
+        <span v-else>{{ tt('Member') }}</span>
+      </template>
+    </PVColumn>
     <PVColumn
       v-if="canManage"
-      header="Actions"
+      :header="tt('Actions')"
     >
       <template #body="slotProps">
         <div class="flex flex-column gap-1">
           <PVButton
             v-if="slotProps.data.manager"
-            label="Remove Manager"
+            :label="tt('Remove Manager')"
             class="p-button-xs p-button-success p-button-outlined"
             icon="pi pi-user-minus"
             @click="removeManager(slotProps.data.userId)"
           />
           <template v-else>
             <PVButton
-              label="Make Manager"
+              :label="tt('Make Manager')"
               class="p-button-xs p-button-success p-button-outlined"
               icon="pi pi-user-plus"
               @click="addManager(slotProps.data.userId)"
             />
             <PVButton
-              label="Remove From Initiative"
+              :label="tt('Remove From Initiative')"
               class="p-button-xs p-button-danger p-button-outlined"
               icon="pi pi-trash"
               @click="removeMember(slotProps.data.userId)"

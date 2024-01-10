@@ -82,14 +82,26 @@ func New(cfg *Config) (*TaskRunner, error) {
 	}, nil
 }
 
-func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfolioRequest) (task.ID, task.RunnerID, error) {
+type TaskRequest interface {
+	task.ParsePortfolioRequest | task.CreateReportRequest | task.CreateAuditRequest
+}
+
+func encodeRequest[T TaskRequest](req *T) (string, error) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(req); err != nil {
-		return "", "", fmt.Errorf("failed to encode ParsePortfolioRequest: %w", err)
+		return "", fmt.Errorf("failed to encode request: %w", err)
 	}
 	value := buf.String()
 	if len(value) > 128*1024 {
-		return "", "", fmt.Errorf("ParsePortfolioRequest is too large: %d bytes > 128 kb", len(value))
+		return "", fmt.Errorf("request is too large: %d bytes > 128 kb", len(value))
+	}
+	return value, nil
+}
+
+func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfolioRequest) (task.ID, task.RunnerID, error) {
+	value, err := encodeRequest(req)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to encode ParsePortfolioRequest: %w", err)
 	}
 	return tr.run(ctx, []task.EnvVar{
 		{
@@ -103,15 +115,36 @@ func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfol
 	})
 }
 
+func (tr *TaskRunner) CreateAudit(ctx context.Context, req *task.CreateAuditRequest) (task.ID, task.RunnerID, error) {
+	value, err := encodeRequest(req)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to encode CreateAuditRequest: %w", err)
+	}
+	return tr.run(ctx, []task.EnvVar{
+		{
+			Key:   "TASK_TYPE",
+			Value: string(task.CreateAudit),
+		},
+		{
+			Key:   "CREATE_AUDIT_REQUEST",
+			Value: value,
+		},
+	})
+}
+
 func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, task.RunnerID, error) {
+	value, err := encodeRequest(req)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to encode CreateReportRequest: %w", err)
+	}
 	return tr.run(ctx, []task.EnvVar{
 		{
 			Key:   "TASK_TYPE",
 			Value: string(task.CreateReport),
 		},
 		{
-			Key:   "PORTFOLIO_ID",
-			Value: string(req.PortfolioID),
+			Key:   "CREATE_REPORT_REQUEST",
+			Value: value,
 		},
 	})
 }
