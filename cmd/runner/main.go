@@ -123,6 +123,7 @@ func run(args []string) error {
 	validTasks := map[task.Type]func(context.Context, task.ID) error{
 		task.ParsePortfolio: toRunFn(parsePortfolioReq, h.parsePortfolio),
 		task.CreateReport:   toRunFn(createReportReq, h.createReport),
+		task.CreateAudit:    toRunFn(createAuditReq, h.createAudit),
 	}
 
 	taskID := task.ID(os.Getenv("TASK_ID"))
@@ -325,7 +326,7 @@ func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.
 			EventType:   to.Ptr("parse-portfolio-complete"),
 			EventTime:   to.Ptr(time.Now()),
 			ID:          to.Ptr(string(taskID)),
-			Subject:     to.Ptr("subject"),
+			Subject:     to.Ptr(string(taskID)),
 		},
 	}
 
@@ -338,6 +339,7 @@ func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.
 	return nil
 }
 
+// TODO(grady): Move this line counting into the image to prevent having our code do any read of the actual underlying data.
 func countCSVLines(path string) (int, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -356,28 +358,46 @@ func countCSVLines(path string) (int, error) {
 	return lineCount - 1, nil
 }
 
-func createReportReq() (*task.CreateReportRequest, error) {
-	pID := os.Getenv("PORTFOLIO_ID")
-	if pID == "" {
-		return nil, errors.New("no PORTFOLIO_ID was given")
+func createAuditReq() (*task.CreateAuditRequest, error) {
+	car := os.Getenv("CREATE_AUDIT_REQUEST")
+	if car == "" {
+		return nil, errors.New("no CREATE_AUDIT_REQUEST was given")
 	}
+	var task task.CreateAuditRequest
+	if err := json.NewDecoder(strings.NewReader(car)).Decode(&task); err != nil {
+		return nil, fmt.Errorf("failed to load CreateAuditRequest: %w", err)
+	}
+	return &task, nil
+}
 
-	return &task.CreateReportRequest{
-		PortfolioID: pacta.PortfolioID(pID),
-	}, nil
+func createReportReq() (*task.CreateReportRequest, error) {
+	crr := os.Getenv("CREATE_REPORT_REQUEST")
+	if crr == "" {
+		return nil, errors.New("no CREATE_REPORT_REQUEST was given")
+	}
+	var task task.CreateReportRequest
+	if err := json.NewDecoder(strings.NewReader(crr)).Decode(&task); err != nil {
+		return nil, fmt.Errorf("failed to load CreateReportRequest: %w", err)
+	}
+	return &task, nil
+}
+
+func (h *handler) createAudit(ctx context.Context, taskID task.ID, req *task.CreateAuditRequest) error {
+	return errors.New("not implemented")
 }
 
 func (h *handler) createReport(ctx context.Context, taskID task.ID, req *task.CreateReportRequest) error {
-	baseName := string(req.PortfolioID) + ".json"
-
-	// Load the parsed portfolio from blob storage, place it in /mnt/
-	// processed_portfolios, where the `create_report.R` script expects it
-	// to be.
-	srcURI := blob.Join(h.blob.Scheme(), h.destPortfolioContainer, baseName)
-	destPath := filepath.Join("/", "mnt", "processed_portfolios", baseName)
-
-	if err := h.downloadBlob(ctx, srcURI, destPath); err != nil {
-		return fmt.Errorf("failed to download processed portfolio blob: %w", err)
+	fileNames := []string{}
+	for i, blobURI := range req.BlobURIs {
+		// Load the parsed portfolio from blob storage, place it in /mnt/
+		// processed_portfolios, where the `create_report.R` script expects it
+		// to be.
+		fileName := fmt.Sprintf("%d.json", i)
+		fileNames = append(fileNames, fileName)
+		destPath := filepath.Join("/", "mnt", "processed_portfolios", fileName)
+		if err := h.downloadBlob(ctx, string(blobURI), destPath); err != nil {
+			return fmt.Errorf("failed to download processed portfolio blob: %w", err)
+		}
 	}
 
 	reportDir := filepath.Join("/", "mnt", "reports")
@@ -387,7 +407,7 @@ func (h *handler) createReport(ctx context.Context, taskID task.ID, req *task.Cr
 
 	cmd := exec.CommandContext(ctx, "/usr/local/bin/Rscript", "/app/create_report.R")
 	cmd.Env = append(cmd.Env,
-		"PORTFOLIO="+string(req.PortfolioID),
+		"PORTFOLIO="+strings.Join(fileNames, ","),
 		"HOME=/root", /* Required by pandoc */
 	)
 	cmd.Stdout = os.Stdout
@@ -436,4 +456,12 @@ func (a *azureTokenCredential) GetToken(ctx context.Context, options policy.Toke
 		// We just don't bother with expiration time
 		ExpiresOn: time.Now().AddDate(1, 0, 0),
 	}, nil
+}
+
+func asStrs[T ~string](in []T) []string {
+	out := make([]string, len(in))
+	for i, v := range in {
+		out[i] = string(v)
+	}
+	return out
 }
