@@ -105,9 +105,7 @@ export const useURLParams = () => {
   const fromQueryReactiveWithDefault = (key: string, def: string): WritableComputedRef<string> => {
     const fqr = fromQueryReactive(key)
     return computed({
-      get: () => {
-        return fqr.value ?? def
-      },
+      get: () => fqr.value ?? def,
       set: (val: string) => {
         if (val === def) {
           fqr.value = undefined
