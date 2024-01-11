@@ -310,14 +310,17 @@
   },
   "pages/audit-logs": {
     "Action": "Action",
+    "Actor": "Actor",
     "Actor ID": "Actor ID",
     "Actor Owner ID": "Actor Owner ID",
     "Actor Type": "Actor Type",
     "Time": "Time",
     "ID": "ID",
+    "Primary Target": "Primary Target",
     "Primary Target ID": "Primary Target ID",
     "Primary Target Owner": "Primary Target Owner",
     "Primary Target Type": "Primary Target Type",
+    "Secondary Target": "Secondary Target",
     "Secondary Target ID": "Secondary Target ID",
     "Secondary Target Owner": "Secondary Target Owner",
     "Secondary Target Type": "Secondary Target Type"

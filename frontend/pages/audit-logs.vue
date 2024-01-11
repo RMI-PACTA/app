@@ -1,21 +1,23 @@
 <script setup lang="ts">
-import { type AuditLogQueryWhere, type AuditLogQuerySort, AuditLogQuerySortBy, type AuditLog } from '@/openapi/generated/pacta'
+import { type AuditLogQuerySort, type AuditLogQueryReq, AuditLogTargetType, AuditLogQuerySortBy, type AuditLog } from '@/openapi/generated/pacta'
 import { urlReactiveAuditLogQuery } from '@/lib/auditlogquery'
 import { type DataTableSortMeta } from 'primevue/datatable'
 
 const prefix = 'pages/audit-logs'
 
-const { fromQueryReactiveWithDefault, waitForPendingChangesToApply } = useURLParams()
+const localePath = useLocalePath()
+const { fromQueryReactiveWithDefault, waitForURLToUpdate } = useURLParams()
 const { t } = useI18n()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const { getMaybeMe } = useSession()
+const { humanReadableTimeFromStandardString } = useTime()
 
 const { maybeMe } = await getMaybeMe()
 const tt = (s: string) => t(`${prefix}.${s}`)
 
 const auditLogQuery = urlReactiveAuditLogQuery(fromQueryReactiveWithDefault)
-const selectedColumnsQuery = fromQueryReactiveWithDefault('cols', 'createdAt,actorId,action,primaryTargetType,primaryTargetId')
+const selectedColumnsQuery = fromQueryReactiveWithDefault('cols', 'createdAt,actor,action,primaryTarget,secondaryTarget')
 
 interface DataResponse {
   auditLogs: AuditLog[]
@@ -58,47 +60,104 @@ const clickNext = () => {
   }
 }
 
-const doUpdate = (fn: (v: AuditLogQuery) => void): void => {
+const doUpdate = (fn: (v: AuditLogQueryReq) => void): void => {
   const newQuery = { ...auditLogQuery.value }
   fn(newQuery)
   auditLogQuery.value = newQuery
 }
+/* When we support filtering, we'll need this
 const wheres = computed<AuditLogQueryWhere[]>({
   get: () => auditLogQuery.value.wheres,
-  set: (v: AuditLogQueryWhere[]) => { doUpdate((alq: AuditLogQuery) => { alq.wheres = v }) },
+  set: (v: AuditLogQueryWhere[]) => { doUpdate((alq: AuditLogQueryReq) => { alq.wheres = v }) },
 })
+*/
 const sorts = computed<AuditLogQuerySort[]>({
   get: () => auditLogQuery.value.sorts ?? [],
-  set: (v: AuditLogQuerySort[]) => { doUpdate((alq: AuditLogQuery) => { alq.sorts = v }) },
+  set: (v: AuditLogQuerySort[]) => { doUpdate((alq: AuditLogQueryReq) => { alq.sorts = v }) },
 })
 const cursor = computed<string | undefined>({
   get: () => auditLogQuery.value.cursor,
-  set: (v: string | undefined) => { doUpdate((alq: AuditLogQuery) => { alq.cursor = v }) },
-})
-const limit = computed<number | undefined>({
-  get: () => auditLogQuery.value.limit,
-  set: (v: number | undefined) => { doUpdate((alq: AuditLogQuery) => { alq.limit = v }) },
+  set: (v: string | undefined) => { doUpdate((alq: AuditLogQueryReq) => { alq.cursor = v }) },
 })
 
 interface Column {
   field: string
   header: string
   sortBy?: AuditLogQuerySortBy | undefined
+  customBody?: boolean
 }
 
 const allColumns: Column[] = [
   { field: 'id', header: tt('ID') },
-  { field: 'createdAt', header: tt('Time'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_CREATED_AT },
-  { field: 'actorType', header: tt('Actor Type'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_ACTOR_TYPE },
-  { field: 'actorId', header: tt('Actor ID'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_ACTOR_ID },
-  { field: 'actorOwnerId', header: tt('Actor Owner ID'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_ACTOR_OWNER_ID },
-  { field: 'action', header: tt('Action') },
-  { field: 'primaryTargetType', header: tt('Primary Target Type'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_PRIMARY_TARGET_TYPE },
-  { field: 'primaryTargetId', header: tt('Primary Target ID'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_PRIMARY_TARGET_ID },
-  { field: 'primaryTargetOwner', header: tt('Primary Target Owner'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_PRIMARY_TARGET_OWNER_ID },
-  { field: 'secondaryTargetType', header: tt('Secondary Target Type'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_SECONDARY_TARGET_TYPE },
-  { field: 'secondaryTargetId', header: tt('Secondary Target ID'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_SECONDARY_TARGET_ID },
-  { field: 'secondaryTargetOwner', header: tt('Secondary Target Owner'), sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_SECONDARY_TARGET_OWNER_ID },
+  {
+    field: 'createdAt',
+    header: tt('Time'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_CREATED_AT,
+    customBody: true,
+  },
+  {
+    field: 'actor',
+    header: tt('Actor'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_ACTOR_ID,
+    customBody: true,
+  },
+  {
+    field: 'action',
+    header: tt('Action'),
+    customBody: true,
+  },
+  {
+    field: 'primaryTarget',
+    header: tt('Primary Target'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_PRIMARY_TARGET_TYPE,
+    customBody: true,
+  },
+  {
+    field: 'secondaryTarget',
+    header: tt('Secondary Target'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_SECONDARY_TARGET_TYPE,
+    customBody: true,
+  },
+  {
+    field: 'actorId',
+    header: tt('Actor ID'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_ACTOR_ID,
+  },
+  {
+    field: 'actorOwnerId',
+    header: tt('Actor Owner ID'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_ACTOR_OWNER_ID,
+  },
+  {
+    field: 'primaryTargetType',
+    header: tt('Primary Target Type'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_PRIMARY_TARGET_TYPE,
+  },
+  {
+    field: 'primaryTargetId',
+    header: tt('Primary Target ID'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_PRIMARY_TARGET_ID,
+  },
+  {
+    field: 'primaryTargetOwner',
+    header: tt('Primary Target Owner'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_PRIMARY_TARGET_OWNER_ID,
+  },
+  {
+    field: 'secondaryTargetType',
+    header: tt('Secondary Target Type'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_SECONDARY_TARGET_TYPE,
+  },
+  {
+    field: 'secondaryTargetId',
+    header: tt('Secondary Target ID'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_SECONDARY_TARGET_ID,
+  },
+  {
+    field: 'secondaryTargetOwner',
+    header: tt('Secondary Target Owner'),
+    sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_SECONDARY_TARGET_OWNER_ID,
+  },
 ]
 const selectedColumns = computed<Column[]>({
   get: () => {
@@ -119,7 +178,7 @@ const tableSortModel = computed<DataTableSortMeta[]>({
         field: column.field,
         order: s.ascending ? 1 : -1,
       }
-    }).filter((s) => s !== null)
+    }).filter((s) => s !== null).map((s) => s as DataTableSortMeta)
   },
   set: (v: DataTableSortMeta[]) => {
     const result = v.map((s) => {
@@ -134,9 +193,34 @@ const tableSortModel = computed<DataTableSortMeta[]>({
       }
     }).filter((s) => (s !== null)).map((s) => s as AuditLogQuerySort)
     sorts.value = result
-    console.log(v, result)
   },
 })
+
+const getTargetLink = (t: AuditLogTargetType, id: string): string => {
+  switch (t) {
+    case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_PORTFOLIO:
+      // TODO(grady) make this directly addressable
+      return localePath(`/my-data/${id}`)
+    case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_PORTFOLIO_GROUP:
+      // TODO(grady) make this directly addressable
+      return localePath(`/my-data/${id}`)
+    case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_INCOMPLETE_UPLOAD:
+      // TODO(grady) make this directly addressable
+      return localePath(`/my-data/${id}`)
+    case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_ANALYSIS:
+    case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_ANALYSIS_ARTIFACT:
+      // TODO(grady) make this directly addressable
+      return localePath(`/my-data/${id}`)
+    case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_USER:
+      return localePath(`/user/${id}`)
+    case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_INITIATIVE:
+      return localePath(`/initiative/${id}`)
+    case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_PACTA_VERSION:
+      return localePath(`/admin/pacta-version/${id}`)
+  }
+  console.warn(`Unknown target type ${t}`)
+  return '#'
+}
 
 onMounted(() => {
   if (auditLogQuery.value.wheres.length === 0) {
@@ -153,11 +237,7 @@ onMounted(() => {
       }],
     }
   }
-  console.log('auditLogQuery - A', auditLogQuery.value)
-  void waitForPendingChangesToApply().then(() => {
-    console.log('auditLogQuery - B', auditLogQuery.value)
-    void refreshAuditLogs()
-  })
+  void waitForURLToUpdate().then(refreshAuditLogs)
 })
 </script>
 
@@ -194,6 +274,7 @@ onMounted(() => {
       sort-mode="multiple"
       removable-sort
       :value="auditLogs"
+      size="small"
     >
       <PVColumn
         v-for="column in selectedColumns"
@@ -201,13 +282,86 @@ onMounted(() => {
         :sortable="column.sortBy !== undefined"
         :field="column.field"
         :header="column.header"
-      />
+      >
+        <template
+          v-if="column.customBody"
+          #body="slotProps"
+        >
+          <template v-if="column.field === 'createdAt'">
+            {{ humanReadableTimeFromStandardString(slotProps.data.createdAt).value }}
+          </template>
+          <template
+            v-else-if="column.field === 'actor'"
+          >
+            <div class="flex flex-column gap-1">
+              <span class="text-sm">
+                {{ slotProps.data.actorId }}
+              </span>
+              <span class="text-sm">
+                {{ slotProps.data.actorOwnerId }}
+              </span>
+              <div class="flex align-items-center gap-2">
+                <span>
+                  Acting as <b>{{ `${slotProps.data.actorType}`.replace("AuditLogActorType", '') }}</b>
+                </span>
+                <LinkButton
+                  :to="getTargetLink(AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_USER, slotProps.data.actorId)"
+                  class="p-button-xs p-button-outlined p-button-secondary"
+                  icon="pi pi-external-link"
+                />
+              </div>
+            </div>
+          </template>
+          <template v-else-if="column.field === 'action'">
+            {{ `${slotProps.data.action}`.replace("AuditLogAction", '') }}
+          </template>
+          <template v-else-if="column.field === 'primaryTarget'">
+            <div class="flex flex-column gap-1">
+              <div class="flex align-items-center gap-2">
+                <b>{{ slotProps.data.primaryTargetType.replace("AuditLogTargetType", '') }}</b>
+                <LinkButton
+                  :to="getTargetLink(AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_USER, slotProps.data.actorId)"
+                  class="p-button-xs p-button-outlined p-button-secondary"
+                  icon="pi pi-external-link"
+                />
+              </div>
+              <span class="text-sm">
+                {{ slotProps.data.primaryTargetId }}
+              </span>
+              <span class="text-sm">
+                {{ slotProps.data.primaryTargetOwner }}
+              </span>
+            </div>
+          </template>
+          <template v-else-if="column.field === 'secondaryTarget'">
+            <div
+              v-if="slotProps.data.secondaryTargetId"
+              class="flex flex-column gap-1"
+            >
+              <b>
+                {{ slotProps.data.secondaryTargetType.replace("AuditLogTargetType", '') }}
+                <LinkButton
+                  :to="getTargetLink(AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_USER, slotProps.data.actorId)"
+                  class="p-button-xs p-button-outlined p-button-secondary"
+                  icon="pi pi-external-link"
+                />
+              </b>
+              <span>
+                {{ slotProps.data.secondaryTargetId }}
+              </span>
+              <span>
+                {{ slotProps.data.secondaryTargetOwner }}
+              </span>
+            </div>
+          </template>
+        </template>
+      </PVColumn>
       <PVColumn
         expander
         header="Details"
       />
       <template #expansion="slotProps">
-        <div class="code-block">
+        <div class="code-block my-2">
           {{ slotProps.data }}
         </div>
       </template>

@@ -172,7 +172,6 @@ export const urlReactiveAuditLogQuery = (fromQueryReactiveWithDefault: (key: str
       qWheres.value = encodeAuditLogQueryWheres(value.wheres)
       qLimit.value = encodeAuditLogQueryLimit(value.limit ?? limitDefault)
       qCursor.value = encodeAuditLogQueryCursor(value.cursor ?? '')
-      console.log('setWheresTo', value.wheres, encodeAuditLogQueryWheres(value.wheres), qWheres.value)
     },
   })
 }
