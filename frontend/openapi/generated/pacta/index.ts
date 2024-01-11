@@ -56,6 +56,8 @@ export type { ListPortfolioGroupsReq } from './models/ListPortfolioGroupsReq';
 export type { ListPortfolioGroupsResp } from './models/ListPortfolioGroupsResp';
 export type { ListPortfoliosReq } from './models/ListPortfoliosReq';
 export type { ListPortfoliosResp } from './models/ListPortfoliosResp';
+export type { MergeUsersReq } from './models/MergeUsersReq';
+export type { MergeUsersResp } from './models/MergeUsersResp';
 export type { NewPortfolioAsset } from './models/NewPortfolioAsset';
 export type { PactaVersion } from './models/PactaVersion';
 export type { PactaVersionChanges } from './models/PactaVersionChanges';

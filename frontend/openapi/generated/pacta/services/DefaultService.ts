@@ -25,6 +25,8 @@ import type { ListAnalysesResp } from '../models/ListAnalysesResp';
 import type { ListIncompleteUploadsResp } from '../models/ListIncompleteUploadsResp';
 import type { ListPortfolioGroupsResp } from '../models/ListPortfolioGroupsResp';
 import type { ListPortfoliosResp } from '../models/ListPortfoliosResp';
+import type { MergeUsersReq } from '../models/MergeUsersReq';
+import type { MergeUsersResp } from '../models/MergeUsersResp';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
@@ -169,6 +171,24 @@ export class DefaultService {
         return this.httpRequest.request({
             method: 'POST',
             url: '/pacta-versions',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Merges two users together
+     * Merges two users together
+     * @param requestBody a request describing the two users to merge
+     * @returns MergeUsersResp the users were merged successfully
+     * @throws ApiError
+     */
+    public mergeUsers(
+        requestBody: MergeUsersReq,
+    ): CancelablePromise<MergeUsersResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/admin/merge-users',
             body: requestBody,
             mediaType: 'application/json',
         });

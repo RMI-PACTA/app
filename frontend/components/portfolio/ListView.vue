@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { portfolioEditor } from '@/lib/editor'
-import { type Portfolio, type PortfolioGroup, type Initiative } from '@/openapi/generated/pacta'
+import { AnalysisType, type Portfolio, type PortfolioGroup, type Initiative } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
 
 const {
@@ -66,6 +66,19 @@ const saveChanges = (id: string) => {
     `${prefix}.saveChanges`,
   )
 }
+
+const runAnalysis = (id: string) => {
+  return withLoading(
+    () => pactaClient.runAnalysis({
+      analysisType: AnalysisType.ANALYSIS_TYPE_REPORT,
+      name: 'Test Analysis!',
+      description: 'this is a test',
+      portfolioId: id,
+    }).then(() => { emit('refresh') }),
+    `${prefix}.saveChanges`,
+  )
+}
+
 const deletePortfolio = (id: string) => withLoading(
   () => pactaClient.deletePortfolio(id),
   `${prefix}.deletePortfolio`,
@@ -226,6 +239,10 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
                 @click="() => saveChanges(slotProps.data.id)"
               />
             </div>
+            <PVButton
+              label="Test Run Analysis"
+              @click="() => runAnalysis(slotProps.data.id)"
+            />
           </div>
         </div>
       </template>

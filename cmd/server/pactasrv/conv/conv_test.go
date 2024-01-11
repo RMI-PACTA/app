@@ -22,6 +22,10 @@ func TestAuditLogTargetTypeRoundTrip(t *testing.T) {
 	testEnumConvertability(t, pacta.AuditLogTargetTypeValues, auditLogTargetTypeToOAPI, auditLogTargetTypeFromOAPI)
 }
 
+func TestAnalysisTypeRoundTrip(t *testing.T) {
+	testEnumConvertability(t, pacta.AnalysisTypeValues, AnalysisTypeToOAPI, AnalysisTypeFromOAPI)
+}
+
 func testEnumConvertability[A comparable, B any](t *testing.T, as []A, aToB func(in A) (B, error), bToA func(in B) (A, error)) {
 	for _, a := range as {
 		b, err := aToB(a)
