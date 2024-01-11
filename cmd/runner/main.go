@@ -50,8 +50,8 @@ func run(args []string) error {
 	var (
 		env = fs.String("env", "", "The environment we're running in.")
 
-		azEventParsePortfolioCompleteTopic = fs.String("azure_event_parse_portfolio_complete_topic", "", "The EventGrid topic to send notifications when parsing of portfolio(s) has finished")
-		azTopicLocation                    = fs.String("azure_topic_location", "", "The location (like 'centralus-1') where our EventGrid topics are hosted")
+		azEventTopic    = fs.String("azure_event_topic", "", "The EventGrid topic to send notifications when tasks have finished")
+		azTopicLocation = fs.String("azure_topic_location", "", "The location (like 'centralus-1') where our EventGrid topics are hosted")
 
 		azStorageAccount           = fs.String("azure_storage_account", "", "The storage account to authenticate against for blob operations")
 		azSourcePortfolioContainer = fs.String("azure_source_portfolio_container", "", "The container in the storage account where we read raw portfolios from")
@@ -100,7 +100,7 @@ func run(args []string) error {
 		}
 	}
 
-	pubsubClient, err := publisher.NewClient(fmt.Sprintf("https://%s.%s.eventgrid.azure.net/api/events", *azEventParsePortfolioCompleteTopic, *azTopicLocation), creds, nil)
+	pubsubClient, err := publisher.NewClient(fmt.Sprintf("https://%s.%s.eventgrid.azure.net/api/events", *azEventTopic, *azTopicLocation), creds, nil)
 	if err != nil {
 		return fmt.Errorf("failed to init pub/sub client: %w", err)
 	}
@@ -323,7 +323,7 @@ func (h *handler) parsePortfolio(ctx context.Context, taskID task.ID, req *task.
 				Outputs: out,
 			},
 			DataVersion: to.Ptr("1.0"),
-			EventType:   to.Ptr("parse-portfolio-complete"),
+			EventType:   to.Ptr("parsed-portfolio"),
 			EventTime:   to.Ptr(time.Now()),
 			ID:          to.Ptr(string(taskID)),
 			Subject:     to.Ptr(string(taskID)),

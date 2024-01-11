@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -26,7 +25,6 @@ import (
 	"github.com/RMI/pacta/secrets"
 	"github.com/RMI/pacta/session"
 	"github.com/RMI/pacta/task"
-	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/zaphttplog"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
@@ -64,11 +62,9 @@ func run(args []string) error {
 		env      = fs.String("env", "", "The environment that we're running in.")
 		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the secret configuration. Can only be used when running locally.")
 
-		azEventSubscription         = fs.String("azure_event_subscription", "", "The Azure Subscription ID to allow webhook registrations from")
-		azEventResourceGroup        = fs.String("azure_event_resource_group", "", "The Azure resource group to allow webhook registrations from")
-		azEventParsedPortfolioTopic = fs.String("azure_event_parsed_portfolio_topic", "", "The name of the topic for webhooks about parsed portfolios")
-		azCreatedAuditTopic         = fs.String("azure_event_created_audit_topic", "", "The name of the topic for webhooks about completed audits")
-		azCreatedReportTopic        = fs.String("azure_event_created_report_topic", "", "The name of the topic for webhooks about completed audits")
+		azEventSubscription  = fs.String("azure_event_subscription", "", "The Azure Subscription ID to allow webhook registrations from")
+		azEventResourceGroup = fs.String("azure_event_resource_group", "", "The Azure resource group to allow webhook registrations from")
+		azEventTopic         = fs.String("azure_event_topic", "", "The name of the topic for webhooks about ecosystem updates, like parsed portfolios or created reports/audits.")
 
 		// Only when running locally because the Dockerized runner can't use local `az` CLI credentials
 		localDockerTenantID     = fs.String("local_docker_tenant_id", "", "The Azure Tenant ID the localdocker service principal lives in")
@@ -93,14 +89,12 @@ func run(args []string) error {
 
 		azEventWebhookSecrets = fs.String("secret_azure_webhook_secrets", "", "A comma-separated list of shared secrets we'll accept for incoming webhooks")
 
-		runnerConfigLocation   = fs.String("secret_runner_config_location", "", "Location (like 'centralus') where the runner jobs should be executed")
 		runnerConfigConfigPath = fs.String("secret_runner_config_config_path", "", "Config path (like '/configs/dev.conf') where the runner jobs should read their base config from")
 
-		runnerConfigIdentityName               = fs.String("secret_runner_config_identity_name", "", "Name of the Azure identity to run runner jobs with")
-		runnerConfigIdentitySubscriptionID     = fs.String("secret_runner_config_identity_subscription_id", "", "Subscription ID of the identity to run runner jobs with")
-		runnerConfigIdentityResourceGroup      = fs.String("secret_runner_config_identity_resource_group", "", "Resource group of the identity to run runner jobs with")
-		runnerConfigIdentityClientID           = fs.String("secret_runner_config_identity_client_id", "", "Client ID of the identity to run runner jobs with")
-		runnerConfigIdentityManagedEnvironment = fs.String("secret_runner_config_identity_managed_environment", "", "Name of the Container Apps Environment where runner jobs should run")
+		runnerConfigSubscriptionID          = fs.String("secret_runner_config_subscription_id", "", "Subscription ID of the identity to run runner jobs with")
+		runnerConfigResourceGroup           = fs.String("secret_runner_config_resource_group", "", "Resource group of the identity to run runner jobs with")
+		runnerConfigManagedIdentityClientID = fs.String("secret_runner_config_managed_identity_client_id", "", "Client ID of the identity to run runner jobs with")
+		runnerConfigJobName                 = fs.String("secret_runner_config_job_name", "", "Name of the Container Apps Job to start instances of.")
 
 		runnerConfigImageRegistry = fs.String("secret_runner_config_image_registry", "", "Registry where PACTA runner images live, like 'rmisa.azurecr.io'")
 		runnerConfigImageName     = fs.String("secret_runner_config_image_name", "", "Name of the Docker image of the PACTA runner, like 'runner'")
@@ -143,15 +137,11 @@ func run(args []string) error {
 			Data: *authKeyData,
 		},
 		RunnerConfig: &secrets.RawRunnerConfig{
-			Location:   *runnerConfigLocation,
-			ConfigPath: *runnerConfigConfigPath,
-			Identity: &secrets.RawRunnerIdentity{
-				Name:               *runnerConfigIdentityName,
-				SubscriptionID:     *runnerConfigIdentitySubscriptionID,
-				ResourceGroup:      *runnerConfigIdentityResourceGroup,
-				ClientID:           *runnerConfigIdentityClientID,
-				ManagedEnvironment: *runnerConfigIdentityManagedEnvironment,
-			},
+			ConfigPath:              *runnerConfigConfigPath,
+			SubscriptionID:          *runnerConfigSubscriptionID,
+			ResourceGroup:           *runnerConfigResourceGroup,
+			ManagedIdentityClientID: *runnerConfigManagedIdentityClientID,
+			JobName:                 *runnerConfigJobName,
 			Image: &secrets.RawRunnerImage{
 				Registry: *runnerConfigImageRegistry,
 				Name:     *runnerConfigImageName,
@@ -221,15 +211,10 @@ func run(args []string) error {
 	if *useAZRunner {
 		logger.Info("initializing Azure task runner client")
 		tmp, err := aztask.NewRunner(creds, &aztask.Config{
-			Location: runCfg.Location,
-			Rand:     rand.New(cryptorand.New()),
-			Identity: &aztask.RunnerIdentity{
-				Name:               runCfg.Identity.Name,
-				SubscriptionID:     runCfg.Identity.SubscriptionID,
-				ResourceGroup:      runCfg.Identity.ResourceGroup,
-				ClientID:           runCfg.Identity.ClientID,
-				ManagedEnvironment: runCfg.Identity.ManagedEnvironment,
-			},
+			SubscriptionID:          runCfg.SubscriptionID,
+			ResourceGroup:           runCfg.ResourceGroup,
+			ManagedIdentityClientID: runCfg.ManagedIdentityClientID,
+			JobName:                 runCfg.JobName,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to init Azure runner: %w", err)
@@ -289,15 +274,13 @@ func run(args []string) error {
 	})
 
 	eventSrv, err := azevents.NewServer(&azevents.Config{
-		Logger:                   logger,
-		AllowedAuthSecrets:       strings.Split(*azEventWebhookSecrets, ","),
-		Subscription:             *azEventSubscription,
-		ResourceGroup:            *azEventResourceGroup,
-		ParsedPortfolioTopicName: *azEventParsedPortfolioTopic,
-		CreatedAuditTopicName:    *azCreatedAuditTopic,
-		CreatedReportTopicName:   *azCreatedReportTopic,
-		DB:                       db,
-		Now:                      time.Now,
+		Logger:             logger,
+		AllowedAuthSecrets: strings.Split(*azEventWebhookSecrets, ","),
+		Subscription:       *azEventSubscription,
+		ResourceGroup:      *azEventResourceGroup,
+		TopicName:          *azEventTopic,
+		DB:                 db,
+		Now:                time.Now,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init Azure Event Grid handler: %w", err)

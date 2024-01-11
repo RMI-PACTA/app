@@ -43,6 +43,7 @@ export const useURLParams = () => {
   }
 
   const getVal = (src: RouteParams | LocationQuery, key: string): string | undefined => {
+    // NOTE: if the value is in pendingValues, that means it's the source of truth
     const pvs = pendingValues.value
     if (pvs.has(key)) {
       return pvs.get(key)
@@ -70,10 +71,10 @@ export const useURLParams = () => {
     const pvs = pendingValues.value
     const query = new URLSearchParams(stringifyQuery(router.currentRoute.value.query))
     for (const [key, val] of pvs) {
-      if (val) {
-        query.set(key, val)
-      } else {
+      if (val === undefined) {
         query.delete(key)
+      } else {
+        query.set(key, val)
       }
     }
     let qs = query.toString()
@@ -87,6 +88,10 @@ export const useURLParams = () => {
 
   const setVal = (key: string, val: string | undefined) => {
     pendingValues.value.set(key, val)
+    // Note: we only try to resolve pending values upon next tick.
+    // This isn't required, but it prevents us from doing more work on the browser,
+    // since in multi-update cases, we'll generate multiple replace() calls which will
+    // become redundant upon the next tick updating the URLs.
     void nextTick(resolvePendingValues)
   }
 

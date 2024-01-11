@@ -3,6 +3,7 @@
 const { fromParams } = useURLParams()
 const localePath = useLocalePath()
 const { humanReadableTimeFromStandardString } = useTime()
+const { loading: { withLoading } } = useModal()
 const { t } = useI18n()
 
 const tt = (key: string) => t(`pages/initiative/relationships.${key}`)
@@ -19,7 +20,7 @@ const { maybeMe, isAdmin } = await getMaybeMe()
 const id = presentOrCheckURL(fromParams('id'))
 const prefix = `initiative/${id}/relationships`
 const [
-  { data: relationships },
+  { data: relationships, refresh: refreshRelationships },
 ] = await Promise.all([
   useSimpleAsyncData(`${prefix}.getRelationships`, () => pactaClient.listInitiativeUserRelationshipsByInitiative(id)),
 ])
@@ -31,15 +32,19 @@ const canManage = computed(() => {
   return relationships.value.some((r) => r.userId === mm.id && r.manager)
 })
 
-const makeManager = (userId: string) => {
-  alert('make manager not yet implemented')
-}
-const removeFromInitiative = (userId: string) => {
-  alert('remove from initiative not yet implemented')
-}
-const removeManager = (userId: string) => {
-  alert('remove manager not yet implemented')
-}
+const changeMembership = (userId: string, member: boolean | undefined, manager: boolean | undefined) =>
+  withLoading(async () => {
+    await pactaClient.updateInitiativeUserRelationship(
+      id,
+      userId,
+      { member, manager },
+    )
+    await refreshRelationships()
+  }, 'initiative/relationships/changeMembership')
+
+const addManager = (userId: string) => { void changeMembership(userId, undefined, true) }
+const removeManager = (userId: string) => { void changeMembership(userId, undefined, false) }
+const removeMember = (userId: string) => { void changeMembership(userId, false, undefined) }
 </script>
 
 <template>
@@ -102,13 +107,13 @@ const removeManager = (userId: string) => {
               :label="tt('Make Manager')"
               class="p-button-xs p-button-success p-button-outlined"
               icon="pi pi-user-plus"
-              @click="makeManager(slotProps.data.userId)"
+              @click="addManager(slotProps.data.userId)"
             />
             <PVButton
               :label="tt('Remove From Initiative')"
               class="p-button-xs p-button-danger p-button-outlined"
               icon="pi pi-trash"
-              @click="removeFromInitiative(slotProps.data.userId)"
+              @click="removeMember(slotProps.data.userId)"
             />
           </template>
         </div>
