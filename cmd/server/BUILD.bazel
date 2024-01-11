@@ -31,7 +31,6 @@ go_library(
         "@com_github_lestrrat_go_jwx_v2//jwk",
         "@com_github_namsral_flag//:flag",
         "@com_github_rs_cors//:cors",
-        "@com_github_silicon_ally_cryptorand//:cryptorand",
         "@com_github_silicon_ally_zaphttplog//:zaphttplog",
         "@org_uber_go_zap//:zap",
     ],

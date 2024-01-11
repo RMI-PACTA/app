@@ -25,18 +25,13 @@ type AuthVerificationKey struct {
 }
 
 type RunnerConfig struct {
-	Location   string
 	ConfigPath string
-	Identity   RunnerIdentity
 	Image      RunnerImage
-}
 
-type RunnerIdentity struct {
-	Name               string
-	SubscriptionID     string
-	ResourceGroup      string
-	ClientID           string
-	ManagedEnvironment string
+	SubscriptionID          string
+	ResourceGroup           string
+	ManagedIdentityClientID string
+	JobName                 string
 }
 
 type RunnerImage struct {
@@ -56,18 +51,13 @@ type RawAuthVerificationKey struct {
 }
 
 type RawRunnerConfig struct {
-	Location   string
 	ConfigPath string
-	Identity   *RawRunnerIdentity
 	Image      *RawRunnerImage
-}
 
-type RawRunnerIdentity struct {
-	Name               string
-	SubscriptionID     string
-	ResourceGroup      string
-	ClientID           string
-	ManagedEnvironment string
+	SubscriptionID          string
+	ResourceGroup           string
+	ManagedIdentityClientID string
+	JobName                 string
 }
 
 type RawRunnerImage struct {
@@ -208,10 +198,6 @@ func parseRunnerConfig(cfg *RawRunnerConfig) (RunnerConfig, error) {
 		return RunnerConfig{}, errors.New("no runner config was provided")
 	}
 
-	if cfg.Location == "" {
-		return RunnerConfig{}, errors.New("no runner_config.location was provided")
-	}
-
 	if cfg.Image == nil {
 		return RunnerConfig{}, errors.New("no runner_config.image was provided")
 	}
@@ -226,35 +212,23 @@ func parseRunnerConfig(cfg *RawRunnerConfig) (RunnerConfig, error) {
 		return RunnerConfig{}, errors.New("no runner_config.config_path was provided")
 	}
 
-	if cfg.Identity == nil {
-		return RunnerConfig{}, errors.New("no runner_config.identity was provided")
+	if cfg.SubscriptionID == "" {
+		return RunnerConfig{}, errors.New("no runner_config.subscription_id was provided")
 	}
-	if cfg.Identity.Name == "" {
-		return RunnerConfig{}, errors.New("no runner_config.identity.name was provided")
+	if cfg.ResourceGroup == "" {
+		return RunnerConfig{}, errors.New("no runner_config.resource_group was provided")
 	}
-	if cfg.Identity.SubscriptionID == "" {
-		return RunnerConfig{}, errors.New("no runner_config.identity.subscription_id was provided")
-	}
-	if cfg.Identity.ResourceGroup == "" {
-		return RunnerConfig{}, errors.New("no runner_config.identity.resource_group was provided")
-	}
-	if cfg.Identity.ClientID == "" {
-		return RunnerConfig{}, errors.New("no runner_config.identity.client_id was provided")
-	}
-	if cfg.Identity.ManagedEnvironment == "" {
-		return RunnerConfig{}, errors.New("no runner_config.identity.managed_environment was provided")
+	if cfg.ManagedIdentityClientID == "" {
+		return RunnerConfig{}, errors.New("no runner_config.managed_identity_client_id was provided")
 	}
 
 	return RunnerConfig{
-		Location:   cfg.Location,
 		ConfigPath: cfg.ConfigPath,
-		Identity: RunnerIdentity{
-			Name:               cfg.Identity.Name,
-			SubscriptionID:     cfg.Identity.SubscriptionID,
-			ResourceGroup:      cfg.Identity.ResourceGroup,
-			ClientID:           cfg.Identity.ClientID,
-			ManagedEnvironment: cfg.Identity.ManagedEnvironment,
-		},
+
+		SubscriptionID:          cfg.SubscriptionID,
+		ResourceGroup:           cfg.ResourceGroup,
+		ManagedIdentityClientID: cfg.ManagedIdentityClientID,
+		JobName:                 cfg.JobName,
 		Image: RunnerImage{
 			Registry: cfg.Image.Registry,
 			Name:     cfg.Image.Name,
