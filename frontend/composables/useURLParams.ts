@@ -71,10 +71,10 @@ export const useURLParams = () => {
     const pvs = pendingValues.value
     const query = new URLSearchParams(stringifyQuery(router.currentRoute.value.query))
     for (const [key, val] of pvs) {
-      if (val) {
-        query.set(key, val)
-      } else {
+      if (val === undefined) {
         query.delete(key)
+      } else {
+        query.set(key, val)
       }
     }
     let qs = query.toString()
@@ -105,9 +105,7 @@ export const useURLParams = () => {
   const fromQueryReactiveWithDefault = (key: string, def: string): WritableComputedRef<string> => {
     const fqr = fromQueryReactive(key)
     return computed({
-      get: () => {
-        return fqr.value ?? def
-      },
+      get: () => fqr.value ?? def,
       set: (val: string) => {
         if (val === def) {
           fqr.value = undefined
