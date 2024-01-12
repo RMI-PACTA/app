@@ -92,6 +92,8 @@ func TestSchemaHistory(t *testing.T) {
 		{ID: 8, Version: 8},   // 0008_indexes_on_blob_ids
 		{ID: 9, Version: 9},   // 0009_support_user_merge
 		{ID: 10, Version: 10}, // 0010_audit_log_enum_values
+		{ID: 11, Version: 11}, // 0011_add_report_file_types
+
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {
