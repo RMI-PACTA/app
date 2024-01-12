@@ -15,11 +15,12 @@ bazel run //scripts:run_server -- --use_azure_runner
 
 ### Creating a new docker image to run locally
 
+When testing locally (e.g. without `--use_azure_runner`), you can build and tag a runner image locally and use that. To do that, run `bazel run //scripts:build_and_load_runner`
+
+### Cleaning up old runner containers
+
+By default, we don't auto-remove stopped containers (i.e. finished runner tasks), to give developers a chance to review the logs (e.g. with `docker logs <sha>`). To clean up all completed runs at once, run:
+
 ```bash
-# Build the runner binary
-bazel build --@io_bazel_rules_go//go/config:pure //cmd/runner:image_tarball
-# Load the new image into docker, which will output a SHA256 value
-docker load < bazel-bin/cmd/runner/image_tarball/tarball.tar
-# Tag the runner image in order for it to be picked up locally. Don't push this to the registry!
-docker tag <SHA from previous step> rmisa.azurecr.io/runner
+docker rm $(docker ps -a -q -f "status=exited" -f "ancestor=rmisa.azurecr.io/runner:latest")
 ```

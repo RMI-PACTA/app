@@ -180,24 +180,68 @@ func parsePortfolioReq() (*task.ParsePortfolioRequest, error) {
 	return &task, nil
 }
 
-func (h *handler) uploadDirectory(ctx context.Context, dirPath, container string) error {
+func (h *handler) uploadDirectory(ctx context.Context, dirPath, container string) ([]*task.AnalysisArtifact, error) {
 	base := filepath.Base(dirPath)
 
-	return filepath.WalkDir(dirPath, func(path string, info fs.DirEntry, err error) error {
+	var artifacts []*task.AnalysisArtifact
+	err := filepath.WalkDir(dirPath, func(path string, info fs.DirEntry, err error) error {
 		if info.IsDir() {
 			return nil
 		}
 
 		// This is a file, let's upload it to the container
-		uri := blob.Join(h.blob.Scheme(), container, base, strings.TrimPrefix(path, dirPath))
+		uri := blob.Join(h.blob.Scheme(), container, base, strings.TrimPrefix(path, dirPath+"/"))
 		if err := h.uploadBlob(ctx, path, uri); err != nil {
 			return fmt.Errorf("failed to upload blob: %w", err)
 		}
+
+		fn := filepath.Base(path)
+		// Returns pacta.FileType_UNKNOWN for unrecognized extensions, which we'll serve as binary blobs.
+		ft := fileTypeFromExt(filepath.Ext(fn))
+		if ft == pacta.FileType_UNKNOWN {
+			h.logger.Error("unhandled file extension", zap.String("dir", dirPath), zap.String("file_ext", filepath.Ext(fn)))
+		}
+		artifacts = append(artifacts, &task.AnalysisArtifact{
+			BlobURI:  pacta.BlobURI(uri),
+			FileName: fn,
+			FileType: ft,
+		})
 		return nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("error while walking dir/uploading blobs: %w", err)
+	}
+	return artifacts, nil
+}
+
+func fileTypeFromExt(ext string) pacta.FileType {
+	switch ext {
+	case ".csv":
+		return pacta.FileType_CSV
+	case ".yaml":
+		return pacta.FileType_YAML
+	case ".zip":
+		return pacta.FileType_ZIP
+	case ".html":
+		return pacta.FileType_HTML
+	case ".json":
+		return pacta.FileType_JSON
+	case ".txt":
+		return pacta.FileType_TEXT
+	case ".css":
+		return pacta.FileType_CSS
+	case ".js":
+		return pacta.FileType_JS
+	case ".ttf":
+		return pacta.FileType_TTF
+	default:
+		return pacta.FileType_UNKNOWN
+	}
 }
 
 func (h *handler) uploadBlob(ctx context.Context, srcPath, destURI string) error {
+	h.logger.Info("uploading blob", zap.String("src", srcPath), zap.String("dest", destURI))
+
 	srcF, err := os.Open(srcPath)
 	if err != nil {
 		return fmt.Errorf("failed to open file for upload: %w", err)
@@ -388,13 +432,16 @@ func (h *handler) createAudit(ctx context.Context, taskID task.ID, req *task.Cre
 
 func (h *handler) createReport(ctx context.Context, taskID task.ID, req *task.CreateReportRequest) error {
 	fileNames := []string{}
-	for i, blobURI := range req.BlobURIs {
+	for _, blobURI := range req.BlobURIs {
 		// Load the parsed portfolio from blob storage, place it in /mnt/
 		// processed_portfolios, where the `create_report.R` script expects it
 		// to be.
-		fileName := fmt.Sprintf("%d.json", i)
-		fileNames = append(fileNames, fileName)
-		destPath := filepath.Join("/", "mnt", "processed_portfolios", fileName)
+		fileNameWithExt := filepath.Base(string(blobURI))
+		if !strings.HasSuffix(fileNameWithExt, ".json") {
+			return fmt.Errorf("given blob wasn't a JSON-formatted portfolio, %q", fileNameWithExt)
+		}
+		fileNames = append(fileNames, strings.TrimSuffix(fileNameWithExt, ".json"))
+		destPath := filepath.Join("/", "mnt", "processed_portfolios", fileNameWithExt)
 		if err := h.downloadBlob(ctx, string(blobURI), destPath); err != nil {
 			return fmt.Errorf("failed to download processed portfolio blob: %w", err)
 		}
@@ -423,15 +470,39 @@ func (h *handler) createReport(ctx context.Context, taskID task.ID, req *task.Cr
 		return fmt.Errorf("failed to read report directory: %w", err)
 	}
 
+	var artifacts []*task.AnalysisArtifact
 	for _, dirEntry := range dirEntries {
 		if !dirEntry.IsDir() {
 			continue
 		}
 		dirPath := filepath.Join(reportDir, dirEntry.Name())
-		if err := h.uploadDirectory(ctx, dirPath, h.reportContainer); err != nil {
+		tmp, err := h.uploadDirectory(ctx, dirPath, h.reportContainer)
+		if err != nil {
 			return fmt.Errorf("failed to upload report directory: %w", err)
 		}
+		artifacts = tmp
 	}
+
+	events := []publisher.Event{
+		{
+			Data: task.CreateReportResponse{
+				TaskID:    taskID,
+				Request:   req,
+				Artifacts: artifacts,
+			},
+			DataVersion: to.Ptr("1.0"),
+			EventType:   to.Ptr("created-report"),
+			EventTime:   to.Ptr(time.Now()),
+			ID:          to.Ptr(string(taskID)),
+			Subject:     to.Ptr(string(taskID)),
+		},
+	}
+
+	if _, err := h.pubsub.PublishEvents(ctx, events, nil); err != nil {
+		return fmt.Errorf("failed to publish event: %w", err)
+	}
+
+	h.logger.Info("created report", zap.String("task_id", string(taskID)))
 
 	return nil
 }
