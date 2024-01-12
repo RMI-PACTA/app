@@ -83,17 +83,14 @@ func InitiativeInvitationFromOAPI(i *api.InitiativeInvitationCreate) (*pacta.Ini
 	}, nil
 }
 
-func AnalysisTypeFromOAPI(at *api.AnalysisType) (*pacta.AnalysisType, error) {
-	if at == nil {
-		return nil, oapierr.BadRequest("analysisTypeFromOAPI: can't convert nil pointer")
+func AnalysisTypeFromOAPI(at api.AnalysisType) (pacta.AnalysisType, error) {
+	switch at {
+	case api.AnalysisTypeAUDIT:
+		return pacta.AnalysisType_Audit, nil
+	case api.AnalysisTypeREPORT:
+		return pacta.AnalysisType_Report, nil
 	}
-	switch string(*at) {
-	case "audit":
-		return ptr(pacta.AnalysisType_Audit), nil
-	case "report":
-		return ptr(pacta.AnalysisType_Report), nil
-	}
-	return nil, oapierr.BadRequest("analysisTypeFromOAPI: unknown analysis type", zap.String("analysis_type", string(*at)))
+	return "", oapierr.BadRequest("analysisTypeFromOAPI: unknown analysis type", zap.String("analysis_type", string(at)))
 }
 
 func HoldingsDateFromOAPI(hd *api.HoldingsDate) (*pacta.HoldingsDate, error) {
