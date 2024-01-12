@@ -47,7 +47,12 @@ CREATE TYPE file_type AS ENUM (
     'yaml',
     'zip',
     'html',
-    'json');
+    'json',
+    'txt',
+    'css',
+    'js',
+    'ttf',
+    '');
 CREATE TYPE language AS ENUM (
     'en',
     'de',
