@@ -7,8 +7,9 @@ export default defineI18nConfig(() => ({
     // Consider using process.env.NODE_ENV == 'prod', etc.
     const fn = vm?.appContext.app.$nuxt.$missingTranslations.handleMissingTranslation
     if (fn) {
-      // const callable = fn as (locale: string, key: string) => void
       fn(locale, key)
+    } else {
+      console.warn(`No handleMissingTranslation function found, can't handle ${locale} ${key}`)
     }
   },
 }))

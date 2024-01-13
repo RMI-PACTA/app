@@ -15,7 +15,13 @@ bazel run //scripts:run_server -- --use_azure_runner
 
 ### Creating a new docker image to run locally
 
-When testing locally (e.g. without `--use_azure_runner`), you can build and tag a runner image locally and use that. To do that, run `bazel run //scripts:build_and_load_runner`
+When developing the runner, you have two options:
+
+* **Test against local Docker** - Run the server **without** the  `--use_azure_runner`, which means async tasks will run locally, using `docker run ...`. To test local runner changes, you can build and tag a runner image locally with `bazel run //scripts:build_and_load_runner`.
+  * After running the script, the updated runner will immediately be available, no need to restart the server.
+  * This is the option you'll want to use most of the time.
+* **Test against Azure Container Apps Jobs** - Run the server **with** the  `--use_azure_runner`, which means async tasks will be run on Azure, created via the Azure API. To test changes here, you can build and tag a runner image locally with `bazel run //scripts:build_and_load_runner`, and then push it to Azure with `docker push rmisa.azurecr.io/runner:latest`
+  * You generally won't need to use this option unless you're testing something very specific about the runner's integration with Azure, as the runner code is identical whether run locally or on Azure.
 
 ### Cleaning up old runner containers
 
