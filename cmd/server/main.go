@@ -22,6 +22,7 @@ import (
 	"github.com/RMI/pacta/dockertask"
 	"github.com/RMI/pacta/oapierr"
 	oapipacta "github.com/RMI/pacta/openapi/pacta"
+	"github.com/RMI/pacta/reportsrv"
 	"github.com/RMI/pacta/secrets"
 	"github.com/RMI/pacta/session"
 	"github.com/RMI/pacta/task"
@@ -286,8 +287,14 @@ func run(args []string) error {
 		return fmt.Errorf("failed to init Azure Event Grid handler: %w", err)
 	}
 
-	r := chi.NewRouter()
-	r.Group(eventSrv.RegisterHandlers)
+	reportSrv, err := reportsrv.New(&reportsrv.Config{
+		DB:     db,
+		Blob:   blobClient,
+		Logger: logger,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to init report server: %w", err)
+	}
 
 	jwKey, err := jwk.FromRaw(sec.AuthVerificationKey.PublicKey)
 	if err != nil {
@@ -295,9 +302,9 @@ func run(args []string) error {
 	}
 	jwKey.Set(jwk.KeyIDKey, sec.AuthVerificationKey.ID)
 
-	// We now register our PACTA above as the handler for the interface
-	oapipacta.HandlerWithOptions(pactaStrictHandler, oapipacta.ChiServerOptions{
-		BaseRouter: r.With(
+	type middlewareFunc = func(http.Handler) http.Handler
+	middleware := func(addl ...middlewareFunc) []middlewareFunc {
+		return append([]middlewareFunc{
 			// The order of these is important. We run RequestID and RealIP first to
 			// populate relevant metadata for logging, and we run recovery immediately after
 			// logging so it can catch any subsequent panics, but still has access to the
@@ -306,14 +313,23 @@ func run(args []string) error {
 			chimiddleware.RealIP,
 			zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(false)),
 			chimiddleware.Recoverer,
-
 			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
 			jwtauth.Authenticator,
 			session.WithAuthn(logger, db),
+		}, addl...)
+	}
 
-			oapimiddleware.OapiRequestValidator(pactaSwagger),
+	r := chi.NewRouter()
+	r.With(chimiddleware.Recoverer).Group(eventSrv.RegisterHandlers)
+	r.With(middleware()...).Group(reportSrv.RegisterHandlers)
 
-			rateLimitMiddleware(*rateLimitMaxRequests, *rateLimitUnitTime),
+	// We now register our PACTA above as the handler for the interface
+	oapipacta.HandlerWithOptions(pactaStrictHandler, oapipacta.ChiServerOptions{
+		BaseRouter: r.With(
+			middleware(
+				oapimiddleware.OapiRequestValidator(pactaSwagger),
+				rateLimitMiddleware(*rateLimitMaxRequests, *rateLimitUnitTime),
+			)...,
 		),
 	})
 
