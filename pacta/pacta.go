@@ -330,13 +330,29 @@ func (o *HoldingsDate) Clone() *HoldingsDate {
 	}
 }
 
+type PortfolioProperties struct {
+	HoldingsDate       *HoldingsDate
+	ESG                *bool
+	External           *bool
+	EngagementStrategy *bool
+}
+
+func (o PortfolioProperties) Clone() PortfolioProperties {
+	return PortfolioProperties{
+		HoldingsDate:       o.HoldingsDate.Clone(),
+		ESG:                o.ESG,
+		External:           o.External,
+		EngagementStrategy: o.EngagementStrategy,
+	}
+}
+
 type IncompleteUploadID string
 type IncompleteUpload struct {
 	ID                IncompleteUploadID
 	Name              string
 	Description       string
 	CreatedAt         time.Time
-	HoldingsDate      *HoldingsDate
+	Properties        PortfolioProperties
 	RanAt             time.Time
 	CompletedAt       time.Time
 	FailureCode       FailureCode
@@ -355,7 +371,7 @@ func (o *IncompleteUpload) Clone() *IncompleteUpload {
 		Name:              o.Name,
 		Description:       o.Description,
 		CreatedAt:         o.CreatedAt,
-		HoldingsDate:      o.HoldingsDate.Clone(),
+		Properties:        o.Properties.Clone(),
 		RanAt:             o.RanAt,
 		CompletedAt:       o.CompletedAt,
 		FailureCode:       o.FailureCode,
@@ -372,7 +388,7 @@ type Portfolio struct {
 	Name                           string
 	Description                    string
 	CreatedAt                      time.Time
-	HoldingsDate                   *HoldingsDate
+	Properties                     PortfolioProperties
 	Owner                          *Owner
 	Blob                           *Blob
 	AdminDebugEnabled              bool
@@ -390,7 +406,7 @@ func (o *Portfolio) Clone() *Portfolio {
 		Name:                           o.Name,
 		Description:                    o.Description,
 		CreatedAt:                      o.CreatedAt,
-		HoldingsDate:                   o.HoldingsDate.Clone(),
+		Properties:                     o.Properties.Clone(),
 		Owner:                          o.Owner.Clone(),
 		Blob:                           o.Blob.Clone(),
 		AdminDebugEnabled:              o.AdminDebugEnabled,

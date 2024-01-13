@@ -5,7 +5,6 @@ import { selectedCountSuffix } from '@/lib/selection'
 
 const {
   humanReadableTimeFromStandardString,
-  humanReadableDateFromStandardString,
 } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
@@ -194,10 +193,6 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
             <div class="flex gap-2 justify-content-between">
               <span>{{ tt('Number of Rows') }}</span>
               <b>{{ slotProps.data.editorValues.value.numberOfRows.originalValue }}</b>
-            </div>
-            <div class="flex gap-2 justify-content-between">
-              <span>{{ tt('Holdings Date') }}</span>
-              <b>{{ humanReadableDateFromStandardString(slotProps.data.editorValues.value.holdingsDate.originalValue.time).value }}</b>
             </div>
           </div>
           <h2 class="mt-5">

@@ -4,6 +4,7 @@
 /* eslint-disable */
 
 import type { HoldingsDate } from './HoldingsDate';
+import type { OptionalBoolean } from './OptionalBoolean';
 import type { PortfolioGroupMembershipPortfolioGroup } from './PortfolioGroupMembershipPortfolioGroup';
 import type { PortfolioInitiativeMembershipInitiative } from './PortfolioInitiativeMembershipInitiative';
 
@@ -24,7 +25,6 @@ export type Portfolio = {
      * The time at which this portfolio was successfully parsed from a raw
      */
     createdAt: string;
-    holdingsDate?: HoldingsDate;
     /**
      * Whether the admin debug mode is enabled for this portfolio
      */
@@ -41,5 +41,18 @@ export type Portfolio = {
      * The list of initiatives that this portfolio is a member of
      */
     initiatives?: Array<PortfolioInitiativeMembershipInitiative>;
+    propertyHoldingsDate?: HoldingsDate;
+    /**
+     * If set, this portfolio represents ESG data
+     */
+    propertyESG: OptionalBoolean;
+    /**
+     * If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input
+     */
+    propertyExternal: OptionalBoolean;
+    /**
+     * If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+     */
+    propertyEngagementStrategy: OptionalBoolean;
 };
 

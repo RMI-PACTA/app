@@ -27,6 +27,16 @@ func LanguageFromOAPI(l api.Language) (pacta.Language, error) {
 	return "", oapierr.BadRequest("unknown language", zap.String("language", string(l)))
 }
 
+func OptionalBoolFromOAPI(b api.OptionalBoolean) *bool {
+	switch b {
+	case api.OptionalBooleanFALSE:
+		return ptr(false)
+	case api.OptionalBooleanTRUE:
+		return ptr(true)
+	}
+	return nil
+}
+
 func InitiativeCreateFromOAPI(i *api.InitiativeCreate) (*pacta.Initiative, error) {
 	if i == nil {
 		return nil, oapierr.BadRequest("InitiativeCreate cannot be nil")

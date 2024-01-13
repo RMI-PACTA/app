@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -23,7 +24,7 @@ func portfolioQueryStanza(where string) string {
 		portfolio.name,
 		portfolio.description,
 		portfolio.created_at,
-		portfolio.holdings_date,
+		portfolio.properties,
 		portfolio.blob_id,
 		portfolio.admin_debug_enabled,
 		portfolio.number_of_rows,
@@ -103,17 +104,17 @@ func (d *DB) CreatePortfolio(tx db.Tx, p *pacta.Portfolio) (pacta.PortfolioID, e
 	if err := validatePortfolioForCreation(p); err != nil {
 		return "", fmt.Errorf("validating portfolio for creation: %w", err)
 	}
-	hd, err := encodeHoldingsDate(p.HoldingsDate)
+	props, err := encodeProperties(p.Properties)
 	if err != nil {
-		return "", fmt.Errorf("validating holdings date: %w", err)
+		return "", fmt.Errorf("encoding properties: %w", err)
 	}
 	p.ID = pacta.PortfolioID(d.randomID("pflo"))
 	err = d.exec(tx, `
 		INSERT INTO portfolio 
-			(id, owner_id, name, description, holdings_date, blob_id, admin_debug_enabled, number_of_rows)
+			(id, owner_id, name, description, properties, blob_id, admin_debug_enabled, number_of_rows)
 			VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8);`,
-		p.ID, p.Owner.ID, p.Name, p.Description, hd, p.Blob.ID, p.AdminDebugEnabled, p.NumberOfRows)
+		p.ID, p.Owner.ID, p.Name, p.Description, props, p.Blob.ID, p.AdminDebugEnabled, p.NumberOfRows)
 	if err != nil {
 		return "", fmt.Errorf("creating portfolio: %w", err)
 	}
@@ -182,7 +183,7 @@ func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, e
 
 func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 	p := &pacta.Portfolio{Owner: &pacta.Owner{}, Blob: &pacta.Blob{}}
-	hd := pgtype.Timestamptz{}
+	props := []byte{}
 	groupsIDs := []pgtype.Text{}
 	groupsCreatedAts := []pgtype.Timestamptz{}
 	initiativesIDs := []pgtype.Text{}
@@ -194,7 +195,7 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 		&p.Name,
 		&p.Description,
 		&p.CreatedAt,
-		&hd,
+		&props,
 		&p.Blob.ID,
 		&p.AdminDebugEnabled,
 		&p.NumberOfRows,
@@ -207,9 +208,9 @@ func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 	if err != nil {
 		return nil, fmt.Errorf("scanning into portfolio row: %w", err)
 	}
-	p.HoldingsDate, err = decodeHoldingsDate(hd)
+	p.Properties, err = decodeProperties(props)
 	if err != nil {
-		return nil, fmt.Errorf("decoding holdings date: %w", err)
+		return nil, fmt.Errorf("decoding properties: %w", err)
 	}
 	if err := checkSizesEquivalent("groups", len(groupsIDs), len(groupsCreatedAts)); err != nil {
 		return nil, err
@@ -264,20 +265,20 @@ func rowsToPortfolios(rows pgx.Rows) ([]*pacta.Portfolio, error) {
 }
 
 func (db *DB) putPortfolio(tx db.Tx, p *pacta.Portfolio) error {
-	hd, err := encodeHoldingsDate(p.HoldingsDate)
+	props, err := encodeProperties(p.Properties)
 	if err != nil {
-		return fmt.Errorf("validating holdings date: %w", err)
+		return fmt.Errorf("encoding properties: %w", err)
 	}
 	err = db.exec(tx, `
 		UPDATE portfolio SET
 			owner_id = $2,
 			name = $3, 
 			description = $4,
-			holdings_date = $5,
+			properties = $5,
 			admin_debug_enabled = $6,
 			number_of_rows = $7
 		WHERE id = $1;
-		`, p.ID, p.Owner.ID, p.Name, p.Description, hd, p.AdminDebugEnabled, p.NumberOfRows)
+		`, p.ID, p.Owner.ID, p.Name, p.Description, props, p.AdminDebugEnabled, p.NumberOfRows)
 	if err != nil {
 		return fmt.Errorf("updating portfolio writable fields: %w", err)
 	}
@@ -303,8 +304,25 @@ func validatePortfolioForCreation(p *pacta.Portfolio) error {
 	if p.NumberOfRows < 0 {
 		return fmt.Errorf("portfolio number_of_rows must be non-negative")
 	}
-	if p.HoldingsDate == nil || p.HoldingsDate.Time.IsZero() {
-		return fmt.Errorf("portfolio holdings_date must be non-nil and non-zero")
-	}
 	return nil
+}
+
+func encodeProperties(p pacta.PortfolioProperties) ([]byte, error) {
+	bytes, err := json.Marshal(p)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling portfolio_properties: %w", err)
+	}
+	return bytes, nil
+}
+
+func decodeProperties(b []byte) (pacta.PortfolioProperties, error) {
+	if len(b) == 0 {
+		return pacta.PortfolioProperties{}, nil
+	}
+	p := pacta.PortfolioProperties{}
+	err := json.Unmarshal(b, &p)
+	if err != nil {
+		return pacta.PortfolioProperties{}, fmt.Errorf("unmarshalling portfolio_properties: %w", err)
+	}
+	return p, nil
 }

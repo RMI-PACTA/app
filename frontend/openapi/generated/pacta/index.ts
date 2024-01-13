@@ -59,6 +59,7 @@ export type { ListPortfoliosResp } from './models/ListPortfoliosResp';
 export type { MergeUsersReq } from './models/MergeUsersReq';
 export type { MergeUsersResp } from './models/MergeUsersResp';
 export type { NewPortfolioAsset } from './models/NewPortfolioAsset';
+export { OptionalBoolean } from './models/OptionalBoolean';
 export type { PactaVersion } from './models/PactaVersion';
 export type { PactaVersionChanges } from './models/PactaVersionChanges';
 export type { PactaVersionCreate } from './models/PactaVersionCreate';

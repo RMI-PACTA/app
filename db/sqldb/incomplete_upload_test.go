@@ -23,11 +23,15 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 	cmpOpts := incompleteUploadCmpOpts()
 
 	iu := &pacta.IncompleteUpload{
-		Name:         "i-u-name",
-		Description:  "i-u-description",
-		HoldingsDate: exampleHoldingsDate,
-		Owner:        &pacta.Owner{ID: o1.ID},
-		Blob:         &pacta.Blob{ID: b.ID},
+		Name:        "i-u-name",
+		Description: "i-u-description",
+		Properties: pacta.PortfolioProperties{
+			HoldingsDate: exampleHoldingsDate,
+			ESG:          ptr(true),
+			External:     ptr(false),
+		},
+		Owner: &pacta.Owner{ID: o1.ID},
+		Blob:  &pacta.Blob{ID: b.ID},
 	}
 	id, err := tdb.CreateIncompleteUpload(tx, iu)
 	if err != nil {
@@ -68,7 +72,10 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 		db.SetIncompleteUploadCompletedAt(completedAt),
 		db.SetIncompleteUploadAdminDebugEnabled(true),
 		db.SetIncompleteUploadFailureMessage(failureMessage),
-		db.SetIncompleteUploadHoldingsDate(hd),
+		db.SetIncompleteUploadPropertyHoldingsDate(hd),
+		db.SetIncompleteUploadPropertyESG(ptr(false)),
+		db.SetIncompleteUploadPropertyEngagementStrategy(ptr(true)),
+		db.SetIncompleteUploadPropertyExternal(nil),
 	)
 	if err != nil {
 		t.Fatalf("updating incomplete upload: %v", err)
@@ -81,7 +88,10 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 	iu.CompletedAt = completedAt
 	iu.AdminDebugEnabled = true
 	iu.FailureMessage = failureMessage
-	iu.HoldingsDate = hd
+	iu.Properties.HoldingsDate = hd
+	iu.Properties.ESG = ptr(false)
+	iu.Properties.EngagementStrategy = ptr(true)
+	iu.Properties.External = nil
 
 	actual, err = tdb.IncompleteUpload(tx, iu.ID)
 	if err != nil {
@@ -144,11 +154,10 @@ func TestFailureCodePersistability(t *testing.T) {
 	o := ownerUserForTesting(t, tdb, u)
 
 	iu := &pacta.IncompleteUpload{
-		Name:         "i-u-name",
-		Description:  "i-u-description",
-		HoldingsDate: exampleHoldingsDate,
-		Owner:        &pacta.Owner{ID: o.ID},
-		Blob:         &pacta.Blob{ID: b.ID},
+		Name:        "i-u-name",
+		Description: "i-u-description",
+		Owner:       &pacta.Owner{ID: o.ID},
+		Blob:        &pacta.Blob{ID: b.ID},
 	}
 	id, err := tdb.CreateIncompleteUpload(tx, iu)
 	if err != nil {

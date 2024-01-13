@@ -28,10 +28,25 @@ const createEditorPortfolioFields = (translation: Translation): EditorPortfolioF
       label: tt('Admin Debugging Enabled'),
       helpText: tt('AdminDebuggingEnabledHelpText'),
     },
-    holdingsDate: {
-      name: 'holdingsDate',
+    propertyHoldingsDate: {
+      name: 'propertyHoldingsDate',
       label: tt('Holdings Date'),
       helpText: tt('HoldingsDateHelpText'),
+    },
+    propertyESG: {
+      name: 'propertyESG',
+      label: tt('Environmental, Social, and Governance (ESG)'),
+      helpText: tt('ESGHelpText'),
+    },
+    propertyExternal: {
+      name: 'propertyExternal',
+      label: tt('External'),
+      helpText: tt('ExternalHelpText'),
+    },
+    propertyEngagementStrategy: {
+      name: 'propertyEngagementStrategy',
+      label: tt('Engagement Strategy'),
+      helpText: tt('EngagementStrategyHelpText'),
     },
     createdAt: {
       name: 'createdAt',
