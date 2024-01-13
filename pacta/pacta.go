@@ -340,9 +340,9 @@ type PortfolioProperties struct {
 func (o PortfolioProperties) Clone() PortfolioProperties {
 	return PortfolioProperties{
 		HoldingsDate:       o.HoldingsDate.Clone(),
-		ESG:                o.ESG,
-		External:           o.External,
-		EngagementStrategy: o.EngagementStrategy,
+		ESG:                clonePtr(o.ESG),
+		External:           clonePtr(o.External),
+		EngagementStrategy: clonePtr(o.EngagementStrategy),
 	}
 }
 
@@ -775,4 +775,12 @@ func cloneAll[T cloneable[T]](in []T) []T {
 		out[i] = t.Clone()
 	}
 	return out
+}
+
+func clonePtr[T any](in *T) *T {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
 }
