@@ -125,20 +125,8 @@ type testDB struct {
 	blobs             map[pacta.BlobID]*pacta.Blob
 }
 
-func (tdb *testDB) Begin(ctx context.Context) (db.Tx, error) {
-	return testTx{}, nil
-}
-
 func (tdb *testDB) NoTxn(ctx context.Context) db.Tx {
 	return testTx{}
-}
-
-func (tdb *testDB) Transactional(ctx context.Context, fn func(tx db.Tx) error) error {
-	return fn(testTx{})
-}
-
-func (tdb *testDB) RunOrContinueTransaction(tx db.Tx, fn func(tx db.Tx) error) error {
-	return fn(testTx{})
 }
 
 func (tdb *testDB) AnalysisArtifactsForAnalysis(tx db.Tx, id pacta.AnalysisID) ([]*pacta.AnalysisArtifact, error) {

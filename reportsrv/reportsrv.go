@@ -41,10 +41,7 @@ type Server struct {
 }
 
 type DB interface {
-	Begin(context.Context) (db.Tx, error)
 	NoTxn(context.Context) db.Tx
-	Transactional(context.Context, func(tx db.Tx) error) error
-	RunOrContinueTransaction(db.Tx, func(tx db.Tx) error) error
 
 	AnalysisArtifactsForAnalysis(tx db.Tx, id pacta.AnalysisID) ([]*pacta.AnalysisArtifact, error)
 	Blobs(tx db.Tx, ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error)
@@ -83,14 +80,15 @@ func (s *Server) RegisterHandlers(r chi.Router) {
 func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 	aID := pacta.AnalysisID(chi.URLParam(r, "analysis_id"))
 	if aID == "" {
-		http.Error(w, "no id given", http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	ctx := r.Context()
 
 	artifacts, err := s.db.AnalysisArtifactsForAnalysis(s.db.NoTxn(ctx), aID)
 	if err != nil {
-		http.Error(w, "failed to get artifacts: "+err.Error(), http.StatusInternalServerError)
+		s.logger.Error("failed to load artifacts for analysis", zap.String("analysis_id", string(aID)), zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	var blobIDs []pacta.BlobID
@@ -100,7 +98,8 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 
 	blobs, err := s.db.Blobs(s.db.NoTxn(ctx), blobIDs)
 	if err != nil {
-		http.Error(w, "failed to get blobs: "+err.Error(), http.StatusInternalServerError)
+		s.logger.Error("failed to load blobs", zap.Strings("blob_ids", asStrs(blobIDs)), zap.Error(err))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -131,24 +130,30 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		// This isn't the asset we're looking for.
 		if uriPath != subPath {
 			continue
 		}
 
+		// Load the blob from blob storage and copy it byte-for-byte to the HTTP response.
 		r, err := s.blob.ReadBlob(ctx, uri)
 		if err != nil {
 			http.Error(w, "failed to read blob: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		defer r.Close()
+
 		w.Header().Set("Content-Type", fileTypeToMIME(b.FileType))
 		if _, err := io.Copy(w, r); err != nil {
-			http.Error(w, "failed to read/write blob: "+err.Error(), http.StatusInternalServerError)
+			s.logger.Error("failed to read/write blob", zap.String("blob_uri", uri), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		return
 	}
-	http.Error(w, "not found", http.StatusNotFound)
+
+	s.logger.Error("unknown report asset requested for analysis", zap.String("analysis_id", string(aID)), zap.String("req_path", r.URL.Path), zap.String("asset_path", subPath))
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	return
 }
 
@@ -178,4 +183,12 @@ func fileTypeToMIME(ft pacta.FileType) string {
 		return "application/octet-stream"
 	}
 
+}
+
+func asStrs[T ~string](ts []T) []string {
+	ss := make([]string, len(ts))
+	for i, t := range ts {
+		ss[i] = string(t)
+	}
+	return ss
 }
