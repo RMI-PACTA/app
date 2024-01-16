@@ -24,7 +24,7 @@
     "Metadata": "Metadata",
     "Number of Rows": "Number of Rows",
     "Save Changes": "Save Changes",
-    "Refresh": "Refresh"
+    "Refresh": "Refresh",
   },
   "components/initiative/Toolbar": {
     "Edit": "Edit",
@@ -36,6 +36,9 @@
   "components/locale/Selector": {
     "Availabile In": "This site is available in:",
     "Bottom Right": "You can change the language at any time in the bottom right corner of the page. ↘️"
+  },
+  "components/language/Selector": {
+    "Unset": "Unset"
   },
   "components/modal/Error": {
     "Common Steps": "Some common troubleshooting steps that might be helpful:",
@@ -100,6 +103,21 @@
     "Copy to Clipboard": "Copy to Clipboard",
     "Download File": "Download File"
   },
+  "components/inputs/Esg": {
+    "Unset": "Unspecified",
+    "True": "These portfolios represent ESG data",
+    "False": "These portfolios do not represent ESG data"
+  },
+  "components/inputs/External": {
+    "Unset": "Unspecified",
+    "True": "These portfolios represent external data",
+    "False": "These portfolios represent internal data"
+  },
+  "components/inputs/EngagementStrategy": {
+    "Unset": "Unspecified",
+    "True": "These portfolios represent engagement strategy data",
+    "False": "These portfolios represent non-engageement strategy data"
+  },
   "components/modal/PermissionDenied": {
     "Email Us": "If you think this is a bug (something that you should have access to), or if you want to let us know how you got here, please email us at",
     "Heading": "Permission Denied",
@@ -128,6 +146,7 @@
     "Editable Properties": "Editable Properties",
     "Holdings Date": "Holdings Date",
     "Metadata": "Metadata",
+    "No Uploaded Portfolios Message": "It looks like you haven't uploaded any portfolios yet - the first step to using the PACTA tool is uploading your portfolio to the platform, where it can be processed, parsed, and validated. Click the button below to upload a new portfolio.",
     "Number of Rows": "Number of Rows",
     "Save Changes": "Save Changes",
     "Refresh": "Refresh"
@@ -140,7 +159,8 @@
     "Delete": "Delete",
     "New Portfolio Group": "New Portfolio Group",
     "How To Run a Report": "How To Run a Report",
-    "Refresh": "Refresh"
+    "Refresh": "Refresh",
+    "No Portfolio Groups Message": "Portfolio groups are mechanisms for organizing your portfolios, like a folder or a tag. You can create a portfolio group by clicking the button below."
   },
   "components/portfolio/group/NewModal": {
     "Discard": "Discard",
@@ -234,7 +254,13 @@
     "Description": "Description",
     "DescriptionHelpText": "The description is optional, but can be used to provide additional context for the portfolio.",
     "Admin Debugging Enabled": "Admin Debugging Enabled",
-    "AdminDebuggingEnabledHelpText": "If enabled, this content of this portfolio will be accessible to administrators. When disabled, only you, the owner of this content, can access it."
+    "AdminDebuggingEnabledHelpText": "If enabled, this content of this portfolio will be accessible to administrators. When disabled, only you, the owner of this content, can access it.",
+    "ESG": "Environmental, Social, and Governance (ESG)",
+    "ESGHelpText": "If enabled, this portfolio represents ESG data. If disabled, this portfolio represents non-ESG data.",
+    "External": "External",
+    "ExternalHelpText": "If enabled, this portfolio represents external data. If disabled, this portfolio represents internal data.",
+    "Engagement Strategy": "Engagement Strategy",
+    "EngagementStrategyHelpText": "If enabled, this portfolio represents engagement strategy data. If disabled, this portfolio represents non-engagement strategy data."
   },
   "lib/editor/portfolio_group": {
     "Created At": "Created At",
@@ -242,6 +268,19 @@
     "ID": "ID",
     "Members": "Members",
     "Name": "Name"
+  },
+  "lib/editor/user": {
+    "Admin": "Admin",
+    "AdminHelpText": "If enabled, this user is an administrator. Enable this only with extreme caution.",
+    "Canonical Email": "Canonical Email",
+    "Entered Email": "Entered Email",
+    "ID": "ID",
+    "Name": "Name",
+    "NameHelpText": "This username will be visible to other users on the platform. It can be changed at any time.",
+    "Preferred Language": "Preferred Language",
+    "PreferredLanguageHelpText": "This is your preffered language for report generation and platform text.",
+    "Super Admin": "Super Admin",
+    "SuperAdminHelpText": "If enabled, this user becomes a super-administrator, and can do anything that a user can do through the site."
   },
   "lib/editor/utils": {
     "AllChangesSaved": "All Changes Saved",
@@ -300,13 +339,22 @@
     "Discard Changes": "Discard Changes"
   },
   "pages/upload": {
+    "Add File(s)": "Add File(s)",
+    "Add More File(s)": "Add More File(s)",
     "Cleaning Up": "Cleaning Up",
     "Done": "Done",
     "Selected": "Selected",
     "Uploaded": "Uploaded",
     "Uploading": "Uploading",
     "Validating": "Validating",
-    "Waiting": "Waiting"
+    "Waiting": "Waiting",
+    "Begin Upload": "Begin Upload",
+    "ErrMustBeCSV": "File must be a CSV file",
+    "ErrNameTooLong" : "Filename is too long (1000 characters max).",
+    "ErrDuplicate": "This file may be a duplicate, consider removing it.",
+    "ErrTooLarge": "File is too large (100MB max)",
+    "Optional Portfolio Properties": "Optional Portfolio Properties",
+    "No Edit Properties": "The portfolios have already been created with the settings you selected. You can change their settings by editing each portfolio you created individually."
   },
   "pages/audit-logs": {
     "Action": "Action",

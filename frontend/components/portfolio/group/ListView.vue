@@ -102,6 +102,11 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
       sort-field="editorValues.value.createdAt.originalValue"
       :sort-order="-1"
     >
+      <template #empty>
+        <PVMessage severity="info">
+          {{ tt('No Portfolio Groups Message') }}
+        </PVMessage>
+      </template>
       <PVColumn selection-mode="multiple" />
       <PVColumn
         field="editorValues.value.name.originalValue"
@@ -184,13 +189,14 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
     </PVDataTable>
     <div class="flex flex-wrap gap-3 w-full justify-content-between">
       <PVButton
-        class="p-button-outlined"
+        :class="portfolioGroups.length > 0 ? 'p-button-outlined' : ''"
         icon="pi pi-plus"
         :label="tt('New Portfolio Group')"
         @click="() => newPortfolioGroupVisible = true"
       />
       <!-- TODO(grady) Hook this up to something. -->
       <PVButton
+        v-if="portfolioGroups.length > 0"
         class="p-button-outlined"
         :label="tt('How To Run a Report')"
         icon="pi pi-question-circle"

@@ -168,8 +168,9 @@ func (s *Server) userDoAuthzAndAuditLog(ctx context.Context, targetUserID pacta.
 		if actorInfo.UserID == targetUserID {
 			as.isAuthorized = true
 			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Owner)
+		} else {
+			as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
 		}
-		as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
 	default:
 		return fmt.Errorf("unknown action %q for user authz", action)
 	}

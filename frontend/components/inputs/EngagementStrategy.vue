@@ -25,9 +25,9 @@ const model = computed({
 <template>
   <ExplicitTriStateCheckbox
     v-model:value="model"
-    :true-label="tt('These file represents Engagement Strategy data')"
-    :false-label="tt('These files do not represent engagement strategy data')"
-    :unset-label="tt('Not specified')"
+    :true-label="tt('True')"
+    :false-label="tt('False')"
+    :unset-label="tt('Unset')"
     :disabled="props.disabled"
   />
 </template>

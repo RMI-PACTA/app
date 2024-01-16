@@ -25,11 +25,16 @@ const {
   currentValue: portfolioGroup,
   saveTooltip,
   canSave,
+  resetEditor,
 } = portfolioGroupEditor(defaultPortfolioGroup, i18n)
 const discard = () => { newPortfolioGroupVisible.value = false }
 const save = () => withLoading(
   () => pactaClient.createPortfolioGroup(portfolioGroup.value)
-    .then(() => { emit('created'); newPortfolioGroupVisible.value = false }),
+    .then(() => {
+      emit('created')
+      newPortfolioGroupVisible.value = false
+      resetEditor()
+    }),
   `${prefix}.save`,
 )
 const tt = (key: string) => t(`components/portfolio/group/NewModal.${key}`)

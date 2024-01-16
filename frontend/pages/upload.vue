@@ -96,13 +96,13 @@ const fileStatesWithDetail = computed<FileStateDetail[]>(() => {
     let otherError: string | undefined
     // TODO(#79) validate this server side too.
     if (fileState.file.name.length > 1000) {
-      otherError = 'Filename is too long (1000 characters max).'
+      otherError = tt('ErrNameTooLong')
     } else if (fileState.file.size > 1028 * 1028 * 100) {
-      otherError = 'File is too large (100MB max).'
+      otherError = tt('ErrTooLarge')
     } else if (!fileState.file.name.endsWith('.csv')) {
-      otherError = 'File must be a csv file.'
+      otherError = tt('ErrMustBeCSV')
     } else if (isDuplicate(fileState)) {
-      otherError = 'This file may be a duplicate, consider removing it.'
+      otherError = tt('ErrDuplicate')
     }
     return {
       ...fileState,
@@ -121,22 +121,22 @@ const fileUploaderProps = computed(() => ({
   auto: true,
   multiple: true,
   'custom-upload': true,
-  'choose-label': 'Add File(s)',
+  'choose-label': fileStatesWithDetail.value.length === 0 ? tt('Add File(s)') : tt('Add More File(s)'),
 }))
 const actionButtonLabel = computed(() => {
   if (hasAnyState(FileStatus.Waiting)) {
-    return 'Waiting...'
+    return tt('Waiting') + '...'
   }
   if (hasAnyState(FileStatus.Uploading)) {
-    return 'Uploading...'
+    return tt('Uploading') + '...'
   }
   if (hasAnyState(FileStatus.Validating)) {
-    return 'Validating...'
+    return tt('Validating') + '...'
   }
   if (hasAnyState(FileStatus.CleanUp)) {
-    return 'Cleaning Up...'
+    return tt('Cleaning Up') + '...'
   }
-  return 'Begin Upload'
+  return tt('Begin Upload')
 })
 const allDone = computed(() => hasAllState(FileStatus.Done) && fileStates.value.length > 0)
 
@@ -332,7 +332,7 @@ const cleanUpIncompleteUploads = async () => {
                   <PVButton
                     class="p-button-danger p-button-text px-1 py-0 w-auto"
                     icon="pi pi-trash"
-                    :disabled="isProcessing"
+                    :disabled="isProcessing || allDone"
                     @click="() => removeFile(slotProps.data.index)"
                   />
                 </div>
@@ -358,8 +358,18 @@ const cleanUpIncompleteUploads = async () => {
       />
     </FormField>
     <PVAccordion>
-      <PVAccordionTab :header="tt('Optional Portfolio Properties')">
-        <div class="flex flex-column gap-3">
+      <PVAccordionTab
+        :header="tt('Optional Portfolio Properties')"
+        :pt="{
+          content: {
+            class: 'pb-0 md:px-4',
+          },
+        }"
+      >
+        <div class="flex flex-column">
+          <PVMessage v-if="allDone">
+            {{ tt('No Edit Properties') }}
+          </PVMessage>
           <FormField
             label="Holdings Date"
             help-text="The holdings date for the portfolio"
@@ -375,16 +385,16 @@ const cleanUpIncompleteUploads = async () => {
           >
             <InputsEsg
               v-model:value="esg"
-              :disabled="isProcessing"
+              :disabled="isProcessing || allDone"
             />
           </FormField>
           <FormField
             label="External"
             help-text="The external rating for the portfolios that will be uploaded"
           >
-            <InputsEsg
+            <InputsExternal
               v-model:value="external"
-              :disabled="isProcessing"
+              :disabled="isProcessing || allDone"
             />
           </FormField>
           <FormField
@@ -393,7 +403,7 @@ const cleanUpIncompleteUploads = async () => {
           >
             <InputsEngagementStrategy
               v-model:value="engagementStrategy"
-              :disabled="isProcessing"
+              :disabled="isProcessing || allDone"
             />
           </FormField>
         </div>

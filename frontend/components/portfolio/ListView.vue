@@ -82,6 +82,7 @@ const deletePortfolio = (id: string) => withLoading(
   () => pactaClient.deletePortfolio(id),
   `${prefix}.deletePortfolio`,
 )
+const deleteThisPortfolio = (id: string) => deletePortfolio(id).then(refresh)
 const deleteSelected = () => Promise.all([selectedRows.value.map((row) => deletePortfolio(row.id))]).then(refresh)
 </script>
 
@@ -122,6 +123,11 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
       sort-field="editorValues.value.createdAt.originalValue"
       :sort-order="-1"
     >
+      <template #empty>
+        <PVMessage severity="info">
+          {{ tt('No Uploaded Portfolios Message') }}
+        </PVMessage>
+      </template>
       <PVColumn selection-mode="multiple" />
       <PVColumn
         field="editorValues.value.createdAt.originalValue"
@@ -223,7 +229,7 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
               icon="pi pi-trash"
               class="p-button-danger p-button-outlined"
               :label="tt('Delete')"
-              @click="() => deletePortfolio(slotProps.data.id)"
+              @click="() => deleteThisPortfolio(slotProps.data.id)"
             />
             <div v-tooltip.bottom="slotProps.data.saveTooltip">
               <PVButton
@@ -244,13 +250,15 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
     </PVDataTable>
     <div class="flex flex-wrap gap-3 w-full justify-content-between">
       <LinkButton
-        class="p-button-outlined"
-        icon="pi pi-arrow-left"
+        :class="props.portfolios.length > 0 ? 'p-button-outlined' : ''"
+        icon="pi pi-arrow-right"
+        icon-pos="right"
         to="/upload"
         :label="tt('Upload New Portfolios')"
       />
       <!-- TODO(grady) Hook this up to something. -->
       <PVButton
+        v-if="props.portfolios.length > 0"
         class="p-button-outlined"
         :label="tt('How To Run a Report')"
         icon="pi pi-question-circle"
