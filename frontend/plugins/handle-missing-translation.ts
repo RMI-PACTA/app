@@ -16,13 +16,13 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   }
 
-  nuxtApp.vueApp.provide('handleMissingTranslation', handleMissingTranslation)
   const values = computed(() => {
     return missingTranslations.value
   })
   return {
     provide: {
       missingTranslations: {
+        handleMissingTranslation,
         values,
         numberMissing,
       },

@@ -206,6 +206,13 @@ const (
 	FileType_ZIP  = "zip"
 	FileType_HTML = "html"
 	FileType_JSON = "json"
+
+	// All for serving reports
+	FileType_TEXT    = "txt"
+	FileType_CSS     = "css"
+	FileType_JS      = "js"
+	FileType_TTF     = "ttf"
+	FileType_UNKNOWN = "unknown"
 )
 
 var FileTypeValues = []FileType{
@@ -215,6 +222,11 @@ var FileTypeValues = []FileType{
 	FileType_JSON,
 	FileType_HTML,
 	FileType_JSON,
+	FileType_TEXT,
+	FileType_CSS,
+	FileType_JS,
+	FileType_TTF,
+	FileType_UNKNOWN,
 }
 
 func ParseFileType(s string) (FileType, error) {
@@ -233,6 +245,16 @@ func ParseFileType(s string) (FileType, error) {
 		return FileType_HTML, nil
 	case "json":
 		return FileType_JSON, nil
+	case "txt":
+		return FileType_TEXT, nil
+	case "css":
+		return FileType_CSS, nil
+	case "js":
+		return FileType_JS, nil
+	case "ttf":
+		return FileType_TTF, nil
+	case "unknown":
+		return FileType_UNKNOWN, nil
 	}
 	return "", fmt.Errorf("unknown pacta.FileType: %q", s)
 }
