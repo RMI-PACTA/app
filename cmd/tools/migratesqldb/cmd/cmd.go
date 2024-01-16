@@ -67,12 +67,7 @@ var (
 		Use:   "apply",
 		Short: "Apply migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			migrationsPath, err := runfiles.Rlocation("__main__/db/sqldb/migrations/0001_create_schema_migrations_history.down.sql")
-			if err != nil {
-				return fmt.Errorf("failed to get a path to migrations: %w", err)
-			}
-			migrationsPath = filepath.Dir(migrationsPath)
-			migrator, err := newMigrator(sqlDB, migrationsPath)
+			migrator, err := newMigrator(sqlDB)
 			if err != nil {
 				return fmt.Errorf("when creating the migrator: %w", err)
 			}
@@ -87,12 +82,7 @@ var (
 		Use:   "rollback",
 		Short: "Rollback migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			migrationsPath, err := runfiles.Rlocation("__main__/db/sqldb/migrations/0001_create_schema_migrations_history.down.sql")
-			if err != nil {
-				return fmt.Errorf("failed to get a path to migrations: %w", err)
-			}
-			migrationsPath = filepath.Dir(migrationsPath)
-			migrator, err := newMigrator(sqlDB, migrationsPath)
+			migrator, err := newMigrator(sqlDB)
 			if err != nil {
 				return fmt.Errorf("when creating the migrator: %w", err)
 			}
@@ -110,7 +100,15 @@ func init() {
 	rootCmd.AddCommand(applyCmd, rollbackCmd)
 }
 
-func newMigrator(db *sql.DB, migrationsPath string) (*migrate.Migrate, error) {
+func newMigrator(db *sql.DB) (*migrate.Migrate, error) {
+	// For a description of why this is needed, see:
+	// https://github.com/bazelbuild/rules_go/issues/3830
+	migrationsPath, err := runfiles.Rlocation("__main__/db/sqldb/migrations/0001_create_schema_migrations_history.down.sql")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get a path to migrations: %w", err)
+	}
+	migrationsPath = filepath.Dir(migrationsPath)
+
 	// Pings the database to distinguish between migration and connection errors
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
