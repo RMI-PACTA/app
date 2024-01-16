@@ -79,17 +79,13 @@ func (d *DB) CreateIncompleteUpload(tx db.Tx, i *pacta.IncompleteUpload) (pacta.
 	if err := validateIncompleteUploadForCreation(i); err != nil {
 		return "", fmt.Errorf("validating incomplete_upload for creation: %w", err)
 	}
-	props, err := encodeProperties(i.Properties)
-	if err != nil {
-		return "", fmt.Errorf("encoding properties: %w", err)
-	}
 	i.ID = pacta.IncompleteUploadID(d.randomID("iu"))
-	err = d.exec(tx, `
+	err := d.exec(tx, `
 		INSERT INTO incomplete_upload 
 			(id, owner_id, admin_debug_enabled, blob_id, name, description, properties)
 			VALUES
 			($1, $2, $3, $4, $5, $6, $7);`,
-		i.ID, i.Owner.ID, i.AdminDebugEnabled, i.Blob.ID, i.Name, i.Description, props)
+		i.ID, i.Owner.ID, i.AdminDebugEnabled, i.Blob.ID, i.Name, i.Description, i.Properties)
 	if err != nil {
 		return "", fmt.Errorf("creating incomplete_upload: %w", err)
 	}
@@ -148,7 +144,6 @@ func rowToIncompleteUpload(row rowScanner) (*pacta.IncompleteUpload, error) {
 	var (
 		failureCode, failureMessage pgtype.Text
 		ranAt, completedAt          pgtype.Timestamptz
-		props                       []byte
 	)
 	err := row.Scan(
 		&iu.ID,
@@ -157,7 +152,7 @@ func rowToIncompleteUpload(row rowScanner) (*pacta.IncompleteUpload, error) {
 		&iu.Blob.ID,
 		&iu.Name,
 		&iu.Description,
-		&props,
+		&iu.Properties,
 		&iu.CreatedAt,
 		&ranAt,
 		&completedAt,
@@ -166,10 +161,6 @@ func rowToIncompleteUpload(row rowScanner) (*pacta.IncompleteUpload, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("scanning into incomplete_upload: %w", err)
-	}
-	iu.Properties, err = decodeProperties(props)
-	if err != nil {
-		return nil, fmt.Errorf("decoding properties: %w", err)
 	}
 	if failureCode.Valid {
 		iu.FailureCode, err = pacta.ParseFailureCode(failureCode.String)
@@ -194,11 +185,7 @@ func rowsToIncompleteUploads(rows pgx.Rows) ([]*pacta.IncompleteUpload, error) {
 }
 
 func (db *DB) putIncompleteUpload(tx db.Tx, iu *pacta.IncompleteUpload) error {
-	props, err := encodeProperties(iu.Properties)
-	if err != nil {
-		return fmt.Errorf("validating properties: %w", err)
-	}
-	err = db.exec(tx, `
+	err := db.exec(tx, `
 		UPDATE incomplete_upload SET
 			owner_id = $2,
 			admin_debug_enabled = $3,
@@ -211,7 +198,7 @@ func (db *DB) putIncompleteUpload(tx db.Tx, iu *pacta.IncompleteUpload) error {
 			failure_message = $10
 		WHERE id = $1;
 		`, iu.ID, iu.Owner.ID, iu.AdminDebugEnabled, iu.Name, iu.Description,
-		props, timeToNilable(iu.RanAt), timeToNilable(iu.CompletedAt),
+		iu.Properties, timeToNilable(iu.RanAt), timeToNilable(iu.CompletedAt),
 		strToNilable(iu.FailureCode), strToNilable(iu.FailureMessage))
 	if err != nil {
 		return fmt.Errorf("updating incomplete_upload writable fields: %w", err)

@@ -255,6 +255,12 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 		return nil, oapierr.Internal("unknown analysis type", zap.String("analysis_type", string(analysisType)))
 	}
 
+	now := s.Now()
+	if err := s.DB.UpdateAnalysis(s.DB.NoTxn(ctx), analysisID, db.SetAnalysisRanAt(now)); err != nil {
+		// Just log the error, it's non-critical
+		s.Logger.Error("failed to set ranAt time on analysis", zap.String("analysis_id", string(analysisID)), zap.Time("ran_at", now))
+	}
+
 	return api.RunAnalysis200JSONResponse{AnalysisId: string(analysisID)}, nil
 }
 

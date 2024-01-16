@@ -71,6 +71,7 @@ mkdir -p "$SOCKET_DIR/sub"
 # We turn off ports and listen solely on our Unix socket.
 docker run \
   --name local-postgres \
+  --userns keep-id \
   --rm \
   --interactive --tty \
   --detach \

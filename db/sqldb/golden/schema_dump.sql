@@ -116,7 +116,12 @@ CREATE TYPE public.file_type AS ENUM (
     'yaml',
     'zip',
     'html',
-    'json'
+    'json',
+    'txt',
+    'css',
+    'js',
+    'ttf',
+    'unknown'
 );
 
 

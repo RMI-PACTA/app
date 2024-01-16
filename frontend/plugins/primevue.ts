@@ -21,6 +21,7 @@ import Textarea from 'primevue/textarea'
 import Tooltip from 'primevue/tooltip'
 import TriStateCheckbox from 'primevue/tristatecheckbox'
 import Message from 'primevue/message'
+import MultiSelect from 'primevue/multiselect'
 import OverlayPanel from 'primevue/overlaypanel'
 import ProgressSpinner from 'primevue/progressspinner'
 import ToastService from 'primevue/toastservice'
@@ -45,6 +46,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVInputText', InputText)
   vueApp.component('PVInputSwitch', InputSwitch)
   vueApp.component('PVMessage', Message)
+  vueApp.component('PVMultiSelect', MultiSelect)
   vueApp.component('PVOverlayPanel', OverlayPanel)
   vueApp.component('PVProgressSpinner', ProgressSpinner)
   vueApp.component('PVTabPanel', TabPanel)

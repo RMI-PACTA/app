@@ -17,6 +17,7 @@ go_library(
         "//dockertask",
         "//oapierr",
         "//openapi:pacta_generated",
+        "//reportsrv",
         "//secrets",
         "//session",
         "//task",
