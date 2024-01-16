@@ -212,7 +212,7 @@ const (
 	FileType_CSS     = "css"
 	FileType_JS      = "js"
 	FileType_TTF     = "ttf"
-	FileType_UNKNOWN = ""
+	FileType_UNKNOWN = "unknown"
 )
 
 var FileTypeValues = []FileType{
@@ -253,7 +253,7 @@ func ParseFileType(s string) (FileType, error) {
 		return FileType_JS, nil
 	case "ttf":
 		return FileType_TTF, nil
-	case "":
+	case "unknown":
 		return FileType_UNKNOWN, nil
 	}
 	return "", fmt.Errorf("unknown pacta.FileType: %q", s)

@@ -233,9 +233,11 @@ func validateBlobForCreation(b *pacta.Blob) error {
 	if b.BlobURI == "" {
 		return fmt.Errorf("blob missing BlobURI")
 	}
+	if b.FileType == "" {
+		return fmt.Errorf("blob missing FileType")
+	}
 	if b.FileName == "" {
 		return fmt.Errorf("blob missing FileName")
 	}
-	// A blank FileType is valid, just means we don't recognize the file type yet.
 	return nil
 }

@@ -121,7 +121,7 @@ CREATE TYPE public.file_type AS ENUM (
     'css',
     'js',
     'ttf',
-    ''
+    'unknown'
 );
 
 
