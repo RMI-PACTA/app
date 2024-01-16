@@ -15,4 +15,5 @@ export enum AuditLogAction {
     AUDIT_LOG_ACTION_ENABLE_SHARING = 'AuditLogActionEnableSharing',
     AUDIT_LOG_ACTION_DISABLE_SHARING = 'AuditLogActionDisableSharing',
     AUDIT_LOG_ACTION_READ_METADATA = 'AuditLogActionReadMetadata',
+    AUDIT_LOG_ACTION_TRANSFER_OWNERSHIP = 'AuditLogActionTransferOwnership',
 }

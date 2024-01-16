@@ -15,11 +15,18 @@ bazel run //scripts:run_server -- --use_azure_runner
 
 ### Creating a new docker image to run locally
 
+When developing the runner, you have two options:
+
+* **Test against local Docker** - Run the server **without** the  `--use_azure_runner`, which means async tasks will run locally, using `docker run ...`. To test local runner changes, you can build and tag a runner image locally with `bazel run //scripts:build_and_load_runner`.
+  * After running the script, the updated runner will immediately be available, no need to restart the server.
+  * This is the option you'll want to use most of the time.
+* **Test against Azure Container Apps Jobs** - Run the server **with** the  `--use_azure_runner`, which means async tasks will be run on Azure, created via the Azure API. To test changes here, you can build and tag a runner image locally with `bazel run //scripts:build_and_load_runner`, and then push it to Azure with `docker push rmisa.azurecr.io/runner:latest`
+  * You generally won't need to use this option unless you're testing something very specific about the runner's integration with Azure, as the runner code is identical whether run locally or on Azure.
+
+### Cleaning up old runner containers
+
+By default, we don't auto-remove stopped containers (i.e. finished runner tasks), to give developers a chance to review the logs (e.g. with `docker logs <sha>`). To clean up all completed runs at once, run:
+
 ```bash
-# Build the runner binary
-bazel build --@io_bazel_rules_go//go/config:pure //cmd/runner:image_tarball
-# Load the new image into docker, which will output a SHA256 value
-docker load < bazel-bin/cmd/runner/image_tarball/tarball.tar
-# Tag the runner image in order for it to be picked up locally. Don't push this to the registry!
-docker tag <SHA from previous step> rmisa.azurecr.io/runner
+docker rm $(docker ps -a -q -f "status=exited" -f "ancestor=rmisa.azurecr.io/runner:latest")
 ```
