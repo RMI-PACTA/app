@@ -1,6 +1,6 @@
 import { type AuditLogQueryReq, type AuditLogQuerySort, type AuditLogQueryWhere, type AuditLogQuerySortBy } from '@/openapi/generated/pacta'
 import { type WritableComputedRef } from 'vue'
-import { type useLocalePath } from '@nuxtjs/i18n/dist/runtime/composables'
+import { type LocalePathFunction } from 'vue-i18n-routing'
 import { computed } from 'vue'
 
 const encodeAuditLogQuerySorts = (sorts: AuditLogQuerySort[]): string => {
@@ -176,7 +176,7 @@ export const urlReactiveAuditLogQuery = (fromQueryReactiveWithDefault: (key: str
   })
 }
 
-export const createURLAuditLogQuery = (localePath: ReturnType<typeof useLocalePath>, req: AuditLogQueryReq): string => {
+export const createURLAuditLogQuery = (localePath: LocalePathFunction, req: AuditLogQueryReq): string => {
   const qSorts = encodeAuditLogQuerySorts(req.sorts ?? [])
   const qWheres = encodeAuditLogQueryWheres(req.wheres)
   const qLimit = encodeAuditLogQueryLimit(req.limit ?? limitDefault)
