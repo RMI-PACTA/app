@@ -15,6 +15,12 @@ do
 	shift
 done
 
+IS_PODMAN=false
+if docker --version | grep -q 'podman'; then
+  IS_PODMAN=true
+  echo "Running against podman"
+fi
+
 # Note: This is fixed by the container, changing it here will not work. For
 # more info, see https://hub.docker.com/_/postgres/
 PG_USER="postgres"
@@ -68,19 +74,28 @@ set_kv "SOCKET_DIR" "$SOCKET_DIR/sub"
 # Needed for rootless Podman setups
 mkdir -p "$SOCKET_DIR/sub"
 
+declare -a RUN_ARGS=(
+  "--name" "local-postgres"
+  "--rm"
+  "--interactive" "--tty"
+  "--detach"
+  "--env" POSTGRES_PASSWORD="$PG_PASSWORD"
+  "--env" POSTGRES_DB="$PG_DB_NAME"
+  "--env" PG_DATA="$PG_DATA_PATH"
+  "--volume" "$SOCKET_DIR/sub:/var/run/postgresql"
+  "--volume" "$PG_LOCAL_DATA_PATH:$PG_DATA_PATH"
+)
+
+# When running against podman, we use `--userns=keep-id` so that the
+# `.postgres-data` directory is owned by the caller, as opposed to a mapped uid
+# like 165xx. We could add an else here so that people with conventional docker
+# setups don't have a root-owned .postgres/data, but we'll start with this.
+if [ "$IS_PODMAN" = true ]; then
+  RUN_ARGS+=("--userns" "keep-id")
+fi
+
 # We turn off ports and listen solely on our Unix socket.
-docker run \
-  --name local-postgres \
-  --userns keep-id \
-  --rm \
-  --interactive --tty \
-  --detach \
-  --env POSTGRES_PASSWORD="$PG_PASSWORD" \
-  --env POSTGRES_DB="$PG_DB_NAME" \
-  --env PG_DATA="$PG_DATA_PATH" \
-  --volume "$SOCKET_DIR/sub:/var/run/postgresql" \
-  --volume "$PG_LOCAL_DATA_PATH:$PG_DATA_PATH" \
-  postgres:14.9 -c listen_addresses=''
+docker run "${RUN_ARGS[@]}" postgres:14.9 -c listen_addresses=''
 CONTAINER_ID=$(docker ps -aqf "name=local-postgres")
 
 echo "Waiting for database to come up..."
