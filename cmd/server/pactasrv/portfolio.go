@@ -90,6 +90,15 @@ func (s *Server) UpdatePortfolio(ctx context.Context, request api.UpdatePortfoli
 	if request.Body.Description != nil {
 		mutations = append(mutations, db.SetPortfolioDescription(*request.Body.Description))
 	}
+	if request.Body.PropertyESG != nil {
+		mutations = append(mutations, db.SetPortfolioPropertyESG(conv.OptionalBoolFromOAPI(*request.Body.PropertyESG)))
+	}
+	if request.Body.PropertyExternal != nil {
+		mutations = append(mutations, db.SetPortfolioPropertyExternal(conv.OptionalBoolFromOAPI(*request.Body.PropertyExternal)))
+	}
+	if request.Body.PropertyEngagementStrategy != nil {
+		mutations = append(mutations, db.SetPortfolioPropertyEngagementStrategy(conv.OptionalBoolFromOAPI(*request.Body.PropertyEngagementStrategy)))
+	}
 	if request.Body.AdminDebugEnabled != nil {
 		if *request.Body.AdminDebugEnabled {
 			if err := s.portfolioDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_EnableAdminDebug); err != nil {

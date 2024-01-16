@@ -28,9 +28,25 @@ const createEditorIncompleteUploadFields = (translation: Translation): EditorInc
       label: tt('Admin Debugging Enabled'),
       helpText: tt('When enabled, this upload can be accessed by administrators to help with debugging. Only turn this on if you\'re comfortable with system administrators accessing this data.'),
     },
-    holdingsDate: {
-      name: 'holdingsDate',
+    propertyHoldingsDate: {
+      name: 'propertyHoldingsDate',
       label: tt('Holdings Date'),
+      helpText: tt('HoldingsDateHelpText'),
+    },
+    propertyESG: {
+      name: 'propertyESG',
+      label: tt('Environmental, Social, and Governance (ESG)'),
+      helpText: tt('ESGHelpText'),
+    },
+    propertyExternal: {
+      name: 'propertyExternal',
+      label: tt('External'),
+      helpText: tt('ExternalHelpText'),
+    },
+    propertyEngagementStrategy: {
+      name: 'propertyEngagementStrategy',
+      label: tt('Engagement Strategy'),
+      helpText: tt('EngagementStrategyHelpText'),
     },
     createdAt: {
       name: 'createdAt',

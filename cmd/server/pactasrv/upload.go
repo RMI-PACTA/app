@@ -25,10 +25,17 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 		return nil, err
 	}
 	owner := &pacta.Owner{ID: actorInfo.OwnerID}
-	holdingsDate, err := conv.HoldingsDateFromOAPI(&request.Body.HoldingsDate)
-	if err != nil {
-		return nil, err
+	properties := pacta.PortfolioProperties{}
+	if request.Body.PropertyHoldingsDate != nil {
+		properties.HoldingsDate, err = conv.HoldingsDateFromOAPI(request.Body.PropertyHoldingsDate)
+		if err != nil {
+			return nil, err
+		}
 	}
+	properties.ESG = conv.OptionalBoolFromOAPI(request.Body.PropertyESG)
+	properties.External = conv.OptionalBoolFromOAPI(request.Body.PropertyExternal)
+	properties.EngagementStrategy = conv.OptionalBoolFromOAPI(request.Body.PropertyEngagementStrategy)
+
 	n := len(request.Body.Items)
 	if n > 25 {
 		// TODO(#71) Implement basic limits
@@ -76,10 +83,10 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 			}
 			blob.ID = blobID
 			iuid, err := s.DB.CreateIncompleteUpload(tx, &pacta.IncompleteUpload{
-				Blob:         blob,
-				Name:         blob.FileName,
-				HoldingsDate: holdingsDate,
-				Owner:        owner,
+				Blob:       blob,
+				Name:       blob.FileName,
+				Properties: properties,
+				Owner:      owner,
 			})
 			if err != nil {
 				return fmt.Errorf("creating incomplete upload %d: %w", i, err)

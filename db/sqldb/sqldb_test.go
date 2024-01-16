@@ -93,7 +93,7 @@ func TestSchemaHistory(t *testing.T) {
 		{ID: 9, Version: 9},   // 0009_support_user_merge
 		{ID: 10, Version: 10}, // 0010_audit_log_enum_values
 		{ID: 11, Version: 11}, // 0011_add_report_file_types
-
+		{ID: 12, Version: 12}, // 0012_portfolio_properties
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {

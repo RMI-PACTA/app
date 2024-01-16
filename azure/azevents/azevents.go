@@ -299,7 +299,7 @@ func (s *Server) handleParsedPortfolio(id string, resp *task.ParsePortfolioRespo
 		if len(incompleteUploads) == 0 {
 			return fmt.Errorf("no incomplete uploads found for ids: %v", resp.Request.IncompleteUploadIDs)
 		}
-		var holdingsDate *pacta.HoldingsDate
+		var properties *pacta.PortfolioProperties
 		var ownerID pacta.OwnerID
 		for _, iu := range incompleteUploads {
 			if ownerID == "" {
@@ -307,14 +307,13 @@ func (s *Server) handleParsedPortfolio(id string, resp *task.ParsePortfolioRespo
 			} else if ownerID != iu.Owner.ID {
 				return fmt.Errorf("multiple owners found for incomplete uploads: %+v", incompleteUploads)
 			}
-			if iu.HoldingsDate == nil {
-				return fmt.Errorf("incomplete upload %s had no holdings date", iu.ID)
-			}
-			if holdingsDate == nil {
-				holdingsDate = iu.HoldingsDate
-			} else if iu.HoldingsDate != nil && *holdingsDate != *iu.HoldingsDate {
-				// Question for Grady: can iu.HoldingsDate ever be nil?
-				return fmt.Errorf("multiple holdings dates found for incomplete uploads: %+v", incompleteUploads)
+
+			if properties == nil {
+				properties = &iu.Properties
+			} else if *properties != iu.Properties {
+				// TODO(#75) We currently don't support merging portfolios with different properties.
+				// but we could change that if we get better input output correlation information.
+				return fmt.Errorf("multiple properties found for incomplete uploads: %+v", incompleteUploads)
 			}
 			if iu.RanAt.After(ranAt) {
 				ranAt = iu.RanAt
@@ -330,7 +329,7 @@ func (s *Server) handleParsedPortfolio(id string, resp *task.ParsePortfolioRespo
 				Name:         output.Blob.FileName,
 				NumberOfRows: output.LineCount,
 				Blob:         &pacta.Blob{ID: blobID},
-				HoldingsDate: holdingsDate,
+				Properties:   *properties,
 			})
 			if err != nil {
 				return fmt.Errorf("creating portfolio %d: %w", i, err)

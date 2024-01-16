@@ -41,6 +41,30 @@ const evs = computed({
       />
     </FormEditorField>
     <FormEditorField
+      :editor-field="efs.propertyESG"
+      :editor-value="evs.propertyESG"
+    >
+      <InputsEsg
+        v-model:value="evs.propertyESG.currentValue"
+      />
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="efs.propertyExternal"
+      :editor-value="evs.propertyExternal"
+    >
+      <InputsExternal
+        v-model:value="evs.propertyExternal.currentValue"
+      />
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="efs.propertyEngagementStrategy"
+      :editor-value="evs.propertyEngagementStrategy"
+    >
+      <InputsEngagementStrategy
+        v-model:value="evs.propertyEngagementStrategy.currentValue"
+      />
+    </FormEditorField>
+    <FormEditorField
       :editor-field="efs.adminDebugEnabled"
       :editor-value="evs.adminDebugEnabled"
     >

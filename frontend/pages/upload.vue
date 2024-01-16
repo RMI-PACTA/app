@@ -2,6 +2,7 @@
 import { type FileUploadUploaderEvent } from 'primevue/fileupload'
 import { serializeError } from 'serialize-error'
 import { formatFileSize } from '@/lib/filesize'
+import { OptionalBoolean, type HoldingsDate } from '@/openapi/generated/pacta'
 
 const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
@@ -38,7 +39,10 @@ interface FileStateDetail extends FileState {
   effectiveError?: string | undefined
 }
 
-const holdingsDate = useState<Date>(`${prefix}.holdingsDate`, () => new Date())
+const holdingsDate = useState<HoldingsDate | undefined>(`${prefix}.holdingsDate`, () => undefined)
+const esg = useState<OptionalBoolean>(`${prefix}.esg`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
+const external = useState<OptionalBoolean>(`${prefix}.external`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
+const engagementStrategy = useState<OptionalBoolean>(`${prefix}.engagementStrategy`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
 const errorCode = useState<string>(`${prefix}.errorCode`, () => '')
 const errorMessage = useState<string>(`${prefix}.errorMessage`, () => '')
 const startedProcessing = useState<boolean>(`${prefix}.startedProcessing`, () => false)
@@ -46,7 +50,10 @@ const isProcessing = useState<boolean>(`${prefix}.isProcessing`, () => false)
 const fileStates = useState<FileState[]>(`${prefix}.fileState`, () => [])
 
 const reset = () => {
-  holdingsDate.value = new Date()
+  holdingsDate.value = undefined
+  esg.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
+  external.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
+  engagementStrategy.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
   errorCode.value = ''
   errorMessage.value = ''
   startedProcessing.value = false
@@ -159,9 +166,10 @@ const startUpload = async () => {
       file_name: fileState.file.name,
       // TODO(#79) consider adding file size here as a validation step.
     })),
-    holdings_date: {
-      time: holdingsDate.value.toISOString(),
-    },
+    propertyHoldingsDate: holdingsDate.value,
+    propertyESG: esg.value,
+    propertyExternal: external.value,
+    propertyEngagementStrategy: engagementStrategy.value,
   }).catch(e => {
     console.log('error starting upload', e, e.body)
     if (e.body?.error_id) {
@@ -291,17 +299,6 @@ const cleanUpIncompleteUploads = async () => {
       This Copy will need work, and will need to link to the documentation.
     </p>
     <FormField
-      label="Holdings Date"
-      help-text="The holdings date for the portfolios that will be uploaded"
-    >
-      <PVCalendar
-        v-model="holdingsDate"
-        view="month"
-        date-format="mm/yy"
-        :disabled="startedProcessing"
-      />
-    </FormField>
-    <FormField
       label="Portfolio Files"
       class="w-full mb-0"
       help-text="This should include a link to documentation etc."
@@ -360,6 +357,48 @@ const cleanUpIncompleteUploads = async () => {
         label="File States"
       />
     </FormField>
+    <PVAccordion>
+      <PVAccordionTab :header="tt('Optional Portfolio Properties')">
+        <div class="flex flex-column gap-3">
+          <FormField
+            label="Holdings Date"
+            help-text="The holdings date for the portfolio"
+          >
+            <InputsHoldingDate
+              v-model:value="holdingsDate"
+              :disabled="isProcessing"
+            />
+          </FormField>
+          <FormField
+            label="ESG"
+            help-text="The ESG rating for the portfolios that will be uploaded"
+          >
+            <InputsEsg
+              v-model:value="esg"
+              :disabled="isProcessing"
+            />
+          </FormField>
+          <FormField
+            label="External"
+            help-text="The external rating for the portfolios that will be uploaded"
+          >
+            <InputsEsg
+              v-model:value="external"
+              :disabled="isProcessing"
+            />
+          </FormField>
+          <FormField
+            label="Engagement Strategy"
+            help-text="The engagement strategy for the portfolios that will be uploaded"
+          >
+            <InputsEngagementStrategy
+              v-model:value="engagementStrategy"
+              :disabled="isProcessing"
+            />
+          </FormField>
+        </div>
+      </PVAccordionTab>
+    </PVAccordion>
     <PVMessage
       v-show="!!errorCode"
       severity="error"

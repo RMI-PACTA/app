@@ -125,10 +125,10 @@ CREATE TABLE incomplete_upload (
 	description text NOT NULL,
 	failure_code failure_code,
 	failure_message text,
-	holdings_date timestamp with time zone,
 	id text NOT NULL,
 	name text NOT NULL,
 	owner_id text NOT NULL,
+	properties jsonb DEFAULT '{}'::jsonb NOT NULL,
 	ran_at timestamp with time zone);
 ALTER TABLE ONLY incomplete_upload ADD CONSTRAINT incomplete_upload_pkey PRIMARY KEY (id);
 CREATE INDEX incomplete_upload_by_blob_id ON incomplete_upload USING btree (blob_id);
@@ -226,11 +226,11 @@ CREATE TABLE portfolio (
 	blob_id text NOT NULL,
 	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	description text NOT NULL,
-	holdings_date timestamp with time zone,
 	id text NOT NULL,
 	name text NOT NULL,
 	number_of_rows integer,
-	owner_id text NOT NULL);
+	owner_id text NOT NULL,
+	properties jsonb DEFAULT '{}'::jsonb NOT NULL);
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_pkey PRIMARY KEY (id);
 CREATE INDEX portfolio_by_blob_id ON portfolio USING btree (blob_id);
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_blob_id_fkey FOREIGN KEY (blob_id) REFERENCES blob(id) ON DELETE RESTRICT;

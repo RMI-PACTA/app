@@ -250,12 +250,12 @@ CREATE TABLE public.incomplete_upload (
     blob_id text,
     name text NOT NULL,
     description text NOT NULL,
-    holdings_date timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     ran_at timestamp with time zone,
     completed_at timestamp with time zone,
     failure_code public.failure_code,
-    failure_message text
+    failure_message text,
+    properties jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -387,10 +387,10 @@ CREATE TABLE public.portfolio (
     name text NOT NULL,
     description text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    holdings_date timestamp with time zone,
     blob_id text NOT NULL,
     admin_debug_enabled boolean NOT NULL,
-    number_of_rows integer
+    number_of_rows integer,
+    properties jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 

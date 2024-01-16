@@ -24,6 +24,16 @@ func LanguageToOAPI(l pacta.Language) (api.Language, error) {
 	}
 }
 
+func optionalBoolToOAPI(b *bool) api.OptionalBoolean {
+	if b == nil {
+		return api.OptionalBooleanUNSET
+	} else if *b {
+		return api.OptionalBooleanTRUE
+	} else {
+		return api.OptionalBooleanFALSE
+	}
+}
+
 func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 	if i == nil {
 		return nil, oapierr.Internal("initiativeToOAPI: can't convert nil pointer")
@@ -190,25 +200,31 @@ func IncompleteUploadToOAPI(iu *pacta.IncompleteUpload) (*api.IncompleteUpload, 
 	if iu == nil {
 		return nil, oapierr.Internal("incompleteUploadToOAPI: can't convert nil pointer")
 	}
-	hd, err := HoldingsDateToOAPI(iu.HoldingsDate)
-	if err != nil {
-		return nil, oapierr.Internal("incompleteUploadToOAPI: holdingsDateToOAPI failed", zap.Error(err))
-	}
 	fc, err := FailureCodeToOAPI(iu.FailureCode)
 	if err != nil {
 		return nil, oapierr.Internal("incompleteUploadToOAPI: failureCodeToOAPI failed", zap.Error(err))
 	}
+	var hd *api.HoldingsDate
+	if iu.Properties.HoldingsDate != nil {
+		hd, err = HoldingsDateToOAPI(iu.Properties.HoldingsDate)
+		if err != nil {
+			return nil, oapierr.Internal("incompleteUploadToOAPI: holdingsDateToOAPI failed", zap.Error(err))
+		}
+	}
 	return &api.IncompleteUpload{
-		Id:                string(iu.ID),
-		Name:              iu.Name,
-		Description:       iu.Description,
-		HoldingsDate:      hd,
-		CreatedAt:         iu.CreatedAt,
-		RanAt:             timeToNilable(iu.RanAt),
-		CompletedAt:       timeToNilable(iu.CompletedAt),
-		FailureCode:       fc,
-		FailureMessage:    stringToNilable(iu.FailureMessage),
-		AdminDebugEnabled: iu.AdminDebugEnabled,
+		Id:                         string(iu.ID),
+		Name:                       iu.Name,
+		Description:                iu.Description,
+		CreatedAt:                  iu.CreatedAt,
+		RanAt:                      timeToNilable(iu.RanAt),
+		CompletedAt:                timeToNilable(iu.CompletedAt),
+		FailureCode:                fc,
+		FailureMessage:             stringToNilable(iu.FailureMessage),
+		AdminDebugEnabled:          iu.AdminDebugEnabled,
+		PropertyHoldingsDate:       hd,
+		PropertyESG:                optionalBoolToOAPI(iu.Properties.ESG),
+		PropertyExternal:           optionalBoolToOAPI(iu.Properties.External),
+		PropertyEngagementStrategy: optionalBoolToOAPI(iu.Properties.EngagementStrategy),
 	}, nil
 }
 
@@ -219,10 +235,6 @@ func PortfoliosToOAPI(ius []*pacta.Portfolio) ([]*api.Portfolio, error) {
 func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 	if p == nil {
 		return nil, oapierr.Internal("portfolioToOAPI: can't convert nil pointer")
-	}
-	hd, err := HoldingsDateToOAPI(p.HoldingsDate)
-	if err != nil {
-		return nil, oapierr.Internal("portfolioToOAPI: holdingsDateToOAPI failed", zap.Error(err))
 	}
 	portfolioGroupMemberships := []api.PortfolioGroupMembershipPortfolioGroup{}
 	for _, m := range p.PortfolioGroupMemberships {
@@ -239,16 +251,26 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 	if err != nil {
 		return nil, oapierr.Internal("initiativeToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
 	}
+	var hd *api.HoldingsDate
+	if p.Properties.HoldingsDate != nil {
+		hd, err = HoldingsDateToOAPI(p.Properties.HoldingsDate)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioToOAPI: holdingsDateToOAPI failed", zap.Error(err))
+		}
+	}
 	return &api.Portfolio{
-		Id:                string(p.ID),
-		Name:              p.Name,
-		Description:       p.Description,
-		HoldingsDate:      hd,
-		CreatedAt:         p.CreatedAt,
-		NumberOfRows:      p.NumberOfRows,
-		AdminDebugEnabled: p.AdminDebugEnabled,
-		Groups:            &portfolioGroupMemberships,
-		Initiatives:       &pims,
+		Id:                         string(p.ID),
+		Name:                       p.Name,
+		Description:                p.Description,
+		CreatedAt:                  p.CreatedAt,
+		NumberOfRows:               p.NumberOfRows,
+		AdminDebugEnabled:          p.AdminDebugEnabled,
+		Groups:                     &portfolioGroupMemberships,
+		Initiatives:                &pims,
+		PropertyHoldingsDate:       hd,
+		PropertyESG:                optionalBoolToOAPI(p.Properties.ESG),
+		PropertyExternal:           optionalBoolToOAPI(p.Properties.External),
+		PropertyEngagementStrategy: optionalBoolToOAPI(p.Properties.EngagementStrategy),
 	}, nil
 }
 

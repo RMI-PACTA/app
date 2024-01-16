@@ -19,6 +19,7 @@ import TabPanel from 'primevue/tabpanel'
 import TabView from 'primevue/tabview'
 import Textarea from 'primevue/textarea'
 import Tooltip from 'primevue/tooltip'
+import TriStateCheckbox from 'primevue/tristatecheckbox'
 import Message from 'primevue/message'
 import MultiSelect from 'primevue/multiselect'
 import OverlayPanel from 'primevue/overlaypanel'
@@ -52,6 +53,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVTabView', TabView)
   vueApp.component('PVTextarea', Textarea)
   vueApp.component('PVToast', Toast)
+  vueApp.component('PVTriStateCheckbox', TriStateCheckbox)
 
   vueApp.directive('tooltip', Tooltip)
 })

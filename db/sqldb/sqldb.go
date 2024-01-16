@@ -441,3 +441,7 @@ func checkSizesEquivalent(name string, sizes ...int) error {
 	}
 	return nil
 }
+
+func ptr[T any](t T) *T {
+	return &t
+}

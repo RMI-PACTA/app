@@ -22,9 +22,14 @@ func TestPortfolioCRUD(t *testing.T) {
 	o2 := ownerUserForTesting(t, tdb, u2)
 
 	p := &pacta.Portfolio{
-		Name:         "portfolio-name",
-		Description:  "portfolio-description",
-		HoldingsDate: exampleHoldingsDate,
+		Name:        "portfolio-name",
+		Description: "portfolio-description",
+		Properties: pacta.PortfolioProperties{
+			HoldingsDate:       exampleHoldingsDate,
+			ESG:                nil,
+			External:           ptr(true),
+			EngagementStrategy: ptr(false),
+		},
 		Owner:        &pacta.Owner{ID: o1.ID},
 		Blob:         &pacta.Blob{ID: b.ID},
 		NumberOfRows: 10,
@@ -58,7 +63,10 @@ func TestPortfolioCRUD(t *testing.T) {
 	err = tdb.UpdatePortfolio(tx, p.ID,
 		db.SetPortfolioName(nName),
 		db.SetPortfolioDescription(nDesc),
-		db.SetPortfolioHoldingsDate(exampleHoldingsDate2),
+		db.SetPortfolioPropertyHoldingsDate(exampleHoldingsDate2),
+		db.SetPortfolioPropertyESG(ptr(true)),
+		db.SetPortfolioPropertyExternal(ptr(false)),
+		db.SetPortfolioPropertyEngagementStrategy(nil),
 		db.SetPortfolioOwner(o2.ID),
 		db.SetPortfolioAdminDebugEnabled(true),
 		db.SetPortfolioNumberOfRows(nRows),
@@ -68,7 +76,10 @@ func TestPortfolioCRUD(t *testing.T) {
 	}
 	p.Name = nName
 	p.Description = nDesc
-	p.HoldingsDate = exampleHoldingsDate2
+	p.Properties.HoldingsDate = exampleHoldingsDate2
+	p.Properties.ESG = ptr(true)
+	p.Properties.External = ptr(false)
+	p.Properties.EngagementStrategy = nil
 	p.Owner = &pacta.Owner{ID: o2.ID}
 	p.AdminDebugEnabled = true
 	p.NumberOfRows = nRows
@@ -157,7 +168,6 @@ func portfolioForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.Portfo
 	p := &pacta.Portfolio{
 		Name:         "portfolio-name-" + key,
 		Description:  "portfolio-description-" + key,
-		HoldingsDate: exampleHoldingsDate,
 		Owner:        &pacta.Owner{ID: o.ID},
 		Blob:         &pacta.Blob{ID: b.ID},
 		NumberOfRows: 10,

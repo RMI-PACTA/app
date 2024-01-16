@@ -1025,6 +1025,12 @@ components:
       type: string
       enum:
         - FailureCodeUNKNOWN
+    OptionalBoolean:
+      type: string
+      enum:
+        - OptionalBooleanTRUE
+        - OptionalBooleanFALSE
+        - OptionalBooleanUNSET
     PactaVersionCreate:
       type: object
       required:
@@ -1480,14 +1486,25 @@ components:
       type: object
       required:
         - items
-        - holdings_date
+        - propertyESG
+        - propertyExternal
+        - propertyEngagementStrategy
       properties:
         items:
           type: array
           items:
             $ref: '#/components/schemas/StartPortfolioUploadReqItem'
-        holdings_date:
+        propertyHoldingsDate:
           $ref: '#/components/schemas/HoldingsDate'
+        propertyESG:
+          description: If set, this portfolio represents ESG data
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyExternal:
+          description: If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input 
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyEngagementStrategy:
+          description: If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+          $ref: '#/components/schemas/OptionalBoolean'
     StartPortfolioUploadReqItem:
       type: object
       required:
@@ -1602,6 +1619,9 @@ components:
         - description
         - createdAt
         - adminDebugEnabled
+        - propertyESG
+        - propertyExternal
+        - propertyEngagementStrategy
       properties:
         id:
           type: string # Assuming IncompleteUploadID is a string, otherwise define its structure
@@ -1612,8 +1632,17 @@ components:
         description:
           type: string
           description: Description of the upload
-        holdingsDate:
+        propertyHoldingsDate:
           $ref: '#/components/schemas/HoldingsDate'
+        propertyESG:
+          description: If set, this portfolio represents ESG data
+          $ref: '#/components/schemas/OptionalBoolean' 
+        propertyExternal:
+          description: If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input 
+          $ref: '#/components/schemas/OptionalBoolean' 
+        propertyEngagementStrategy:
+          description: If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+          $ref: '#/components/schemas/OptionalBoolean' 
         createdAt:
           type: string
           format: date-time
@@ -1657,6 +1686,9 @@ components:
         - createdAt
         - adminDebugEnabled
         - numberOfRows
+        - propertyESG
+        - propertyExternal
+        - propertyEngagementStrategy
       properties:
         id: 
           type: string
@@ -1671,8 +1703,6 @@ components:
           type: string
           format: date-time
           description: The time at which this portfolio was successfully parsed from a raw  
-        holdingsDate: 
-          $ref: '#/components/schemas/HoldingsDate'
         adminDebugEnabled:
           type: boolean 
           description: Whether the admin debug mode is enabled for this portfolio
@@ -1689,6 +1719,17 @@ components:
           description: The list of initiatives that this portfolio is a member of
           items: 
             $ref: '#/components/schemas/PortfolioInitiativeMembershipInitiative'
+        propertyHoldingsDate: 
+          $ref: '#/components/schemas/HoldingsDate'
+        propertyESG:
+          description: If set, this portfolio represents ESG data
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyExternal:
+          description: If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input 
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyEngagementStrategy:
+          description: If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+          $ref: '#/components/schemas/OptionalBoolean'
     PortfolioChanges:
       type: object
       properties:
@@ -1701,6 +1742,18 @@ components:
         adminDebugEnabled:
           type: boolean 
           description: Whether the admin debug mode is enabled for this portfolio
+        propertyHoldingsDate:
+          $ref: '#/components/schemas/HoldingsDate'
+        propertyESG:
+          description: If set, this portfolio represents ESG data
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyExternal:
+          description: If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input 
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyEngagementStrategy:
+          type: boolean
+          description: If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+          $ref: '#/components/schemas/OptionalBoolean'
     PortfolioSnapshot:
       type: object
       description: represents an immutable description of a collection of portfolios at a point in time, used to ensure reproducibility and change detection
