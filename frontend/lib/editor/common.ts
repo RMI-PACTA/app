@@ -60,6 +60,7 @@ export interface EditorComputedValues <R> {
   isInvalid: ComputedRef<boolean>
   saveTooltip: ComputedRef<string | undefined>
   canSave: ComputedRef<boolean>
+  resetEditor: () => void
 }
 
 export const createEditorValues = <R>(r: R): EditorValuesFor<R> => Object.keys(r as any)

@@ -16,7 +16,7 @@ const emits = defineEmits<Emits>()
 const model = computed<LanguageOption | undefined>({
   get: () => props.value ? languageToOption(props.value) : undefined,
   set: (v: LanguageOption | undefined) => {
-    emits('update:value', v.language)
+    emits('update:value', v ? v.language : undefined)
   },
 })
 </script>
