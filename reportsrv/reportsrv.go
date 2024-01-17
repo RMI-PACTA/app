@@ -11,6 +11,7 @@ import (
 	"github.com/RMI/pacta/blob"
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
+	"github.com/RMI/pacta/session"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -43,8 +44,12 @@ type Server struct {
 type DB interface {
 	NoTxn(context.Context) db.Tx
 
+	Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error)
 	AnalysisArtifactsForAnalysis(tx db.Tx, id pacta.AnalysisID) ([]*pacta.AnalysisArtifact, error)
 	Blobs(tx db.Tx, ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error)
+	GetOwnerForUser(tx db.Tx, userID pacta.UserID) (pacta.OwnerID, error)
+	CreateAuditLog(tx db.Tx, log *pacta.AuditLog) (pacta.AuditLogID, error)
+	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 }
 
 type Blob interface {
@@ -74,6 +79,7 @@ func (s *Server) verifyRequest(next http.Handler) http.Handler {
 
 func (s *Server) RegisterHandlers(r chi.Router) {
 	r.Use(s.verifyRequest)
+	r.Get("/report/{analysis_id}", s.serveReport)
 	r.Get("/report/{analysis_id}/*", s.serveReport)
 }
 
@@ -103,6 +109,19 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a, err := s.db.Analysis(s.db.NoTxn(ctx), aID)
+	if err != nil {
+		if strings.HasPrefix(string(aID), "analysis") {
+			s.logger.Error("failed to load analysis", zap.String("analysis_id", string(aID)), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else {
+			s.logger.Info("poorly constructed analysis id", zap.String("path", string(aID)), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+	}
+
 	subPath := strings.TrimPrefix(r.URL.Path, "/report/"+string(aID))
 	if strings.HasPrefix(subPath, "/") {
 		subPath = subPath[1:]
@@ -111,11 +130,11 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 		subPath = "index.html"
 	}
 
-	for _, a := range artifacts {
+	for _, aa := range artifacts {
 		// Container is just 'reports', we can ignore that.
-		b, ok := blobs[a.Blob.ID]
+		b, ok := blobs[aa.Blob.ID]
 		if !ok {
-			s.logger.Error("no blob loaded for blob ID", zap.String("analysis_artifact_id", string(a.ID)), zap.String("blob_id", string(a.Blob.ID)))
+			s.logger.Error("no blob loaded for blob ID", zap.String("analysis_artifact_id", string(a.ID)), zap.String("blob_id", string(aa.Blob.ID)))
 			continue
 		}
 		uri := string(b.BlobURI)
@@ -135,6 +154,11 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		if ok := s.doAuthzAndAuditLog(a, aa, w, r); !ok {
+			// Note that doAuthzAndAuditLog will have already written the response.
+			return
+		}
+
 		// Load the blob from blob storage and copy it byte-for-byte to the HTTP response.
 		r, err := s.blob.ReadBlob(ctx, uri)
 		if err != nil {
@@ -152,9 +176,74 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.logger.Error("unknown report asset requested for analysis", zap.String("analysis_id", string(aID)), zap.String("req_path", r.URL.Path), zap.String("asset_path", subPath))
+	s.logger.Info("unknown report asset", zap.String("analysis_id", string(aID)), zap.String("req_path", r.URL.Path), zap.String("asset_path", subPath))
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	return
+}
+
+func (s *Server) doAuthzAndAuditLog(a *pacta.Analysis, aa *pacta.AnalysisArtifact, w http.ResponseWriter, r *http.Request) bool {
+	ctx := r.Context()
+	const unauthenticatedUserID = "unauthenticated user"
+	var actorOwner *pacta.Owner
+	actorID, _ := session.UserIDFromContext(ctx)
+	if actorID == "" {
+		actorID = unauthenticatedUserID
+	} else {
+		ownerID, err := s.db.GetOwnerForUser(s.db.NoTxn(ctx), actorID)
+		if err != nil {
+			s.logger.Error("failed to get owner for user", zap.String("user_id", string(actorID)), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return false
+		}
+		actorOwner = &pacta.Owner{ID: ownerID}
+	}
+	auditLog := &pacta.AuditLog{
+		Action:               pacta.AuditLogAction_Download,
+		ActorID:              string(actorID),
+		ActorOwner:           actorOwner,
+		PrimaryTargetType:    pacta.AuditLogTargetType_AnalysisArtifact,
+		PrimaryTargetID:      string(aa.ID),
+		PrimaryTargetOwner:   a.Owner,
+		SecondaryTargetType:  pacta.AuditLogTargetType_Analysis,
+		SecondaryTargetID:    string(a.ID),
+		SecondaryTargetOwner: a.Owner,
+	}
+	allowIfAuditLogSaves := func() bool {
+		if _, err := s.db.CreateAuditLog(s.db.NoTxn(ctx), auditLog); err != nil {
+			s.logger.Error("failed to create audit log", zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return false
+		}
+		return true
+	}
+	if aa.SharedToPublic {
+		auditLog.ActorType = pacta.AuditLogActorType_Public
+		return allowIfAuditLogSaves()
+	}
+	if actorID == unauthenticatedUserID {
+		s.logger.Info("unauthenticated user attempted to read asset", zap.String("user_id", string(actorID)))
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return false
+	}
+	if a.Owner.ID == actorOwner.ID {
+		auditLog.ActorType = pacta.AuditLogActorType_Owner
+		return allowIfAuditLogSaves()
+	}
+	if aa.AdminDebugEnabled {
+		user, err := s.db.User(s.db.NoTxn(ctx), actorID)
+		if err != nil {
+			s.logger.Error("failed to get user", zap.String("user_id", string(actorID)), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return false
+		}
+		if user.Admin || user.SuperAdmin {
+			auditLog.ActorType = pacta.AuditLogActorType_Admin
+			return allowIfAuditLogSaves()
+		}
+	}
+	s.logger.Info("unauthorized user attempted to read asset", zap.String("user_id", string(actorID)))
+	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	return false
 }
 
 func fileTypeToMIME(ft pacta.FileType) string {

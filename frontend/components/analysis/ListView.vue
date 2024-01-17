@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import { portfolioGroupEditor } from '@/lib/editor'
-import { type Portfolio, type PortfolioGroup, type PortfolioGroupMembershipPortfolio, type Analysis } from '@/openapi/generated/pacta'
+import { analysisEditor } from '@/lib/editor'
+import { type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
 
+const { public: { apiServerURL } } = useRuntimeConfig()
 const {
   humanReadableTimeFromStandardString,
 } = useTime()
 const pactaClient = usePACTA()
-const { loading: { withLoading }, newPortfolioGroup: { newPortfolioGroupVisible } } = useModal()
+const { loading: { withLoading } } = useModal()
 const i18n = useI18n()
-const localePath = useLocalePath()
 const { t } = i18n
 
 interface Props {
   portfolios: Portfolio[]
   portfolioGroups: PortfolioGroup[]
+  initiatives: Initiative[]
   analyses: Analysis[]
   selectedPortfolioIds: string[]
   selectedPortfolioGroupIds: string[]
@@ -29,53 +30,50 @@ interface Emits {
 }
 const emit = defineEmits<Emits>()
 
-const selectedPortfolioGroupIDs = computed({
-  get: () => props.selectedPortfolioGroupIds ?? [],
-  set: (value: string[]) => { emit('update:selectedPortfolioGroupIds', value) },
+const refresh = () => { emit('refresh') }
+
+const selectedAnalysisIDs = computed({
+  get: () => props.selectedAnalysisIds ?? [],
+  set: (value: string[]) => { emit('update:selectedAnalysisIds', value) },
 })
 
-interface EditorObject extends ReturnType<typeof portfolioGroupEditor> {
+interface EditorObject extends ReturnType<typeof analysisEditor> {
   id: string
 }
 
-const prefix = 'components/portfolio/group/ListView'
+const prefix = 'components/analysis/ListView'
 const tt = (s: string) => t(`${prefix}.${s}`)
-
-const editorObjects = computed<EditorObject[]>(() => props.portfolioGroups.map((item) => ({ ...portfolioGroupEditor(item, i18n), id: item.id })))
-
 const expandedRows = useState<EditorObject[]>(`${prefix}.expandedRows`, () => [])
 const selectedRows = computed<EditorObject[]>({
   get: () => {
-    return editorObjects.value.filter((editorObject) => selectedPortfolioGroupIDs.value.includes(editorObject.id))
+    const ids = selectedAnalysisIDs.value
+    return editorObjects.value.filter((editorObject) => ids.includes(editorObject.id))
   },
   set: (value: EditorObject[]) => {
-    selectedPortfolioGroupIDs.value = value.map((row) => row.id)
+    const ids = value.map((row) => row.id)
+    ids.sort()
+    selectedAnalysisIDs.value = ids
   },
 })
 
-const deletePortfolioGroup = (id: string) => withLoading(
-  () => pactaClient.deletePortfolioGroup(id).then(() => {
-    expandedRows.value = expandedRows.value.filter((row) => row.id !== id)
-    emit('refresh')
-  }),
-  `${prefix}.deletePortfolioGroup`,
-)
-const deleteSelected = () => Promise.all([selectedRows.value.map((row) => deletePortfolioGroup(row.id))]).then(() => { emit('refresh') })
+const editorObjects = computed<EditorObject[]>(() => props.analyses.map((item) => ({ ...analysisEditor(item, i18n), id: item.id })))
+
+const selectedAnalyses = computed<Analysis[]>(() => selectedRows.value.map((row) => row.currentValue.value))
+
 const saveChanges = (id: string) => {
   const index = editorObjects.value.findIndex((editorObject) => editorObject.id === id)
   const eo = presentOrFileBug(editorObjects.value[index])
   return withLoading(
-    () => pactaClient.updatePortfolioGroup(id, eo.changes.value)
-      .then(() => pactaClient.findPortfolioGroupById(id))
-      .then((portfolio) => {
-        editorObjects.value[index] = { ...portfolioGroupEditor(portfolio, i18n), id }
-      }),
+    () => pactaClient.updateAnalysis(id, eo.changes.value).then(refresh),
     `${prefix}.saveChanges`,
   )
 }
-const editorObjectToIds = (editorObject: EditorObject): string[] => {
-  return (editorObject.editorValues.value.members.originalValue ?? []).map((m: PortfolioGroupMembershipPortfolio) => m.portfolio.id)
-}
+
+const deleteAnalysis = (id: string) => withLoading(
+  () => pactaClient.deleteAnalysis(id),
+  `${prefix}.deleteAnalysis`,
+)
+const deleteSelected = () => Promise.all([selectedRows.value.map((row) => deleteAnalysis(row.id))]).then(refresh)
 </script>
 
 <template>
@@ -85,7 +83,7 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
         icon="pi pi-refresh"
         class="p-button-outlined p-button-secondary p-button-sm"
         :label="tt('Refresh')"
-        @click="() => emit('refresh')"
+        @click="refresh"
       />
       <PVButton
         :disabled="!selectedRows || selectedRows.length === 0"
@@ -100,17 +98,11 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
       v-model:expanded-rows="expandedRows"
       :value="editorObjects"
       data-key="id"
-      class="w-full"
       size="small"
       sort-field="editorValues.value.createdAt.originalValue"
       :sort-order="-1"
     >
       <PVColumn selection-mode="multiple" />
-      <PVColumn
-        field="editorValues.value.name.originalValue"
-        sortable
-        :header="tt('Name')"
-      />
       <PVColumn
         field="editorValues.value.createdAt.originalValue"
         :header="tt('Created At')"
@@ -121,39 +113,43 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
         </template>
       </PVColumn>
       <PVColumn
-        :header="tt('Number of Members')"
+        field="editorValues.value.name.originalValue"
+        sortable
+        :header="tt('Name')"
+      />
+      <PVColumn
+        :header="tt('View')"
       >
         <template #body="slotProps">
           <LinkButton
-            :disabled="editorObjectToIds(slotProps.data).length === 0"
-            :to="localePath(`/my-data?tab=p&pids=${ editorObjectToIds(slotProps.data).join(',')}`)"
-            :label="`${editorObjectToIds(slotProps.data).length}`"
-            icon="pi pi-th-large"
-            class="py-1 px-2 p-button-outlined p-button-secondary"
+            icon="pi pi-external-link"
+            class="p-button-outlined p-button-xs"
+            :label="tt('View')"
+            :to="`${apiServerURL}/report/${slotProps.data.id}`"
+            new-tab
           />
         </template>
       </PVColumn>
       <PVColumn
         expander
-        header="Details"
+        :header="tt('Details')"
       />
       <template
         #expansion="slotProps"
       >
         <div class="surface-100 p-3">
           <h2 class="mt-0">
-            Metadata
+            {{ tt('Metadata') }}
           </h2>
-          <div class="flex flex-column gap-2 w-fit">
-            <div class="flex gap-2 justify-content-between">
-              <span>Created At</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}</b>
-            </div>
-          </div>
+          <StandardDebug
+            always
+            :value="slotProps.data.currentValue.value"
+            label="Raw Data"
+          />
           <h2 class="mt-5">
-            Editable Properties
+            {{ tt('Editable Properties') }}
           </h2>
-          <PortfolioGroupEditor
+          <AnalysisEditor
             v-model:editor-values="slotProps.data.editorValues.value"
             :editor-fields="slotProps.data.editorFields.value"
           />
@@ -162,7 +158,7 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
               icon="pi pi-trash"
               class="p-button-danger p-button-outlined"
               :label="tt('Delete')"
-              @click="() => deletePortfolioGroup(slotProps.data.id)"
+              @click="() => deleteAnalysis(slotProps.data.id)"
             />
             <div v-tooltip.bottom="slotProps.data.saveTooltip">
               <PVButton
@@ -174,24 +170,10 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
               />
             </div>
           </div>
-          <StandardDebug
-            :value="slotProps.data.editorFields.value"
-            label="Editor Fields"
-          />
-          <StandardDebug
-            :value="slotProps.data.editorValues.value"
-            label="Editor Values"
-          />
         </div>
       </template>
     </PVDataTable>
     <div class="flex flex-wrap gap-3 w-full justify-content-between">
-      <PVButton
-        class="p-button-outlined"
-        icon="pi pi-plus"
-        :label="tt('New Portfolio Group')"
-        @click="() => newPortfolioGroupVisible = true"
-      />
       <!-- TODO(grady) Hook this up to something. -->
       <PVButton
         class="p-button-outlined"
@@ -200,5 +182,13 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
         icon-pos="right"
       />
     </div>
+    <StandardDebug
+      :value="selectedAnalyses"
+      label="Selected Analyses"
+    />
+    <StandardDebug
+      :value="props.analyses"
+      label="All Analyses"
+    />
   </div>
 </template>

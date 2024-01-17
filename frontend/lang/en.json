@@ -26,6 +26,17 @@
     "Save Changes": "Save Changes",
     "Refresh": "Refresh"
   },
+  "components/analysis/ListView": {
+    "Created At": "Created At",
+    "Details": "Details",
+    "Name": "Name",
+    "Delete": "Delete",
+    "Metadata": "Metadata",
+    "Editable Properties": "Editable Properties",
+    "Save Changes": "Save Changes",
+    "Refresh": "Refresh",
+    "View": "View"
+  },
   "components/initiative/Toolbar": {
     "Edit": "Edit",
     "Initiative Home": "Initiative Home",
@@ -262,7 +273,8 @@
     "My Data": "My Data",
     "Portfolio Groups": "Portfolio Groups",
     "Portfolios": "Portfolios",
-    "Incomplete Uploads": "Incomplete Uploads"
+    "Incomplete Uploads": "Incomplete Uploads",
+    "Analyses": "Reports and Audits"
   },
   "pages/initiative/invitations": {
     "Yes Invitations": "This initiative requires an invitation (a unique, one-time code) to join. You can create and manage these invitations below.",

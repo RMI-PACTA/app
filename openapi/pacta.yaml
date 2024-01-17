@@ -1016,6 +1016,11 @@ components:
         - FileTypeZIP
         - FileTypeJSON
         - FileTypeHTML
+        - FileTypeTEXT
+        - FileTypeCSS
+        - FileTypeJS
+        - FileTypeTTF
+        - FileTypeUNKNOWN
     AnalysisType:
       type: string
       enum:

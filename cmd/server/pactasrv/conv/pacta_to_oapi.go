@@ -314,8 +314,18 @@ func FileTypeToOAPI(ft pacta.FileType) (api.FileType, error) {
 		return api.FileTypeJSON, nil
 	case pacta.FileType_HTML:
 		return api.FileTypeHTML, nil
+	case pacta.FileType_TEXT:
+		return api.FileTypeTEXT, nil
+	case pacta.FileType_CSS:
+		return api.FileTypeCSS, nil
+	case pacta.FileType_JS:
+		return api.FileTypeJS, nil
+	case pacta.FileType_TTF:
+		return api.FileTypeTTF, nil
+	case pacta.FileType_UNKNOWN:
+		return api.FileTypeUNKNOWN, nil
 	}
-	return "", fmt.Errorf("unknown file type: %q", ft)
+	return api.FileTypeUNKNOWN, nil
 }
 
 func BlobToOAPI(b *pacta.Blob) (*api.Blob, error) {

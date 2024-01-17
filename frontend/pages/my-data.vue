@@ -10,17 +10,20 @@ const tt = (s: string) => t(`${prefix}.${s}`)
 
 const selectedPortfolioIdsQP = fromQueryReactiveWithDefault('pids', '')
 const selectedPortfolioGroupIdsQP = fromQueryReactiveWithDefault('pgids', '')
+const selectedAnalysisIdsQP = fromQueryReactiveWithDefault('analyses', '')
 const tabQP = fromQueryReactiveWithDefault('tab', 'p')
 
 const [
   { data: incompleteUploadsData, refresh: refreshIncompleteUploadsApi },
   { data: portfolioData, refresh: refreshPortfoliosApi },
   { data: portfolioGroupData, refresh: refreshPortfolioGroupsApi },
+  { data: analysesData, refresh: refreshAnalysesApi },
   { data: initiativeData, refresh: refreshInitiativesApi },
 ] = await Promise.all([
   useSimpleAsyncData(`${prefix}.incompleteUploads`, () => pactaClient.listIncompleteUploads()),
   useSimpleAsyncData(`${prefix}.portfolios`, () => pactaClient.listPortfolios()),
   useSimpleAsyncData(`${prefix}.portfolioGroups`, () => pactaClient.listPortfolioGroups()),
+  useSimpleAsyncData(`${prefix}.analyses`, () => pactaClient.listAnalyses()),
   useSimpleAsyncData(`${prefix}.initiatives`, () => pactaClient.listInitiatives()),
 ])
 const refreshIncompleteUploads = async () => {
@@ -32,18 +35,19 @@ const refreshPortfolios = async () => {
 const refreshPortfolioGroups = async () => {
   await withLoading(refreshPortfolioGroupsApi, `${prefix}.refreshPortfolioGroups`)
 }
+const refreshAnalyses = async () => {
+  await withLoading(refreshAnalysesApi, `${prefix}.refreshAnalyses`)
+}
 const refreshInitiatives = async () => {
   await withLoading(refreshInitiativesApi, `${prefix}.refreshInitiatives`)
 }
-const refreshAll = async () => {
-  console.log('refreshing all')
-  await Promise.all([
-    refreshIncompleteUploads(),
-    refreshPortfolios(),
-    refreshPortfolioGroups(),
-    refreshInitiatives(),
-  ])
-}
+const refreshAll = () => Promise.all([
+  refreshIncompleteUploads(),
+  refreshPortfolios(),
+  refreshPortfolioGroups(),
+  refreshAnalyses(),
+  refreshInitiatives(),
+])
 
 const selectedPortfolioIds = computed<string[]>({
   get: () => selectedPortfolioIdsQP.value.split(','),
@@ -53,16 +57,22 @@ const selectedPortfolioGroupIds = computed<string[]>({
   get: () => selectedPortfolioGroupIdsQP.value.split(','),
   set: (v: string[]) => { selectedPortfolioGroupIdsQP.value = v.join(',') },
 })
+const selectedAnalysisIds = computed<string[]>({
+  get: () => selectedAnalysisIdsQP.value.split(','),
+  set: (v: string[]) => { selectedAnalysisIdsQP.value = v.join(',') },
+})
 interface TabToIndexMap {
   iu: number
   p: number
   pg: number
+  a: number
 }
 const tabToIndexMap = computed(() => {
   const result: TabToIndexMap = {
     iu: -1,
     p: -1,
     pg: -1,
+    a: -1,
   }
   let idx = 0
   if (incompleteUploadsData.value.items.length > 0) {
@@ -73,6 +83,12 @@ const tabToIndexMap = computed(() => {
   }
   result.p = idx++
   result.pg = idx++
+  if (analysesData.value.items.length > 0) {
+    result.a = idx
+    idx++
+  } else {
+    result.a = -1
+  }
   return result
 })
 const activeIndex = computed<number>({
@@ -135,8 +151,10 @@ const activeIndex = computed<number>({
           v-if="portfolioData && portfolioGroupData && initiativeData"
           v-model:selected-portfolio-group-ids="selectedPortfolioGroupIds"
           v-model:selected-portfolio-ids="selectedPortfolioIds"
+          v-model:selected-analysis-ids="selectedAnalysisIds"
           :portfolios="portfolioData.items"
           :portfolio-groups="portfolioGroupData.items"
+          :analyses="analysesData.items"
           :initiatives="initiativeData"
           @refresh="refreshAll"
         />
@@ -149,11 +167,34 @@ const activeIndex = computed<number>({
           </div>
         </template>
         <PortfolioGroupListView
-          v-if="portfolioData && portfolioGroupData && initiativeData"
+          v-if="portfolioData && portfolioGroupData && initiativeData && analysesData"
           v-model:selected-portfolio-group-ids="selectedPortfolioGroupIds"
           v-model:selected-portfolio-ids="selectedPortfolioIds"
+          v-model:selected-analysis-ids="selectedAnalysisIds"
           :portfolios="portfolioData.items"
           :portfolio-groups="portfolioGroupData.items"
+          :analyses="analysesData.items"
+          @refresh="refreshAll"
+        />
+      </PVTabPanel>
+      <PVTabPanel
+        v-if="(analysesData?.items ?? []).length > 0"
+      >
+        <template #header>
+          <div class="flex align-items-center gap-3">
+            <i class="pi pi-book" />
+            <div>{{ tt('Analyses') }}</div>
+          </div>
+        </template>
+        <AnalysisListView
+          v-if="portfolioData && portfolioGroupData && initiativeData && analysesData"
+          v-model:selected-portfolio-group-ids="selectedPortfolioGroupIds"
+          v-model:selected-portfolio-ids="selectedPortfolioIds"
+          v-model:selected-analysis-ids="selectedAnalysisIds"
+          :portfolios="portfolioData.items"
+          :portfolio-groups="portfolioGroupData.items"
+          :analyses="analysesData.items"
+          :initiatives="initiativeData"
           @refresh="refreshAll"
         />
       </PVTabPanel>

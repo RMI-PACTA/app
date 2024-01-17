@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { portfolioEditor } from '@/lib/editor'
-import { AnalysisType, type Portfolio, type PortfolioGroup, type Initiative } from '@/openapi/generated/pacta'
+import { AnalysisType, type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
 
 const {
@@ -16,13 +16,16 @@ interface Props {
   portfolios: Portfolio[]
   portfolioGroups: PortfolioGroup[]
   initiatives: Initiative[]
+  analyses: Analysis[]
   selectedPortfolioIds: string[]
   selectedPortfolioGroupIds: string[]
+  selectedAnalysisIds: string[]
 }
 const props = defineProps<Props>()
 interface Emits {
   (e: 'update:selectedPortfolioIds', value: string[]): void
   (e: 'update:selectedPortfolioGroupIds', value: string[]): void
+  (e: 'update:selectedAnalysisIds', value: string[]): void
   (e: 'refresh'): void
 }
 const emit = defineEmits<Emits>()
@@ -66,17 +69,20 @@ const saveChanges = (id: string) => {
   )
 }
 
-const runAnalysis = (id: string) => {
+const runAnalysis = (id: string, analysisType: AnalysisType) => {
+  const n = props.portfolios.find((p) => p.id === id)?.name ?? 'unknown'
   return withLoading(
     () => pactaClient.runAnalysis({
-      analysisType: AnalysisType.ANALYSIS_TYPE_REPORT,
-      name: 'Test Analysis!',
-      description: 'this is a test',
+      analysisType,
+      name: `${tt(analysisType)}: ${n}`,
+      description: `${tt(analysisType)} run at ${new Date().toLocaleString()} for portfolio ${n} (${id})`,
       portfolioId: id,
-    }).then(() => { emit('refresh') }),
-    `${prefix}.saveChanges`,
+    }),
+    `${prefix}.runPortfolioAnalysis`,
   )
 }
+const runAudit = (id: string) => runAnalysis(id, AnalysisType.ANALYSIS_TYPE_AUDIT)
+const runReport = (id: string) => runAnalysis(id, AnalysisType.ANALYSIS_TYPE_REPORT)
 
 const deletePortfolio = (id: string) => withLoading(
   () => pactaClient.deletePortfolio(id),
@@ -212,6 +218,20 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
             />
           </div>
           <h2 class="mt-5">
+            {{ tt('Analyses') }}
+          </h2>
+          <PVMessage severity="warn">
+            TODO - filter analyses by those that match this portfolio
+          </PVMessage>
+          <PVButton
+            :label="tt('Run Audit')"
+            @click="() => runAudit(slotProps.data.id)"
+          />
+          <PVButton
+            :label="tt('Run Report')"
+            @click="() => runReport(slotProps.data.id)"
+          />
+          <h2 class="mt-5">
             {{ tt('Editable Properties') }}
           </h2>
           <PortfolioEditor
@@ -234,10 +254,6 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
                 @click="() => saveChanges(slotProps.data.id)"
               />
             </div>
-            <PVButton
-              label="Test Run Analysis"
-              @click="() => runAnalysis(slotProps.data.id)"
-            />
           </div>
         </div>
       </template>

@@ -32,6 +32,9 @@ func (d *DB) Blob(tx db.Tx, id pacta.BlobID) (*pacta.Blob, error) {
 }
 
 func (d *DB) Blobs(tx db.Tx, ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error) {
+	if len(ids) == 0 {
+		return map[pacta.BlobID]*pacta.Blob{}, nil
+	}
 	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+blobSelectColumns+`

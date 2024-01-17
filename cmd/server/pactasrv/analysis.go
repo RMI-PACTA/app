@@ -25,6 +25,16 @@ func (s *Server) ListAnalyses(ctx context.Context, request api.ListAnalysesReque
 	if err != nil {
 		return nil, oapierr.Internal("failed to query analyses", zap.Error(err))
 	}
+	if err := s.populateArtifactsInAnalyses(ctx, as...); err != nil {
+		return nil, err
+	}
+	artifacts := []*pacta.AnalysisArtifact{}
+	for _, a := range as {
+		artifacts = append(artifacts, a.Artifacts...)
+	}
+	if err := s.populateBlobsInAnalysisArtifacts(ctx, artifacts...); err != nil {
+		return nil, err
+	}
 	items, err := dereference(conv.AnalysesToOAPI(as))
 	if err != nil {
 		return nil, err
