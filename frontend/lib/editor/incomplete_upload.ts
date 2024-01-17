@@ -35,7 +35,7 @@ const createEditorIncompleteUploadFields = (translation: Translation): EditorInc
     },
     propertyESG: {
       name: 'propertyESG',
-      label: tt('Environmental, Social, and Governance (ESG)'),
+      label: tt('ESG'),
       helpText: tt('ESGHelpText'),
     },
     propertyExternal: {

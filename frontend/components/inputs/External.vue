@@ -25,9 +25,9 @@ const model = computed({
 <template>
   <ExplicitTriStateCheckbox
     v-model:value="model"
-    :true-label="tt('These file represents external data')"
-    :false-label="tt('These files represent internal data')"
-    :unset-label="tt('Not specified')"
+    :true-label="tt('True')"
+    :false-label="tt('False')"
+    :unset-label="tt('Unset')"
     :disabled="props.disabled"
   />
 </template>
