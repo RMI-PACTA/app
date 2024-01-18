@@ -20,6 +20,8 @@ import (
 func TestServeReport(t *testing.T) {
 
 	srv, env := setup(t)
+	router := chi.NewRouter()
+	srv.RegisterHandlers(router)
 
 	aIDStr := "analysis.id1"
 	analysisID := pacta.AnalysisID(aIDStr)
@@ -86,6 +88,7 @@ func TestServeReport(t *testing.T) {
 		"test://reports/1111-2222-3333-4444/lib/some/package.js": jsContent,
 	}
 
+	standardPath := "/report/" + aIDStr + "/"
 	cases := []struct {
 		asUser          pacta.UserID
 		path            string
@@ -93,13 +96,12 @@ func TestServeReport(t *testing.T) {
 		wantContentType string
 		wantRespContent string
 	}{{
-		asUser:          userID,
-		path:            "/report/" + aIDStr,
-		wantContentType: "text/html",
-		wantRespContent: htmlContent,
+		asUser:  userID,
+		path:    "/report/" + aIDStr,
+		wantErr: http.StatusTemporaryRedirect,
 	}, {
 		asUser:          userID,
-		path:            "/report/" + aIDStr + "/",
+		path:            standardPath,
 		wantContentType: "text/html",
 		wantRespContent: htmlContent,
 	}, {
@@ -114,22 +116,22 @@ func TestServeReport(t *testing.T) {
 		wantRespContent: jsContent,
 	}, {
 		asUser:          "",
-		path:            "/report/" + aIDStr,
+		path:            standardPath,
 		wantContentType: "text/html",
 		wantErr:         http.StatusUnauthorized,
 	}, {
 		asUser:          otherUserID,
-		path:            "/report/" + aIDStr,
+		path:            standardPath,
 		wantContentType: "text/html",
 		wantErr:         http.StatusUnauthorized,
 	}, {
 		asUser:          adminUserID,
-		path:            "/report/" + aIDStr,
+		path:            standardPath,
 		wantContentType: "text/html",
 		wantRespContent: htmlContent,
 	}, {
 		asUser:          userID,
-		path:            "/report/a-nonsense-report",
+		path:            "/report/a-nonsense-report/",
 		wantContentType: "text/html",
 		wantErr:         http.StatusNotFound,
 	}}
@@ -149,7 +151,7 @@ func TestServeReport(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, c.path, nil).WithContext(ctx)
 			w := httptest.NewRecorder()
 
-			srv.serveReport(w, r)
+			router.ServeHTTP(w, r)
 
 			res := w.Result()
 			// Successful response...

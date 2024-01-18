@@ -125,7 +125,7 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
             icon="pi pi-external-link"
             class="p-button-outlined p-button-xs"
             :label="tt('View')"
-            :to="`${apiServerURL}/report/${slotProps.data.id}`"
+            :to="`${apiServerURL}/report/${slotProps.data.id}/`"
             new-tab
           />
         </template>

@@ -79,7 +79,11 @@ func (s *Server) verifyRequest(next http.Handler) http.Handler {
 
 func (s *Server) RegisterHandlers(r chi.Router) {
 	r.Use(s.verifyRequest)
-	r.Get("/report/{analysis_id}", s.serveReport)
+	r.Get("/report/{analysis_id}", func(w http.ResponseWriter, r *http.Request) {
+		analysisID := chi.URLParam(r, "analysis_id")
+		newPath := "/report/" + analysisID + "/"
+		http.Redirect(w, r, newPath, http.StatusTemporaryRedirect)
+	})
 	r.Get("/report/{analysis_id}/*", s.serveReport)
 }
 
@@ -134,18 +138,18 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 		// Container is just 'reports', we can ignore that.
 		b, ok := blobs[aa.Blob.ID]
 		if !ok {
-			s.logger.Error("no blob loaded for blob ID", zap.String("analysis_artifact_id", string(a.ID)), zap.String("blob_id", string(aa.Blob.ID)))
+			s.logger.Error("no blob loaded for blob ID", zap.String("analysis_artifact_id", string(aa.ID)), zap.String("blob_id", string(aa.Blob.ID)))
 			continue
 		}
 		uri := string(b.BlobURI)
 		_, path, ok := blob.SplitURI(s.blob.Scheme(), uri)
 		if !ok {
-			s.logger.Error("blob had invalid URI", zap.String("analysis_artifact_id", string(a.ID)), zap.String("blob_uri", uri))
+			s.logger.Error("blob had invalid URI", zap.String("analysis_artifact_id", string(aa.ID)), zap.String("blob_uri", uri))
 			continue
 		}
 		_, uriPath, ok := strings.Cut(path, "/")
 		if !ok {
-			s.logger.Error("path had no UUID prefix", zap.String("analysis_artifact_id", string(a.ID)), zap.String("blob_uri", uri), zap.String("blob_path", path))
+			s.logger.Error("path had no UUID prefix", zap.String("analysis_artifact_id", string(aa.ID)), zap.String("blob_uri", uri), zap.String("blob_path", path))
 			continue
 		}
 
@@ -241,7 +245,7 @@ func (s *Server) doAuthzAndAuditLog(a *pacta.Analysis, aa *pacta.AnalysisArtifac
 			return allowIfAuditLogSaves()
 		}
 	}
-	s.logger.Info("unauthorized user attempted to read asset", zap.String("user_id", string(actorID)))
+	s.logger.Info("unauthorized user attempted to read asset", zap.String("user_id", string(actorID)), zap.String("analysis_artifact_id", string(aa.ID)), zap.String("analysis_id", string(a.ID)))
 	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 	return false
 }
