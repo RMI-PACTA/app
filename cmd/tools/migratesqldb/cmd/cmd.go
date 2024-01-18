@@ -71,9 +71,10 @@ var (
 			if err != nil {
 				return fmt.Errorf("when creating the migrator: %w", err)
 			}
-			if err := migrator.Up(); err != nil {
+			if err := migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 				return fmt.Errorf("while applying the migration(s): %w", err)
 			}
+
 			return nil
 		},
 	}
