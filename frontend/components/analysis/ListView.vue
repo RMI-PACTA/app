@@ -99,21 +99,21 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
       :value="editorObjects"
       data-key="id"
       size="small"
-      sort-field="editorValues.value.createdAt.originalValue"
+      sort-field="currentValue.value.createdAt"
       :sort-order="-1"
     >
       <PVColumn selection-mode="multiple" />
       <PVColumn
-        field="editorValues.value.createdAt.originalValue"
+        field="currentValue.value.createdAt"
         :header="tt('Created At')"
         sortable
       >
         <template #body="slotProps">
-          {{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}
+          {{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}
         </template>
       </PVColumn>
       <PVColumn
-        field="editorValues.value.name.originalValue"
+        field="currentValue.value.name"
         sortable
         :header="tt('Name')"
       />

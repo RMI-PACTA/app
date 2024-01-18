@@ -74,7 +74,7 @@ const saveChanges = (id: string) => {
   )
 }
 const editorObjectToIds = (editorObject: EditorObject): string[] => {
-  return (editorObject.editorValues.value.members.originalValue ?? []).map((m: PortfolioGroupMembershipPortfolio) => m.portfolio.id)
+  return (editorObject.currentValue.value.members ?? []).map((m: PortfolioGroupMembershipPortfolio) => m.portfolio.id)
 }
 </script>
 
@@ -102,7 +102,7 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
       data-key="id"
       class="w-full"
       size="small"
-      sort-field="editorValues.value.createdAt.originalValue"
+      sort-field="currentValue.value.createdAt"
       :sort-order="-1"
     >
       <template #empty>
@@ -112,17 +112,17 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
       </template>
       <PVColumn selection-mode="multiple" />
       <PVColumn
-        field="editorValues.value.name.originalValue"
+        field="currentValue.value.name"
         sortable
         :header="tt('Name')"
       />
       <PVColumn
-        field="editorValues.value.createdAt.originalValue"
+        field="currentValue.value.createdAt"
         :header="tt('Created At')"
         sortable
       >
         <template #body="slotProps">
-          {{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}
+          {{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}
         </template>
       </PVColumn>
       <PVColumn
@@ -152,7 +152,7 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
           <div class="flex flex-column gap-2 w-fit">
             <div class="flex gap-2 justify-content-between">
               <span>Created At</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}</b>
+              <b>{{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}</b>
             </div>
           </div>
           <h2 class="mt-5">
