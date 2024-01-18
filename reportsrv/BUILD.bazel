@@ -9,6 +9,7 @@ go_library(
         "//blob",
         "//db",
         "//pacta",
+        "//session",
         "@com_github_go_chi_chi_v5//:chi",
         "@org_uber_go_zap//:zap",
     ],
