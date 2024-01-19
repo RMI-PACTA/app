@@ -29,10 +29,14 @@ const menuStyles = computed(() => {
 const menuItems = computed(() => {
   const result: MenuItem[] = [
     {
+      to: 'https://pacta.rmi.org',
+      external: true,
+      label: tt('About'),
+    },
+    {
       to: localePath('/'),
       label: tt('Home'),
     },
-
   ]
   if (isAdmin.value) {
     result.push({
