@@ -11,6 +11,7 @@ import type { AuditLogQueryReq } from '../models/AuditLogQueryReq';
 import type { AuditLogQueryResp } from '../models/AuditLogQueryResp';
 import type { CompletePortfolioUploadReq } from '../models/CompletePortfolioUploadReq';
 import type { CompletePortfolioUploadResp } from '../models/CompletePortfolioUploadResp';
+import type { FindUserByMeResp } from '../models/FindUserByMeResp';
 import type { IncompleteUpload } from '../models/IncompleteUpload';
 import type { IncompleteUploadChanges } from '../models/IncompleteUploadChanges';
 import type { Initiative } from '../models/Initiative';
@@ -799,10 +800,10 @@ export class DefaultService {
     /**
      * gets info about the logged in user
      * Returns the logged in user, if the user is logged in, otherwise returns empty
-     * @returns User user response
+     * @returns FindUserByMeResp user response
      * @throws ApiError
      */
-    public findUserByMe(): CancelablePromise<User> {
+    public findUserByMe(): CancelablePromise<FindUserByMeResp> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/user/me',

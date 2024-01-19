@@ -160,7 +160,25 @@
     "No Uploaded Portfolios Message": "It looks like you haven't uploaded any portfolios yet - the first step to using the PACTA tool is uploading your portfolio to the platform, where it can be processed, parsed, and validated. Click the button below to upload a new portfolio.",
     "Number of Rows": "Number of Rows",
     "Save Changes": "Save Changes",
-    "Refresh": "Refresh"
+    "Refresh": "Refresh",
+    "Run Audit": "Run Audit",
+    "Run Report": "Run Report",
+    "AnalysisTypeREPORT": "Report",
+    "AnalysisTypeAUDIT": "Audit",
+    "Type": "Type",
+    "Access": "Access",
+    "Analysis": "Analysis",
+    "No Analyses Message": "It looks like you haven't run any analyses yet - the next step to using the PACTA tool is running an analysis on your portfolio. Click the button below to run an audit or a report.",
+  },
+  "components/analysis/AccessButtons": {
+    "View": "View",
+    "Download": "Download",
+    "Denied": "You do not have access to this analysis"
+  },
+  "components/analysis/RunButton": {
+    "Run": "Run",
+    "AnalysisTypeAUDIT": "Audit",
+    "AnalysisTypeREPORT": "Report"
   },
   "components/portfolio/group/ListView": {
     "Created At": "Created At",
@@ -366,7 +384,7 @@
     "ErrDuplicate": "This file may be a duplicate, consider removing it.",
     "ErrTooLarge": "File is too large (100MB max)",
     "Optional Portfolio Properties": "Optional Portfolio Properties",
-    "No Edit Properties": "The portfolios have already been created with the settings you selected. You can change their settings by editing each portfolio you created individually."
+    "No Edit Properties": "The portfolios have been created with the settings you selected. You can change their settings by editing each portfolio you created individually."
   },
   "pages/audit-logs": {
     "Action": "Action",

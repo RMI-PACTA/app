@@ -92,11 +92,19 @@ func (s *Server) FindUserByMe(ctx context.Context, request api.FindUserByMeReque
 	if err != nil {
 		return nil, oapierr.Internal("failed to retrieve user", zap.Error(err))
 	}
-	result, err := conv.UserToOAPI(user)
+	ownerID, err := s.DB.GetOwnerForUser(s.DB.NoTxn(ctx), meID)
+	if err != nil {
+		return nil, oapierr.Internal("failed to retrieve owner for user", zap.Error(err))
+	}
+	apiUser, err := conv.UserToOAPI(user)
 	if err != nil {
 		return nil, err
 	}
-	return api.FindUserByMe200JSONResponse(*result), nil
+	result := api.FindUserByMe200JSONResponse{
+		User:    apiUser,
+		OwnerId: ptr(string(ownerID)),
+	}
+	return result, nil
 }
 
 // a callback after login to create or return the user

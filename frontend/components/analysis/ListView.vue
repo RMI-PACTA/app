@@ -3,10 +3,7 @@ import { analysisEditor } from '@/lib/editor'
 import { type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
 
-const { public: { apiServerURL } } = useRuntimeConfig()
-const {
-  humanReadableTimeFromStandardString,
-} = useTime()
+const { humanReadableTimeFromStandardString } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const i18n = useI18n()
@@ -121,12 +118,8 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
         :header="tt('View')"
       >
         <template #body="slotProps">
-          <LinkButton
-            icon="pi pi-external-link"
-            class="p-button-outlined p-button-xs"
-            :label="tt('View')"
-            :to="`${apiServerURL}/report/${slotProps.data.id}/`"
-            new-tab
+          <AnalysisAccessButtons
+            :analysis="slotProps.data.currentValue.value"
           />
         </template>
       </PVColumn>

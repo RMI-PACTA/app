@@ -7,14 +7,14 @@ export type AccessBlobContentRespItem = {
     /**
      * The id of the blob to that the content is for.
      */
-    blob_id: string;
+    blobId: string;
     /**
      * The signed URL where the file can be downloaded from, using GET semantics.
      */
-    download_url: string;
+    downloadUrl: string;
     /**
      * The time at which the signed URL will expire.
      */
-    expiration_time: string;
+    expirationTime: string;
 };
 

@@ -443,6 +443,7 @@ func AnalysisToOAPI(a *pacta.Analysis) (*api.Analysis, error) {
 		FailureCode:       fc,
 		FailureMessage:    fm,
 		Artifacts:         dereferenceAll(aas),
+		OwnerId:           string(a.Owner.ID),
 	}, nil
 }
 

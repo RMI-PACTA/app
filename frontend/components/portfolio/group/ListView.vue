@@ -149,12 +149,11 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
           <h2 class="mt-0">
             Metadata
           </h2>
-          <div class="flex flex-column gap-2 w-fit">
-            <div class="flex gap-2 justify-content-between">
-              <span>Created At</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}</b>
-            </div>
-          </div>
+          <StandardDebug
+            always
+            :value="slotProps.data.currentValue.value"
+            label="Raw Data"
+          />
           <h2 class="mt-5">
             Editable Properties
           </h2>

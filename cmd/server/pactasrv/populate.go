@@ -101,6 +101,25 @@ func (s *Server) populateArtifactsInAnalyses(
 	return nil
 }
 
+func (s *Server) populateSnapshotsInAnalyses(
+	ctx context.Context,
+	ts ...*pacta.Analysis,
+) error {
+	getFn := func(a *pacta.Analysis) ([]*pacta.PortfolioSnapshot, error) {
+		return []*pacta.PortfolioSnapshot{a.PortfolioSnapshot}, nil
+	}
+	lookupFn := func(ids []pacta.PortfolioSnapshotID) (map[pacta.PortfolioSnapshotID]*pacta.PortfolioSnapshot, error) {
+		return s.DB.PortfolioSnapshots(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(a *pacta.PortfolioSnapshot) pacta.PortfolioSnapshotID {
+		return a.ID
+	}
+	if err := populateAll(ts, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating portfolio snapshots in analysis failed", zap.Error(err))
+	}
+	return nil
+}
+
 func (s *Server) populateBlobsInPortfolios(
 	ctx context.Context,
 	ps ...*pacta.Portfolio,
