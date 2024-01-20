@@ -72,16 +72,16 @@ const deleteAll = () => withLoading(
       class="incomplete-upload-table"
     >
       <PVColumn
-        field="editorValues.value.createdAt.originalValue"
+        field="currentValue.value.createdAt"
         header="Created At"
         sortable
       >
         <template #body="slotProps">
-          {{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}
+          {{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}
         </template>
       </PVColumn>
       <PVColumn
-        field="editorValues.value.name.originalValue"
+        field="currentValue.value.name"
         sortable
         header="Name"
       />
@@ -99,23 +99,23 @@ const deleteAll = () => withLoading(
           <div class="flex flex-column gap-2 w-fit">
             <div class="flex gap-2 justify-content-between">
               <span>Created At</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}</b>
+              <b>{{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Ran At</span>
-              <b>{{ slotProps.data.editorValues.value.ranAt.originalValue ? humanReadableTimeFromStandardString(slotProps.data.editorValues.value.ranAt.originalValue).value : 'N/A' }}</b>
+              <b>{{ slotProps.data.currentValue.value.ranAt ? humanReadableTimeFromStandardString(slotProps.data.currentValue.value.ranAt).value : 'N/A' }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Completed At</span>
-              <b>{{ slotProps.data.editorValues.value.completedAt.originalValue ? humanReadableTimeFromStandardString(slotProps.data.editorValues.value.completedAt.originalValue).value : 'N/A' }}</b>
+              <b>{{ slotProps.data.currentValue.value.completedAt ? humanReadableTimeFromStandardString(slotProps.data.currentValue.value.completedAt).value : 'N/A' }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Failure Code</span>
-              <b>{{ slotProps.data.editorValues.value.failureCode.originalValue ?? 'N/A' }}</b>
+              <b>{{ slotProps.data.currentValue.value.failureCode ?? 'N/A' }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>Failure Message</span>
-              <b>{{ slotProps.data.editorValues.value.failureMessage.originalValue ?? 'N/A' }}</b>
+              <b>{{ slotProps.data.currentValue.value.failureMessage ?? 'N/A' }}</b>
             </div>
             <div class="flex gap-2 justify-content-between">
               <span>ID</span>

@@ -24,7 +24,7 @@
     "Metadata": "Metadata",
     "Number of Rows": "Number of Rows",
     "Save Changes": "Save Changes",
-    "Refresh": "Refresh",
+    "Refresh": "Refresh"
   },
   "components/analysis/ListView": {
     "Created At": "Created At",
@@ -239,7 +239,8 @@
   },
   "components/standard/Nav": {
     "Admin": "Admin",
-    "Home": "Home",
+    "About": "About PACTA", 
+    "Home": "Portfolio Analysis Tool",
     "My Data": "My Data",
     "Sign In": "Sign In",
     "Sign Out": "Sign Out"
@@ -402,5 +403,23 @@
     "Secondary Target ID": "Secondary Target ID",
     "Secondary Target Owner": "Secondary Target Owner",
     "Secondary Target Type": "Secondary Target Type"
+  },
+  "pages/index": {
+    "Heading": "PACTA for Investors",
+    "Subheading": "Measure the alignment of financial portfolios with climate scenarios",
+    "Description": "The Paris Agreement Capital Transition Assessment (PACTA) is an open-source and free of charge online software platform that enables users to measure the alignment of financial portfolios with climate scenarios as well as analyze specific companies.",
+    "Section1Heading": "How PACTA Works",
+    "Section1Paragraph1": "PACTA compares what needs to happen in climate-relevant sectors in order to minimize global temperature rises with financial institutions' exposure to companies in these sectors. It uses a dynamic, forward-looking approach, based on the 5-year production plans of companies in a financial institution's portfolio.",
+    "Section1Paragraph2": "The methodology measures alignment per sector or per technology, ensuring sector specific needs are included. For example, some sectors need to move more quickly than others; some need to reform (such as power generation); and others need to phase out (for instance, fossil fuels).",
+    "Section2Heading": "Portfolio Analysis Tool",
+    "Section2Paragraph1": "The PACTA tool to analyze listed equity and corporate bond portfolios was relaunched in March 2021 with a new interactive format. For the first time, investors can now analyze multiple portfolios simultaneously, save their results online, and receive interactive results on their alignment with the Paris climate goals.",
+    "Section2Paragraph2": "The tool is free to use, and requires a csv file including the ISIN, value and currency of the investment to run the analysis. For more information on how to format your portfolios for analysis, please see the Input User Guide.",
+    "Input User Guide": "Input User Guide",
+    "Section2Paragraph3": "All uploaded data and results are only visible to the user that uploaded them, and strict audit logs are maintained for your piece of mind. Portfolios can be deleted from the platform at any time by the user that uploaded them.",
+    "Sign In": "Sign In or Create an Account to Access the Tool",
+    "Get Started": "Get Started, Upload Portfolio(s)",
+    "Section4Heading": "About This Tool",
+    "Section4Paragraph1": "PACTA was originally developed by 2° Investing Initiative (2DII) with backing from UN Principles for Responsible Investment. In June 2022, 2DII transferred stewardship of PACTA to RMI, formerly Rocky Mountain Institute. In 2024, the PACTA for Investors tool was modernized by Silicon Ally, a software development non-profit. The code for this tool, as well as the analysis code for PACTA is open source.",
+    "Section4CTA": "Learn More About PACTA"
   }
 }

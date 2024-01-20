@@ -116,7 +116,7 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
       :value="editorObjects"
       data-key="id"
       size="small"
-      sort-field="editorValues.value.createdAt.originalValue"
+      sort-field="currentValue.value.createdAt"
       :sort-order="-1"
     >
       <template #empty>
@@ -126,16 +126,16 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
       </template>
       <PVColumn selection-mode="multiple" />
       <PVColumn
-        field="editorValues.value.createdAt.originalValue"
+        field="currentValue.value.createdAt"
         :header="tt('Created At')"
         sortable
       >
         <template #body="slotProps">
-          {{ humanReadableTimeFromStandardString(slotProps.data.editorValues.value.createdAt.originalValue).value }}
+          {{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}
         </template>
       </PVColumn>
       <PVColumn
-        field="editorValues.value.name.originalValue"
+        field="currentValue.value.name"
         sortable
         :header="tt('Name')"
       />
@@ -145,12 +145,12 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
         <template #body="slotProps">
           <div class="flex flex-column gap-2">
             <div
-              v-if="slotProps.data.editorValues.value.groups.originalValue.length > 0"
+              v-if="slotProps.data.currentValue.value.groups.length > 0"
               class="flex gap-1 align-items-center flex-wrap"
             >
               <span>{{ tt('Groups') }}:</span>
               <LinkButton
-                v-for="membership in slotProps.data.editorValues.value.groups.originalValue"
+                v-for="membership in slotProps.data.currentValue.value.groups"
                 :key="membership.portfolioGroup.id"
                 class="p-button-outlined p-button-xs"
                 icon="pi pi-table"
@@ -159,12 +159,12 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
               />
             </div>
             <div
-              v-if="slotProps.data.editorValues.value.initiatives.originalValue.length > 0"
+              v-if="slotProps.data.currentValue.value.initiatives.length > 0"
               class="flex gap-1 align-items-center flex-wrap"
             >
               <span>{{ tt('Initiatives') }}:</span>
               <LinkButton
-                v-for="membership in slotProps.data.editorValues.value.initiatives.originalValue"
+                v-for="membership in slotProps.data.currentValue.value.initiatives"
                 :key="membership.initiative.id"
                 class="p-button-xs"
                 :label="membership.initiative.name"
