@@ -11,6 +11,7 @@ import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
+import Image from 'primevue/image'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import InputSwitch from 'primevue/inputswitch'
@@ -42,6 +43,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVDialog', Dialog)
   vueApp.component('PVDropdown', Dropdown)
   vueApp.component('PVFileUpload', FileUpload)
+  vueApp.component('PVImage', Image)
   vueApp.component('PVInputNumber', InputNumber)
   vueApp.component('PVInputText', InputText)
   vueApp.component('PVInputSwitch', InputSwitch)
