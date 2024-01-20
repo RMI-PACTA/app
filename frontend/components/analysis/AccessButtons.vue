@@ -36,32 +36,30 @@ const canAccess = computed(() => {
 const downloadInProgress = useState<boolean>(`${statePrefix}.downloadInProgress`, () => false)
 const doDownload = async () => {
   downloadInProgress.value = true
-  await pactaClient.accessBlobContent({
+  const response: AccessBlobContentResp = await pactaClient.accessBlobContent({
     items: props.analysis.artifacts.map((asset): AccessBlobContentReqItem => ({
       blobId: asset.blob.id,
     })),
-  }).then(async (response: AccessBlobContentResp) => {
-    const zip = new JSZip()
-    await Promise.all(response.items.map(
-      async (item): Promise<void> => {
-        const response = await fetch(item.downloadUrl)
-        const data = await response.blob()
-        const blob = presentOrFileBug(props.analysis.artifacts.find((artifact) => artifact.blob.id === item.blobId)).blob
-        const fileName = `${blob.fileName}`
-        zip.file(fileName, data)
-      }),
-    )
-    return await zip.generateAsync({ type: 'blob' })
-  }).then((content) => {
-    const element = document.createElement('a')
-    element.href = URL.createObjectURL(content)
-    const fileName = `${props.analysis.name}.zip`
-    element.download = fileName
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
-    downloadInProgress.value = false
   })
+  const zip = new JSZip()
+  await Promise.all(response.items.map(
+    async (item): Promise<void> => {
+      const response = await fetch(item.downloadUrl)
+      const data = await response.blob()
+      const blob = presentOrFileBug(props.analysis.artifacts.find((artifact) => artifact.blob.id === item.blobId)).blob
+      const fileName = `${blob.fileName}`
+      zip.file(fileName, data)
+    }),
+  )
+  const content = await zip.generateAsync({ type: 'blob' })
+  const element = document.createElement('a')
+  element.href = URL.createObjectURL(content)
+  const fileName = `${props.analysis.name}.zip`
+  element.download = fileName
+  document.body.appendChild(element)
+  element.click()
+  document.body.removeChild(element)
+  downloadInProgress.value = false
 }
 
 const openReport = () => navigateTo(`${apiServerURL}/report/${props.analysis.id}/`, {
