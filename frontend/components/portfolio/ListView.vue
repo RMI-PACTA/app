@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { portfolioEditor } from '@/lib/editor'
-import { AnalysisType, type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
+import { type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
 
 const {
@@ -211,71 +211,12 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
           <h2 class="mt-5">
             {{ tt('Analysis') }}
           </h2>
-          <PVDataTable
-            :value="slotProps.data.analyses"
-            data-key="id"
-            size="medium"
-            sort-field="createdAt"
-            :sort-order="-1"
-          >
-            <template #empty>
-              <PVMessage severity="info">
-                {{ tt('No Analyses Message') }}
-              </PVMessage>
-            </template>
-            <PVColumn
-              field="createdAt"
-              :header="tt('Created At')"
-            >
-              <template #body="slotProps2">
-                {{ humanReadableTimeFromStandardString(slotProps2.data.createdAt).value }}
-              </template>
-            </PVColumn>
-            <PVColumn
-              field="analysisType"
-              :header="tt('Type')"
-            >
-              <template #body="slotProps2">
-                {{ tt(slotProps2.data.analysisType) }}
-              </template>
-            </PVColumn>
-            <PVColumn
-              field="name"
-              :header="tt('Name')"
-            />
-            <PVColumn
-              field="Access"
-              :header="tt('Access')"
-            >
-              <template #body="slotProps2">
-                <AnalysisAccessButtons
-                  class="py-2"
-                  :analysis="slotProps2.data"
-                />
-              </template>
-            </PVColumn>
-            <PVColumn :header="tt('Details')">
-              <template #body="slotProps2">
-                <LinkButton
-                  class="p-button-outlined p-button-xs p-button-secondary"
-                  icon="pi pi-arrow-right"
-                  :to="localePath(`/my-data?tab=a&analyses=${slotProps2.data.id}`)"
-                />
-              </template>
-            </PVColumn>
-          </PVDataTable>
-          <div class="flex gap-2 pt-2">
-            <AnalysisRunButton
-              :analysis-type="AnalysisType.ANALYSIS_TYPE_AUDIT"
-              :name="slotProps.data.currentValue.value.name"
-              :portfolio-id="slotProps.data.id"
-            />
-            <AnalysisRunButton
-              :analysis-type="AnalysisType.ANALYSIS_TYPE_REPORT"
-              :name="slotProps.data.currentValue.value.name"
-              :portfolio-id="slotProps.data.id"
-            />
-          </div>
+          <AnalysisContextualListView
+            :analyses="slotProps.data.analyses"
+            :name="slotProps.data.currentValue.value.name"
+            :portfolio-id="slotProps.data.id"
+            @refresh="refresh"
+          />
           <h2 class="mt-5">
             {{ tt('Editable Properties') }}
           </h2>
