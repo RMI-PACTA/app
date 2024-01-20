@@ -62,20 +62,24 @@ const tt = (s: string) => t(`pages/index.${s}`)
         />
       </p>
       <p>{{ tt('Section2Paragraph3') }}</p>
-      <PVButton
-        v-if="!isAuthenticated"
-        :label="tt('Sign In')"
-        icon="pi pi-sign-in"
-        icon-pos="right"
-        @click="signIn"
-      />
-      <LinkButton
-        v-else
-        :label="tt('Get Started')"
-        icon="pi pi-arrow-right"
-        icon-pos="right"
-        to="/upload"
-      />
+      <div class="flex justify-content-center mt-2">
+        <PVButton
+          v-if="!isAuthenticated"
+          :label="tt('Sign In')"
+          icon="pi pi-sign-in"
+          icon-pos="right"
+          class="max-w-30rem"
+          @click="signIn"
+        />
+        <LinkButton
+          v-else
+          :label="tt('Get Started')"
+          icon="pi pi-arrow-right"
+          icon-pos="right"
+          class="max-w-30rem"
+          to="/upload"
+        />
+      </div>
     </div>
     <div class="flex gap-3 flex-column p-3">
       <h2 class="m-0">
