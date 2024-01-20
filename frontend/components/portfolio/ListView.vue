@@ -39,6 +39,7 @@ const selectedPortfolioIDs = computed({
 
 interface EditorObject extends ReturnType<typeof portfolioEditor> {
   id: string
+  analyses: Analysis[]
 }
 
 const prefix = 'components/portfolio/ListView'
@@ -56,7 +57,11 @@ const selectedRows = computed<EditorObject[]>({
   },
 })
 
-const editorObjects = computed<EditorObject[]>(() => props.portfolios.map((item) => ({ ...portfolioEditor(item, i18n), id: item.id })))
+const editorObjects = computed<EditorObject[]>(() => props.portfolios.map((item) => ({
+  id: item.id,
+  ...portfolioEditor(item, i18n),
+  analyses: props.analyses.filter((a) => a.portfolioSnapshot.portfolio?.id === item.id),
+})))
 
 const selectedPortfolios = computed<Portfolio[]>(() => selectedRows.value.map((row) => row.currentValue.value))
 
@@ -68,21 +73,6 @@ const saveChanges = (id: string) => {
     `${prefix}.saveChanges`,
   )
 }
-
-const runAnalysis = (id: string, analysisType: AnalysisType) => {
-  const n = props.portfolios.find((p) => p.id === id)?.name ?? 'unknown'
-  return withLoading(
-    () => pactaClient.runAnalysis({
-      analysisType,
-      name: `${tt(analysisType)}: ${n}`,
-      description: `${tt(analysisType)} run at ${new Date().toLocaleString()} for portfolio ${n} (${id})`,
-      portfolioId: id,
-    }),
-    `${prefix}.runPortfolioAnalysis`,
-  )
-}
-const runAudit = (id: string) => runAnalysis(id, AnalysisType.ANALYSIS_TYPE_AUDIT)
-const runReport = (id: string) => runAnalysis(id, AnalysisType.ANALYSIS_TYPE_REPORT)
 
 const deletePortfolio = (id: string) => withLoading(
   () => pactaClient.deletePortfolio(id),
@@ -197,16 +187,11 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
           <h2 class="mt-0">
             {{ tt('Metadata') }}
           </h2>
-          <div class="flex flex-column gap-2 w-fit">
-            <div class="flex gap-2 justify-content-between">
-              <span>{{ tt('Created At') }}</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}</b>
-            </div>
-            <div class="flex gap-2 justify-content-between">
-              <span>{{ tt('Number of Rows') }}</span>
-              <b>{{ slotProps.data.currentValue.value.numberOfRows }}</b>
-            </div>
-          </div>
+          <StandardDebug
+            always
+            :value="slotProps.data.currentValue.value"
+            label="Raw Data"
+          />
           <h2 class="mt-5">
             {{ tt('Memberships') }}
           </h2>
@@ -224,19 +209,73 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
             />
           </div>
           <h2 class="mt-5">
-            {{ tt('Analyses') }}
+            {{ tt('Analysis') }}
           </h2>
-          <PVMessage severity="warn">
-            TODO - filter analyses by those that match this portfolio
-          </PVMessage>
-          <PVButton
-            :label="tt('Run Audit')"
-            @click="() => runAudit(slotProps.data.id)"
-          />
-          <PVButton
-            :label="tt('Run Report')"
-            @click="() => runReport(slotProps.data.id)"
-          />
+          <PVDataTable
+            :value="slotProps.data.analyses"
+            data-key="id"
+            size="medium"
+            sort-field="createdAt"
+            :sort-order="-1"
+          >
+            <template #empty>
+              <PVMessage severity="info">
+                {{ tt('No Analyses Message') }}
+              </PVMessage>
+            </template>
+            <PVColumn
+              field="createdAt"
+              :header="tt('Created At')"
+            >
+              <template #body="slotProps2">
+                {{ humanReadableTimeFromStandardString(slotProps2.data.createdAt).value }}
+              </template>
+            </PVColumn>
+            <PVColumn
+              field="analysisType"
+              :header="tt('Type')"
+            >
+              <template #body="slotProps2">
+                {{ tt(slotProps2.data.analysisType) }}
+              </template>
+            </PVColumn>
+            <PVColumn
+              field="name"
+              :header="tt('Name')"
+            />
+            <PVColumn
+              field="Access"
+              :header="tt('Access')"
+            >
+              <template #body="slotProps2">
+                <AnalysisAccessButtons
+                  class="py-2"
+                  :analysis="slotProps2.data"
+                />
+              </template>
+            </PVColumn>
+            <PVColumn :header="tt('Details')">
+              <template #body="slotProps2">
+                <LinkButton
+                  class="p-button-outlined p-button-xs p-button-secondary"
+                  icon="pi pi-arrow-right"
+                  :to="localePath(`/my-data?tab=a&analyses=${slotProps2.data.id}`)"
+                />
+              </template>
+            </PVColumn>
+          </PVDataTable>
+          <div class="flex gap-2 pt-2">
+            <AnalysisRunButton
+              :analysis-type="AnalysisType.ANALYSIS_TYPE_AUDIT"
+              :name="slotProps.data.currentValue.value.name"
+              :portfolio-id="slotProps.data.id"
+            />
+            <AnalysisRunButton
+              :analysis-type="AnalysisType.ANALYSIS_TYPE_REPORT"
+              :name="slotProps.data.currentValue.value.name"
+              :portfolio-id="slotProps.data.id"
+            />
+          </div>
           <h2 class="mt-5">
             {{ tt('Editable Properties') }}
           </h2>

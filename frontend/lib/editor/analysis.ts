@@ -59,6 +59,10 @@ const createEditorAnalysisFields = (translation: Translation): EditorAnalysisFie
       name: 'artifacts',
       label: tt('Artifacts'),
     },
+    ownerId: {
+      name: 'ownerId',
+      label: tt('Owner ID'),
+    },
   }
 }
 

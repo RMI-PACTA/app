@@ -99,6 +99,7 @@ type DB interface {
 	CreateSnapshotOfPortfolio(tx db.Tx, pID pacta.PortfolioID) (pacta.PortfolioSnapshotID, error)
 	CreateSnapshotOfPortfolioGroup(tx db.Tx, pgID pacta.PortfolioGroupID) (pacta.PortfolioSnapshotID, error)
 	CreateSnapshotOfInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta.PortfolioSnapshotID, error)
+	PortfolioSnapshots(tx db.Tx, ids []pacta.PortfolioSnapshotID) (map[pacta.PortfolioSnapshotID]*pacta.PortfolioSnapshot, error)
 
 	GetOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error)
 

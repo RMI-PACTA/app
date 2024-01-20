@@ -35,6 +35,9 @@ func (s *Server) ListAnalyses(ctx context.Context, request api.ListAnalysesReque
 	if err := s.populateBlobsInAnalysisArtifacts(ctx, artifacts...); err != nil {
 		return nil, err
 	}
+	if err := s.populateSnapshotsInAnalyses(ctx, as...); err != nil {
+		return nil, err
+	}
 	items, err := dereference(conv.AnalysesToOAPI(as))
 	if err != nil {
 		return nil, err
@@ -74,6 +77,9 @@ func (s *Server) FindAnalysisById(ctx context.Context, request api.FindAnalysisB
 		return nil, err
 	}
 	if err := s.populateBlobsInAnalysisArtifacts(ctx, a.Artifacts...); err != nil {
+		return nil, err
+	}
+	if err := s.populateSnapshotsInAnalyses(ctx, a); err != nil {
 		return nil, err
 	}
 	converted, err := conv.AnalysisToOAPI(a)

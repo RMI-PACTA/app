@@ -34,6 +34,7 @@ interface Props {
   loadingIcon?: string
   activeClass?: string
   inactiveClass?: string
+  external?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   to: undefined,
@@ -49,6 +50,7 @@ const props = withDefaults(defineProps<Props>(), {
   loadingIcon: 'pi pi-spinner pi-spin',
   activeClass: '',
   inactiveClass: '',
+  external: undefined,
 })
 
 const attrs = useAttrs()
@@ -156,6 +158,7 @@ const href = computed(() => {
     :target="target"
     :to="to"
     :aria-disabled="disabled"
+    :external="props.external"
     custom
   >
     <a

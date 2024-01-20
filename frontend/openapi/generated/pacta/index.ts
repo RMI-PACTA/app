@@ -35,6 +35,7 @@ export type { CompletePortfolioUploadResp } from './models/CompletePortfolioUplo
 export type { Error } from './models/Error';
 export { FailureCode } from './models/FailureCode';
 export { FileType } from './models/FileType';
+export type { FindUserByMeResp } from './models/FindUserByMeResp';
 export type { HoldingsDate } from './models/HoldingsDate';
 export type { IncompleteUpload } from './models/IncompleteUpload';
 export type { IncompleteUploadChanges } from './models/IncompleteUploadChanges';

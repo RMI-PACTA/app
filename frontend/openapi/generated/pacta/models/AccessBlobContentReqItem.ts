@@ -7,6 +7,6 @@ export type AccessBlobContentReqItem = {
     /**
      * The id of the blob to request the content for.
      */
-    blob_id: string;
+    blobId: string;
 };
 
