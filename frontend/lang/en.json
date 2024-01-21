@@ -314,7 +314,9 @@
     "External": "External",
     "ExternalHelpText": "If enabled, this portfolio represents external data. If disabled, this portfolio represents internal data.",
     "Engagement Strategy": "Engagement Strategy",
-    "EngagementStrategyHelpText": "If enabled, this portfolio represents engagement strategy data. If disabled, this portfolio represents non-engagement strategy data."
+    "EngagementStrategyHelpText": "If enabled, this portfolio represents engagement strategy data. If disabled, this portfolio represents non-engagement strategy data.",
+    "Holdings Date": "Holdings Date",
+    "HoldingsDateHelpText": "The date that the holdings in this portfolio are being evaluated at."
   },
   "lib/editor/portfolio_group": {
     "Created At": "Created At",

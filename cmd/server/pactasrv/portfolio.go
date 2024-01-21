@@ -90,6 +90,13 @@ func (s *Server) UpdatePortfolio(ctx context.Context, request api.UpdatePortfoli
 	if request.Body.Description != nil {
 		mutations = append(mutations, db.SetPortfolioDescription(*request.Body.Description))
 	}
+	if request.Body.PropertyHoldingsDate != nil {
+		hd, err := conv.HoldingsDateFromOAPI(request.Body.PropertyHoldingsDate)
+		if err != nil {
+			return nil, err
+		}
+		mutations = append(mutations, db.SetPortfolioPropertyHoldingsDate(hd))
+	}
 	if request.Body.PropertyESG != nil {
 		mutations = append(mutations, db.SetPortfolioPropertyESG(conv.OptionalBoolFromOAPI(*request.Body.PropertyESG)))
 	}
