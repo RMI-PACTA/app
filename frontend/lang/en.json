@@ -26,6 +26,28 @@
     "Save Changes": "Save Changes",
     "Refresh": "Refresh"
   },
+  "components/analysis/ContextualListView": { 
+    "Ran At": "Ran At",
+    "Run Audit": "Run Audit",
+    "Run Report": "Run Report",
+    "AnalysisTypeREPORT": "Report",
+    "AnalysisTypeAUDIT": "Audit",
+    "Type": "Type",
+    "Access": "Access",
+    "Analysis": "Analysis",
+    "No Analyses Message": "No analysis of this data has been started.",
+    "Details": "Details",
+    "Name": "Name",
+    "Status": "Status",
+    "No Audits Message": "It is recommened to run an audit to check the quality of your data and its format.",
+    "No Reports Message": "If everything looks good in the audit results, try running a report!"
+  },
+  "components/analysis/StatusChip": {
+    "Running": "Running",
+    "Completed": "Completed",
+    "Failed": "Failed",
+    "PotentialTimeout": "Potential Timeout - hasn't completed despite running for a long time",
+  },
   "components/analysis/ListView": {
     "Created At": "Created At",
     "Details": "Details",
@@ -35,7 +57,8 @@
     "Editable Properties": "Editable Properties",
     "Save Changes": "Save Changes",
     "Refresh": "Refresh",
-    "View": "View"
+    "View": "View",
+    "Status": "Status"
   },
   "components/initiative/Toolbar": {
     "Edit": "Edit",
@@ -167,8 +190,7 @@
     "AnalysisTypeAUDIT": "Audit",
     "Type": "Type",
     "Access": "Access",
-    "Analysis": "Analysis",
-    "No Analyses Message": "It looks like you haven't run any analyses yet - the next step to using the PACTA tool is running an analysis on your portfolio. Click the button below to run an audit or a report.",
+    "Analysis": "Analysis"
   },
   "components/analysis/AccessButtons": {
     "View": "View",
@@ -182,6 +204,8 @@
   },
   "components/portfolio/group/ListView": {
     "Created At": "Created At",
+    "Analysis": "Analysis",
+    "Metadata": "Metadata",
     "Name": "Name",
     "Number of Members": "Number of Members",
     "Save Changes": "Save Changes",

@@ -36,12 +36,19 @@ const selectedPortfolioGroupIDs = computed({
 
 interface EditorObject extends ReturnType<typeof portfolioGroupEditor> {
   id: string
+  analyses: Analysis[]
 }
 
 const prefix = 'components/portfolio/group/ListView'
 const tt = (s: string) => t(`${prefix}.${s}`)
 
-const editorObjects = computed<EditorObject[]>(() => props.portfolioGroups.map((item) => ({ ...portfolioGroupEditor(item, i18n), id: item.id })))
+const editorObjects = computed<EditorObject[]>(() => props.portfolioGroups.map(
+  (item) => ({
+    ...portfolioGroupEditor(item, i18n),
+    id: item.id,
+    analyses: props.analyses.filter((a) => a.portfolioSnapshot.portfolioGroup?.id === item.id),
+  }),
+))
 
 const expandedRows = useState<EditorObject[]>(`${prefix}.expandedRows`, () => [])
 const selectedRows = computed<EditorObject[]>({
@@ -68,7 +75,11 @@ const saveChanges = (id: string) => {
     () => pactaClient.updatePortfolioGroup(id, eo.changes.value)
       .then(() => pactaClient.findPortfolioGroupById(id))
       .then((portfolio) => {
-        editorObjects.value[index] = { ...portfolioGroupEditor(portfolio, i18n), id }
+        editorObjects.value[index] = {
+          ...portfolioGroupEditor(portfolio, i18n),
+          id,
+          analyses: props.analyses.filter((a) => a.portfolioSnapshot.portfolioGroup?.id === id),
+        }
       }),
     `${prefix}.saveChanges`,
   )
@@ -147,12 +158,21 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
       >
         <div class="surface-100 p-3">
           <h2 class="mt-0">
-            Metadata
+            {{ tt('Metadata') }}
           </h2>
           <StandardDebug
             always
             :value="slotProps.data.currentValue.value"
             label="Raw Data"
+          />
+          <h2 class="mt-5">
+            {{ tt('Analysis') }}
+          </h2>
+          <AnalysisContextualListView
+            :analyses="slotProps.data.analyses"
+            :name="slotProps.data.currentValue.value.name"
+            :portfolio-group-id="slotProps.data.id"
+            @refresh="() => emit('refresh')"
           />
           <h2 class="mt-5">
             Editable Properties
