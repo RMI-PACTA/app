@@ -140,7 +140,7 @@ const userMenuItems = computed(() => {
       </template>
       <PVButton
         v-show="maybeMe !== undefined"
-        v-tooltip="tt('Settings')"
+        v-tooltip.left="tt('Settings')"
         icon="pi pi-user"
         class="hidden sm:flex ml-2 flex-shrink-0"
         rounded

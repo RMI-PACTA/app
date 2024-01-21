@@ -269,7 +269,8 @@
     "Sign In": "Sign In",
     "Sign Out": "Sign Out",
     "Account": "Account",
-    "Audit Logs": "Audit Logs"
+    "Audit Logs": "Audit Logs",
+    "Settings": "Settings"
   },
   "components/user/Editor": {
     "The name that will be associated with": "The name that will be associated with ",
