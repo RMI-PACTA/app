@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
@@ -103,6 +104,84 @@ func (d *DB) Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, 
 		result[u.ID] = u
 	}
 	return result, nil
+}
+
+func (d *DB) QueryUsers(tx db.Tx, q *db.UserQuery) ([]*pacta.User, *db.PageInfo, error) {
+	if q.Limit <= 0 {
+		return nil, nil, fmt.Errorf("limit must be greater than 0, was %d", q.Limit)
+	}
+	offset, err := offsetFromCursor(q.Cursor)
+	if err != nil {
+		return nil, nil, fmt.Errorf("converting cursor to offset: %w", err)
+	}
+	sql, args, err := userQuery(q)
+	if err != nil {
+		return nil, nil, fmt.Errorf("building user query: %w", err)
+	}
+	rows, err := d.query(tx, sql, args...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("executing user query: %w", err)
+	}
+	us, err := rowsToUsers(rows)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting users from rows: %w", err)
+	}
+	// This will incorrectly say "yes there are more results" if we happen to hit the actual limit, but
+	// that's a pretty small performance loss.
+	hasNextPage := len(us) == q.Limit
+	cursor := offsetToCursor(offset + len(us))
+	return us, &db.PageInfo{HasNextPage: hasNextPage, Cursor: db.Cursor(cursor)}, nil
+}
+
+func userQuery(q *db.UserQuery) (string, []any, error) {
+	args := &queryArgs{}
+	selectFrom := `SELECT ` + userSelectColumns + ` FROM pacta_user`
+	where := userQueryWheresToSQL(q.Wheres, args)
+	order := userQuerySortsToSQL(q.Sorts)
+	limit := fmt.Sprintf("LIMIT %d", q.Limit)
+	offset := ""
+	if q.Cursor != "" {
+		o, err := offsetFromCursor(q.Cursor)
+		if err != nil {
+			return "", nil, fmt.Errorf("extracting offset from cursor in audit-log query: %w", err)
+		}
+		offset = fmt.Sprintf("OFFSET %d", o)
+	}
+	sql := fmt.Sprintf("%s %s %s %s %s;", selectFrom, where, order, limit, offset)
+	return sql, args.values, nil
+}
+
+func userQuerySortsToSQL(ss []*db.UserQuerySort) string {
+	sorts := []string{}
+	for _, s := range ss {
+		v := " DESC"
+		if s.Ascending {
+			v = " ASC"
+		}
+		sorts = append(sorts, fmt.Sprintf("pacta_user.%s %s", s.By, v))
+	}
+	// Forces a deterministic sort for pagination.
+	sorts = append(sorts, "pacta_user.id ASC")
+	return "ORDER BY " + strings.Join(sorts, ", ")
+}
+
+func userQueryWheresToSQL(qs []*db.UserQueryWhere, args *queryArgs) string {
+	wheres := []string{}
+	for _, q := range qs {
+		if q.NameOrEmailLike != "" {
+			wheres = append(wheres,
+				fmt.Sprintf(
+					`name ILIKE ('%[1]s' || %[2]s || '%[1]s')
+					OR
+					canonical_email ILIKE ('%[1]s' || %[2]s || '%[1]s')`,
+					"%",
+					args.add(q.NameOrEmailLike)))
+		}
+	}
+	if len(wheres) == 0 {
+		return ""
+	}
+	return "WHERE " + strings.Join(wheres, " AND ")
 }
 
 func (d *DB) createUser(tx db.Tx, u *pacta.User) (pacta.UserID, error) {

@@ -22,11 +22,19 @@ const adminItems: AdminItem[] = [
     href: '/admin/initiative',
   },
   {
-    title: 'Test Portfolio Processing',
-    icon: 'pi pi-file-o',
-    desc: 'Test out portfolio processing with an uploaded portfolio',
-    href: '/admin/portfolio_test',
+    title: 'User List',
+    icon: 'pi pi-users',
+    desc: 'View a list of users, and search for users based on name or email, then edit or delete them',
+    href: '/admin/users',
   },
+  /*
+  {
+    title: 'User Merge',
+    icon: 'pi pi-user-minus',
+    desc: 'Merge two user accounts into one, retaining all data',
+    href: '/admin/user-merge',
+  },
+  */
 ]
 </script>
 
@@ -44,19 +52,14 @@ const adminItems: AdminItem[] = [
       >
         <PVCard class="h-full">
           <template #title>
-            <div class="flex align-items-center">
-              <i
-                :class="item.icon"
-                class="text-2xl mr-3"
-              />
-              <span>{{ item.title }}</span>
-            </div>
-          </template>
-          <template #content>
-            {{ item.desc }}
-          </template>
-          <template #footer>
-            <div class="flex justify-content-end w-full">
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex align-items-center">
+                <i
+                  :class="item.icon"
+                  class="text-2xl mr-3"
+                />
+                <span>{{ item.title }}</span>
+              </div>
               <LinkButton
                 class="p-button-sm"
                 :to="localePath(item.href)"
@@ -65,6 +68,9 @@ const adminItems: AdminItem[] = [
                 label="Go"
               />
             </div>
+          </template>
+          <template #content>
+            {{ item.desc }}
           </template>
         </PVCard>
       </div>

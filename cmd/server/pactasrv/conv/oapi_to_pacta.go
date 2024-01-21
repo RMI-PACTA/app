@@ -314,3 +314,35 @@ func AuditLogQueryFromOAPI(q *api.AuditLogQueryReq) (*db.AuditLogQuery, error) {
 		Sorts:  sorts,
 	}, nil
 }
+
+func userQueryWhereFromOAPI(i api.UserQueryWhere) (*db.UserQueryWhere, error) {
+	result := &db.UserQueryWhere{}
+	if i.NameOrEmailLike != nil {
+		result.NameOrEmailLike = *i.NameOrEmailLike
+	}
+	return result, nil
+}
+
+func UserQueryFromOAPI(q *api.UserQueryReq) (*db.UserQuery, error) {
+	limit := 100
+	cursor := ""
+	if q.Cursor != nil {
+		cursor = *q.Cursor
+	}
+	wheres := []api.UserQueryWhere{}
+	if q.Wheres != nil {
+		wheres = append(wheres, *q.Wheres...)
+	}
+	ws, err := convAll(wheres, userQueryWhereFromOAPI)
+	if err != nil {
+		return nil, oapierr.BadRequest("error converting user query wheres", zap.Error(err))
+	}
+	return &db.UserQuery{
+		Cursor: db.Cursor(cursor),
+		Limit:  limit,
+		Wheres: ws,
+		Sorts: []*db.UserQuerySort{
+			{By: db.UserQuerySortBy_CreatedAt, Ascending: false},
+		},
+	}, nil
+}

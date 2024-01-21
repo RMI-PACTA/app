@@ -714,6 +714,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FindUserByMeResp'
+  /users:
+    post:
+      description: Gets the list of users that the user is able to view, currently an admin-only action 
+      operationId: userQuery 
+      requestBody:
+        description: A request describing which users should be returned  
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserQueryReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQueryResp'
   /user/authentication-followup:
     post:
       description: Creates a user in the database, if the user does not yet exist, or returns the existing user.
@@ -2200,6 +2217,40 @@ components:
         secondaryTargetOwner:
           type: string
           description: the id of the owner of the secondary object this action was performed on
+    UserQueryWhere: 
+      type: object
+      properties: 
+        nameOrEmailLike:
+          type: string
+          description: if provided, filters the results to only include users whose name or email contains this string
+    UserQueryReq:
+      type: object
+      properties: 
+        cursor:
+          type: string
+          description: if provided, continues an existing query at the given point 
+        wheres:
+          type: array 
+          description: the constraints to place on the returned records
+          items: 
+            $ref: '#/components/schemas/UserQueryWhere'
+    UserQueryResp:
+      type: object
+      required:
+        - users
+        - cursor
+        - hasNextPage
+      properties:
+        users:
+          type: array
+          items: 
+            $ref: '#/components/schemas/User'
+        hasNextPage:
+          type: boolean
+          description: describes whether there are more records to query
+        cursor:
+          type: string
+          description: the parameter to re-request with to continue this query on the next page of results
     MergeUsersReq:
       type: object
       required:

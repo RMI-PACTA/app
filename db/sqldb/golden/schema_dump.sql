@@ -17,6 +17,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
+
+
+--
 -- Name: analysis_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -747,6 +761,20 @@ CREATE INDEX owner_by_user_id ON public.owner USING btree (user_id);
 --
 
 CREATE INDEX portfolio_by_blob_id ON public.portfolio USING btree (blob_id);
+
+
+--
+-- Name: user_canonical_email_gin_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX user_canonical_email_gin_index ON public.pacta_user USING gin (canonical_email public.gin_trgm_ops);
+
+
+--
+-- Name: user_name_gin_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX user_name_gin_index ON public.pacta_user USING gin (name public.gin_trgm_ops);
 
 
 --

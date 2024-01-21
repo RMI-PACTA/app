@@ -85,5 +85,8 @@ export type { StartPortfolioUploadResp } from './models/StartPortfolioUploadResp
 export type { StartPortfolioUploadRespItem } from './models/StartPortfolioUploadRespItem';
 export type { User } from './models/User';
 export type { UserChanges } from './models/UserChanges';
+export type { UserQueryReq } from './models/UserQueryReq';
+export type { UserQueryResp } from './models/UserQueryResp';
+export type { UserQueryWhere } from './models/UserQueryWhere';
 
 export { DefaultService } from './services/DefaultService';

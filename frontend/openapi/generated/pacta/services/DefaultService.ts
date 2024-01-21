@@ -43,6 +43,8 @@ import type { StartPortfolioUploadReq } from '../models/StartPortfolioUploadReq'
 import type { StartPortfolioUploadResp } from '../models/StartPortfolioUploadResp';
 import type { User } from '../models/User';
 import type { UserChanges } from '../models/UserChanges';
+import type { UserQueryReq } from '../models/UserQueryReq';
+import type { UserQueryResp } from '../models/UserQueryResp';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -807,6 +809,23 @@ export class DefaultService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/user/me',
+        });
+    }
+
+    /**
+     * Gets the list of users that the user is able to view, currently an admin-only action
+     * @param requestBody A request describing which users should be returned
+     * @returns UserQueryResp
+     * @throws ApiError
+     */
+    public userQuery(
+        requestBody: UserQueryReq,
+    ): CancelablePromise<UserQueryResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/users',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 
