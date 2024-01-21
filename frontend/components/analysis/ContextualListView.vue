@@ -22,29 +22,8 @@ interface Emits {
 }
 const emit = defineEmits<Emits>()
 
-const items = computed(() => props.analyses.map((a) => {
-  let status = tt('Running')
-  let statusBg = 'bg-yellow-200'
-  if (a.completedAt !== undefined) {
-    if (a.failureMessage !== undefined) {
-      status = tt('Failed')
-      statusBg = 'bg-red-400'
-    } else {
-      status = tt('Completed')
-      statusBg = 'bg-green-200'
-    }
-  } else if (new Date().getTime() - new Date(a.createdAt).getTime() > 1000 * 60 * 10) {
-    status = tt('PotentialTimeout')
-    statusBg = 'bg-red-200'
-  }
-  return {
-    ...a,
-    status,
-    statusBg,
-  }
-}))
-const hasAnyAudits = computed(() => items.value.some((a) => a.analysisType === AnalysisType.ANALYSIS_TYPE_AUDIT))
-const hasAnyReports = computed(() => items.value.some((a) => a.analysisType === AnalysisType.ANALYSIS_TYPE_REPORT))
+const hasAnyAudits = computed(() => props.analyses.some((a) => a.analysisType === AnalysisType.ANALYSIS_TYPE_AUDIT))
+const hasAnyReports = computed(() => props.analyses.some((a) => a.analysisType === AnalysisType.ANALYSIS_TYPE_REPORT))
 
 const showPromptToRunAudit = computed(() => {
   return !hasAnyAudits.value && !hasAnyReports.value
@@ -63,7 +42,7 @@ const reportButtonClasses = computed(() => {
 <template>
   <div class="flex flex-column gap-2">
     <PVDataTable
-      :value="items"
+      :value="props.analyses"
       data-key="id"
       size="medium"
       sort-field="createdAt"
@@ -83,7 +62,6 @@ const reportButtonClasses = computed(() => {
         </template>
       </PVColumn>
       <PVColumn
-        field="status"
         :header="tt('Status')"
       >
         <template #body="slotProps">
