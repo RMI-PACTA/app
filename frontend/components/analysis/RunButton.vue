@@ -2,10 +2,10 @@
 import { type RunAnalysisReq, type Analysis, type AnalysisType } from '@/openapi/generated/pacta'
 import { useConfirm } from 'primevue/useconfirm'
 
+const { linkToAnalysis } = useMyDataURLs()
 const { require: confirm } = useConfirm()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
-const localePath = useLocalePath()
 const i18n = useI18n()
 const { t } = i18n
 
@@ -122,7 +122,7 @@ const completeBtnTo = computed(() => {
   if (!analysisId.value) {
     return ''
   }
-  return localePath(`/my-data?tab=a&analyses=${analysisId.value}`)
+  return linkToAnalysis(analysisId.value)
 })
 const completeBtnLabel = computed(() => {
   if (!analysisId.value) {

@@ -4,10 +4,10 @@ import { serializeError } from 'serialize-error'
 import { formatFileSize } from '@/lib/filesize'
 import { OptionalBoolean, type HoldingsDate } from '@/openapi/generated/pacta'
 
+const { linkToPortfolioList } = useMyDataURLs()
 const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
 const { t } = useI18n()
-const localePath = useLocalePath()
 
 const prefix = 'pages/upload'
 const tt = (key: string) => t(`${prefix}.${key}`)
@@ -449,7 +449,7 @@ const cleanUpIncompleteUploads = async () => {
           label="See Uploaded Portfolios"
           icon="pi pi-arrow-right"
           icon-pos="right"
-          :to="localePath('/my-data')"
+          :to="linkToPortfolioList()"
         />
       </div>
     </template>

@@ -3,35 +3,35 @@ import { portfolioGroupEditor } from '@/lib/editor'
 import { type Portfolio, type PortfolioGroup, type PortfolioGroupMembershipPortfolio, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
 
-const {
-  humanReadableTimeFromStandardString,
-} = useTime()
+const { linkToPortfolios } = useMyDataURLs()
+const { humanReadableTimeFromStandardString } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading }, newPortfolioGroup: { newPortfolioGroupVisible } } = useModal()
 const i18n = useI18n()
-const localePath = useLocalePath()
 const { t } = i18n
 
 interface Props {
   portfolios: Portfolio[]
   portfolioGroups: PortfolioGroup[]
   analyses: Analysis[]
-  selectedPortfolioIds: string[]
   selectedPortfolioGroupIds: string[]
-  selectedAnalysisIds: string[]
+  expandedPortfolioGroupIds: string[]
 }
 const props = defineProps<Props>()
 interface Emits {
-  (e: 'update:selectedPortfolioIds', value: string[]): void
   (e: 'update:selectedPortfolioGroupIds', value: string[]): void
-  (e: 'update:selectedAnalysisIds', value: string[]): void
+  (e: 'update:expandedPortfolioGroupIds', value: string[]): void
   (e: 'refresh'): void
 }
 const emit = defineEmits<Emits>()
 
-const selectedPortfolioGroupIDs = computed({
+const selectedPortfolioGroupIdsModel = computed({
   get: () => props.selectedPortfolioGroupIds ?? [],
   set: (value: string[]) => { emit('update:selectedPortfolioGroupIds', value) },
+})
+const expandedPortfolioGroupIdsModel = computed({
+  get: () => props.expandedPortfolioGroupIds ?? [],
+  set: (value: string[]) => { emit('update:expandedPortfolioGroupIds', value) },
 })
 
 interface EditorObject extends ReturnType<typeof portfolioGroupEditor> {
@@ -50,13 +50,33 @@ const editorObjects = computed<EditorObject[]>(() => props.portfolioGroups.map(
   }),
 ))
 
-const expandedRows = useState<EditorObject[]>(`${prefix}.expandedRows`, () => [])
 const selectedRows = computed<EditorObject[]>({
   get: () => {
-    return editorObjects.value.filter((editorObject) => selectedPortfolioGroupIDs.value.includes(editorObject.id))
+    const ids = selectedPortfolioGroupIdsModel.value
+    return editorObjects.value.filter((editorObject) => ids.includes(editorObject.id))
   },
   set: (value: EditorObject[]) => {
-    selectedPortfolioGroupIDs.value = value.map((row) => row.id)
+    const ids = value.map((row) => row.id)
+    ids.sort()
+    selectedPortfolioGroupIdsModel.value = ids
+  },
+})
+const readyToExpand = useState<boolean>(`${prefix}.readyToExpand`, () => false)
+onMounted(() => {
+  readyToExpand.value = true
+})
+const expandedRows = computed<EditorObject[]>({
+  get: () => {
+    if (!readyToExpand.value) {
+      return []
+    }
+    const ids = expandedPortfolioGroupIdsModel.value
+    return editorObjects.value.filter((editorObject) => ids.includes(editorObject.id))
+  },
+  set: (value: EditorObject[]) => {
+    const ids = value.map((row) => row.id)
+    ids.sort()
+    expandedPortfolioGroupIdsModel.value = ids
   },
 })
 
@@ -142,7 +162,7 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
         <template #body="slotProps">
           <LinkButton
             :disabled="editorObjectToIds(slotProps.data).length === 0"
-            :to="localePath(`/my-data?tab=p&pids=${ editorObjectToIds(slotProps.data).join(',')}`)"
+            :to="linkToPortfolios(editorObjectToIds(slotProps.data))"
             :label="`${editorObjectToIds(slotProps.data).length}`"
             icon="pi pi-th-large"
             class="py-1 px-2 p-button-outlined p-button-secondary"
