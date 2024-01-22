@@ -43,7 +43,7 @@ const tt = (key: string) => t(`pages/admin/initiative/new.${key}`)
   <StandardContent>
     <TitleBar :title="tt('New Initiative')" />
     <p>
-      TODO(#80) Initiative Copy Goes Here
+      {{ tt('Paragraph1' ) }}
     </p>
     <InitiativeEditor
       v-model:editorValues="editorValues"
