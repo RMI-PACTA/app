@@ -55,7 +55,7 @@ type DB interface {
 	AllInitiatives(tx db.Tx) ([]*pacta.Initiative, error)
 	CreateInitiative(tx db.Tx, i *pacta.Initiative) error
 	UpdateInitiative(tx db.Tx, id pacta.InitiativeID, mutations ...db.UpdateInitiativeFn) error
-	DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error
+	DeleteInitiative(tx db.Tx, id pacta.InitiativeID) ([]pacta.BlobURI, error)
 
 	PACTAVersion(tx db.Tx, id pacta.PACTAVersionID) (*pacta.PACTAVersion, error)
 	DefaultPACTAVersion(tx db.Tx) (*pacta.PACTAVersion, error)
@@ -108,7 +108,7 @@ type DB interface {
 	PortfolioGroups(tx db.Tx, ids []pacta.PortfolioGroupID) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error)
 	CreatePortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) (pacta.PortfolioGroupID, error)
 	UpdatePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID, mutations ...db.UpdatePortfolioGroupFn) error
-	DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error
+	DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) ([]pacta.BlobURI, error)
 	CreatePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
 	DeletePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
 

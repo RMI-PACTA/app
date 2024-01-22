@@ -147,6 +147,17 @@ func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, e
 		if err != nil {
 			return fmt.Errorf("reading portfolio: %w", err)
 		}
+		analysisIDs, err := d.AnalysesRunOnPortfolio(tx, id)
+		if err != nil {
+			return fmt.Errorf("reading portfolio analyses: %w", err)
+		}
+		for _, aID := range analysisIDs {
+			sBuris, err := d.DeleteAnalysis(tx, aID)
+			if err != nil {
+				return fmt.Errorf("deleting analysis: %w", err)
+			}
+			buris = append(buris, sBuris...)
+		}
 		err = d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting portfolio_group_memberships: %w", err)

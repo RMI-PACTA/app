@@ -113,9 +113,12 @@ func (s *Server) DeletePortfolioGroup(ctx context.Context, request api.DeletePor
 	if err := s.portfolioGroupAuthz(ctx, id, pacta.AuditLogAction_Delete); err != nil {
 		return nil, err
 	}
-	err := s.DB.DeletePortfolioGroup(s.DB.NoTxn(ctx), id)
+	buris, err := s.DB.DeletePortfolioGroup(s.DB.NoTxn(ctx), id)
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete portfolio group", zap.String("portfolio_group_id", request.Id), zap.Error(err))
+	}
+	if err := s.deleteBlobs(ctx, buris...); err != nil {
+		return nil, err
 	}
 	return api.DeletePortfolioGroup204Response{}, nil
 }

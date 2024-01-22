@@ -142,9 +142,12 @@ func (d *DB) DeleteOwner(tx db.Tx, oID pacta.OwnerID) ([]pacta.BlobURI, error) {
 			return fmt.Errorf("getting portfolio groups for owner: %w", err)
 		}
 		for _, pgroup := range pgroups {
-			err := d.DeletePortfolioGroup(tx, pgroup.ID)
+			pgBuris, err := d.DeletePortfolioGroup(tx, pgroup.ID)
 			if err != nil {
 				return fmt.Errorf("deleting portfolio group: %w", err)
+			}
+			if pgBuris != nil {
+				buris = append(buris, pgBuris...)
 			}
 		}
 		incompleteUploads, err := d.IncompleteUploadsByOwner(tx, oID)

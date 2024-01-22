@@ -117,7 +117,7 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 		CreatedAt:      time.Now(),
 	}}
 
-	err = tdb.DeletePortfolioGroup(tx, pg1.ID)
+	buris, err := tdb.DeletePortfolioGroup(tx, pg1.ID)
 	if err != nil {
 		t.Fatalf("delete portfolio group: %v", err)
 	}
@@ -127,6 +127,9 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 	if diff := cmp.Diff(expecteds, actuals, portfolioGroupCmpOpts()); diff != "" {
 		t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff([]pacta.BlobURI{}, buris); diff != "" {
+		t.Fatalf("blob uri mismatch (-want +got):\n%s", diff)
 	}
 }
 
