@@ -150,7 +150,7 @@ const wheresQP = 'w'
 const limitQP = 'l'
 const limitDefault = 100
 const cursorQP = 'c'
-const pageURLBase = '/auditlog'
+const pageURLBase = '/audit-logs'
 
 export const urlReactiveAuditLogQuery = (fromQueryReactiveWithDefault: (key: string, defaultValue: string) => WritableComputedRef<string>): WritableComputedRef<AuditLogQueryReq> => {
   const qSorts = fromQueryReactiveWithDefault(sortsQP, '')
@@ -194,7 +194,5 @@ export const createURLAuditLogQuery = (localePath: LocalePathFunction, req: Audi
   if (qCursor) {
     q.set(cursorQP, qCursor)
   }
-  const url = new URL(pageURLBase)
-  url.search = q.toString()
-  return localePath(url.toString())
+  return localePath(pageURLBase + '?' + q.toString())
 }

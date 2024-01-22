@@ -58,7 +58,15 @@
     "Save Changes": "Save Changes",
     "Refresh": "Refresh",
     "View": "View",
-    "Status": "Status"
+    "Status": "Status",
+    "Access Controls": "Access Controls",
+    "Admin Debugging Enabled": "Admin Debugging",
+    "ADEHelpText": "If enabled, this analysis will be accessible to administrators for debugging purposes. When disabled, only you, the owner of this analysis, can access it.",
+    "Shared To Public": "Sharing Status",
+    "STPHelpText": "If enabled, anyone with the link can see this analysis. If disabled, folks visiting the link for this report will not be able to see it.",
+    "Audit Logs":"Audit Logs",
+    "AuditLogsHelpText": "Audit logs are a record of who has accessed or modified this analysis, and when. This is useful for debugging, for understanding who has seen this analysis, and for establishing peace of mind that your data's security is being upheld.",
+    "View Audit Logs": "View Audit Logs"
   },
   "components/initiative/Toolbar": {
     "Edit": "Edit",
@@ -164,6 +172,18 @@
     "No Administrator Access Enabled": "No Administrator Access Enabled",
     "ModalHeading": "Administrator Debugging Access",
     "ModalSubheading": "Exercise caution - this changes who can see the data that you upload",
+    "Paragraph1": "You're enabling administrator access to this resource. If you continue, site administrators will be able to access the content of this data.",
+    "Paragraph2": "Enabling this will not grant access to this data to anyone besides site administrators. Additionally, you will be able to see who accessed this data, and when, via the audit logs for this resource.",
+    "Ack": "I Understand",
+    "No Ack": "Nevermind"
+  },
+  "components/SharedToPublicToggleButton": {
+    "Shared to Public": "Shared to Public - anyone with the link can see this analysis",
+    "Not Shared": "Not Shared - only you can see this analysis",
+    "ModalHeading": "Sharing Status Change Requested",
+    "ModalSubheading": "Exercise caution - this changes who can see this report",
+    "Paragraph1": "This report is currently only visible to it's owner (you). If you set the visibility to public, then anyone with the link will be able to access it. You can change this setting at any time.",
+    "Paragraph2": "Note this is distinct from enabling administrator debugging access - if the report is not shared, but administrator debugging access is enabled, then administrators will be able to see the report, but it will not be visible to the public.",
     "Ack": "I Understand",
     "No Ack": "Nevermind"
   },

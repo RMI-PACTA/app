@@ -12,7 +12,7 @@ interface Emits {
 }
 const emit = defineEmits<Emits>()
 
-const prefix = 'components/AdminDebugEnabledToggleButton'
+const prefix = 'components/SharedToPublicToggleButton'
 const tt = (s: string) => t(`${prefix}.${s}`)
 const everAcked = computedBooleanLocalStorageValue(`${prefix}.everAcked`, false)
 
@@ -37,15 +37,15 @@ const noAck = () => {
   model.value = false
 }
 
-const visible = newModalVisibilityState('AdminDebugEnabledWarning')
+const visible = newModalVisibilityState('SharedToPublicWarning')
 </script>
 
 <template>
   <div>
     <ExplicitInputSwitch
       v-model:value="model"
-      :on-label="tt('Administrator Debugging Access Enabled')"
-      :off-label="tt('No Administrator Access Enabled')"
+      :on-label="tt('Shared to Public')"
+      :off-label="tt('Not Shared')"
     />
     <StandardModal
       v-model:visible="visible"
@@ -53,14 +53,12 @@ const visible = newModalVisibilityState('AdminDebugEnabledWarning')
       :sub-header="tt('ModalSubheading')"
     >
       <p>
-        {{ tt('Paragraph1' ) }}
+        {{ tt('Paragraph1') }}
       </p>
       <p>
-        {{ tt('Paragraph1' ) }}
-        You're enabling administrator access to this resource. If you do so, site administrators will be able to
-        access the content of this data.
+        {{ tt('Paragraph2') }}
       </p>
-      <div class="flex gap-2 pt-3 justify-content-between align-items-center flex-wrap">
+      <div class="flex pt-3 gap-2 justify-content-between align-items-center flex-wrap">
         <PVButton
           :label="tt('No Ack')"
           icon="pi pi-arrow-left"

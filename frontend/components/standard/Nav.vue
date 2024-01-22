@@ -124,7 +124,7 @@ const userMenuItems = computed(() => {
         <LinkButton
           v-if="mi.to"
           :key="index"
-          :class="mi.to === router.currentRoute.value.fullPath ? 'border-noround sm:border-round' : 'p-button-text'"
+          :class="mi.to === router.currentRoute.value.path ? 'border-noround sm:border-round' : 'p-button-text'"
           :to="mi.to"
           :external="mi.external"
           :label="`${mi.label}`"
@@ -138,7 +138,7 @@ const userMenuItems = computed(() => {
         />
       </template>
       <PVButton
-        v-show="maybeMe !== undefined"
+        v-if="isAuthenticated"
         v-tooltip.left="tt('Settings')"
         icon="pi pi-user"
         class="hidden sm:flex ml-2 flex-shrink-0"
