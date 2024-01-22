@@ -171,10 +171,9 @@ func userQueryWheresToSQL(qs []*db.UserQueryWhere, args *queryArgs) string {
 		if q.NameOrEmailLike != "" {
 			wheres = append(wheres,
 				fmt.Sprintf(
-					`name ILIKE ('%[1]s' || %[2]s || '%[1]s')
+					`name ILIKE ('%%' || %[1]s || '%%')
 					OR
-					canonical_email ILIKE ('%[1]s' || %[2]s || '%[1]s')`,
-					"%",
+					canonical_email ILIKE ('%%' || %[1]s || '%%')`,
 					args.add(q.NameOrEmailLike)))
 		}
 	}
