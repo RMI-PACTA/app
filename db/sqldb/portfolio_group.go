@@ -108,9 +108,21 @@ func (d *DB) UpdatePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID, mutations
 	return nil
 }
 
-func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error {
-	return d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
-		err := d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_group_id = $1;`, id)
+func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) ([]pacta.BlobURI, error) {
+	buris := []pacta.BlobURI{}
+	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		analysisIDs, err := d.AnalysesRunOnPortfolioGroup(tx, id)
+		if err != nil {
+			return fmt.Errorf("reading portfolio_group analyses: %w", err)
+		}
+		for _, aID := range analysisIDs {
+			sBuris, err := d.DeleteAnalysis(tx, aID)
+			if err != nil {
+				return fmt.Errorf("deleting analysis: %w", err)
+			}
+			buris = append(buris, sBuris...)
+		}
+		err = d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_group_id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting portfolio_group_memberships: %w", err)
 		}
@@ -120,6 +132,10 @@ func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("deleting portfolio_group txn: %w", err)
+	}
+	return buris, nil
 }
 
 func rowToPortfolioGroup(row rowScanner) (*pacta.PortfolioGroup, error) {

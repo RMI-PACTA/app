@@ -114,11 +114,25 @@ func (d *DB) UpdateInitiative(tx db.Tx, id pacta.InitiativeID, mutations ...db.U
 	return nil
 }
 
-func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error {
+func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) ([]pacta.BlobURI, error) {
+	buris := []pacta.BlobURI{}
 	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
-		// TODO(grady) add owner deletions here - where the initiative is the owner of the asset/blob
-		// TODO(grady) do snapshot deletions here
-		err := d.exec(tx, `DELETE FROM initiative_invitation WHERE initiative_id = $1;`, id)
+		owner, err := d.GetOrCreateOwnerForInitiative(tx, id)
+		if err != nil {
+			return fmt.Errorf("getting owner for initiative: %w", err)
+		}
+		analysisIDs, err := d.AnalysesRunOnInitiative(tx, id)
+		if err != nil {
+			return fmt.Errorf("reading initative analyses: %w", err)
+		}
+		for _, aID := range analysisIDs {
+			aBuris, err := d.DeleteAnalysis(tx, aID)
+			if err != nil {
+				return fmt.Errorf("deleting analysis: %w", err)
+			}
+			buris = append(buris, aBuris...)
+		}
+		err = d.exec(tx, `DELETE FROM initiative_invitation WHERE initiative_id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting initiative_invitations: %w", err)
 		}
@@ -130,6 +144,11 @@ func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error {
 		if err != nil {
 			return fmt.Errorf("deleting portfolio_initiative_memberships: %w", err)
 		}
+		oBuris, err := d.DeleteOwner(tx, owner)
+		if err != nil {
+			return fmt.Errorf("deleting owner: %w", err)
+		}
+		buris = append(buris, oBuris...)
 		err = d.exec(tx, `DELETE FROM initiative WHERE id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting initiative: %w", err)
@@ -137,9 +156,9 @@ func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error {
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("performing initiative deletion: %w", err)
+		return nil, fmt.Errorf("performing initiative deletion: %w", err)
 	}
-	return nil
+	return buris, nil
 }
 
 func rowToInitiative(row rowScanner) (*pacta.Initiative, error) {

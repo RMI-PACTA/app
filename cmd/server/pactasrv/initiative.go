@@ -100,9 +100,12 @@ func (s *Server) DeleteInitiative(ctx context.Context, request api.DeleteInitiat
 	if err := s.initiativeDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Delete); err != nil {
 		return nil, err
 	}
-	err := s.DB.DeleteInitiative(s.DB.NoTxn(ctx), id)
+	buris, err := s.DB.DeleteInitiative(s.DB.NoTxn(ctx), id)
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete initiative", zap.Error(err))
+	}
+	if err := s.deleteBlobs(ctx, buris...); err != nil {
+		return nil, err
 	}
 	return api.DeleteInitiative204Response{}, nil
 }
