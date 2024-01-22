@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type MenuItem } from 'primevue/menuitem'
-import type * as PrimeVueMenu from 'primevue/menu'
 
 const { t } = useI18n()
 const localePath = useLocalePath()

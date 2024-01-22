@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type AuditLogQuerySort, type AuditLogQueryWhere, type AuditLogQueryReq, AuditLogAction, AuditLogTargetType, AuditLogQuerySortBy, type AuditLog } from '@/openapi/generated/pacta'
 import { urlReactiveAuditLogQuery } from '@/lib/auditlogquery'
-import { type DataTableSortMeta, type DataTableFilterMeta } from 'primevue/datatable'
+import { type DataTableSortMeta } from 'primevue/datatable'
 import { FilterMatchMode } from 'primevue/api'
 
 const prefix = 'pages/audit-logs'
@@ -196,7 +196,7 @@ const allColumns: Column[] = [
     customBody: true,
     filterType: FilterType.EnumBased,
     enumValues: Object.values(AuditLogAction).map((a: AuditLogAction) => ({
-      label: `${a}`.replace('AuditLogAction', ''),
+      label: a.replace('AuditLogAction', ''),
       value: a,
     })).sort((a, b) => a.label.localeCompare(b.label)),
   },
@@ -231,7 +231,7 @@ const allColumns: Column[] = [
     sortBy: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_PRIMARY_TARGET_TYPE,
     filterType: FilterType.EnumBased,
     enumValues: Object.values(AuditLogTargetType).map((a: AuditLogTargetType) => ({
-      label: `${a}`.replace('AuditLogTargetType', ''),
+      label: a.replace('AuditLogTargetType', ''),
       value: a,
     })).sort((a, b) => a.label.localeCompare(b.label)),
   },
@@ -439,9 +439,14 @@ const getTargetLink = (t: AuditLogTargetType, id: string): string => {
   return '#'
 }
 
-const columnControlOverlay = useState<{ toggle: (e: Event) => void }>(`${prefix}.columnControlOverlay`)
+const columnControlOverlay = ref<{ toggle: (e: Event) => void }>()
 const toggleColumnControl = (e: Event) => {
-  columnControlOverlay.value.toggle(e)
+  const c = columnControlOverlay.value
+  if (c) {
+    c.toggle(e)
+  } else {
+    console.warn('columnControlOverlay is not available')
+  }
 }
 
 const defaultAuditLogQuery = (): AuditLogQueryReq => {
