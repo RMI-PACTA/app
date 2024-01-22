@@ -42,6 +42,9 @@ type DB interface {
 	CreateBlob(tx db.Tx, b *pacta.Blob) (pacta.BlobID, error)
 	CreatePortfolio(tx db.Tx, p *pacta.Portfolio) (pacta.PortfolioID, error)
 
+	CreatePortfolioGroup(tx db.Tx, pg *pacta.PortfolioGroup) (pacta.PortfolioGroupID, error)
+	CreatePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
+
 	IncompleteUploads(tx db.Tx, ids []pacta.IncompleteUploadID) (map[pacta.IncompleteUploadID]*pacta.IncompleteUpload, error)
 	UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error
 
@@ -335,6 +338,20 @@ func (s *Server) handleParsedPortfolio(id string, resp *task.ParsePortfolioRespo
 				return fmt.Errorf("creating portfolio %d: %w", i, err)
 			}
 			portfolioIDs = append(portfolioIDs, portfolioID)
+		}
+		if len(portfolioIDs) > 1 {
+			pgID, err := s.db.CreatePortfolioGroup(tx, &pacta.PortfolioGroup{
+				Owner: &pacta.Owner{ID: ownerID},
+				Name:  "Upload on " + now.Format("2006-01-02"),
+			})
+			if err != nil {
+				return fmt.Errorf("creating portfolio_group: %w", err)
+			}
+			for _, pID := range portfolioIDs {
+				if err := s.db.CreatePortfolioGroupMembership(tx, pgID, pID); err != nil {
+					return fmt.Errorf("creating portfolio_group_membership: %w", err)
+				}
+			}
 		}
 		for iuid, iu := range incompleteUploads {
 			err := s.db.UpdateIncompleteUpload(
