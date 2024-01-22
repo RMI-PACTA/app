@@ -117,6 +117,7 @@ type DB interface {
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
 	DeleteUser(tx db.Tx, id pacta.UserID) ([]pacta.BlobURI, error)
+	QueryUsers(tx db.Tx, q *db.UserQuery) ([]*pacta.User, *db.PageInfo, error)
 
 	CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error)
 	CreateAuditLogs(tx db.Tx, as []*pacta.AuditLog) error

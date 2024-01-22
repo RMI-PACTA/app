@@ -96,6 +96,10 @@ func portfolioInitiativeMembershipToOAPIInitiative(in *pacta.PortfolioInitiative
 	return out, nil
 }
 
+func UsersToOAPI(users []*pacta.User) ([]*api.User, error) {
+	return convAll(users, UserToOAPI)
+}
+
 func UserToOAPI(user *pacta.User) (*api.User, error) {
 	if user == nil {
 		return nil, oapierr.Internal("userToOAPI: can't convert nil pointer")

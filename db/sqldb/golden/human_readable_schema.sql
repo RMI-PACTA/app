@@ -206,6 +206,8 @@ ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_authn_mechanism_authn_id_k
 ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_canonical_email_key UNIQUE (canonical_email);
 ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_entered_email_key UNIQUE (entered_email);
 ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_pkey PRIMARY KEY (id);
+CREATE INDEX user_canonical_email_gin_index ON pacta_user USING gin (canonical_email gin_trgm_ops);
+CREATE INDEX user_name_gin_index ON pacta_user USING gin (name gin_trgm_ops);
 
 
 CREATE TABLE pacta_version (

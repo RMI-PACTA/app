@@ -152,6 +152,34 @@ func (s *Server) UserAuthenticationFollowup(ctx context.Context, _request api.Us
 	return api.UserAuthenticationFollowup200JSONResponse(*result), nil
 }
 
+// (GET /users)
+func (s *Server) UserQuery(ctx context.Context, request api.UserQueryRequestObject) (api.UserQueryResponseObject, error) {
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !actorInfo.IsAdmin && !actorInfo.IsSuperAdmin {
+		return nil, oapierr.Unauthorized("only admins can list users")
+	}
+	q, err := conv.UserQueryFromOAPI(request.Body)
+	if err != nil {
+		return nil, err
+	}
+	us, pi, err := s.DB.QueryUsers(s.DB.NoTxn(ctx), q)
+	if err != nil {
+		return nil, oapierr.Internal("failed to query users", zap.Error(err))
+	}
+	users, err := dereference(conv.UsersToOAPI(us))
+	if err != nil {
+		return nil, err
+	}
+	return api.UserQuery200JSONResponse{
+		Users:       users,
+		Cursor:      string(pi.Cursor),
+		HasNextPage: pi.HasNextPage,
+	}, nil
+}
+
 func (s *Server) userDoAuthzAndAuditLog(ctx context.Context, targetUserID pacta.UserID, action pacta.AuditLogAction) error {
 	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {

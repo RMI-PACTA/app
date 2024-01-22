@@ -79,3 +79,25 @@ type AuditLogQuery struct {
 	Wheres []*AuditLogQueryWhere
 	Sorts  []*AuditLogQuerySort
 }
+
+type UserQuerySortBy string
+
+const (
+	UserQuerySortBy_CreatedAt UserQuerySortBy = "created_at"
+)
+
+type UserQuerySort struct {
+	By        UserQuerySortBy
+	Ascending bool
+}
+
+type UserQueryWhere struct {
+	NameOrEmailLike string
+}
+
+type UserQuery struct {
+	Cursor Cursor
+	Limit  int
+	Wheres []*UserQueryWhere
+	Sorts  []*UserQuerySort
+}
