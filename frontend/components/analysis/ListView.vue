@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { analysisEditor } from '@/lib/editor'
-import { type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
+import { AuditLogQuerySortBy, type Portfolio, type AnalysisArtifact, type AnalysisArtifactChanges, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
+import { createURLAuditLogQuery } from '@/lib/auditlogquery'
 
 const { humanReadableTimeFromStandardString } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const i18n = useI18n()
+const localePath = useLocalePath()
 const { t } = i18n
 
 interface Props {
@@ -36,6 +38,8 @@ const selectedAnalysisIDs = computed({
 
 interface EditorObject extends ReturnType<typeof analysisEditor> {
   id: string
+  artifactsADEState: boolean
+  artifactsSTPState: boolean
 }
 
 const prefix = 'components/analysis/ListView'
@@ -53,7 +57,12 @@ const selectedRows = computed<EditorObject[]>({
   },
 })
 
-const editorObjects = computed<EditorObject[]>(() => props.analyses.map((item) => ({ ...analysisEditor(item, i18n), id: item.id })))
+const editorObjects = computed<EditorObject[]>(() => props.analyses.map((item: Analysis) => ({
+  ...analysisEditor(item, i18n),
+  id: item.id,
+  artifactsADEState: item.artifacts.every(a => a.adminDebugEnabled),
+  artifactsSTPState: item.artifacts.every(a => a.sharedToPublic),
+})))
 
 const selectedAnalyses = computed<Analysis[]>(() => selectedRows.value.map((row) => row.currentValue.value))
 
@@ -66,6 +75,32 @@ const saveChanges = (id: string) => {
   )
 }
 
+const auditLogURL = (id: string) => {
+  return createURLAuditLogQuery(
+    localePath,
+    {
+      sorts: [{ by: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_CREATED_AT, ascending: false }],
+      wheres: [{ inTargetId: [id] }],
+    },
+  )
+}
+
+const changeAllArtifacts = (id: string, changes: AnalysisArtifactChanges) => {
+  const artifacts: AnalysisArtifact[] = editorObjects.value.find((eo) => eo.id === id)?.currentValue.value.artifacts ?? []
+  void withLoading(async () => {
+    for (const artifact of artifacts) {
+      await pactaClient.updateAnalysisArtifact(artifact.id, changes)
+    }
+    refresh()
+  }, `${prefix}.changeAllArtifacts`)
+}
+
+const setAllADEOnArtifacts = (id: string, value: boolean) => {
+  changeAllArtifacts(id, { adminDebugEnabled: value })
+}
+const setAllSTPOnArtifacts = (id: string, value: boolean) => {
+  changeAllArtifacts(id, { sharedToPublic: value })
+}
 const deleteAnalysis = (id: string) => withLoading(
   () => pactaClient.deleteAnalysis(id),
   `${prefix}.deleteAnalysis`,
@@ -174,6 +209,39 @@ const deleteSpecificAnalysis = async (id: string) => {
               />
             </div>
           </div>
+          <h2 class="mt-5">
+            {{ tt('Access Controls') }}
+          </h2>
+          <FormField
+            :label="tt('Admin Debugging Enabled')"
+            :help-text="tt('ADEHelpText')"
+          >
+            <AdminDebugEnabledToggleButton
+              :value="slotProps.data.artifactsADEState"
+              @update:value="(newValue: boolean) => setAllADEOnArtifacts(slotProps.data.id, newValue)"
+            />
+          </FormField>
+          <FormField
+            :label="tt('Shared To Public')"
+            :help-text="tt('STPHelpText')"
+          >
+            <SharedToPublicToggleButton
+              :value="slotProps.data.artifactsSTPState"
+              @update:value="(newValue: boolean) => setAllSTPOnArtifacts(slotProps.data.id, newValue)"
+            />
+          </FormField>
+          <FormField
+            :label="tt('Audit Logs')"
+            :help-text="tt('AuditLogsHelpText')"
+          >
+            <LinkButton
+              :label="tt('View Audit Logs')"
+              :to="auditLogURL(slotProps.data.id)"
+              icon="pi pi-arrow-right"
+              class="p-button-outlined align-self-start"
+              icon-pos="right"
+            />
+          </formfield>
         </div>
       </template>
     </PVDataTable>

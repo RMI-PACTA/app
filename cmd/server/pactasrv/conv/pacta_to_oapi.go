@@ -395,7 +395,7 @@ func AnalysisArtifactToOAPI(aa *pacta.AnalysisArtifact) (*api.AnalysisArtifact, 
 	return &api.AnalysisArtifact{
 		Id:                string(aa.ID),
 		AdminDebugEnabled: aa.AdminDebugEnabled,
-		SharedToPublic:    aa.AdminDebugEnabled,
+		SharedToPublic:    aa.SharedToPublic,
 		Blob:              *blob,
 	}, nil
 }

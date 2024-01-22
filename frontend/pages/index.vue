@@ -34,15 +34,8 @@ const tt = (s: string) => t(`pages/index.${s}`)
       >
         <PVImage
           preview
+          class="img-max-w-full"
           src="/img/how-it-works.jpg"
-          :pt="{
-            root: {
-              'class': 'max-w-full',
-            },
-            image : {
-              'class': 'max-w-full',
-            }
-          }"
         />
       </div>
     </div>
@@ -98,3 +91,13 @@ const tt = (s: string) => t(`pages/index.${s}`)
     </div>
   </StandardContent>
 </template>
+
+<style lang="scss">
+.img-max-w-full {
+  max-width: 100%;
+
+  img {
+    max-width: 100%;
+  }
+}
+</style>
