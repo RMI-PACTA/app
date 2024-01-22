@@ -127,6 +127,7 @@ const reportButtonClasses = computed(() => {
         :portfolio-id="props.portfolioId"
         :portfolio-group-id="props.portfolioGroupId"
         :initiative-id="props.initiativeId"
+        :warn-for-duplicate="hasAnyAudits"
         class="p-button-sm"
         @started="() => emit('refresh')"
       />
@@ -137,6 +138,7 @@ const reportButtonClasses = computed(() => {
         :portfolio-id="props.portfolioId"
         :portfolio-group-id="props.portfolioGroupId"
         :initiative-id="props.initiativeId"
+        :warn-for-duplicate="hasAnyReports"
         class="p-button-sm"
         @started="() => emit('refresh')"
       />

@@ -103,12 +103,12 @@ func AnalysisTypeFromOAPI(at api.AnalysisType) (pacta.AnalysisType, error) {
 	return "", oapierr.BadRequest("analysisTypeFromOAPI: unknown analysis type", zap.String("analysis_type", string(at)))
 }
 
-func HoldingsDateFromOAPI(hd *api.HoldingsDate) (*pacta.HoldingsDate, error) {
-	if hd == nil {
+func HoldingsDateFromOAPI(hd api.HoldingsDate) (*pacta.HoldingsDate, error) {
+	if hd.Time == nil {
 		return nil, nil
 	}
 	return &pacta.HoldingsDate{
-		Time: hd.Time,
+		Time: *hd.Time,
 	}, nil
 }
 

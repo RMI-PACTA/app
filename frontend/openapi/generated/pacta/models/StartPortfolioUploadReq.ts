@@ -9,7 +9,10 @@ import type { StartPortfolioUploadReqItem } from './StartPortfolioUploadReqItem'
 
 export type StartPortfolioUploadReq = {
     items: Array<StartPortfolioUploadReqItem>;
-    propertyHoldingsDate?: HoldingsDate;
+    /**
+     * The holdings date of the portfolio, if set
+     */
+    propertyHoldingsDate: HoldingsDate;
     /**
      * If set, this portfolio represents ESG data
      */
