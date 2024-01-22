@@ -20,7 +20,7 @@ export type IncompleteUpload = {
      * Description of the upload
      */
     description: string;
-    propertyHoldingsDate?: HoldingsDate;
+    propertyHoldingsDate: HoldingsDate;
     /**
      * If set, this portfolio represents ESG data
      */

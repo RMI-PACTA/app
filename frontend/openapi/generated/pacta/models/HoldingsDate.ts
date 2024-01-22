@@ -7,6 +7,6 @@ export type HoldingsDate = {
     /**
      * The time at which the holdings are represented at
      */
-    time: string;
+    time?: string;
 };
 

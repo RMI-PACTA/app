@@ -13,8 +13,8 @@ interface Emits {
 const emit = defineEmits<Emits>()
 
 const model = computed<Date | undefined>({
-  get: () => props.value ? new Date(props.value.time) : undefined,
-  set: (value: Date | undefined) => { emit('update:value', value ? ({ time: value.toISOString() }) : undefined) },
+  get: () => props.value?.time ? new Date(props.value.time) : undefined,
+  set: (value: Date | undefined) => { emit('update:value', value ? ({ time: value.toISOString() }) : ({ time: undefined })) },
 })
 </script>
 

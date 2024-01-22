@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type RunAnalysisReq, type Analysis, type AnalysisType } from '@/openapi/generated/pacta'
+import { useConfirm } from 'primevue/useconfirm'
 
+const { require: confirm } = useConfirm()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const localePath = useLocalePath()
@@ -14,6 +16,7 @@ const tt = (key: string) => t(`${prefix}.${key}`)
 interface Props {
   analysisType: AnalysisType
   name: string
+  warnForDuplicate?: boolean
   portfolioGroupId?: string
   portfolioId?: string
   initiativeId?: string
@@ -54,14 +57,35 @@ const request = computed<RunAnalysisReq>(() => {
     throw new Error('No portfolio, portfolio group or initiative ID provided')
   }
 })
-const runAnalysis = () => {
+
+const startRun = () => {
   emit('started')
-  return withLoading(
+  clicked.value = true
+  void withLoading(
     () => pactaClient.runAnalysis(request.value)
       .then((resp) => { analysisId.value = resp.analysisId })
       .then(() => { void refreshAnalysisState() }),
     `${prefix}.runAnalysis`,
   )
+}
+const runAnalysis = () => {
+  if (!props.warnForDuplicate) {
+    startRun()
+    return
+  }
+  confirm({
+    header: tt('ConfirmationHeader'),
+    message: tt('ConfirmationMessage'),
+    icon: 'pi pi-copy',
+    position: 'center',
+    blockScroll: true,
+    reject: () => { clicked.value = false },
+    rejectLabel: tt('Cancel Run'),
+    rejectIcon: 'pi pi-times',
+    acceptLabel: tt('Run Anyway'),
+    accept: startRun,
+    acceptIcon: 'pi pi-check',
+  })
 }
 const refreshAnalysisState = async () => {
   const aid = analysisId.value

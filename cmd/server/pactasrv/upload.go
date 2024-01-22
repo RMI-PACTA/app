@@ -26,11 +26,9 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 	}
 	owner := &pacta.Owner{ID: actorInfo.OwnerID}
 	properties := pacta.PortfolioProperties{}
-	if request.Body.PropertyHoldingsDate != nil {
-		properties.HoldingsDate, err = conv.HoldingsDateFromOAPI(request.Body.PropertyHoldingsDate)
-		if err != nil {
-			return nil, err
-		}
+	properties.HoldingsDate, err = conv.HoldingsDateFromOAPI(request.Body.PropertyHoldingsDate)
+	if err != nil {
+		return nil, err
 	}
 	properties.ESG = conv.OptionalBoolFromOAPI(request.Body.PropertyESG)
 	properties.External = conv.OptionalBoolFromOAPI(request.Body.PropertyExternal)

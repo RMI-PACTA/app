@@ -1508,6 +1508,7 @@ components:
       type: object
       required:
         - items
+        - propertyHoldingsDate
         - propertyESG
         - propertyExternal
         - propertyEngagementStrategy
@@ -1517,6 +1518,7 @@ components:
           items:
             $ref: '#/components/schemas/StartPortfolioUploadReqItem'
         propertyHoldingsDate:
+          description: The holdings date of the portfolio, if set
           $ref: '#/components/schemas/HoldingsDate'
         propertyESG:
           description: If set, this portfolio represents ESG data
@@ -1626,8 +1628,6 @@ components:
           description: The time at which the signed URL will expire. 
     HoldingsDate:
       type: object
-      required:
-        - time
       properties:
         time: 
           type: string 
@@ -1641,6 +1641,7 @@ components:
         - description
         - createdAt
         - adminDebugEnabled
+        - propertyHoldingsDate
         - propertyESG
         - propertyExternal
         - propertyEngagementStrategy
@@ -1708,6 +1709,7 @@ components:
         - createdAt
         - adminDebugEnabled
         - numberOfRows
+        - propertyHoldingsDate
         - propertyESG
         - propertyExternal
         - propertyEngagementStrategy
