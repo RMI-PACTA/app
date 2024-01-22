@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type RunAnalysisReq, type Analysis, type AnalysisType } from '@/openapi/generated/pacta'
+import { linkToAnalysis } from '@/lib/mydata'
 
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
@@ -98,7 +99,7 @@ const completeBtnTo = computed(() => {
   if (!analysisId.value) {
     return ''
   }
-  return localePath(`/my-data?tab=a&analyses=${analysisId.value}`)
+  return linkToAnalysis(localePath, analysisId.value)
 })
 const completeBtnLabel = computed(() => {
   if (!analysisId.value) {

@@ -2,6 +2,7 @@
 import { portfolioEditor } from '@/lib/editor'
 import { type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
+import { linkToPortfolioGroup } from '@/lib/mydata'
 
 const {
   humanReadableTimeFromStandardString,
@@ -18,23 +19,25 @@ interface Props {
   initiatives: Initiative[]
   analyses: Analysis[]
   selectedPortfolioIds: string[]
-  selectedPortfolioGroupIds: string[]
-  selectedAnalysisIds: string[]
+  expandedPortfolioIds: string[]
 }
 const props = defineProps<Props>()
 interface Emits {
   (e: 'update:selectedPortfolioIds', value: string[]): void
-  (e: 'update:selectedPortfolioGroupIds', value: string[]): void
-  (e: 'update:selectedAnalysisIds', value: string[]): void
+  (e: 'update:expandedPortfolioIds', value: string[]): void
   (e: 'refresh'): void
 }
 const emit = defineEmits<Emits>()
 
 const refresh = () => { emit('refresh') }
 
-const selectedPortfolioIDs = computed({
+const selectedPortfolioIdsModel = computed({
   get: () => props.selectedPortfolioIds ?? [],
   set: (value: string[]) => { emit('update:selectedPortfolioIds', value) },
+})
+const expandedPortfolioIdsModel = computed({
+  get: () => props.expandedPortfolioIds ?? [],
+  set: (value: string[]) => { emit('update:expandedPortfolioIds', value) },
 })
 
 interface EditorObject extends ReturnType<typeof portfolioEditor> {
@@ -44,16 +47,36 @@ interface EditorObject extends ReturnType<typeof portfolioEditor> {
 
 const prefix = 'components/portfolio/ListView'
 const tt = (s: string) => t(`${prefix}.${s}`)
-const expandedRows = useState<EditorObject[]>(`${prefix}.expandedRows`, () => [])
+
 const selectedRows = computed<EditorObject[]>({
   get: () => {
-    const ids = selectedPortfolioIDs.value
+    const ids = selectedPortfolioIdsModel.value
     return editorObjects.value.filter((editorObject) => ids.includes(editorObject.id))
   },
   set: (value: EditorObject[]) => {
     const ids = value.map((row) => row.id)
     ids.sort()
-    selectedPortfolioIDs.value = ids
+    selectedPortfolioIdsModel.value = ids
+  },
+})
+const readyToExpand = useState<boolean>(`${prefix}.readyToExpand`, () => false)
+onMounted(() => {
+  readyToExpand.value = true
+})
+const expandedRows = computed<EditorObject[]>({
+  get: () => {
+    if (!readyToExpand.value) {
+      return []
+    }
+    const ids = expandedPortfolioIdsModel.value
+    const result = editorObjects.value.filter((editorObject) => ids.includes(editorObject.id))
+    console.log('expandedRows = ', result.length)
+    return result
+  },
+  set: (value: EditorObject[]) => {
+    const ids = value.map((row) => row.id)
+    ids.sort()
+    expandedPortfolioIdsModel.value = ids
   },
 })
 
@@ -85,6 +108,10 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
 <template>
   <div class="flex flex-column gap-3">
     <div class="flex gap-2 flex-wrap">
+      <StandardDebug
+        :value="props.expandedPortfolioIds"
+        label="Expanded Portfolio IDs"
+      />
       <PVButton
         icon="pi pi-refresh"
         class="p-button-outlined p-button-secondary p-button-sm"
@@ -155,7 +182,7 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
                 class="p-button-outlined p-button-xs"
                 icon="pi pi-table"
                 :label="membership.portfolioGroup.name"
-                :to="localePath(`/my-data?tab=pg&pgids=${membership.portfolioGroup.id}`)"
+                :to="linkToPortfolioGroup(localePath, membership.portfolioGroup.id)"
               />
             </div>
             <div

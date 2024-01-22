@@ -3,6 +3,7 @@ import { type FileUploadUploaderEvent } from 'primevue/fileupload'
 import { serializeError } from 'serialize-error'
 import { formatFileSize } from '@/lib/filesize'
 import { OptionalBoolean, type HoldingsDate } from '@/openapi/generated/pacta'
+import { linkToPortfolioList } from '@/lib/mydata'
 
 const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
@@ -449,7 +450,7 @@ const cleanUpIncompleteUploads = async () => {
           label="See Uploaded Portfolios"
           icon="pi pi-arrow-right"
           icon-pos="right"
-          :to="localePath('/my-data')"
+          :to="linkToPortfolioList(localePath)"
         />
       </div>
     </template>

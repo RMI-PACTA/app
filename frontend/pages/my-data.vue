@@ -1,4 +1,16 @@
 <script setup lang="ts">
+import { type WritableComputedRef } from 'vue'
+import {
+  Tab,
+  QueryParamTab,
+  QueryParamSelectedPortfolioIds,
+  QueryParamExpandedPortfolioIds,
+  QueryParamSelectedPortfolioGroupIds,
+  QueryParamExpandedPortfolioGroupIds,
+  QueryParamSelectedAnalysisIds,
+  QueryParamExpandedAnalysisIds,
+} from '@/lib/mydata'
+
 const prefix = 'pages/my-data'
 
 const { fromQueryReactiveWithDefault } = useURLParams()
@@ -8,10 +20,17 @@ const { loading: { withLoading } } = useModal()
 
 const tt = (s: string) => t(`${prefix}.${s}`)
 
-const selectedPortfolioIdsQP = fromQueryReactiveWithDefault('pids', '')
-const selectedPortfolioGroupIdsQP = fromQueryReactiveWithDefault('pgids', '')
-const selectedAnalysisIdsQP = fromQueryReactiveWithDefault('analyses', '')
-const tabQP = fromQueryReactiveWithDefault('tab', 'p')
+const joinedWithCommas = (r: WritableComputedRef<string>): WritableComputedRef<string[]> => computed({
+  get: () => r.value.split(','),
+  set: (v: string[]) => { r.value = v.join(',') },
+})
+const selectedPortfolioIds = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamSelectedPortfolioIds, ''))
+const expandedPortfolioIds = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamExpandedPortfolioIds, ''))
+const selectedPortfolioGroupIds = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamSelectedPortfolioGroupIds, ''))
+const expandedPortfolioGroupIds = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamExpandedPortfolioGroupIds, ''))
+const selectedAnalysisIds = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamSelectedAnalysisIds, ''))
+const expandedAnalysisIds = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamExpandedAnalysisIds, ''))
+const tabQP = fromQueryReactiveWithDefault(QueryParamTab, 'p')
 
 const [
   { data: incompleteUploadsData, refresh: refreshIncompleteUploadsApi },
@@ -49,52 +68,31 @@ const refreshAll = () => Promise.all([
   refreshInitiatives(),
 ])
 
-const selectedPortfolioIds = computed<string[]>({
-  get: () => selectedPortfolioIdsQP.value.split(','),
-  set: (v: string[]) => { selectedPortfolioIdsQP.value = v.join(',') },
-})
-const selectedPortfolioGroupIds = computed<string[]>({
-  get: () => selectedPortfolioGroupIdsQP.value.split(','),
-  set: (v: string[]) => { selectedPortfolioGroupIdsQP.value = v.join(',') },
-})
-const selectedAnalysisIds = computed<string[]>({
-  get: () => selectedAnalysisIdsQP.value.split(','),
-  set: (v: string[]) => { selectedAnalysisIdsQP.value = v.join(',') },
-})
-interface TabToIndexMap {
-  iu: number
-  p: number
-  pg: number
-  a: number
-}
+type TabToIndexMap = Record<Tab, number>
 const tabToIndexMap = computed(() => {
   const result: TabToIndexMap = {
-    iu: -1,
-    p: -1,
-    pg: -1,
-    a: -1,
+    [Tab.Portfolio]: -1,
+    [Tab.PortfolioGroup]: -1,
+    [Tab.IncompleteUpload]: -1,
+    [Tab.Analysis]: -1,
   }
   let idx = 0
   if (incompleteUploadsData.value.items.length > 0) {
-    result.iu = idx
+    result[Tab.IncompleteUpload] = idx
     idx++
-  } else {
-    result.iu = -1
   }
-  result.p = idx++
-  result.pg = idx++
+  result[Tab.Portfolio] = idx++
+  result[Tab.PortfolioGroup] = idx++
   if (analysesData.value.items.length > 0) {
-    result.a = idx
+    result[Tab.Analysis] = idx
     idx++
-  } else {
-    result.a = -1
   }
   return result
 })
 const activeIndex = computed<number>({
   get: () => {
-    const tab = tabQP.value as keyof TabToIndexMap
-    const result = tabToIndexMap.value[tab]
+    const tab = tabQP.value
+    const result = tabToIndexMap.value[tab as Tab]
     if (result === undefined) {
       console.error(`Unknown tab ${tab}`)
       return 0
@@ -149,9 +147,8 @@ const activeIndex = computed<number>({
         </template>
         <PortfolioListView
           v-if="portfolioData && portfolioGroupData && initiativeData"
-          v-model:selected-portfolio-group-ids="selectedPortfolioGroupIds"
           v-model:selected-portfolio-ids="selectedPortfolioIds"
-          v-model:selected-analysis-ids="selectedAnalysisIds"
+          v-model:expanded-portfolio-ids="expandedPortfolioIds"
           :portfolios="portfolioData.items"
           :portfolio-groups="portfolioGroupData.items"
           :analyses="analysesData.items"
@@ -169,8 +166,7 @@ const activeIndex = computed<number>({
         <PortfolioGroupListView
           v-if="portfolioData && portfolioGroupData && initiativeData && analysesData"
           v-model:selected-portfolio-group-ids="selectedPortfolioGroupIds"
-          v-model:selected-portfolio-ids="selectedPortfolioIds"
-          v-model:selected-analysis-ids="selectedAnalysisIds"
+          v-model:expanded-portfolio-group-ids="expandedPortfolioGroupIds"
           :portfolios="portfolioData.items"
           :portfolio-groups="portfolioGroupData.items"
           :analyses="analysesData.items"
@@ -188,9 +184,8 @@ const activeIndex = computed<number>({
         </template>
         <AnalysisListView
           v-if="portfolioData && portfolioGroupData && initiativeData && analysesData"
-          v-model:selected-portfolio-group-ids="selectedPortfolioGroupIds"
-          v-model:selected-portfolio-ids="selectedPortfolioIds"
           v-model:selected-analysis-ids="selectedAnalysisIds"
+          v-model:expanded-analysis-ids="expandedAnalysisIds"
           :portfolios="portfolioData.items"
           :portfolio-groups="portfolioGroupData.items"
           :analyses="analysesData.items"

@@ -16,24 +16,26 @@ interface Props {
   portfolioGroups: PortfolioGroup[]
   initiatives: Initiative[]
   analyses: Analysis[]
-  selectedPortfolioIds: string[]
-  selectedPortfolioGroupIds: string[]
   selectedAnalysisIds: string[]
+  expandedAnalysisIds: string[]
 }
 const props = defineProps<Props>()
 interface Emits {
-  (e: 'update:selectedPortfolioIds', value: string[]): void
-  (e: 'update:selectedPortfolioGroupIds', value: string[]): void
   (e: 'update:selectedAnalysisIds', value: string[]): void
+  (e: 'update:expandedAnalysisIds', value: string[]): void
   (e: 'refresh'): void
 }
 const emit = defineEmits<Emits>()
 
 const refresh = () => { emit('refresh') }
 
-const selectedAnalysisIDs = computed({
+const selectedAnalysisIdsModel = computed({
   get: () => props.selectedAnalysisIds ?? [],
   set: (value: string[]) => { emit('update:selectedAnalysisIds', value) },
+})
+const expandedAnalysisIdsModel = computed({
+  get: () => props.expandedAnalysisIds ?? [],
+  set: (value: string[]) => { emit('update:expandedAnalysisIds', value) },
 })
 
 interface EditorObject extends ReturnType<typeof analysisEditor> {
@@ -44,16 +46,33 @@ interface EditorObject extends ReturnType<typeof analysisEditor> {
 
 const prefix = 'components/analysis/ListView'
 const tt = (s: string) => t(`${prefix}.${s}`)
-const expandedRows = useState<EditorObject[]>(`${prefix}.expandedRows`, () => [])
 const selectedRows = computed<EditorObject[]>({
   get: () => {
-    const ids = selectedAnalysisIDs.value
+    const ids = selectedAnalysisIdsModel.value
     return editorObjects.value.filter((editorObject) => ids.includes(editorObject.id))
   },
   set: (value: EditorObject[]) => {
     const ids = value.map((row) => row.id)
     ids.sort()
-    selectedAnalysisIDs.value = ids
+    selectedAnalysisIdsModel.value = ids
+  },
+})
+const readyToExpand = useState<boolean>(`${prefix}.readyToExpand`, () => false)
+onMounted(() => {
+  readyToExpand.value = true
+})
+const expandedRows = computed<EditorObject[]>({
+  get: () => {
+    if (!readyToExpand.value) {
+      return []
+    }
+    const ids = expandedAnalysisIdsModel.value
+    return editorObjects.value.filter((editorObject) => ids.includes(editorObject.id))
+  },
+  set: (value: EditorObject[]) => {
+    const ids = value.map((row) => row.id)
+    ids.sort()
+    expandedAnalysisIdsModel.value = ids
   },
 })
 
