@@ -71,45 +71,25 @@ func (d *DB) ownerByInitiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Owner, e
 }
 
 func (d *DB) GetOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error) {
-	var ownerID pacta.OwnerID
-	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
-		owner, err := d.ownerByUser(tx, uID)
-		if err == nil {
-			ownerID = owner.ID
-			return nil
-		}
-		if !db.IsNotFound(err) {
-			return fmt.Errorf("user owner not found: %w", err)
-		}
-		return fmt.Errorf("looking up owner: %w", err)
-	})
+	owner, err := d.ownerByUser(tx, uID)
 	if err != nil {
-		return "", fmt.Errorf("getting or creating owner for initiative: %w", err)
+		if db.IsNotFound(err) {
+			return "", db.NotFound(uID, "ownerByUserId")
+		}
+		return "", fmt.Errorf("error retrieving user owner: %w", err)
 	}
-	return ownerID, nil
+	return owner.ID, nil
 }
 
-func (d *DB) GetOrCreateOwnerForInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta.OwnerID, error) {
-	var ownerID pacta.OwnerID
-	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
-		owner, err := d.ownerByInitiative(tx, iID)
-		if err == nil {
-			ownerID = owner.ID
-			return nil
-		}
-		if !db.IsNotFound(err) {
-			return fmt.Errorf("querying owner by user: %w", err)
-		}
-		ownerID, err = d.createOwner(tx, &pacta.Owner{Initiative: &pacta.Initiative{ID: iID}})
-		if err != nil {
-			return fmt.Errorf("creating owner: %w", err)
-		}
-		return nil
-	})
+func (d *DB) GetOwnerForInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta.OwnerID, error) {
+	owner, err := d.ownerByInitiative(tx, iID)
 	if err != nil {
-		return "", fmt.Errorf("getting or creating owner for initiative: %w", err)
+		if db.IsNotFound(err) {
+			return "", db.NotFound(iID, "ownerByInitiativeId")
+		}
+		return "", fmt.Errorf("error retrieving initiative owner: %w", err)
 	}
-	return ownerID, nil
+	return owner.ID, nil
 }
 
 func (d *DB) DeleteOwner(tx db.Tx, oID pacta.OwnerID) ([]pacta.BlobURI, error) {
