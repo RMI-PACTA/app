@@ -18,6 +18,7 @@ import InputNumber from 'primevue/inputnumber'
 import InputSwitch from 'primevue/inputswitch'
 import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
+import Menu from 'primevue/menu'
 import MultiSelect from 'primevue/multiselect'
 import OverlayPanel from 'primevue/overlaypanel'
 import ProgressSpinner from 'primevue/progressspinner'
@@ -50,6 +51,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVInputSwitch', InputSwitch)
   vueApp.component('PVInputText', InputText)
   vueApp.component('PVMessage', Message)
+  vueApp.component('PVMenu', Menu)
   vueApp.component('PVMultiSelect', MultiSelect)
   vueApp.component('PVOverlayPanel', OverlayPanel)
   vueApp.component('PVProgressSpinner', ProgressSpinner)

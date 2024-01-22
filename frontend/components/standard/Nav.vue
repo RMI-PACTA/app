@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type MenuItem } from 'primevue/menuitem'
+import type * as PrimeVueMenu from 'primevue/menu'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
@@ -15,6 +16,14 @@ const { isAdmin, maybeMe } = await getMaybeMe()
 const prefix = 'components/standard/Nav'
 const tt = (s: string) => t(`${prefix}.${s}`)
 const menuHidden = useState<boolean>(`${prefix}.menuHidden`, () => false)
+const userMenu = useState<{ toggle: (e: Event) => void } | null>(`${prefix}.userMenu`, () => null)
+const userMenuVisible = useState<boolean>(`${prefix}.userMenuVisible`, () => false)
+
+const toggleUserMenu = (e: Event) => {
+  if (userMenu.value) {
+    userMenu.value.toggle(e)
+  }
+}
 
 const menuStyles = computed(() => {
   return {
@@ -44,16 +53,10 @@ const menuItems = computed(() => {
       to: localePath('/admin'),
     })
   }
-  if (maybeMe.value) {
+  if (isAuthenticated.value) {
     result.push({
       label: tt('My Data'),
       to: localePath('/my-data'),
-    })
-  }
-  if (isAuthenticated.value) {
-    result.push({
-      label: tt('Sign Out'),
-      command: () => { void signOut() },
     })
   } else {
     result.push({
@@ -61,6 +64,26 @@ const menuItems = computed(() => {
       command: () => { void signIn() },
     })
   }
+  return result
+})
+const userMenuItems = computed(() => {
+  const result: MenuItem[] = [{
+    label: tt('Account'),
+    icon: 'pi pi-cog',
+    to: localePath('/user/me'),
+  }, {
+    label: tt('My Data'),
+    icon: 'pi pi-list',
+    to: localePath('/my-data'),
+  }, {
+    label: tt('Audit Logs'),
+    icon: 'pi pi-lock',
+    to: localePath('/audit-logs'),
+  }, {
+    label: tt('Sign Out'),
+    icon: 'pi pi-sign-out',
+    command: () => { void signOut() },
+  }]
   return result
 })
 </script>
@@ -74,15 +97,26 @@ const menuItems = computed(() => {
         class="h-3rem pb-2"
         @click="() => router.push(localePath('/'))"
       />
-      <PVButton
-        :icon="menuHidden ? 'pi pi-bars' : 'pi pi-times'"
-        :class="menuHidden ? 'p-button-text' : 'border-bottom-noround p-button-primary'"
-        class="sm:hidden p-button-lg h-3rem"
-        @click="() => menuHidden = !menuHidden"
-      />
+      <div class="flex gap-1 align-items-center">
+        <PVButton
+          v-show="maybeMe !== undefined"
+          v-tooltip="tt('Settings')"
+          icon="pi pi-user"
+          class="sm:hidden ml-2 flex-shrink-0"
+          rounded
+          :class="userMenuVisible ? 'p-button-primary' : 'p-button-text'"
+          @click="toggleUserMenu"
+        />
+        <PVButton
+          :icon="menuHidden ? 'pi pi-bars' : 'pi pi-times'"
+          :class="menuHidden ? 'p-button-text' : 'border-bottom-noround p-button-primary'"
+          class="sm:hidden p-button-lg h-3rem"
+          @click="() => menuHidden = !menuHidden"
+        />
+      </div>
     </div>
     <div
-      class="flex gap-2 sm:p-1 flex-1 flex-column sm:flex-row border-primary sm:border-none sm:max-h-full border-round justify-content-end"
+      class="flex gap-2 sm:p-1 flex-1 flex-column sm:flex-row border-primary sm:border-none sm:max-h-full border-round justify-content-end align-items-center"
       :style="menuStyles"
     >
       <template
@@ -93,6 +127,7 @@ const menuItems = computed(() => {
           :key="index"
           :class="mi.to === router.currentRoute.value.fullPath ? 'border-noround sm:border-round' : 'p-button-text'"
           :to="mi.to"
+          :external="mi.external"
           :label="`${mi.label}`"
         />
         <PVButton
@@ -103,6 +138,72 @@ const menuItems = computed(() => {
           @click="mi.command"
         />
       </template>
+      <PVButton
+        v-show="maybeMe !== undefined"
+        v-tooltip.left="tt('Settings')"
+        icon="pi pi-user"
+        class="hidden sm:flex ml-2 flex-shrink-0"
+        rounded
+        :class="userMenuVisible ? 'p-button-primary' : 'p-button-outlined'"
+        @click="toggleUserMenu"
+      />
+      <PVOverlayPanel
+        ref="userMenu"
+        :pt="{
+          content: 'p-0',
+        }"
+        class="caret-primary"
+        @hide="() => userMenuVisible = false"
+        @show="() => userMenuVisible = true"
+      >
+        <div class="bg-primary p-3">
+          <div class="flex gap-3 align-items-center">
+            <StandardAvatar :name="maybeMe?.name" />
+            <div class="flex flex-column gap-1">
+              <span class="font-bold text-lg text-white">
+                {{ maybeMe?.name }}
+              </span>
+              <span class="text-sm text-white">
+                {{ maybeMe?.enteredEmail }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex flex-column gap-1 p-2"
+          @click="toggleUserMenu"
+        >
+          <template
+            v-for="(mi, index) in userMenuItems"
+          >
+            <LinkButton
+              v-if="mi.to"
+              :key="index"
+              :class="mi.to === router.currentRoute.value.fullPath ? 'border-noround sm:border-round' : 'p-button-text'"
+              :to="mi.to"
+              :external="mi.external"
+              :icon="mi.icon"
+              :label="`${mi.label}`"
+            />
+            <PVButton
+              v-else
+              :key="mi.label"
+              :label="mi.label"
+              :icon="mi.icon"
+              class="p-button-text"
+              @click="mi.command"
+            />
+          </template>
+        </div>
+      </PVOverlayPanel>
     </div>
   </div>
 </template>
+
+<style lang="scss">
+.caret-primary.p-overlaypanel{
+  &::before, &::after {
+    border-bottom-color: var(--primary-color)
+  }
+}
+</style>
