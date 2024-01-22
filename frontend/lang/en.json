@@ -431,7 +431,15 @@
     "Secondary Target": "Secondary Target",
     "Secondary Target ID": "Secondary Target ID",
     "Secondary Target Owner": "Secondary Target Owner",
-    "Secondary Target Type": "Secondary Target Type"
+    "Secondary Target Type": "Secondary Target Type",
+    "Filter To Specific Values": "Values To Include",
+    "Columns": "Columns",
+    "Column Selection": "Column Selection",
+    "Select or Remove Columns To Display": "Select or Remove Columns to Display",
+    "Reset":  "Reset",
+    "Done": "Done",
+    "DescriptionParagraph1": "RMI takes the security of your data with the utmost care. To that end, we have implemented a robust audit logging system that tracks all changes to your data, and who made those changes. This audit log is available to you at any time, and can be filtered by time, user, or action. Hopefully this will give you some peace of mind that your sensitive data is being appropriately handled.",
+    "DescriptionParagraph2": "If you have any questions about the audit log, or if you think that something is missing, or you would like to learn more, please contact us."
   },
   "pages/index": {
     "Heading": "PACTA for Investors",
