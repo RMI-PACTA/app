@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { AnalysisType, type Analysis } from '@/openapi/generated/pacta'
-import { linkToAnalysis } from '@/lib/mydata'
 
+const { linkToAnalysis } = useMyDataURLs()
 const { humanReadableTimeFromStandardString } = useTime()
 const i18n = useI18n()
-const localePath = useLocalePath()
 const { t } = i18n
 const prefix = 'components/analysis/ContextualListView'
 const tt = (s: string) => t(`${prefix}.${s}`)
@@ -99,7 +98,7 @@ const reportButtonClasses = computed(() => {
           <LinkButton
             class="p-button-outlined p-button-xs p-button-secondary"
             icon="pi pi-arrow-right"
-            :to="linkToAnalysis(localePath, slotProps.data.id)"
+            :to="linkToAnalysis(slotProps.data.id)"
           />
         </template>
       </PVColumn>

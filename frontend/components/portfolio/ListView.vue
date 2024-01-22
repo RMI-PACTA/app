@@ -2,11 +2,9 @@
 import { portfolioEditor } from '@/lib/editor'
 import { type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
-import { linkToPortfolioGroup } from '@/lib/mydata'
 
-const {
-  humanReadableTimeFromStandardString,
-} = useTime()
+const { linkToPortfolioGroup } = useMyDataURLs()
+const { humanReadableTimeFromStandardString } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading } } = useModal()
 const localePath = useLocalePath()
@@ -182,7 +180,7 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
                 class="p-button-outlined p-button-xs"
                 icon="pi pi-table"
                 :label="membership.portfolioGroup.name"
-                :to="linkToPortfolioGroup(localePath, membership.portfolioGroup.id)"
+                :to="linkToPortfolioGroup(membership.portfolioGroup.id)"
               />
             </div>
             <div

@@ -2,15 +2,12 @@
 import { portfolioGroupEditor } from '@/lib/editor'
 import { type Portfolio, type PortfolioGroup, type PortfolioGroupMembershipPortfolio, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
-import { linkToPortfolios } from '@/lib/mydata'
 
-const {
-  humanReadableTimeFromStandardString,
-} = useTime()
+const { linkToPortfolios } = useMyDataURLs()
+const { humanReadableTimeFromStandardString } = useTime()
 const pactaClient = usePACTA()
 const { loading: { withLoading }, newPortfolioGroup: { newPortfolioGroupVisible } } = useModal()
 const i18n = useI18n()
-const localePath = useLocalePath()
 const { t } = i18n
 
 interface Props {
@@ -165,7 +162,7 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
         <template #body="slotProps">
           <LinkButton
             :disabled="editorObjectToIds(slotProps.data).length === 0"
-            :to="linkToPortfolios(localePath, editorObjectToIds(slotProps.data))"
+            :to="linkToPortfolios(editorObjectToIds(slotProps.data))"
             :label="`${editorObjectToIds(slotProps.data).length}`"
             icon="pi pi-th-large"
             class="py-1 px-2 p-button-outlined p-button-secondary"
