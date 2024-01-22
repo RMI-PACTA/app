@@ -374,7 +374,7 @@ const cleanUpIncompleteUploads = async () => {
             label="Holdings Date"
             help-text="The holdings date for the portfolio"
           >
-            <InputsHoldingDate
+            <InputsHoldingsDate
               v-model:value="holdingsDate"
               :disabled="isProcessing"
             />

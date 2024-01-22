@@ -41,6 +41,14 @@ const evs = computed({
       />
     </FormEditorField>
     <FormEditorField
+      :editor-field="efs.propertyHoldingsDate"
+      :editor-value="evs.propertyHoldingsDate"
+    >
+      <InputsHoldingsDate
+        v-model:value="evs.propertyHoldingsDate.currentValue"
+      />
+    </FormEditorField>
+    <FormEditorField
       :editor-field="efs.propertyESG"
       :editor-value="evs.propertyESG"
     >

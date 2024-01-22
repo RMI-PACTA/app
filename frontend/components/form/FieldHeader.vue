@@ -66,7 +66,7 @@ const helpTextTextClass = computed(() => helpTextExpanded.value ? 'mb-2' : 'h-0'
     <div
       v-if="helpTextExists"
       :class="helpTextTextClass"
-      class="overflow-hidden ml-1 text-sm help-text-animate"
+      class="overflow-hidden text-sm help-text-animate"
     >
       <slot name="help-text" />
       {{ props.helpText }}

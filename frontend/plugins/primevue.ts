@@ -7,26 +7,28 @@ import AccordionTab from 'primevue/accordiontab'
 import Button from 'primevue/button'
 import Calendar from 'primevue/calendar'
 import Card from 'primevue/card'
+import Chips from 'primevue/chips'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
+import FileUpload from 'primevue/fileupload'
 import Image from 'primevue/image'
 import InputNumber from 'primevue/inputnumber'
-import InputText from 'primevue/inputtext'
 import InputSwitch from 'primevue/inputswitch'
-import FileUpload from 'primevue/fileupload'
-import TabPanel from 'primevue/tabpanel'
-import TabView from 'primevue/tabview'
-import Textarea from 'primevue/textarea'
-import Tooltip from 'primevue/tooltip'
-import TriStateCheckbox from 'primevue/tristatecheckbox'
+import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
+import Menu from 'primevue/menu'
 import MultiSelect from 'primevue/multiselect'
 import OverlayPanel from 'primevue/overlaypanel'
 import ProgressSpinner from 'primevue/progressspinner'
-import ToastService from 'primevue/toastservice'
+import TabPanel from 'primevue/tabpanel'
+import TabView from 'primevue/tabview'
+import Textarea from 'primevue/textarea'
 import Toast from 'primevue/toast'
+import ToastService from 'primevue/toastservice'
+import Tooltip from 'primevue/tooltip'
+import TriStateCheckbox from 'primevue/tristatecheckbox'
 
 export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.use(PrimeVue)
@@ -38,6 +40,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVButton', Button)
   vueApp.component('PVCalendar', Calendar)
   vueApp.component('PVCard', Card)
+  vueApp.component('PVChips', Chips)
   vueApp.component('PVColumn', Column)
   vueApp.component('PVDataTable', DataTable)
   vueApp.component('PVDialog', Dialog)
@@ -45,9 +48,10 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVFileUpload', FileUpload)
   vueApp.component('PVImage', Image)
   vueApp.component('PVInputNumber', InputNumber)
-  vueApp.component('PVInputText', InputText)
   vueApp.component('PVInputSwitch', InputSwitch)
+  vueApp.component('PVInputText', InputText)
   vueApp.component('PVMessage', Message)
+  vueApp.component('PVMenu', Menu)
   vueApp.component('PVMultiSelect', MultiSelect)
   vueApp.component('PVOverlayPanel', OverlayPanel)
   vueApp.component('PVProgressSpinner', ProgressSpinner)

@@ -71,6 +71,10 @@ const deleteAnalysis = (id: string) => withLoading(
   `${prefix}.deleteAnalysis`,
 )
 const deleteSelected = () => Promise.all([selectedRows.value.map((row) => deleteAnalysis(row.id))]).then(refresh)
+const deleteSpecificAnalysis = async (id: string) => {
+  await deleteAnalysis(id)
+  refresh()
+}
 </script>
 
 <template>
@@ -107,6 +111,13 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
       >
         <template #body="slotProps">
           {{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}
+        </template>
+      </PVColumn>
+      <PVColumn :header="tt('Status')">
+        <template #body="slotProps">
+          <AnalysisStatusChip
+            :analysis="slotProps.data.currentValue.value"
+          />
         </template>
       </PVColumn>
       <PVColumn
@@ -151,7 +162,7 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
               icon="pi pi-trash"
               class="p-button-danger p-button-outlined"
               :label="tt('Delete')"
-              @click="() => deleteAnalysis(slotProps.data.id)"
+              @click="() => deleteSpecificAnalysis(slotProps.data.id)"
             />
             <div v-tooltip.bottom="slotProps.data.saveTooltip">
               <PVButton

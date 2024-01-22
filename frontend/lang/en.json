@@ -26,6 +26,28 @@
     "Save Changes": "Save Changes",
     "Refresh": "Refresh"
   },
+  "components/analysis/ContextualListView": { 
+    "Ran At": "Ran At",
+    "Run Audit": "Run Audit",
+    "Run Report": "Run Report",
+    "AnalysisTypeREPORT": "Report",
+    "AnalysisTypeAUDIT": "Audit",
+    "Type": "Type",
+    "Access": "Access",
+    "Analysis": "Analysis",
+    "No Analyses Message": "No analysis of this data has been started.",
+    "Details": "Details",
+    "Name": "Name",
+    "Status": "Status",
+    "No Audits Message": "It is recommened to run an audit to check the quality of your data and its format.",
+    "No Reports Message": "If everything looks good in the audit results, try running a report!"
+  },
+  "components/analysis/StatusChip": {
+    "Running": "Running",
+    "Completed": "Completed",
+    "Failed": "Failed",
+    "PotentialTimeout": "Potential Timeout - hasn't completed despite running for a long time",
+  },
   "components/analysis/ListView": {
     "Created At": "Created At",
     "Details": "Details",
@@ -35,7 +57,8 @@
     "Editable Properties": "Editable Properties",
     "Save Changes": "Save Changes",
     "Refresh": "Refresh",
-    "View": "View"
+    "View": "View",
+    "Status": "Status"
   },
   "components/initiative/Toolbar": {
     "Edit": "Edit",
@@ -167,8 +190,7 @@
     "AnalysisTypeAUDIT": "Audit",
     "Type": "Type",
     "Access": "Access",
-    "Analysis": "Analysis",
-    "No Analyses Message": "It looks like you haven't run any analyses yet - the next step to using the PACTA tool is running an analysis on your portfolio. Click the button below to run an audit or a report.",
+    "Analysis": "Analysis"
   },
   "components/analysis/AccessButtons": {
     "View": "View",
@@ -182,6 +204,8 @@
   },
   "components/portfolio/group/ListView": {
     "Created At": "Created At",
+    "Analysis": "Analysis",
+    "Metadata": "Metadata",
     "Name": "Name",
     "Number of Members": "Number of Members",
     "Save Changes": "Save Changes",
@@ -243,7 +267,10 @@
     "Home": "Portfolio Analysis Tool",
     "My Data": "My Data",
     "Sign In": "Sign In",
-    "Sign Out": "Sign Out"
+    "Sign Out": "Sign Out",
+    "Account": "Account",
+    "Audit Logs": "Audit Logs",
+    "Settings": "Settings"
   },
   "components/user/Editor": {
     "The name that will be associated with": "The name that will be associated with ",
@@ -290,7 +317,9 @@
     "External": "External",
     "ExternalHelpText": "If enabled, this portfolio represents external data. If disabled, this portfolio represents internal data.",
     "Engagement Strategy": "Engagement Strategy",
-    "EngagementStrategyHelpText": "If enabled, this portfolio represents engagement strategy data. If disabled, this portfolio represents non-engagement strategy data."
+    "EngagementStrategyHelpText": "If enabled, this portfolio represents engagement strategy data. If disabled, this portfolio represents non-engagement strategy data.",
+    "Holdings Date": "Holdings Date",
+    "HoldingsDateHelpText": "The date that the holdings in this portfolio are being evaluated at."
   },
   "lib/editor/portfolio_group": {
     "Created At": "Created At",
@@ -402,7 +431,15 @@
     "Secondary Target": "Secondary Target",
     "Secondary Target ID": "Secondary Target ID",
     "Secondary Target Owner": "Secondary Target Owner",
-    "Secondary Target Type": "Secondary Target Type"
+    "Secondary Target Type": "Secondary Target Type",
+    "Filter To Specific Values": "Values To Include",
+    "Columns": "Columns",
+    "Column Selection": "Column Selection",
+    "Select or Remove Columns To Display": "Select or Remove Columns to Display",
+    "Reset":  "Reset",
+    "Done": "Done",
+    "DescriptionParagraph1": "RMI takes the security of your data with the utmost care. To that end, we have implemented a robust audit logging system that tracks all changes to your data, and who made those changes. This audit log is available to you at any time, and can be filtered by time, user, or action. Hopefully this will give you some peace of mind that your sensitive data is being appropriately handled.",
+    "DescriptionParagraph2": "If you have any questions about the audit log, or if you think that something is missing, or you would like to learn more, please contact us."
   },
   "pages/index": {
     "Heading": "PACTA for Investors",

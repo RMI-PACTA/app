@@ -47,9 +47,9 @@ const encodeAuditLogQueryWheres = (wheres: AuditLogQueryWhere[]): string => {
     } else if (where.inTargetOwnerId) {
       components.push(`TargetOwnerId:${where.inTargetOwnerId.join('|')}`)
     } else if (where.minCreatedAt) {
-      components.push(`MinCreatedAt:${where.minCreatedAt}`)
+      components.push(`MinCreatedAt:${where.minCreatedAt.replaceAll(':', '_')}`)
     } else if (where.maxCreatedAt) {
-      components.push(`MaxCreatedAt:${where.maxCreatedAt}`)
+      components.push(`MaxCreatedAt:${where.maxCreatedAt.replaceAll(':', '_')}`)
     } else {
       console.warn(new Error(`Unknown where: ${JSON.stringify(where)}`))
     }
@@ -108,12 +108,12 @@ const decodeAudtLogQueryWheres = (wheres: string): AuditLogQueryWhere[] => {
         break
       case 'MinCreatedAt':
         result.push({
-          minCreatedAt: value,
+          minCreatedAt: value.replaceAll('_', ':'),
         })
         break
       case 'MaxCreatedAt':
         result.push({
-          maxCreatedAt: value,
+          maxCreatedAt: value.replaceAll('_', ':'),
         })
         break
       default:
