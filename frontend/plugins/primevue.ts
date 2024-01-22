@@ -9,6 +9,8 @@ import Calendar from 'primevue/calendar'
 import Card from 'primevue/card'
 import Chips from 'primevue/chips'
 import Column from 'primevue/column'
+import ConfirmDialog from 'primevue/confirmdialog'
+import ConfirmationService from 'primevue/confirmationservice'
 import DataTable from 'primevue/datatable'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
@@ -42,6 +44,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVCard', Card)
   vueApp.component('PVChips', Chips)
   vueApp.component('PVColumn', Column)
+  vueApp.component('PVConfirmDialog', ConfirmDialog)
   vueApp.component('PVDataTable', DataTable)
   vueApp.component('PVDialog', Dialog)
   vueApp.component('PVDropdown', Dropdown)
@@ -62,4 +65,5 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVTriStateCheckbox', TriStateCheckbox)
 
   vueApp.directive('tooltip', Tooltip)
+  vueApp.use(ConfirmationService)
 })

@@ -177,12 +177,12 @@ func InitiativeUserRelationshipToOAPI(i *pacta.InitiativeUserRelationship) (*api
 	}, nil
 }
 
-func HoldingsDateToOAPI(hd *pacta.HoldingsDate) (*api.HoldingsDate, error) {
+func HoldingsDateToOAPI(hd *pacta.HoldingsDate) (api.HoldingsDate, error) {
 	if hd == nil {
-		return nil, nil
+		return api.HoldingsDate{}, nil
 	}
-	return &api.HoldingsDate{
-		Time: hd.Time,
+	return api.HoldingsDate{
+		Time: &hd.Time,
 	}, nil
 }
 
@@ -208,12 +208,9 @@ func IncompleteUploadToOAPI(iu *pacta.IncompleteUpload) (*api.IncompleteUpload, 
 	if err != nil {
 		return nil, oapierr.Internal("incompleteUploadToOAPI: failureCodeToOAPI failed", zap.Error(err))
 	}
-	var hd *api.HoldingsDate
-	if iu.Properties.HoldingsDate != nil {
-		hd, err = HoldingsDateToOAPI(iu.Properties.HoldingsDate)
-		if err != nil {
-			return nil, oapierr.Internal("incompleteUploadToOAPI: holdingsDateToOAPI failed", zap.Error(err))
-		}
+	hd, err := HoldingsDateToOAPI(iu.Properties.HoldingsDate)
+	if err != nil {
+		return nil, oapierr.Internal("incompleteUploadToOAPI: holdingsDateToOAPI failed", zap.Error(err))
 	}
 	return &api.IncompleteUpload{
 		Id:                         string(iu.ID),
@@ -255,12 +252,9 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 	if err != nil {
 		return nil, oapierr.Internal("initiativeToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
 	}
-	var hd *api.HoldingsDate
-	if p.Properties.HoldingsDate != nil {
-		hd, err = HoldingsDateToOAPI(p.Properties.HoldingsDate)
-		if err != nil {
-			return nil, oapierr.Internal("portfolioToOAPI: holdingsDateToOAPI failed", zap.Error(err))
-		}
+	hd, err := HoldingsDateToOAPI(p.Properties.HoldingsDate)
+	if err != nil {
+		return nil, oapierr.Internal("portfolioToOAPI: holdingsDateToOAPI failed", zap.Error(err))
 	}
 	return &api.Portfolio{
 		Id:                         string(p.ID),

@@ -39,7 +39,7 @@ interface FileStateDetail extends FileState {
   effectiveError?: string | undefined
 }
 
-const holdingsDate = useState<HoldingsDate | undefined>(`${prefix}.holdingsDate`, () => undefined)
+const holdingsDate = useState<HoldingsDate>(`${prefix}.holdingsDate`, () => ({ time: undefined }))
 const esg = useState<OptionalBoolean>(`${prefix}.esg`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
 const external = useState<OptionalBoolean>(`${prefix}.external`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
 const engagementStrategy = useState<OptionalBoolean>(`${prefix}.engagementStrategy`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
@@ -50,7 +50,7 @@ const isProcessing = useState<boolean>(`${prefix}.isProcessing`, () => false)
 const fileStates = useState<FileState[]>(`${prefix}.fileState`, () => [])
 
 const reset = () => {
-  holdingsDate.value = undefined
+  holdingsDate.value = { time: undefined }
   esg.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
   external.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
   engagementStrategy.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
