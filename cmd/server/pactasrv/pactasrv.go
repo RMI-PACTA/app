@@ -102,6 +102,7 @@ type DB interface {
 	PortfolioSnapshots(tx db.Tx, ids []pacta.PortfolioSnapshotID) (map[pacta.PortfolioSnapshotID]*pacta.PortfolioSnapshot, error)
 
 	GetOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error)
+	GetOwnerForInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta.OwnerID, error)
 
 	PortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) (*pacta.PortfolioGroup, error)
 	PortfolioGroupsByOwner(tx db.Tx, owner pacta.OwnerID) ([]*pacta.PortfolioGroup, error)

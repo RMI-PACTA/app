@@ -78,16 +78,22 @@ func (d *DB) CreateInitiative(tx db.Tx, i *pacta.Initiative) error {
 	if err := validateInitiativeForCreation(i); err != nil {
 		return fmt.Errorf("validating initiative for creation: %w", err)
 	}
-	err := d.exec(tx, `
-		INSERT INTO initiative 
-			(id, name, affiliation, public_description, internal_description, requires_invitation_to_join, is_accepting_new_members, is_accepting_new_portfolios, pacta_version_id, language)
-			VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`,
-		i.ID, i.Name, i.Affiliation, i.PublicDescription, i.InternalDescription, i.RequiresInvitationToJoin, i.IsAcceptingNewMembers, i.IsAcceptingNewPortfolios, i.PACTAVersion.ID, i.Language)
-	if err != nil {
-		return fmt.Errorf("creating initiative: %w", err)
-	}
-	return nil
+	return d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		err := d.exec(tx, `
+			INSERT INTO initiative 
+				(id, name, affiliation, public_description, internal_description, requires_invitation_to_join, is_accepting_new_members, is_accepting_new_portfolios, pacta_version_id, language)
+				VALUES
+				($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`,
+			i.ID, i.Name, i.Affiliation, i.PublicDescription, i.InternalDescription, i.RequiresInvitationToJoin, i.IsAcceptingNewMembers, i.IsAcceptingNewPortfolios, i.PACTAVersion.ID, i.Language)
+		if err != nil {
+			return fmt.Errorf("creating initiative: %w", err)
+		}
+		_, err = d.createOwner(tx, &pacta.Owner{Initiative: &pacta.Initiative{ID: i.ID}})
+		if err != nil {
+			return fmt.Errorf("creating owner: %w", err)
+		}
+		return nil
+	})
 }
 
 func (d *DB) UpdateInitiative(tx db.Tx, id pacta.InitiativeID, mutations ...db.UpdateInitiativeFn) error {
@@ -117,7 +123,7 @@ func (d *DB) UpdateInitiative(tx db.Tx, id pacta.InitiativeID, mutations ...db.U
 func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) ([]pacta.BlobURI, error) {
 	buris := []pacta.BlobURI{}
 	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
-		owner, err := d.GetOrCreateOwnerForInitiative(tx, id)
+		owner, err := d.GetOwnerForInitiative(tx, id)
 		if err != nil {
 			return fmt.Errorf("getting owner for initiative: %w", err)
 		}
