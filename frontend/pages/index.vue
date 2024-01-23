@@ -47,11 +47,12 @@ const tt = (s: string) => t(`pages/index.${s}`)
       <p>
         {{ tt('Section2Paragraph2') }}
         <LinkButton
-          :to="localePath('/input-user-guide')"
+          :to="localePath('/input-guide')"
           class="p-button-xs align-self-center py-0 ml-2 p-button-outlined"
           :label="tt('Input User Guide')"
           icon="pi pi-arrow-right"
           icon-pos="right"
+          new-tab
         />
       </p>
       <p>{{ tt('Section2Paragraph3') }}</p>

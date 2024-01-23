@@ -8,6 +8,7 @@ const { linkToPortfolioList } = useMyDataURLs()
 const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const prefix = 'pages/upload'
 const tt = (key: string) => t(`${prefix}.${key}`)
@@ -296,7 +297,13 @@ const cleanUpIncompleteUploads = async () => {
     <!-- TODO(#80) Finalize this copy -->
     <p>
       This is a page where you can upload portfolios to test out the PACTA platform.
-      This Copy will need work, and will need to link to the documentation.
+    </p>
+    <p>
+      Input files are expected to be structred as CSVs with an expected set of header rows.
+      To learn more, check out the <a
+        :href="localePath('/input-guide')"
+        target="_blank"
+      >{{ tt('Input User Guide') }}</a>, or download the <a href="/samples/sample-1.csv">sample CSV</a>.
     </p>
     <FormField
       label="Portfolio Files"
@@ -422,6 +429,7 @@ const cleanUpIncompleteUploads = async () => {
     </PVMessage>
     <PVButton
       v-if="!allDone"
+      class="my-0"
       :label="actionButtonLabel"
       :loading="isProcessing"
       :disabled="isProcessing || fileStatesWithDetail.length === 0"

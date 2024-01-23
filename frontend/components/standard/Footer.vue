@@ -2,6 +2,7 @@
 const { showStandardDebug } = useLocalStorage()
 const { fakeUsers: { fakeUsersVisible }, missingTranslations: { missingTranslationsVisible } } = useModal()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const prefix = 'components/standard/Footer'
 const tt = (s: string) => t(`${prefix}.${s}`)
@@ -53,18 +54,18 @@ const tt = (s: string) => t(`${prefix}.${s}`)
         >
           {{ tt('File a Bug') }}
         </a>
-        <a
+        <NuxtLink
           class="text-primary"
-          href="#"
-        >{{ tt('Terms of Use') }}</a>
-        <a
+          :to="localePath('/tos')"
+        >
+          {{ tt('Terms of Use') }}
+        </NuxtLink>
+        <NuxtLink
           class="text-primary"
-          href="#"
-        >{{ tt('Privacy') }} </a>
-        <a
-          class="text-primary"
-          href="#"
-        >{{ tt('About') }}</a>
+          :to="localePath('/privacy')"
+        >
+          {{ tt('Privacy') }}
+        </NuxtLink>
       </div>
       <LocaleSelector />
     </div>
