@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { portfolioEditor } from '@/lib/editor'
-import { type Portfolio, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
+import { type Portfolio, AuditLogQuerySortBy, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
+import { createURLAuditLogQuery } from '@/lib/auditlogquery'
 
 const { linkToPortfolioGroup } = useMyDataURLs()
 const { humanReadableTimeFromStandardString } = useTime()
@@ -37,6 +38,7 @@ const expandedPortfolioIdsModel = computed({
   get: () => props.expandedPortfolioIds ?? [],
   set: (value: string[]) => { emit('update:expandedPortfolioIds', value) },
 })
+const expendedPortfolioSections = useState<Map<string, number[]>>('ListView.expandedPortfolioSections', () => new Map())
 
 interface EditorObject extends ReturnType<typeof portfolioEditor> {
   id: string
@@ -101,15 +103,21 @@ const deletePortfolio = (id: string) => withLoading(
 )
 const deleteThisPortfolio = (id: string) => deletePortfolio(id).then(refresh)
 const deleteSelected = () => Promise.all([selectedRows.value.map((row) => deletePortfolio(row.id))]).then(refresh)
+
+const auditLogURL = (id: string) => {
+  return createURLAuditLogQuery(
+    localePath,
+    {
+      sorts: [{ by: AuditLogQuerySortBy.AUDIT_LOG_QUERY_SORT_BY_CREATED_AT, ascending: false }],
+      wheres: [{ inTargetId: [id] }],
+    },
+  )
+}
 </script>
 
 <template>
   <div class="flex flex-column gap-3">
     <div class="flex gap-2 flex-wrap">
-      <StandardDebug
-        :value="props.expandedPortfolioIds"
-        label="Expanded Portfolio IDs"
-      />
       <PVButton
         icon="pi pi-refresh"
         class="p-button-outlined p-button-secondary p-button-sm"
@@ -209,63 +217,101 @@ const deleteSelected = () => Promise.all([selectedRows.value.map((row) => delete
         #expansion="slotProps"
       >
         <div class="surface-100 p-3">
-          <h2 class="mt-0">
-            {{ tt('Metadata') }}
+          <h2 class="mb-3">
+            {{ tt('Portfolio') }}: {{ slotProps.data.currentValue.value.name }}
           </h2>
-          <StandardDebug
-            always
-            :value="slotProps.data.currentValue.value"
-            label="Raw Data"
-          />
-          <h2 class="mt-5">
-            {{ tt('Memberships') }}
-          </h2>
-          <div class="flex flex-column gap-2">
-            <PortfolioGroupMembershipMenuButton
-              :selected-portfolios="[slotProps.data.currentValue.value]"
-              :portfolio-groups="props.portfolioGroups"
-              @changed-memberships="refresh"
-              @changed-groups="refresh"
-            />
-            <PortfolioInitiativeMembershipMenuButton
-              :selected-portfolios="[slotProps.data.currentValue.value]"
-              :initiatives="props.initiatives"
-              @changed-memberships="refresh"
-            />
-          </div>
-          <h2 class="mt-5">
-            {{ tt('Analysis') }}
-          </h2>
-          <AnalysisContextualListView
-            :analyses="slotProps.data.analyses"
-            :name="slotProps.data.currentValue.value.name"
-            :portfolio-id="slotProps.data.id"
-            @refresh="refresh"
-          />
-          <h2 class="mt-5">
-            {{ tt('Editable Properties') }}
-          </h2>
-          <PortfolioEditor
-            v-model:editor-values="slotProps.data.editorValues.value"
-            :editor-fields="slotProps.data.editorFields.value"
-          />
-          <div class="flex gap-3 justify-content-between">
-            <PVButton
-              icon="pi pi-trash"
-              class="p-button-danger p-button-outlined"
-              :label="tt('Delete')"
-              @click="() => deleteThisPortfolio(slotProps.data.id)"
-            />
-            <div v-tooltip.bottom="slotProps.data.saveTooltip">
-              <PVButton
-                :disabled="!slotProps.data.canSave.value"
-                :label="tt('Save Changes')"
-                icon="pi pi-save"
-                icon-pos="right"
-                @click="() => saveChanges(slotProps.data.id)"
+          <PVAccordion
+            v-model:activeIndex="expendedPortfolioSections[slotProps.data.id]"
+            :multiple="true"
+          >
+            <PVAccordionTab
+              :header="tt('Edit Portfolio')"
+            >
+              <PortfolioEditor
+                v-model:editor-values="slotProps.data.editorValues.value"
+                :editor-fields="slotProps.data.editorFields.value"
               />
-            </div>
-          </div>
+              <div class="flex gap-2">
+                <PVButton
+                  :disabled="!slotProps.data.canSave.value"
+                  :label="tt('Discard Changes')"
+                  icon="pi pi-refresh"
+                  class="p-button-secondary p-button-outlined"
+                  @click="slotProps.data.resetEditor"
+                />
+                <div v-tooltip.bottom="slotProps.data.saveTooltip">
+                  <PVButton
+                    :disabled="!slotProps.data.canSave.value"
+                    :label="tt('Save Changes')"
+                    icon="pi pi-save"
+                    icon-pos="right"
+                    @click="() => saveChanges(slotProps.data.id)"
+                  />
+                </div>
+              </div>
+            </PVAccordionTab>
+            <PVAccordionTab
+              :header="tt('Memberships')"
+            >
+              <div class="flex flex-column gap-2">
+                <PortfolioGroupMembershipMenuButton
+                  :selected-portfolios="[slotProps.data.currentValue.value]"
+                  :portfolio-groups="props.portfolioGroups"
+                  @changed-memberships="refresh"
+                  @changed-groups="refresh"
+                />
+                <PortfolioInitiativeMembershipMenuButton
+                  :selected-portfolios="[slotProps.data.currentValue.value]"
+                  :initiatives="props.initiatives"
+                  @changed-memberships="refresh"
+                />
+              </div>
+            </PVAccordionTab>
+            <PVAccordionTab :header="tt('Analysis')">
+              <AnalysisContextualListView
+                :analyses="slotProps.data.analyses"
+                :name="slotProps.data.currentValue.value.name"
+                :portfolio-id="slotProps.data.id"
+                @refresh="refresh"
+              />
+            </PVAccordionTab>
+
+            <PVAccordionTab :header="tt('More Options')">
+              <FormField
+                :label="tt('Audit Logs')"
+                :help-text="tt('AuditLogsHelpText')"
+              >
+                <LinkButton
+                  :label="tt('View Audit Logs')"
+                  :to="auditLogURL(slotProps.data.id)"
+                  icon="pi pi-arrow-right"
+                  class="p-button-outlined align-self-start"
+                  icon-pos="right"
+                />
+              </FormField>
+              <FormField
+                :label="tt('Raw Portfolio Metadata')"
+                :help-text="tt('RawPortfolioMetadataHelpText')"
+              >
+                <StandardDebug
+                  always
+                  :value="slotProps.data.currentValue.value"
+                  :label="`${tt('Portfolio Metadata')}: ${slotProps.data.currentValue.value.name}`"
+                />
+              </FormField>
+              <FormField
+                :label="tt('Delete Portfolio')"
+                :help-text="tt('DeletePortfolioHelpText')"
+              >
+                <PVButton
+                  icon="pi pi-trash"
+                  class="p-button-danger p-button-outlined align-self-start"
+                  :label="tt('Delete')"
+                  @click="() => deleteThisPortfolio(slotProps.data.id)"
+                />
+              </FormField>
+            </PVAccordionTab>
+          </PVAccordion>
         </div>
       </template>
     </PVDataTable>

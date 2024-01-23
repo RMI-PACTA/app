@@ -193,7 +193,7 @@
     "Groups": "Groups",
     "How To Run a Report": "How To Run a Report",
     "Initiatives": "Initiatives",
-    "Memberships": "Groups",
+    "Memberships": "Portfolio Groups and Initiative Participation",
     "Name": "Name",
     "Upload New Portfolios": "Upload New Portfolios",
     "Delete": "Delete",
@@ -208,6 +208,7 @@
     "Run Report": "Run Report",
     "AnalysisTypeREPORT": "Report",
     "AnalysisTypeAUDIT": "Audit",
+    "Portfolio":"Portfolio",
     "Type": "Type",
     "Access": "Access",
     "Analysis": "Analysis"

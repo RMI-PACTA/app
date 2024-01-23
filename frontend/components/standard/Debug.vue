@@ -8,6 +8,7 @@ const tt = (s: string) => t(`${prefix}.${s}`)
 interface Props {
   label?: string
   always?: boolean
+  noAccordion?: boolean
   value: unknown
 }
 const props = withDefaults(defineProps<Props>(), { always: false, label: undefined })
@@ -31,7 +32,7 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
 
 <template>
   <PVAccordion
-    v-if="showStandardDebug || props.always"
+    v-if="(showStandardDebug || props.always) && !props.noAccordion"
     class="standard-debug"
   >
     <PVAccordionTab
@@ -40,8 +41,19 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
       header-class="surface-800"
     >
       <div
-        class="code-block surface-50"
+        class="code-block surface-50 relative"
       >
+        <div class="absolute top-0 right-0 flex gap-0">
+          <CopyToClipboardButton
+            :value="valueAsStr"
+            class="p-button-text p-button-secondary"
+          />
+          <DownloadButton
+            :value="valueAsStr"
+            :file-name="`${props.label ?? 'pacta-metadata'}.json`"
+            class="p-button-text p-button-secondary"
+          />
+        </div>
         {{ valueAsStr }}
       </div>
     </PVAccordionTab>
