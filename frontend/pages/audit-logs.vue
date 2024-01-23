@@ -6,6 +6,7 @@ import { FilterMatchMode } from 'primevue/api'
 
 const prefix = 'pages/audit-logs'
 
+const { linkToPortfolio, linkToPortfolioGroup, linkToAnalysis, linkToIncompleteUploadList } = useMyDataURLs()
 const localePath = useLocalePath()
 const { fromQueryReactiveWithDefault, waitForURLToUpdate } = useURLParams()
 const { t } = useI18n()
@@ -416,18 +417,14 @@ const tableSortModel = computed<DataTableSortMeta[]>({
 const getTargetLink = (t: AuditLogTargetType, id: string): string => {
   switch (t) {
     case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_PORTFOLIO:
-      // TODO(grady) make this directly addressable
-      return localePath(`/my-data/${id}`)
+      return linkToPortfolio(id)
     case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_PORTFOLIO_GROUP:
-      // TODO(grady) make this directly addressable
-      return localePath(`/my-data/${id}`)
+      return linkToPortfolioGroup(id)
     case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_INCOMPLETE_UPLOAD:
-      // TODO(grady) make this directly addressable
-      return localePath(`/my-data/${id}`)
+      return linkToIncompleteUploadList()
     case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_ANALYSIS:
     case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_ANALYSIS_ARTIFACT:
-      // TODO(grady) make this directly addressable
-      return localePath(`/my-data/${id}`)
+      return linkToAnalysis(id)
     case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_USER:
       return localePath(`/user/${id}`)
     case AuditLogTargetType.AUDIT_LOG_TARGET_TYPE_INITIATIVE:

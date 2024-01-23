@@ -220,7 +220,11 @@
   "components/analysis/RunButton": {
     "Run": "Run",
     "AnalysisTypeAUDIT": "Audit",
-    "AnalysisTypeREPORT": "Report"
+    "AnalysisTypeREPORT": "Report",
+    "ConfirmationHeader": "Run Duplicate Analysis?",
+    "ConfirmationMessage": "It looks like there is already a run for this analysis - if you have changed the settings or underlying data for this analysis, a new run may be warranted, but otherwise this will just return the same analysis as above.",
+    "Run Anyway": "Run Anyway",
+    "Cancel Run": "Nevermind"
   },
   "components/portfolio/group/ListView": {
     "Created At": "Created At",

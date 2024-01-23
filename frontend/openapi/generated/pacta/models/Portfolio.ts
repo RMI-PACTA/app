@@ -41,7 +41,7 @@ export type Portfolio = {
      * The list of initiatives that this portfolio is a member of
      */
     initiatives?: Array<PortfolioInitiativeMembershipInitiative>;
-    propertyHoldingsDate?: HoldingsDate;
+    propertyHoldingsDate: HoldingsDate;
     /**
      * If set, this portfolio represents ESG data
      */
