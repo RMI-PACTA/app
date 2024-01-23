@@ -12,15 +12,17 @@ const { t } = i18n
 const id = presentOrCheckURL(fromParams('id'))
 
 const prefix = `pages/initiative/${id}`
-const { data } = await useSimpleAsyncData(`${prefix}.getInitiative`, () => pactaClient.findInitiativeById(id))
+
+const { initiative } = await useInitiativeData(id)
+
 const {
   editorValues,
   editorFields,
   changes,
   saveTooltip,
   canSave,
-} = initiativeEditor(presentOrCheckURL(data.value, 'no initiative in response'), i18n)
-const tt = (key: string) => t(`pages/initiative/id.${key}`)
+} = initiativeEditor(presentOrCheckURL(initiative.value, 'no initiative in response'), i18n)
+const tt = (key: string) => t(`pages/initiative/id/edit.${key}`)
 
 const deleteInitiative = () => withLoading(
   () => pactaClient.deleteInitiative(id)

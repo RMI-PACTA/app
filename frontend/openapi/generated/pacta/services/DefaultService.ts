@@ -306,24 +306,6 @@ export class DefaultService {
     }
 
     /**
-     * Returns all initiative user relationships for this initiative that the caller has access to view
-     * @param initiativeId ID of the initiative to fetch relationships for
-     * @returns InitiativeUserRelationship
-     * @throws ApiError
-     */
-    public listInitiativeUserRelationshipsByInitiative(
-        initiativeId: string,
-    ): CancelablePromise<Array<InitiativeUserRelationship>> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/initiative/{initiativeId}/user-relationships',
-            path: {
-                'initiativeId': initiativeId,
-            },
-        });
-    }
-
-    /**
      * Returns all initiative user relationships for this user that the caller has access to view
      * @param userId ID of the user to fetch relationships for
      * @returns InitiativeUserRelationship
@@ -431,27 +413,6 @@ export class DefaultService {
             url: '/initiative-invitation/{id}:claim',
             path: {
                 'id': id,
-            },
-        });
-    }
-
-    /**
-     * Returns the initiative user relationship from this id, if it exists
-     * @param initiativeId ID of the initiative
-     * @param userId ID of the user
-     * @returns InitiativeUserRelationship
-     * @throws ApiError
-     */
-    public getInitiativeUserRelationship(
-        initiativeId: string,
-        userId: string,
-    ): CancelablePromise<InitiativeUserRelationship> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/initiative/{initiativeId}/user-relationship/{userId}',
-            path: {
-                'initiativeId': initiativeId,
-                'userId': userId,
             },
         });
     }

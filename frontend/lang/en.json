@@ -68,7 +68,9 @@
     "AuditLogsHelpText": "Audit logs are a record of who has accessed or modified this analysis, and when. This is useful for debugging, for understanding who has seen this analysis, and for establishing peace of mind that your data's security is being upheld.",
     "View Audit Logs": "View Audit Logs"
   },
-  "components/initiative/Toolbar": {
+  "pages/initiative": {
+    "Initiative": "Initiative",
+    "Portfolios": "Portfolios",
     "Edit": "Edit",
     "Initiative Home": "Initiative Home",
     "Internal Information": "Internal Information",

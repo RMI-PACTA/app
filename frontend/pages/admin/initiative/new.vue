@@ -23,6 +23,7 @@ const defaultInitiative = {
   pactaVersion: undefined,
   createdAt: '',
   portfolioInitiativeMemberships: [],
+  initiativeUserRelationships: [],
 }
 const {
   editorFields,

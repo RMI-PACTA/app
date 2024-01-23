@@ -388,7 +388,7 @@ type initiativeAnalysis struct {
 
 func (ia *initiativeAnalysis) checkAuth(ctx context.Context, tx db.Tx) error {
 	// This crudely tests whether or not a user is a manager of the initiative.
-	if err := ia.s.initiativeDoAuthzAndAuditLog(ctx, ia.iID, pacta.AuditLogAction_Update); err != nil {
+	if _, err := ia.s.initiativeDoAuthzAndAuditLog(ctx, ia.iID, pacta.AuditLogAction_Update); err != nil {
 		return err
 	}
 	i, err := ia.s.DB.Initiative(tx, ia.iID)
