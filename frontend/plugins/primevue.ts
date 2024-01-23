@@ -16,6 +16,7 @@ import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import FileUpload from 'primevue/fileupload'
 import Image from 'primevue/image'
+import InlineMessage from 'primevue/inlinemessage'
 import InputNumber from 'primevue/inputnumber'
 import InputSwitch from 'primevue/inputswitch'
 import InputText from 'primevue/inputtext'
@@ -50,6 +51,7 @@ export default defineNuxtPlugin(({ vueApp }) => {
   vueApp.component('PVDropdown', Dropdown)
   vueApp.component('PVFileUpload', FileUpload)
   vueApp.component('PVImage', Image)
+  vueApp.component('PVInlineMessage', InlineMessage)
   vueApp.component('PVInputNumber', InputNumber)
   vueApp.component('PVInputSwitch', InputSwitch)
   vueApp.component('PVInputText', InputText)

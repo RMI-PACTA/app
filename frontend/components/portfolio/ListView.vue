@@ -3,6 +3,7 @@ import { portfolioEditor } from '@/lib/editor'
 import { type Portfolio, AuditLogQuerySortBy, type PortfolioGroup, type Initiative, type Analysis } from '@/openapi/generated/pacta'
 import { selectedCountSuffix } from '@/lib/selection'
 import { createURLAuditLogQuery } from '@/lib/auditlogquery'
+import { type WritableComputedRef } from 'vue'
 
 const { linkToPortfolioGroup } = useMyDataURLs()
 const { humanReadableTimeFromStandardString } = useTime()
@@ -19,11 +20,13 @@ interface Props {
   analyses: Analysis[]
   selectedPortfolioIds: string[]
   expandedPortfolioIds: string[]
+  expandedSections: Map<string, number[]>
 }
 const props = defineProps<Props>()
 interface Emits {
   (e: 'update:selectedPortfolioIds', value: string[]): void
   (e: 'update:expandedPortfolioIds', value: string[]): void
+  (e: 'update:expandedSections', value: Map<string, number[]>): void
   (e: 'refresh'): void
 }
 const emit = defineEmits<Emits>()
@@ -38,11 +41,15 @@ const expandedPortfolioIdsModel = computed({
   get: () => props.expandedPortfolioIds ?? [],
   set: (value: string[]) => { emit('update:expandedPortfolioIds', value) },
 })
-const expendedPortfolioSections = useState<Map<string, number[]>>('ListView.expandedPortfolioSections', () => new Map())
+const expandedSectionsModel = computed({
+  get: () => props.expandedSections ?? new Map<string, number[]>(),
+  set: (value: Map<string, number[]>) => { emit('update:expandedSections', value) },
+})
 
 interface EditorObject extends ReturnType<typeof portfolioEditor> {
   id: string
   analyses: Analysis[]
+  expandedSections: WritableComputedRef<number[]>
 }
 
 const prefix = 'components/portfolio/ListView'
@@ -70,7 +77,6 @@ const expandedRows = computed<EditorObject[]>({
     }
     const ids = expandedPortfolioIdsModel.value
     const result = editorObjects.value.filter((editorObject) => ids.includes(editorObject.id))
-    console.log('expandedRows = ', result.length)
     return result
   },
   set: (value: EditorObject[]) => {
@@ -80,11 +86,22 @@ const expandedRows = computed<EditorObject[]>({
   },
 })
 
-const editorObjects = computed<EditorObject[]>(() => props.portfolios.map((item) => ({
-  id: item.id,
-  ...portfolioEditor(item, i18n),
-  analyses: props.analyses.filter((a) => a.portfolioSnapshot.portfolio?.id === item.id),
-})))
+const editorObjects = computed<EditorObject[]>(() => props.portfolios.map((item) => {
+  const expandedSectionSuffix = item.id.substring(item.id.length - 4)
+  return ({
+    ...portfolioEditor(item, i18n),
+    id: item.id,
+    analyses: props.analyses.filter((a) => a.portfolioSnapshot.portfolio?.id === item.id),
+    expandedSections: computed<number[]>({
+      get: () => expandedSectionsModel.value.get(expandedSectionSuffix) ?? [],
+      set: (value: number[]) => {
+        const m = new Map<string, number[]>(expandedSectionsModel.value)
+        m.set(expandedSectionSuffix, value)
+        expandedSectionsModel.value = m
+      },
+    }),
+  })
+}))
 
 const selectedPortfolios = computed<Portfolio[]>(() => selectedRows.value.map((row) => row.currentValue.value))
 
@@ -217,16 +234,21 @@ const auditLogURL = (id: string) => {
         #expansion="slotProps"
       >
         <div class="surface-100 p-3">
-          <h2 class="mb-3">
+          <h2 class="mb-3 mt-0">
             {{ tt('Portfolio') }}: {{ slotProps.data.currentValue.value.name }}
           </h2>
           <PVAccordion
-            v-model:activeIndex="expendedPortfolioSections[slotProps.data.id]"
+            v-model:activeIndex="slotProps.data.expandedSections.value"
             :multiple="true"
           >
-            <PVAccordionTab
-              :header="tt('Edit Portfolio')"
-            >
+            <PVAccordionTab>
+              <template #header>
+                <CommonAccordionHeader
+                  :heading="tt('EditHeading')"
+                  :sub-heading="tt('EditSubHeading')"
+                  icon="pi pi-pencil"
+                />
+              </template>
               <PortfolioEditor
                 v-model:editor-values="slotProps.data.editorValues.value"
                 :editor-fields="slotProps.data.editorFields.value"
@@ -250,9 +272,28 @@ const auditLogURL = (id: string) => {
                 </div>
               </div>
             </PVAccordionTab>
-            <PVAccordionTab
-              :header="tt('Memberships')"
-            >
+            <PVAccordionTab>
+              <template #header>
+                <CommonAccordionHeader
+                  :heading="tt('MembershipsHeading')"
+                  :sub-heading="tt('MembershipsSubHeading')"
+                >
+                  <div class="flex gap-1 justify-content-center">
+                    <PVInlineMessage
+                      severity="info"
+                      icon="pi pi-table"
+                    >
+                      {{ slotProps.data.currentValue.value.groups.length }}
+                    </PVInlineMessage>
+                    <PVInlineMessage
+                      severity="info"
+                      icon="pi pi-sitemap"
+                    >
+                      {{ slotProps.data.currentValue.value.initiatives.length }}
+                    </PVInlineMessage>
+                  </div>
+                </CommonAccordionHeader>
+              </template>
               <div class="flex flex-column gap-2">
                 <PortfolioGroupMembershipMenuButton
                   :selected-portfolios="[slotProps.data.currentValue.value]"
@@ -267,7 +308,27 @@ const auditLogURL = (id: string) => {
                 />
               </div>
             </PVAccordionTab>
-            <PVAccordionTab :header="tt('Analysis')">
+            <PVAccordionTab>
+              <template #header>
+                <CommonAccordionHeader
+                  :heading="tt('AnalysesHeading')"
+                  :sub-heading="tt('AnalysesSubHeading')"
+                >
+                  <PVInlineMessage
+                    v-if="slotProps.data.analyses.length === 0"
+                    severity="success"
+                    icon="pi pi-copy"
+                  >
+                    {{ tt('AnalysesComeHereChip') }}
+                  </PVInlineMessage>
+                  <div
+                    v-else
+                    class="bg-red-500"
+                  >
+                    {{ slotProps.data.analyses.map((a: Analysis) => a.analysisType) }}
+                  </div>
+                </CommonAccordionHeader>
+              </template>
               <AnalysisContextualListView
                 :analyses="slotProps.data.analyses"
                 :name="slotProps.data.currentValue.value.name"
@@ -275,8 +336,14 @@ const auditLogURL = (id: string) => {
                 @refresh="refresh"
               />
             </PVAccordionTab>
-
-            <PVAccordionTab :header="tt('More Options')">
+            <PVAccordionTab>
+              <template #header>
+                <CommonAccordionHeader
+                  :heading="tt('MoreHeading')"
+                  :sub-heading="tt('MoreSubHeading')"
+                  icon="pi pi-plus"
+                />
+              </template>
               <FormField
                 :label="tt('Audit Logs')"
                 :help-text="tt('AuditLogsHelpText')"
