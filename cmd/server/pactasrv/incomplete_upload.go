@@ -14,7 +14,6 @@ import (
 
 // (GET /incomplete-uploads)
 func (s *Server) ListIncompleteUploads(ctx context.Context, request api.ListIncompleteUploadsRequestObject) (api.ListIncompleteUploadsResponseObject, error) {
-
 	ownerID, err := s.getUserOwnerID(ctx)
 	if err != nil {
 		return nil, err
