@@ -14,7 +14,6 @@ const [
 <template>
   <StandardContent v-if="user">
     <TitleBar :title="`User: ${user.name || user.id}`" />
-    <UserToolbar :user-id="id" />
     <NuxtPage />
     <StandardDebug
       :value="user"
