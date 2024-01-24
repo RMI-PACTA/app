@@ -389,13 +389,11 @@ func allowPublicInitiativeLookups(r *http.Request) bool {
 	return allowPublicInitiativeLookupsRegexp.MatchString(r.URL.Path)
 }
 
-var allowPublicAnalysisDownloadsRegexp = regexp.MustCompile(`^/report/.*$`)
-
 func allowPublicAnalysisDownloads(r *http.Request) bool {
 	if r.Method != http.MethodGet {
 		return false
 	}
-	return allowPublicAnalysisDownloadsRegexp.MatchString(r.URL.Path)
+	return strings.HasPrefix(r.URL.Path, "/report/")
 }
 
 func requireJWTIfNotPublicEndpoint(next http.Handler) http.Handler {
