@@ -5,19 +5,14 @@ const pactaClient = usePACTA()
 const { fromParams } = useURLParams()
 const { humanReadableDateFromStandardString } = useTime()
 const { getMaybeMe } = useSession()
+const { signIn } = useSignIn()
 const { loading: { withLoading } } = useModal()
 
 const { maybeMe } = await getMaybeMe()
 
 const id = presentOrCheckURL(fromParams('id'))
-const prefix = `initiative/${id}`
-const [
-  { data: initiative },
-  { data: relationships, refresh: refreshRelationships },
-] = await Promise.all([
-  useSimpleAsyncData(`${prefix}.getInitiative`, () => pactaClient.findInitiativeById(id)),
-  useSimpleAsyncData(`${prefix}.getRelationships`, () => pactaClient.listInitiativeUserRelationshipsByInitiative(id)),
-])
+
+const { initiative, refreshInitiative, canDirectlyJoin, isMember, canJoinIfLoggedIn } = await useInitiativeData(id)
 
 const status = computed(() => {
   const i = initiative.value
@@ -31,15 +26,6 @@ const status = computed(() => {
   }
 })
 
-const isAMember = computed(() => {
-  const mm = maybeMe.value
-  if (!mm) return false
-  return relationships.value.some((r) => r.userId === mm.id && r.member)
-})
-const canJoin = computed(() => {
-  const i = initiative.value
-  return maybeMe.value && i.isAcceptingNewMembers && !i.requiresInvitationToJoin && !isAMember.value
-})
 const join = () => {
   void withLoading(async () => {
     await pactaClient.updateInitiativeUserRelationship(
@@ -47,7 +33,7 @@ const join = () => {
       presentOrFileBug(maybeMe.value).id,
       { member: true },
     )
-    await refreshRelationships()
+    await refreshInitiative()
   }, 'initiative/join')
 }
 </script>
@@ -75,23 +61,30 @@ const join = () => {
     </div>
     {{ initiative.publicDescription }}
     <PVButton
-      v-if="isAMember"
+      v-if="isMember"
       disabled
       label="You are a member of this initiative"
       icon="pi pi-check"
     />
     <PVButton
-      v-if="isAMember"
+      v-if="isMember"
       label="Leave Initiative"
       icon="pi pi-arrow-left"
       class="p-button-danger p-button-outlined"
     />
     <PVButton
-      v-if="canJoin"
+      v-if="canDirectlyJoin"
       label="Join Initiative"
       icon="pi pi-arrow-right"
       icon-pos="right"
       @click="join"
+    />
+    <PVButton
+      v-if="canJoinIfLoggedIn"
+      label="Sign in or Create Account to Participate"
+      icon="pi pi-arrow-right"
+      icon-pos="right"
+      @click="signIn"
     />
     <StandardDebug
       :value="initiative"

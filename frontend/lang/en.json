@@ -68,7 +68,9 @@
     "AuditLogsHelpText": "Audit logs are a record of who has accessed or modified this analysis, and when. This is useful for debugging, for understanding who has seen this analysis, and for establishing peace of mind that your data's security is being upheld.",
     "View Audit Logs": "View Audit Logs"
   },
-  "components/initiative/Toolbar": {
+  "pages/initiative": {
+    "Initiative": "Initiative",
+    "Portfolios": "Portfolios",
     "Edit": "Edit",
     "Initiative Home": "Initiative Home",
     "Internal Information": "Internal Information",
@@ -331,19 +333,6 @@
     "Edit": "Edit",
     "Profile": "Profile"
   },
-  "initiative/invitations": {
-    "Create": "Create",
-    "Create Initiative Invitations": "Create Initiative Invitations",
-    "Heading": "Initaitive Invitations",
-    "Includes Illegal Characters": "Includes illegal characters",
-    "New Invitations": "New Invitations",
-    "New Invitations Help": "Create new invitations by clicking the button below. You can create as many invitations as you want, but each invitation can only be used once. Invitation codes must only contain alphanumeric characters (a-z, A-Z, 0-9), underscores and dashes. You can create multiple invitations at once by separating them with tabs, commas, newlines, or spaces.",
-    "No Invitations": "This initiative does not require an invitation to join - anyone who finds this initiative can join it.",
-    "Unused": "Unused",
-    "Yes Invitations": "This initiative requires an invitation (a unique, one-time code) to join. You can create these invitations below.",
-    "You can change": "You can change this behavior on the",
-    "edit initiative page": "edit initiative page"
-  },
   "lib/editor/portfolio": {
     "Created At": "Created At",
     "ID": "ID",
@@ -423,7 +412,19 @@
     "New Invitations": "New Invitations",
     "New Invitations Help": "Create new invitations by entering new values in the box below. If you don't care what the invitation codes look like you can press the randomize button to generate random ones. You can create as many invitations as you want, but each invitation can only be used once. Invitation codes must only contain alphanumeric characters (a-z, A-Z, 0-9), underscores and dashes. You can create multiple invitations at once by separating them with tabs, commas, newlines, or spaces.",
     "Generate Random": "Generate Random",
-    "Cancel": "Cancel"
+    "Cancel": "Cancel",
+    "Create": "Create",
+    "Heading": "Initaitive Invitations",
+    "Includes Illegal Characters": "Includes illegal characters",
+    "No Invitations": "This initiative does not require an invitation to join - anyone who finds this initiative can join it.",
+    "You can change": "You can change this behavior on the",
+    "edit initiative page": "edit initiative page"
+  },
+  "pages/admin/initiative/new": {
+    "New Initiative": "New Initiative",
+    "Paragraph1": "Initiatives are a way to organize portfolios for common analysis and reporting. They typicall correspond to a COP managed projects where investors are contributing data for analysis to a regulator.",
+    "Discard": "Discard",
+    "Save": "Save"
   },
   "pages/initiative/relationships": {
     "Actions": "Actions",
@@ -441,6 +442,10 @@
     "Discard Changes": "Discard Changes"
   },
   "pages/upload": {
+    "Input User Guide": "Input User Guide",
+    "Sample CSV": "Sample CSV",
+    "Paragraph1": "This is a page where you can upload portfolios to test out the PACTA platform.",
+    "Paragraph2": "Input files are expected to be structured as CSVs with an expected set of header rows. To learn more, check out the Input User Guide or download a sample CSV.",
     "Add File(s)": "Add File(s)",
     "Add More File(s)": "Add More File(s)",
     "Cleaning Up": "Cleaning Up",

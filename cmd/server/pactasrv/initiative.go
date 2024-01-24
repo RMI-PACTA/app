@@ -50,7 +50,7 @@ func (s *Server) CreateInitiative(ctx context.Context, request api.CreateInitiat
 // (PATCH /initiative/{id})
 func (s *Server) UpdateInitiative(ctx context.Context, request api.UpdateInitiativeRequestObject) (api.UpdateInitiativeResponseObject, error) {
 	id := pacta.InitiativeID(request.Id)
-	if err := s.initiativeDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
+	if _, err := s.initiativeDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
 		return nil, err
 	}
 	mutations := []db.UpdateInitiativeFn{}
@@ -97,7 +97,7 @@ func (s *Server) UpdateInitiative(ctx context.Context, request api.UpdateInitiat
 // (DELETE /initiative/{id})
 func (s *Server) DeleteInitiative(ctx context.Context, request api.DeleteInitiativeRequestObject) (api.DeleteInitiativeResponseObject, error) {
 	id := pacta.InitiativeID(request.Id)
-	if err := s.initiativeDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Delete); err != nil {
+	if _, err := s.initiativeDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Delete); err != nil {
 		return nil, err
 	}
 	buris, err := s.DB.DeleteInitiative(s.DB.NoTxn(ctx), id)
@@ -113,9 +113,13 @@ func (s *Server) DeleteInitiative(ctx context.Context, request api.DeleteInitiat
 // Returns an initiative by ID
 // (GET /initiative/{id})
 func (s *Server) FindInitiativeById(ctx context.Context, request api.FindInitiativeByIdRequestObject) (api.FindInitiativeByIdResponseObject, error) {
-	// TODO(#12) Allow Anonymous Access
+	actorInfo, err := s.getActorInfoOrAnon(ctx)
+	if err != nil {
+		return nil, err
+	}
 	id := pacta.InitiativeID(request.Id)
-	if err := s.initiativeDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_ReadMetadata); err != nil {
+	info, err := s.initiativeDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_ReadMetadata)
+	if err != nil {
 		return nil, err
 	}
 	i, err := s.DB.Initiative(s.DB.NoTxn(ctx), id)
@@ -125,11 +129,27 @@ func (s *Server) FindInitiativeById(ctx context.Context, request api.FindInitiat
 		}
 		return nil, oapierr.Internal("failed to load initiative", zap.String("initiative_id", request.Id), zap.Error(err))
 	}
-	portfolios, err := s.DB.PortfolioInitiativeMembershipsByInitiative(s.DB.NoTxn(ctx), i.ID)
-	if err != nil {
-		return nil, oapierr.Internal("failed to load portfolios for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+	if info.CanManageUsersAndPortfolios {
+		portfolios, err := s.DB.PortfolioInitiativeMembershipsByInitiative(s.DB.NoTxn(ctx), i.ID)
+		if err != nil {
+			return nil, oapierr.Internal("failed to load portfolios for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+		}
+		i.PortfolioInitiativeMemberships = portfolios
+		relationships, err := s.DB.InitiativeUserRelationshipsByInitiative(s.DB.NoTxn(ctx), i.ID)
+		if err != nil {
+			return nil, oapierr.Internal("failed to load initiative user relationships for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+		}
+		i.InitiativeUserRelationships = relationships
+	} else if actorInfo.UserID != "" {
+		iur, err := s.DB.InitiativeUserRelationship(s.DB.NoTxn(ctx), i.ID, actorInfo.UserID)
+		if err != nil {
+			return nil, oapierr.Internal("failed to load singular initiative user relationship for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+		}
+		i.InitiativeUserRelationships = []*pacta.InitiativeUserRelationship{iur}
 	}
-	i.PortfolioInitiativeMemberships = portfolios
+	if !info.CanSeeInternalInfo {
+		i.InternalDescription = ""
+	}
 	resp, err := conv.InitiativeToOAPI(i)
 	if err != nil {
 		return nil, err
@@ -143,6 +163,9 @@ func (s *Server) ListInitiatives(ctx context.Context, request api.ListInitiative
 	is, err := s.DB.AllInitiatives(s.DB.NoTxn(ctx))
 	if err != nil {
 		return nil, oapierr.Internal("failed to load all initiatives", zap.Error(err))
+	}
+	for _, i := range is {
+		i.InternalDescription = ""
 	}
 	result, err := dereference(mapAll(is, conv.InitiativeToOAPI))
 	if err != nil {
@@ -158,17 +181,14 @@ func (s *Server) AllInitiativeData(ctx context.Context, request api.AllInitiativ
 	if err != nil {
 		return nil, err
 	}
-	// TODO(#12) Implement Authorization, along the lines of #121
-	i, err := s.DB.Initiative(s.DB.NoTxn(ctx), pacta.InitiativeID(request.Id))
+	id := pacta.InitiativeID(request.Id)
+	_, err = s.initiativeDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Download)
 	if err != nil {
-		if db.IsNotFound(err) {
-			return nil, oapierr.NotFound("initiative not found", zap.String("initiative_id", request.Id))
-		}
-		return nil, oapierr.Internal("failed to load initiative", zap.String("initiative_id", request.Id), zap.Error(err))
+		return nil, err
 	}
-	portfolioMembers, err := s.DB.PortfolioInitiativeMembershipsByInitiative(s.DB.NoTxn(ctx), i.ID)
+	portfolioMembers, err := s.DB.PortfolioInitiativeMembershipsByInitiative(s.DB.NoTxn(ctx), id)
 	if err != nil {
-		return nil, oapierr.Internal("failed to load portfolio memberships for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+		return nil, oapierr.Internal("failed to load portfolio memberships for initiative", zap.String("initiative_id", string(id)), zap.Error(err))
 	}
 	portfolioIDs := []pacta.PortfolioID{}
 	for _, pm := range portfolioMembers {
@@ -176,7 +196,7 @@ func (s *Server) AllInitiativeData(ctx context.Context, request api.AllInitiativ
 	}
 	portfolios, err := s.DB.Portfolios(s.DB.NoTxn(ctx), portfolioIDs)
 	if err != nil {
-		return nil, oapierr.Internal("failed to load portfolios for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
+		return nil, oapierr.Internal("failed to load portfolios for initiative", zap.String("initiative_id", string(id)), zap.Error(err))
 	}
 	if err := s.populateBlobsInPortfolios(ctx, values(portfolios)...); err != nil {
 		return nil, err
@@ -192,7 +212,7 @@ func (s *Server) AllInitiativeData(ctx context.Context, request api.AllInitiativ
 			PrimaryTargetID:      string(p.ID),
 			PrimaryTargetOwner:   p.Owner,
 			SecondaryTargetType:  pacta.AuditLogTargetType_Initiative,
-			SecondaryTargetID:    string(i.ID),
+			SecondaryTargetID:    string(id),
 			SecondaryTargetOwner: &pacta.Owner{ID: "SYSTEM"}, // TODO(#12) When merging with #121, use the const type.
 		})
 	}
@@ -216,24 +236,30 @@ func (s *Server) AllInitiativeData(ctx context.Context, request api.AllInitiativ
 			ExpirationTime: expiryTime,
 		})
 	}
-
 	return api.AllInitiativeData200JSONResponse(response), nil
 }
 
-func (s *Server) initiativeDoAuthzAndAuditLog(ctx context.Context, iID pacta.InitiativeID, action pacta.AuditLogAction) error {
-	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
+type initiativeAuthzVisibilityInfo struct {
+	CanManageUsersAndPortfolios bool
+	CanSeeInternalInfo          bool
+}
+
+func (s *Server) initiativeDoAuthzAndAuditLog(ctx context.Context, iID pacta.InitiativeID, action pacta.AuditLogAction) (*initiativeAuthzVisibilityInfo, error) {
+	actorInfo, err := s.getActorInfoOrAnon(ctx)
 	if err != nil {
-		return err
-	}
-	iurs, err := s.DB.InitiativeUserRelationshipsByInitiative(s.DB.NoTxn(ctx), iID)
-	if err != nil {
-		return oapierr.Internal("failed to list initiative user relationships", zap.Error(err))
+		return nil, err
 	}
 	userIsInitiativeManager := false
-	for _, iur := range iurs {
-		if iur.User.ID == actorInfo.UserID && iur.Manager {
-			userIsInitiativeManager = true
-			break
+	userIsInitiativeMember := false
+	if actorInfo.UserID != "" {
+		iur, err := s.DB.InitiativeUserRelationship(s.DB.NoTxn(ctx), iID, actorInfo.UserID)
+		if err != nil {
+			if !db.IsNotFound(err) {
+				return nil, oapierr.Internal("failed to find initiative user relationships", zap.Error(err))
+			}
+		} else {
+			userIsInitiativeMember = iur.Member
+			userIsInitiativeManager = iur.Manager
 		}
 	}
 	as := &authzStatus{
@@ -244,7 +270,16 @@ func (s *Server) initiativeDoAuthzAndAuditLog(ctx context.Context, iID pacta.Ini
 		action:               action,
 	}
 	switch action {
-	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_Create, pacta.AuditLogAction_ReadMetadata, pacta.AuditLogAction_Update:
+	case pacta.AuditLogAction_ReadMetadata:
+		as.isAuthorized = true
+		if userIsInitiativeManager {
+			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Owner)
+		} else if actorInfo.IsAdmin || actorInfo.IsSuperAdmin {
+			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Admin)
+		} else {
+			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Public)
+		}
+	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_Create, pacta.AuditLogAction_Update:
 		if userIsInitiativeManager {
 			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Owner)
 			as.isAuthorized = true
@@ -252,7 +287,13 @@ func (s *Server) initiativeDoAuthzAndAuditLog(ctx context.Context, iID pacta.Ini
 			as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
 		}
 	default:
-		return fmt.Errorf("unknown action %q for initiative authz", action)
+		return nil, fmt.Errorf("unknown action %q for initiative authz", action)
 	}
-	return s.auditLogIfAuthorizedOrFail(ctx, as)
+	if err := s.auditLogIfAuthorizedOrFail(ctx, as); err != nil {
+		return nil, err
+	}
+	return &initiativeAuthzVisibilityInfo{
+		CanSeeInternalInfo:          userIsInitiativeMember || userIsInitiativeManager || actorInfo.IsAdmin || actorInfo.IsSuperAdmin,
+		CanManageUsersAndPortfolios: userIsInitiativeManager || actorInfo.IsAdmin || actorInfo.IsSuperAdmin,
+	}, nil
 }

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -314,7 +315,7 @@ func run(args []string) error {
 			zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(false)),
 			chimiddleware.Recoverer,
 			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
-			jwtauth.Authenticator,
+			requireJWTIfNotPublicEndpoint,
 			session.WithAuthn(logger, db),
 		}, addl...)
 	}
@@ -372,6 +373,34 @@ func run(args []string) error {
 	return nil
 }
 
+type allowFn func(r *http.Request) bool
+
+var publicEndpoints = []allowFn{
+	allowPublicInitiativeLookups,
+}
+
+var allowPublicInitiativeLookupsRegexp = regexp.MustCompile(`^/initiative/[^/]*$`)
+
+func allowPublicInitiativeLookups(r *http.Request) bool {
+	if r.Method != http.MethodGet {
+		return false
+	}
+	return allowPublicInitiativeLookupsRegexp.MatchString(r.URL.Path)
+}
+
+func requireJWTIfNotPublicEndpoint(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for _, fn := range publicEndpoints {
+			if fn(r) {
+				r = r.WithContext(session.WithAllowedAnonymous(r.Context()))
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
+		jwtauth.Authenticator(next).ServeHTTP(w, r)
+	})
+}
+
 func rateLimitMiddleware(maxReq int, windowLength time.Duration) func(http.Handler) http.Handler {
 	// This example uses an in-memory rate limiter for simplicity, an application
 	// that will be running multiple API instances should likely use something like
@@ -381,6 +410,10 @@ func rateLimitMiddleware(maxReq int, windowLength time.Duration) func(http.Handl
 		maxReq,
 		windowLength,
 		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
+			if session.IsAllowedAnonymous(r.Context()) {
+				// Rate limit by IP address if the user is anonymous.
+				return r.RemoteAddr, nil
+			}
 			_, claims, err := jwtauth.FromContext(r.Context())
 			if err != nil {
 				return "", fmt.Errorf("failed to get claims from context: %w", err)

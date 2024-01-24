@@ -248,10 +248,9 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     return filteredAccounts[0]
   })
 
-  const getToken = () => {
+  const getToken = (): Promise<AuthenticationResult | undefined> => {
     if (account.value === undefined) {
-      // TODO: Figure out if this is a legitimate usecase.
-      return Promise.reject(new Error('tried to get a token, but no account was found'))
+      return new Promise<AuthenticationResult | undefined>((resolve) => { resolve(undefined) })
     }
 
     const request: SilentRequest = {
@@ -282,18 +281,16 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
       })
   }
 
-  const createAPIKey = (): Promise<APIKey> => {
-    return getToken()
-      .then((response) => {
-        const userClient = userClientWithAuth(response.idToken)
-        return userClient.createApiKey()
-      })
-      .then((resp) => {
-        if ('message' in resp) {
-          throw new Error(`error creating a new API key ${resp.message}`)
-        }
-        return resp
-      })
+  const createAPIKey = async (): Promise<APIKey | undefined> => {
+    const token = await getToken()
+    if (!token) {
+      return undefined
+    }
+    const apiKey = await userClientWithAuth(token.idToken).createApiKey()
+    if ('message' in apiKey) {
+      throw new Error(`error creating a new API key ${apiKey.message}`)
+    }
+    return apiKey
   }
 
   return {

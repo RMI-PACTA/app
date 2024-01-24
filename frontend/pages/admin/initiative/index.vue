@@ -19,10 +19,6 @@ const deleteInitiative = (id: string) => withLoading(
 <template>
   <StandardContent>
     <TitleBar title="Initiatives" />
-    <p>
-      TODO(#38) Add I18n
-      General information about initiatives here.
-    </p>
     <PVDataTable
       :value="initiatives"
       class="w-full"
@@ -41,7 +37,7 @@ const deleteInitiative = (id: string) => withLoading(
         sortable
       >
         <template #body="slotProps">
-          {{ humanReadableTimeFromStandardString(slotProps.data.createdAt) }}
+          {{ humanReadableTimeFromStandardString(slotProps.data.createdAt).value }}
         </template>
       </PVColumn>
       <PVColumn header="View">
