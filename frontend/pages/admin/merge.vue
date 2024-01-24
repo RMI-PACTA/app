@@ -12,31 +12,34 @@ const fromUserId = useState<string>(`${prefix}.fromUserId`, () => '')
 const toUserId = useState<string>(`${prefix}.toUserId`, () => '')
 const done = useState<boolean>(`${prefix}.done`, () => false)
 
-// TODO(#168) An example of the error here.
-const doMerge = (): void => {
-  void withLoading(() => pactaClient.mergeUsers({
+const doMerge = async () => {
+  await withLoading(() => pactaClient.mergeUsers({
     fromUserId: fromUserId.value,
     toUserId: toUserId.value,
-  }).then((resp) => {
-    done.value = true
   }), `${prefix}.doMerge`)
+
+  done.value = true
 }
 
-const clickMerge = () => {
-  confirm({
-    header: 'Are you 100% sure?',
-    message: 'This will transfer all assets from the source user to the destination user, and then delete the source user. This cannot be undone. Only proceed if you have tripple checked the user IDs and are confident in this procedure.',
-    icon: 'pi pi-user-minus',
-    position: 'center',
-    blockScroll: true,
-    reject: () => { /* noop */ },
-    rejectLabel: 'Cancel',
-    rejectIcon: 'pi pi-times',
-    rejectClass: 'p-button-secondary p-button-text',
-    acceptClass: 'p-button-danger',
-    acceptLabel: 'Proceed',
-    accept: doMerge,
-    acceptIcon: 'pi pi-check',
+const clickMerge = async () => {
+  await new Promise((resolve, reject) => {
+    confirm({
+      header: 'Are you 100% sure?',
+      message: 'This will transfer all assets from the source user to the destination user, and then delete the source user. This cannot be undone. Only proceed if you have tripple checked the user IDs and are confident in this procedure.',
+      icon: 'pi pi-user-minus',
+      position: 'center',
+      blockScroll: true,
+      reject: () => { /* noop */ },
+      rejectLabel: 'Cancel',
+      rejectIcon: 'pi pi-times',
+      rejectClass: 'p-button-secondary p-button-text',
+      acceptClass: 'p-button-danger',
+      acceptLabel: 'Proceed',
+      accept: () => {
+        doMerge().then(resolve).catch(reject)
+      },
+      acceptIcon: 'pi pi-check',
+    })
   })
 }
 

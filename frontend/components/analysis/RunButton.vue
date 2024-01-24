@@ -58,19 +58,19 @@ const request = computed<RunAnalysisReq>(() => {
   }
 })
 
-const startRun = () => {
+const startRun = async () => {
   emit('started')
   clicked.value = true
-  void withLoading(
-    () => pactaClient.runAnalysis(request.value)
-      .then((resp) => { analysisId.value = resp.analysisId })
-      .then(() => { void refreshAnalysisState() }),
+  const resp = await withLoading(
+    () => pactaClient.runAnalysis(request.value),
     `${prefix}.runAnalysis`,
   )
+  analysisId.value = resp.analysisId
+  void refreshAnalysisState()
 }
-const runAnalysis = () => {
+const runAnalysis = async () => {
   if (!props.warnForDuplicate) {
-    startRun()
+    await startRun()
     return
   }
   confirm({
