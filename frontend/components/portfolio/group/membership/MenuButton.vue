@@ -107,7 +107,7 @@ const classes = computed(() => `p-button-sm ${props.btnClass ?? ''} ${visible.va
     icon="pi pi-table"
     @click="toggleMenu"
   />
-  <Teleport to=".modal-group">
+  <Teleport to="#modal-group">
     <PVOverlayPanel
       ref="overlayPanel"
       :pt="{ content: { class: 'p-0' } }"

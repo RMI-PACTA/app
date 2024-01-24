@@ -1,7 +1,7 @@
 <script setup lang="ts" />
 
 <template>
-  <div class="modal-group">
+  <div id="modal-group">
     <ModalError />
     <ModalLoading />
     <ModalPermissionDenied />
