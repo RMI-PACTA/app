@@ -377,6 +377,7 @@ type allowFn func(r *http.Request) bool
 
 var publicEndpoints = []allowFn{
 	allowPublicInitiativeLookups,
+	allowPublicAnalysisDownloads,
 }
 
 var allowPublicInitiativeLookupsRegexp = regexp.MustCompile(`^/initiative/[^/]*$`)
@@ -386,6 +387,13 @@ func allowPublicInitiativeLookups(r *http.Request) bool {
 		return false
 	}
 	return allowPublicInitiativeLookupsRegexp.MatchString(r.URL.Path)
+}
+
+func allowPublicAnalysisDownloads(r *http.Request) bool {
+	if r.Method != http.MethodGet {
+		return false
+	}
+	return strings.HasPrefix(r.URL.Path, "/report/")
 }
 
 func requireJWTIfNotPublicEndpoint(next http.Handler) http.Handler {
