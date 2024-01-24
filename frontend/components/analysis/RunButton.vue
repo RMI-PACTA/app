@@ -87,7 +87,7 @@ const runAnalysis = async () => {
       accept: () => { startRun().then(resolve).catch(reject) },
       acceptIcon: 'pi pi-check',
     })
-  });
+  })
 }
 const refreshAnalysisState = async () => {
   const aid = analysisId.value
