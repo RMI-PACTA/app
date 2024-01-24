@@ -306,16 +306,16 @@ const cleanUpIncompleteUploads = async () => {
         new-tab
         class="p-button-xs p-button-outlined"
         icon="pi pi-external-link"
-      icon-pos="right"
-      :label="tt('Input User Guide')"
+        icon-pos="right"
+        :label="tt('Input User Guide')"
       />
       <LinkButton
         to="/samples/sample-1.csv"
         new-tab
         class="p-button-xs p-button-outlined"
         icon="pi pi-download"
-      icon-pos="right"
-      :label="tt('Sample CSV')"
+        icon-pos="right"
+        :label="tt('Sample CSV')"
       />
     </div>
     <FormField
