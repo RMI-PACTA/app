@@ -346,6 +346,17 @@
     "this user": "this user's public activities on the platform",
     "you": "your public activities on the platform"
   },
+  "pages/initiative/id/portfolios": {
+    "Added By User": "Added by User",
+    "Added At": "Added At",
+    "Details": "Details",
+    "View User": "View User",
+    "Portfolio":"Portfolio",
+    "Remove": "Remove",
+    "Refresh": "Refresh",
+    "Download": "Download",
+    "Download All": "Download All"
+  },
   "components/user/Toolbar": {
     "Edit": "Edit",
     "Profile": "Profile"
@@ -448,6 +459,8 @@
   "pages/initiative/relationships": {
     "Actions": "Actions",
     "Make Manager": "Make Manager",
+    "Remove Manager": "Remove Manager",
+    "Manager": "Manager",
     "Member": "Member",
     "Remove From Initiative": "Remove From Initiative",
     "Role": "Role",

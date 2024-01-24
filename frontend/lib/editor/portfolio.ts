@@ -64,6 +64,10 @@ const createEditorPortfolioFields = (translation: Translation): EditorPortfolioF
       name: 'initiatives',
       label: tt('Initiatives'),
     },
+    blob: {
+      name: 'blob',
+      label: tt('Blob'),
+    },
   }
 }
 

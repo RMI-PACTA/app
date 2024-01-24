@@ -32,6 +32,29 @@ func (s *Server) populatePortfoliosInPortfolioGroups(
 	return nil
 }
 
+func (s *Server) populatePortfoliosInInitiatives(
+	ctx context.Context,
+	ts []*pacta.Initiative,
+) error {
+	getFn := func(i *pacta.Initiative) ([]*pacta.Portfolio, error) {
+		result := []*pacta.Portfolio{}
+		for _, member := range i.PortfolioInitiativeMemberships {
+			result = append(result, member.Portfolio)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.PortfolioID) (map[pacta.PortfolioID]*pacta.Portfolio, error) {
+		return s.DB.Portfolios(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(p *pacta.Portfolio) pacta.PortfolioID {
+		return p.ID
+	}
+	if err := populateAll(ts, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating portfolios in initiatives failed", zap.Error(err))
+	}
+	return nil
+}
+
 func (s *Server) populateInitiativesInPortfolios(
 	ctx context.Context,
 	is []*pacta.Portfolio,

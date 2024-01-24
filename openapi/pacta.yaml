@@ -1692,6 +1692,9 @@ components:
           type: string
           format: date-time
           description: The time at which this portfolio was successfully parsed from a raw  
+        blob: 
+          description: Information about the logical portfolio file itself
+          $ref: '#/components/schemas/Blob'
         adminDebugEnabled:
           type: boolean 
           description: Whether the admin debug mode is enabled for this portfolio

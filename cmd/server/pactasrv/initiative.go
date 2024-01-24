@@ -152,6 +152,9 @@ func (s *Server) FindInitiativeById(ctx context.Context, request api.FindInitiat
 			return nil, oapierr.Internal("failed to load portfolios for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
 		}
 		i.PortfolioInitiativeMemberships = portfolios
+		if err := s.populatePortfoliosInInitiatives(ctx, []*pacta.Initiative{i}); err != nil {
+			return nil, err
+		}
 		relationships, err := s.DB.InitiativeUserRelationshipsByInitiative(s.DB.NoTxn(ctx), i.ID)
 		if err != nil {
 			return nil, oapierr.Internal("failed to load initiative user relationships for initiative", zap.String("initiative_id", string(i.ID)), zap.Error(err))
@@ -296,7 +299,7 @@ func (s *Server) initiativeDoAuthzAndAuditLog(ctx context.Context, iID pacta.Ini
 		} else {
 			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Public)
 		}
-	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_Create, pacta.AuditLogAction_Update:
+	case pacta.AuditLogAction_Delete, pacta.AuditLogAction_Create, pacta.AuditLogAction_Update, pacta.AuditLogAction_Download:
 		if userIsInitiativeManager {
 			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Owner)
 			as.isAuthorized = true
