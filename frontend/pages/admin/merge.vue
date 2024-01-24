@@ -64,7 +64,7 @@ const reset = () => {
         <LinkButton
           class="p-button-secondary p-button-text"
           icon="pi pi-external-link"
-          :to="fromUserId ? localePath(`/user/${fromUserId}/edit`) : undefined"
+          :to="fromUserId ? localePath(`/user/${fromUserId}`) : undefined"
           new-tab
         />
       </div>
@@ -82,7 +82,7 @@ const reset = () => {
         <LinkButton
           class="p-button-secondary p-button-text"
           icon="pi pi-external-link"
-          :to="toUserId ? localePath(`/user/${toUserId}/edit`) : undefined"
+          :to="toUserId ? localePath(`/user/${toUserId}`) : undefined"
           new-tab
         />
       </div>
