@@ -102,4 +102,9 @@ const tt = (s: string) => t(`pages/index.${s}`)
     max-width: 100%;
   }
 }
+
+.p-image-toolbar {
+  z-index: 1;
+  background: var(--primary-color);
+}
 </style>

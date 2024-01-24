@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const localePath = useLocalePath()
+const { showDevTools } = useLocalStorage()
 
 interface AdminItem {
   title: string
@@ -69,6 +70,28 @@ const adminItems: AdminItem[] = [
           </template>
           <template #content>
             {{ item.desc }}
+          </template>
+        </PVCard>
+      </div>
+      <div
+        class="col-12 md:col-6"
+      >
+        <PVCard class="h-full">
+          <template #title>
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex align-items-center">
+                <i
+                  class="text-2xl mr-3 pi pi-cog"
+                />
+                <span>Show Dev Tools</span>
+              </div>
+              <PVInputSwitch
+                v-model="showDevTools"
+              />
+            </div>
+          </template>
+          <template #content>
+            If enabled, the footer of every page will show a set of buttons to help with debugging.
           </template>
         </PVCard>
       </div>

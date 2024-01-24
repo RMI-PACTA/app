@@ -15,16 +15,25 @@
     "Needs Attention": "Needs Attention"
   },
   "components/incompleteupload/ListView": {
+    "Paragraph1": "Incomplete uploads are pieces of data that you have uploaded to the platform, but have not yet finished processing. This can happen if you upload a large file that takes a while to process, or if you upload a file that is not formatted correctly. The two most common responses to this problem are either to delete the data, which you can do below, or enable AdminDebugging on the data and file a bug report so that our team can take a look.", 
     "Created At": "Created At",
+    "Metadata": "Incomplete Upload Metadata",
     "Details": "Details",
     "Name": "Name",
     "Delete": "Delete",
     "Editable Properties": "Editable Properties",
     "Holdings Date": "Holdings Date",
-    "Metadata": "Metadata",
     "Number of Rows": "Number of Rows",
     "Save Changes": "Save Changes",
     "Refresh": "Refresh"
+  },
+  "lib/editor/incomplete_upload": {
+    "Name": "Name",
+    "NameHelpText": "This is the name of the incomplete upload source file - it is only for reference and organization, and does not impact analysis.",
+    "Description": "Description",
+    "DescriptionHelpText": "This is an optional description of the incomplete upload source file - it is only for reference and organization, and does not impact analysis.",
+    "AdminDebuggingEnabled": "Administrator Access",
+    "ADEHelpText": "When enabled, this upload can be accessed by administrators for help with debugging. Only turn this on if you're comfortable with system administrators accessing this data.",
   },
   "components/analysis/ContextualListView": { 
     "Ran At": "Ran At",
@@ -280,7 +289,7 @@
     "A project of": "A project of",
     "About": "About",
     "Dev Tools": "Dev Tools",
-    "File a Bug": "File a Bug",
+    "File a Bug": "Report an Issue",
     "Manage Fake Users": "Manage Fake Users",
     "Missing Translations": "Missing Translations",
     "Privacy": "Privacy",
@@ -374,7 +383,9 @@
     "Portfolio Groups": "Portfolio Groups",
     "Portfolios": "Portfolios",
     "Incomplete Uploads": "Incomplete Uploads",
-    "Analyses": "Reports and Audits"
+    "Analyses": "Reports and Audits",
+    "Paragraph1": "This page is your home base for managing your existing data on the PACTA platform. You can run audits and reports over your portfolios, manage their memberships in groups and initiatives, and view the results of platform analysis.",
+    "Upload More Portfolios": "Upload More Portfolios"
   },
   "pages/initiative/invitations": {
     "Yes Invitations": "This initiative requires an invitation (a unique, one-time code) to join. You can create and manage these invitations below.",
@@ -426,8 +437,10 @@
   "pages/upload": {
     "Input User Guide": "Input User Guide",
     "Sample CSV": "Sample CSV",
-    "Paragraph1": "This is a page where you can upload portfolios to test out the PACTA platform.",
-    "Paragraph2": "Input files are expected to be structured as CSVs with an expected set of header rows. To learn more, check out the Input User Guide or download a sample CSV.",
+    "No Files Selected": "No Files Selected",
+    "Paragraph1": "The PACTA analysis tool is an online platform that allows anyone to better understand the alignment of their financial holdings with various climate scenarios. On this page, you can start this analysis process by uploading one or more portfolios to the platform.",
+    "Paragraph2": "We understand this data is likely sensitive - that's why this tool is built for privacy and security first - unless you explicitly share your data, only you can access it.",
+    "Paragraph3": "Input files should be Comma Separated Value files (CSVs) and must contain an expected set of header rows. To learn more, check out the Input User Guide, or if you just want to see how the tool works, use the sample CSV.",
     "Add File(s)": "Add File(s)",
     "Add More File(s)": "Add More File(s)",
     "Cleaning Up": "Cleaning Up",
@@ -462,11 +475,12 @@
     "Secondary Target Owner": "Secondary Target Owner",
     "Secondary Target Type": "Secondary Target Type",
     "Filter To Specific Values": "Values To Include",
-    "Columns": "Columns",
+    "Columns": "Displayed Columns",
     "Column Selection": "Column Selection",
     "Select or Remove Columns To Display": "Select or Remove Columns to Display",
-    "Reset":  "Reset",
+    "Reset": "Reset Filters",
     "Done": "Done",
+    "Export": "Export",
     "DescriptionParagraph1": "RMI takes the security of your data with the utmost care. To that end, we have implemented a robust audit logging system that tracks all changes to your data, and who made those changes. This audit log is available to you at any time, and can be filtered by time, user, or action. Hopefully this will give you some peace of mind that your sensitive data is being appropriately handled.",
     "DescriptionParagraph2": "If you have any questions about the audit log, or if you think that something is missing, or you would like to learn more, please contact us."
   },
