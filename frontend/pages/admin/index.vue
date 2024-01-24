@@ -27,14 +27,12 @@ const adminItems: AdminItem[] = [
     desc: 'View a list of users, and search for users based on name or email, then edit or delete them',
     href: '/admin/users',
   },
-  /*
   {
     title: 'User Merge',
     icon: 'pi pi-user-minus',
     desc: 'Merge two user accounts into one, retaining all data',
-    href: '/admin/user-merge',
+    href: '/admin/merge',
   },
-  */
 ]
 </script>
 
