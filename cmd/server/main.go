@@ -27,7 +27,6 @@ import (
 	"github.com/RMI/pacta/secrets"
 	"github.com/RMI/pacta/session"
 	"github.com/RMI/pacta/task"
-	"github.com/Silicon-Ally/zaphttplog"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
@@ -312,7 +311,12 @@ func run(args []string) error {
 			// LogEntry created by the logging middleware.
 			chimiddleware.RequestID,
 			chimiddleware.RealIP,
-			zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(false)),
+
+			// Disabled, see #67 for details. Request/Response logging can be useful in some
+			// cases, but we can rely on the native cloud systems we deploy to for similar
+			// info in the meantime.
+			// zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(false)),
+
 			chimiddleware.Recoverer,
 			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
 			requireJWTIfNotPublicEndpoint,
@@ -352,9 +356,8 @@ func run(args []string) error {
 			AllowedOrigins:   []string{*allowedCORSOrigin},
 			AllowCredentials: true,
 			AllowedHeaders:   []string{"Authorization", "Content-Type"},
-			// Enable Debugging for testing, consider disabling in production
-			Debug:          true,
-			AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
+			Debug:            false,
+			AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 		}).Handler(r)
 	} else {
 		handler = r
