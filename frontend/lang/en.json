@@ -424,6 +424,10 @@
     "Discard Changes": "Discard Changes"
   },
   "pages/upload": {
+    "Input User Guide": "Input User Guide",
+    "Sample CSV": "Sample CSV",
+    "Paragraph1": "This is a page where you can upload portfolios to test out the PACTA platform.",
+    "Paragraph2": "Input files are expected to be structured as CSVs with an expected set of header rows. To learn more, check out the Input User Guide or download a sample CSV.",
     "Add File(s)": "Add File(s)",
     "Add More File(s)": "Add More File(s)",
     "Cleaning Up": "Cleaning Up",

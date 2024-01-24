@@ -14,7 +14,7 @@ const { isAdmin, maybeMe } = await getMaybeMe()
 
 const prefix = 'components/standard/Nav'
 const tt = (s: string) => t(`${prefix}.${s}`)
-const menuHidden = useState<boolean>(`${prefix}.menuHidden`, () => false)
+const menuVisible = useState<boolean>(`${prefix}.menuVisible`, () => false)
 const userMenu = useState<{ toggle: (e: Event) => void } | null>(`${prefix}.userMenu`, () => null)
 const userMenuVisible = useState<boolean>(`${prefix}.userMenuVisible`, () => false)
 
@@ -26,11 +26,11 @@ const toggleUserMenu = (e: Event) => {
 
 const menuStyles = computed(() => {
   return {
-    transition: menuHidden.value ? 'max-height .1s ease' : 'max-height .5s ease',
+    transition: menuVisible.value ? 'max-height .5s ease' : 'max-height .1s ease',
     overflow: 'hidden',
-    'max-height': menuHidden.value ? '0px' : '100vh',
-    border: menuHidden.value ? undefined : '2px solid',
-    'margin-top': menuHidden.value ? '0' : '-2px',
+    'max-height': menuVisible.value ? '100vh' : '0px',
+    border: menuVisible.value ? '2px solid' : undefined,
+    'margin-top': menuVisible.value ? '-2px' : '0',
   }
 })
 
@@ -107,10 +107,10 @@ const userMenuItems = computed(() => {
           @click="toggleUserMenu"
         />
         <PVButton
-          :icon="menuHidden ? 'pi pi-bars' : 'pi pi-times'"
-          :class="menuHidden ? 'p-button-text' : 'border-bottom-noround p-button-primary'"
+          :icon="menuVisible ? 'pi pi-times' : 'pi pi-bars'"
+          :class="menuVisible ? 'border-bottom-noround p-button-primary': 'p-button-text'"
           class="sm:hidden p-button-lg h-3rem"
-          @click="() => menuHidden = !menuHidden"
+          @click="() => menuVisible = !menuVisible"
         />
       </div>
     </div>

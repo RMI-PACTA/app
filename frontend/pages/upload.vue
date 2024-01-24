@@ -8,6 +8,7 @@ const { linkToPortfolioList } = useMyDataURLs()
 const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const prefix = 'pages/upload'
 const tt = (key: string) => t(`${prefix}.${key}`)
@@ -293,11 +294,30 @@ const cleanUpIncompleteUploads = async () => {
 <template>
   <StandardContent>
     <TitleBar title="Upload Portfolios" />
-    <!-- TODO(#80) Finalize this copy -->
     <p>
-      This is a page where you can upload portfolios to test out the PACTA platform.
-      This Copy will need work, and will need to link to the documentation.
+      {{ tt('Paragraph1') }}
     </p>
+    <p>
+      {{ tt('Paragraph2') }}
+    </p>
+    <div class="flex gap-1">
+      <LinkButton
+        :to="localePath('/input-guide')"
+        new-tab
+        class="p-button-xs p-button-outlined"
+        icon="pi pi-external-link"
+        icon-pos="right"
+        :label="tt('Input User Guide')"
+      />
+      <LinkButton
+        to="/samples/sample-1.csv"
+        new-tab
+        class="p-button-xs p-button-outlined"
+        icon="pi pi-download"
+        icon-pos="right"
+        :label="tt('Sample CSV')"
+      />
+    </div>
     <FormField
       label="Portfolio Files"
       class="w-full mb-0"
@@ -422,6 +442,7 @@ const cleanUpIncompleteUploads = async () => {
     </PVMessage>
     <PVButton
       v-if="!allDone"
+      class="my-0"
       :label="actionButtonLabel"
       :loading="isProcessing"
       :disabled="isProcessing || fileStatesWithDetail.length === 0"
