@@ -41,7 +41,7 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
       header-class="surface-800"
     >
       <div
-        class="code-block surface-50 relative"
+        class="code-block surface-50 relative min-w-full"
       >
         <div class="absolute top-0 right-0 flex gap-0">
           <CopyToClipboardButton
@@ -68,6 +68,19 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
     .p-accordion-header .p-accordion-header-link {
       gap: 1rem;
       padding: 0.5rem 0.75rem;
+    }
+  }
+  // Because accordions within accordions have poor styling, we hardcode these properties
+  .standard-debug.p-accordion {
+    .p-accordion-header-text {
+      font-size: .9rem;
+    }
+    .p-accordion-header .p-accordion-header-link {
+      border: 1px solid #a7a9ac !important; 
+      border-radius: 2px !important;
+    }
+    .p-accordion-header.p-highlight .p-accordion-header-link {
+      border-radius: 2px 2px 0 0 !important;
     }
   }
 </style>

@@ -24,28 +24,25 @@ const status = computed(() => {
   }
   return tt('Running')
 })
-const bg = computed(() => {
+const severity = computed(() => {
   if (props.analysis.completedAt !== undefined) {
     if (props.analysis.failureMessage !== undefined) {
-      return 'bg-red-400'
+      return 'danger'
     } else {
-      return 'bg-green-200'
+      return 'success'
     }
   }
   if (isStale(props.analysis)) {
-    return 'bg-red-200'
+    return 'danger'
   }
-  return 'bg-yellow-200'
+  return 'warn'
 })
 </script>
 
 <template>
-  <div
-    :class="bg"
-    class="p-1 align-self-stretch flex align-items-center justify-content-center border-round-lg"
+  <PVInlineMessage
+    :severity="severity"
   >
-    <span>
-      {{ status }}
-    </span>
-  </div>
+    {{ status }}
+  </PVInlineMessage>
 </template>

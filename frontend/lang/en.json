@@ -189,10 +189,18 @@
     "Ack": "I Understand",
     "No Ack": "Nevermind"
   },
+  "components/BulkActionsDrawer": {
+    "Bulk Actions": "Bulk Actions"
+  },
   "components/portfolio/ListView": {
     "Created At": "Created At",
     "Details": "Details",
     "Groups": "Groups",
+    "Reports": "Reports",
+    "Discard Changes": "Discard Changes",
+    "InitiativesHelpText": "Initiatives allow you to contribute your data for bulk analysis as part of a regulatory or other project. Adding a portfolio to an initiative enables the initiative owner to run analysis over your data as part of bulk runs, and enables them to download your data.",
+    "Audits": "Audits",
+    "GroupsHelpText": "Groups are a way to organize your portfolios for analysis or recordkeeping - they function like tags, and you can add a portfolio to as many groups as you want.",
     "How To Run a Report": "How To Run a Report",
     "Initiatives": "Initiatives",
     "EditHeading": "Edit Portfolio",
@@ -269,7 +277,7 @@
     "Add all portfolios to group": "Add selected portfolios to group",
     "Add unselected portfolios to group": "Add selected portfolios to this group",
     "Create New Group": "Create New Group",
-    "Group Memberships": "Manage Group Memberships",
+    "Group Memberships": "Modify Group Memberships",
     "Remove all portfolios from group": "Remove selected portfolios from this group",
     "Added OK Singular": "Added portfolio to group",
     "Removed OK Singular": "Removed portfolio from group",
@@ -281,7 +289,7 @@
   "components/portfolio/initiative/membership/MenuButton": {
     "Add all portfolios to initiative": "Add selected portfolios to initiative",
     "Add unselected portfolios to initiative": "Add selected portfolios to this initiative",
-    "Initiative Memberships": "Select Initiative Participation",
+    "Initiative Memberships": "Modify Initiative Participation",
     "Initiative is closed to new portfolios": "Initiative is closed to new portfolios",
     "Remove all portfolios from initiative": "Remove selected portfolios from this initiative",
     "Added OK Singular": "Added portfolio to initiative",
