@@ -16,6 +16,9 @@ import (
 // Creates an initiative invitation
 // (POST /initiative-invitation)
 func (s *Server) CreateInitiativeInvitation(ctx context.Context, request api.CreateInitiativeInvitationRequestObject) (api.CreateInitiativeInvitationResponseObject, error) {
+	if err := checkStringLimitSmall("id", request.Body.Id); err != nil {
+		return nil, err
+	}
 	ii, err := conv.InitiativeInvitationFromOAPI(request.Body)
 	if err != nil {
 		return nil, err

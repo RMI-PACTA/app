@@ -60,6 +60,12 @@ func (s *Server) ListPortfolioGroups(ctx context.Context, request api.ListPortfo
 // Creates a portfolio group
 // (POST /portfolio-groups)
 func (s *Server) CreatePortfolioGroup(ctx context.Context, request api.CreatePortfolioGroupRequestObject) (api.CreatePortfolioGroupResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmall("name", request.Body.Name),
+		checkStringLimitMedium("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
@@ -87,6 +93,12 @@ func (s *Server) CreatePortfolioGroup(ctx context.Context, request api.CreatePor
 // Updates portfolio group properties
 // (PATCH /portfolio-group/{id})
 func (s *Server) UpdatePortfolioGroup(ctx context.Context, request api.UpdatePortfolioGroupRequestObject) (api.UpdatePortfolioGroupResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("name", request.Body.Name),
+		checkStringLimitMediumPtr("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	id := pacta.PortfolioGroupID(request.Id)
 	if err := s.portfolioGroupAuthz(ctx, id, pacta.AuditLogAction_Update); err != nil {
 		return nil, err

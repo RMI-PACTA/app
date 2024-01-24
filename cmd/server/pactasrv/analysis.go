@@ -92,6 +92,12 @@ func (s *Server) FindAnalysisById(ctx context.Context, request api.FindAnalysisB
 // Updates writable analysis properties
 // (PATCH /analysis/{id})
 func (s *Server) UpdateAnalysis(ctx context.Context, request api.UpdateAnalysisRequestObject) (api.UpdateAnalysisResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("name", request.Body.Name),
+		checkStringLimitMediumPtr("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	id := pacta.AnalysisID(request.Id)
 	if err := s.analysisDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
 		return nil, err
@@ -150,6 +156,12 @@ func (s *Server) UpdateAnalysisArtifact(ctx context.Context, request api.UpdateA
 // Requests an analysis be run
 // (POST /run-analysis)
 func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequestObject) (api.RunAnalysisResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmall("name", request.Body.Name),
+		checkStringLimitMedium("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err

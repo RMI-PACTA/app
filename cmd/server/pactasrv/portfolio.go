@@ -79,6 +79,12 @@ func (s *Server) FindPortfolioById(ctx context.Context, request api.FindPortfoli
 // Updates portfolio properties
 // (PATCH /portfolio/{id})
 func (s *Server) UpdatePortfolio(ctx context.Context, request api.UpdatePortfolioRequestObject) (api.UpdatePortfolioResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("name", request.Body.Name),
+		checkStringLimitMediumPtr("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	id := pacta.PortfolioID(request.Id)
 	if err := s.portfolioDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
 		return nil, err

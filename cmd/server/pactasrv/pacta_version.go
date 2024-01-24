@@ -51,6 +51,13 @@ func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVer
 // Creates a PACTA version
 // (POST /pacta-versions)
 func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) (api.CreatePactaVersionResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmall("name", request.Body.Name),
+		checkStringLimitSmall("digest", request.Body.Digest),
+		checkStringLimitMedium("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
@@ -80,6 +87,13 @@ func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePacta
 // Updates a PACTA version
 // (PATCH /pacta-version/{id})
 func (s *Server) UpdatePactaVersion(ctx context.Context, request api.UpdatePactaVersionRequestObject) (api.UpdatePactaVersionResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("name", request.Body.Name),
+		checkStringLimitSmallPtr("digest", request.Body.Digest),
+		checkStringLimitMediumPtr("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	id := pacta.PACTAVersionID(request.Id)
 	if err := s.pactaVersionAuthz(ctx, id, pacta.AuditLogAction_Update); err != nil {
 		return nil, err

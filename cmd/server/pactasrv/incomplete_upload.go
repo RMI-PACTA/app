@@ -67,6 +67,12 @@ func (s *Server) FindIncompleteUploadById(ctx context.Context, request api.FindI
 // Updates incomplete upload properties
 // (PATCH /incomplete-upload/{id})
 func (s *Server) UpdateIncompleteUpload(ctx context.Context, request api.UpdateIncompleteUploadRequestObject) (api.UpdateIncompleteUploadResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("name", request.Body.Name),
+		checkStringLimitMediumPtr("description", request.Body.Description),
+	); err != nil {
+		return nil, err
+	}
 	id := pacta.IncompleteUploadID(request.Id)
 	mutations := []db.UpdateIncompleteUploadFn{}
 	if request.Body.Name != nil {

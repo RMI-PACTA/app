@@ -19,7 +19,9 @@ import (
 // Starts the process of uploading one or more portfolio files
 // (POST /portfolio-upload)
 func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPortfolioUploadRequestObject) (api.StartPortfolioUploadResponseObject, error) {
-	// TODO(#71) Implement basic limits
+	if err := checkIntLimit("number_of_uploaded_files", len(request.Body.Items), 25); err != nil {
+		return nil, err
+	}
 	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
@@ -35,14 +37,13 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 	properties.EngagementStrategy = conv.OptionalBoolFromOAPI(request.Body.PropertyEngagementStrategy)
 
 	n := len(request.Body.Items)
-	if n > 25 {
-		// TODO(#71) Implement basic limits
-		return nil, oapierr.BadRequest("too many items")
-	}
 	blobs := make([]*pacta.Blob, n)
 	respItems := make([]api.StartPortfolioUploadRespItem, n)
 	for i, item := range request.Body.Items {
 		fn := item.FileName
+		if err := checkStringLimitSmall("file_name", fn); err != nil {
+			return nil, err
+		}
 		extStr := filepath.Ext(fn)
 		ft, err := pacta.ParseFileType(extStr)
 		if err != nil {

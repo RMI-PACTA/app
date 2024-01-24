@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "pactasrv",
@@ -13,6 +13,7 @@ go_library(
         "initiative_invitation.go",
         "initiative_portfolio_relationship.go",
         "initiative_user_relationship.go",
+        "limits.go",
         "pacta_version.go",
         "pactasrv.go",
         "parallel.go",
@@ -38,4 +39,10 @@ go_library(
         "@org_uber_go_zap//:zap",
         "@org_uber_go_zap//zapcore",
     ],
+)
+
+go_test(
+    name = "pactasrv_test",
+    srcs = ["limits_test.go"],
+    embed = [":pactasrv"],
 )

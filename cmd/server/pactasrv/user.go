@@ -34,6 +34,11 @@ func (s *Server) FindUserById(ctx context.Context, request api.FindUserByIdReque
 // Updates user properties
 // (PATCH /user/{id})
 func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestObject) (api.UpdateUserResponseObject, error) {
+	if err := anyError(
+		checkStringLimitSmallPtr("name", request.Body.Name),
+	); err != nil {
+		return nil, err
+	}
 	id := pacta.UserID(request.Id)
 	if err := s.userDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
 		return nil, err
