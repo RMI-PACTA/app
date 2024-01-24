@@ -1,5 +1,6 @@
 import { type Ref } from 'vue'
 import { type ErrorObject } from 'serialize-error'
+import { serializeError } from 'serialize-error'
 
 export const useModal = () => {
   const prefix = 'useModal'
@@ -24,6 +25,14 @@ export const useModal = () => {
   // error
   const errorModalVisible = newModalVisibilityState('errorModalVisible')
   const error = useState<ErrorObject>('errorModal.error')
+  const handleError = (err: Error) => {
+    if (process.client) {
+      console.log(err)
+    }
+    error.value = serializeError(err)
+    errorModalVisible.value = true
+    clearLoading()
+  }
 
   // loading
   const loadingSet = useState<Set<string>>(`${prefix}.loadingSet`, () => new Set<string>())
@@ -86,6 +95,7 @@ export const useModal = () => {
     error: {
       error,
       errorModalVisible,
+      handleError,
     },
     permissionDenied: {
       permissionDeniedVisible,

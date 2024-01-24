@@ -3,6 +3,7 @@ import { type Portfolio, type AccessBlobContentResp } from '@/openapi/generated/
 
 const { t } = useI18n()
 const pactaClient = usePACTA()
+const { error: { handleError } } = useModal()
 
 interface Props {
   portfolio: Portfolio
@@ -17,7 +18,7 @@ const downloadInProgress = useState<boolean>(`${statePrefix}.downloadInProgress`
 const doDownload = async () => {
   const blob = props.portfolio.blob
   if (!blob) {
-    console.warn('No blobId found for portfolio', props.portfolio)
+    handleError(new Error(`Portfolio did not have blob associated with it, and could not be downloaded: ${props.portfolio.id}`))
     return
   }
   const blobId = blob.id
