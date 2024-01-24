@@ -125,7 +125,7 @@ const reset = () => {
               always
             />
             <LinkButton
-              :to="localePath(`/user/${slotProps.data.id}/edit`)"
+              :to="localePath(`/user/${slotProps.data.id}`)"
               icon="pi pi-arrow-right"
               icon-pos="right"
               class="p-button-xs p-button-outlined"
