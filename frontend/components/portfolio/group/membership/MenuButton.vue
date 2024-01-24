@@ -12,6 +12,7 @@ const pactaClient = usePACTA()
 interface Props {
   portfolioGroups: PortfolioGroup[]
   selectedPortfolios: Portfolio[]
+  btnClass?: string
 }
 const props = defineProps<Props>()
 interface Emits {
@@ -95,18 +96,18 @@ const groupOptions = computed(() => {
   result.sort((a, b) => a.created < b.created ? 1 : -1)
   return result
 })
+const classes = computed(() => `p-button-sm ${props.btnClass ?? ''} ${visible.value ? '' : 'p-button-outlined'}`)
 </script>
 
 <template>
-  <div>
-    <PVButton
-      :disabled="!props.selectedPortfolios || props.selectedPortfolios.length === 0"
-      class="p-button-sm"
-      :class="visible ? '' : 'p-button-outlined'"
-      :label="tt('Group Memberships') + selectedCountSuffix(props.selectedPortfolios)"
-      icon="pi pi-table"
-      @click="toggleMenu"
-    />
+  <PVButton
+    :disabled="!props.selectedPortfolios || props.selectedPortfolios.length === 0"
+    :class="classes"
+    :label="tt('Group Memberships') + selectedCountSuffix(props.selectedPortfolios)"
+    icon="pi pi-table"
+    @click="toggleMenu"
+  />
+  <Teleport to="#modal-group">
     <PVOverlayPanel
       ref="overlayPanel"
       :pt="{ content: { class: 'p-0' } }"
@@ -164,7 +165,7 @@ const groupOptions = computed(() => {
     <PortfolioGroupNewModal
       @created="changedGroups"
     />
-  </div>
+  </Teleport>
 </template>
 
 <style scoped lang="scss">

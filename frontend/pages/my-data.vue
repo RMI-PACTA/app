@@ -9,6 +9,7 @@ import {
   QueryParamExpandedPortfolioGroupIds,
   QueryParamSelectedAnalysisIds,
   QueryParamExpandedAnalysisIds,
+  QueryParamExpandedSections,
 } from '@/lib/mydata'
 
 const prefix = 'pages/my-data'
@@ -32,6 +33,26 @@ const expandedPortfolioGroupIds = joinedWithCommas(fromQueryReactiveWithDefault(
 const selectedAnalysisIds = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamSelectedAnalysisIds, ''))
 const expandedAnalysisIds = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamExpandedAnalysisIds, ''))
 const tabQP = fromQueryReactiveWithDefault(QueryParamTab, 'p')
+const expandedSectionsArray = joinedWithCommas(fromQueryReactiveWithDefault(QueryParamExpandedSections, ''))
+const expandedSections = computed<Map<string, number[]>>({
+  get: () => {
+    const result = new Map<string, number[]>()
+    expandedSectionsArray.value.forEach((v) => {
+      const [k, ...vv] = v.split(':')
+      result.set(k, vv.map((vvv) => parseInt(vvv)))
+    })
+    return result
+  },
+  set: (v: Map<string, number[]>) => {
+    const result: string[] = []
+    v.forEach((vv, k) => {
+      if (vv.length > 0) {
+        result.push(`${k}:${vv.join(':')}`)
+      }
+    })
+    expandedSectionsArray.value = result
+  },
+})
 
 const [
   { data: incompleteUploadsData, refresh: refreshIncompleteUploadsApi },
@@ -159,6 +180,7 @@ const activeIndex = computed<number>({
           v-if="portfolioData && portfolioGroupData && initiativeData"
           v-model:selected-portfolio-ids="selectedPortfolioIds"
           v-model:expanded-portfolio-ids="expandedPortfolioIds"
+          v-model:expanded-sections="expandedSections"
           :portfolios="portfolioData.items"
           :portfolio-groups="portfolioGroupData.items"
           :analyses="analysesData.items"

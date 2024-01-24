@@ -11,6 +11,7 @@ const pactaClient = usePACTA()
 interface Props {
   initiatives: Initiative[]
   selectedPortfolios: Portfolio[]
+  btnClass?: string
 }
 const props = defineProps<Props>()
 interface Emits {
@@ -94,18 +95,18 @@ const initiativeOptions = computed(() => {
   result.sort((a, b) => a.created < b.created ? 1 : -1)
   return result
 })
+const classes = computed(() => `p-button-sm ${props.btnClass ?? ''} ${visible.value ? '' : 'p-button-outlined'}`)
 </script>
 
 <template>
-  <div>
-    <PVButton
-      :disabled="!props.selectedPortfolios || props.selectedPortfolios.length === 0"
-      class="p-button-sm"
-      :class="visible ? '' : 'p-button-outlined'"
-      :label="tt('Initiative Memberships') + selectedCountSuffix(props.selectedPortfolios)"
-      icon="pi pi-sitemap"
-      @click="toggleMenu"
-    />
+  <PVButton
+    :disabled="!props.selectedPortfolios || props.selectedPortfolios.length === 0"
+    :class="classes"
+    :label="tt('Initiative Memberships') + selectedCountSuffix(props.selectedPortfolios)"
+    icon="pi pi-sitemap"
+    @click="toggleMenu"
+  />
+  <Teleport to="#modal-group">
     <PVOverlayPanel
       ref="overlayPanel"
       :pt="{ content: { class: 'p-0' } }"
@@ -155,7 +156,7 @@ const initiativeOptions = computed(() => {
         </div>
       </div>
     </PVOverlayPanel>
-  </div>
+  </Teleport>
 </template>
 
 <style scoped lang="scss">

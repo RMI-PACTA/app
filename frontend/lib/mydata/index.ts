@@ -5,6 +5,7 @@ export const QueryParamSelectedPortfolioGroupIds = 'sg'
 export const QueryParamExpandedPortfolioGroupIds = 'eg'
 export const QueryParamSelectedAnalysisIds = 'sa'
 export const QueryParamExpandedAnalysisIds = 'ea'
+export const QueryParamExpandedSections = 'es'
 
 export enum Tab {
   Portfolio = 'p',

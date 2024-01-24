@@ -54,3 +54,7 @@ div.p-chips .p-chips-multiple-container {
 div.p-chips .p-chips-multiple-container .p-chips-token {
   margin-right: 0;
 }
+
+div.p-accordion .p-accordion-header:not(.p-disabled).p-highlight .p-accordion-header-link {
+  background-color: #f5f5f5
+}
