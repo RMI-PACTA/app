@@ -373,15 +373,25 @@ func run(args []string) error {
 	return nil
 }
 
-var publicEndpoints = []*regexp.Regexp{
-	regexp.MustCompile(`^/initiative/[^/]*$`),
+type allowFn func(r *http.Request) bool
+
+var publicEndpoints = []allowFn{
+	allowPublicInitiativeLookups,
+}
+
+var allowPublicInitiativeLookupsRegexp = regexp.MustCompile(`^/initiative/[^/]*$`)
+
+func allowPublicInitiativeLookups(r *http.Request) bool {
+	if r.Method != http.MethodGet {
+		return false
+	}
+	return allowPublicInitiativeLookupsRegexp.MatchString(r.URL.Path)
 }
 
 func requireJWTIfNotPublicEndpoint(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		for _, re := range publicEndpoints {
-			if re.MatchString(path) {
+		for _, fn := range publicEndpoints {
+			if fn(r) {
 				r = r.WithContext(session.WithAllowedAnonymous(r.Context()))
 				next.ServeHTTP(w, r)
 				return
@@ -402,14 +412,7 @@ func rateLimitMiddleware(maxReq int, windowLength time.Duration) func(http.Handl
 		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
 			if session.IsAllowedAnonymous(r.Context()) {
 				// Rate limit by IP address if the user is anonymous.
-				ip := r.Header.Get("X-Real-IP")
-				if ip == "" {
-					ip = r.Header.Get("X-Forwarded-For")
-				}
-				if ip == "" {
-					ip = r.RemoteAddr
-				}
-				return ip, nil
+				return r.RemoteAddr, nil
 			}
 			_, claims, err := jwtauth.FromContext(r.Context())
 			if err != nil {

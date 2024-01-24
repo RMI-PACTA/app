@@ -79,27 +79,26 @@ func notFoundOrUnauthorized[T ~string](actorInfo actorInfo, action pacta.AuditLo
 }
 
 func (s *Server) auditLogIfAuthorizedOrFail(ctx context.Context, status *authzStatus) error {
-	zapFields := []zap.Field{
-		zap.String("actor_id", status.actorUserID()),
-		zap.String("action", string(status.action)),
-		zap.String("target_type", string(status.primaryTargetType)),
-		zap.String("target_id", status.primaryTargetID),
+	zapFields := func(others ...zap.Field) []zap.Field {
+		return append([]zap.Field{
+			zap.String("actor_id", status.actorUserID()),
+			zap.String("action", string(status.action)),
+			zap.String("target_type", string(status.primaryTargetType)),
+			zap.String("target_id", status.primaryTargetID),
+		}, others...)
 	}
 	if !status.isAuthorized {
-		zapFields = append(zapFields, zap.String("reason", "is_authorized_false"))
-		s.Logger.Warn("not authorized", zapFields...)
+		s.Logger.Warn("not authorized", zapFields(zap.String("reason", "is_authorized_false"))...)
 		return notFoundOrUnauthorized(status.actorInfo, status.action, status.primaryTargetType, status.primaryTargetID)
 	}
 	al, err := status.ToAuditLog()
 	if err != nil {
-		zapFields = append(zapFields, zap.String("reason", "to_audit_log_failure"), zap.Error(err))
-		s.Logger.Warn("not authorized", zapFields...)
+		s.Logger.Warn("not authorized", zapFields(zap.String("reason", "to_audit_log_failure"), zap.Error(err))...)
 		return err
 	}
 	_, err = s.DB.CreateAuditLog(s.DB.NoTxn(ctx), al)
 	if err != nil {
-		zapFields = append(zapFields, zap.String("reason", "create_audit_log_failure"), zap.Error(err))
-		s.Logger.Warn("not authorized", zapFields...)
+		s.Logger.Warn("not authorized", zapFields(zap.String("reason", "create_audit_log_failure"), zap.Error(err))...)
 		return oapierr.Internal("creating audit log failed", zap.Error(err))
 	}
 	return nil

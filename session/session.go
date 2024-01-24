@@ -12,17 +12,17 @@ import (
 	"go.uber.org/zap"
 )
 
-var userIDKey = struct{}{}
-var allowedAnonymousKey = struct{}{}
+type userIDKey = struct{}
+type allowedAnonymousKey = struct{}
 
 const allowedAnonymousValue = "allowedAnonymous"
 
 func WithUserID(c context.Context, id pacta.UserID) context.Context {
-	return context.WithValue(c, userIDKey, id)
+	return context.WithValue(c, userIDKey{}, id)
 }
 
 func WithAllowedAnonymous(c context.Context) context.Context {
-	return context.WithValue(c, allowedAnonymousKey, allowedAnonymousValue)
+	return context.WithValue(c, allowedAnonymousKey{}, allowedAnonymousValue)
 }
 
 type DB interface {
@@ -31,7 +31,7 @@ type DB interface {
 }
 
 func UserIDFromContext(ctx context.Context) (pacta.UserID, error) {
-	userID, ok := ctx.Value(userIDKey).(pacta.UserID)
+	userID, ok := ctx.Value(userIDKey{}).(pacta.UserID)
 	if !ok {
 		return "", oapierr.Unauthorized("no user id in context")
 	}
@@ -42,7 +42,7 @@ func UserIDFromContext(ctx context.Context) (pacta.UserID, error) {
 }
 
 func IsAllowedAnonymous(ctx context.Context) bool {
-	v := ctx.Value(allowedAnonymousKey)
+	v := ctx.Value(allowedAnonymousKey{})
 	if v == nil {
 		return false
 	}
