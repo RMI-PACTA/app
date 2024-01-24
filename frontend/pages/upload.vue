@@ -294,17 +294,30 @@ const cleanUpIncompleteUploads = async () => {
 <template>
   <StandardContent>
     <TitleBar title="Upload Portfolios" />
-    <!-- TODO(#80) Finalize this copy -->
     <p>
-      This is a page where you can upload portfolios to test out the PACTA platform.
+      {{ tt('Paragraph1') }}
     </p>
     <p>
-      Input files are expected to be structred as CSVs with an expected set of header rows.
-      To learn more, check out the <a
-        :href="localePath('/input-guide')"
-        target="_blank"
-      >{{ tt('Input User Guide') }}</a>, or download the <a href="/samples/sample-1.csv">sample CSV</a>.
+      {{ tt('Paragraph2') }}
     </p>
+    <div class="flex gap-1">
+      <LinkButton
+        :to="localePath('/input-guide')"
+        new-tab
+        class="p-button-xs p-button-outlined"
+        icon="pi pi-external-link"
+      icon-pos="right"
+      :label="tt('Input User Guide')"
+      />
+      <LinkButton
+        to="/samples/sample-1.csv"
+        new-tab
+        class="p-button-xs p-button-outlined"
+        icon="pi pi-download"
+      icon-pos="right"
+      :label="tt('Sample CSV')"
+      />
+    </div>
     <FormField
       label="Portfolio Files"
       class="w-full mb-0"

@@ -71,7 +71,7 @@ const tt = (s: string) => t(`pages/index.${s}`)
           icon="pi pi-arrow-right"
           icon-pos="right"
           class="max-w-30rem"
-          to="/upload"
+          :to="localePath('/upload')"
         />
       </div>
     </div>
@@ -82,7 +82,8 @@ const tt = (s: string) => t(`pages/index.${s}`)
       <p>
         {{ tt('Section4Paragraph1') }}
         <LinkButton
-          to="pacta.rmi.org"
+          to="https://pacta.rmi.org"
+          external
           class="p-button-xs align-self-center py-0 ml-2 p-button-outlined"
           :label="tt('Section4CTA')"
           icon="pi pi-arrow-right"
