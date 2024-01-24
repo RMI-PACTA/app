@@ -18,13 +18,7 @@ const rawNewInvitations = useState<string>(`${prefix}.rawNewInvitations`, () => 
 const numToRandomize = useState<number>(`${prefix}.numToRandomize`, () => 5)
 const dataTable = useState<DataTable>(`${prefix}.dataTable`)
 
-const [
-  { data: initiative },
-  { data: invitations, refresh: refreshInvitations },
-] = await Promise.all([
-  useSimpleAsyncData(`${prefix}.getInitiative`, () => pactaClient.findInitiativeById(id)),
-  useSimpleAsyncData(`${prefix}.getInvitations`, () => pactaClient.listInitiativeInvitations(id)),
-])
+const { initiative, invitations, refreshInitiative, refreshInvitations } = await useInitiativeData(id)
 
 const newInvitations = computed(() => {
   const raw = rawNewInvitations.value
@@ -70,13 +64,13 @@ const createInvitations = () => {
   })).map((request) => pactaClient.createInitiativeInvitation(request))
   return withLoading(
     () => Promise.all(requests)
-      .then(refreshInvitations)
+      .then(refreshInitiative)
       .then(() => { createModalVisible.value = false }),
     `${prefix}.createInvitations`,
   )
 }
 const deleteInvitation = (id: string) => withLoading(
-  () => pactaClient.deleteInitiativeInvitation(id).then(refreshInvitations),
+  () => pactaClient.deleteInitiativeInvitation(id).then(refreshInitiative),
   `${prefix}.deleteInvitation`,
 )
 const deleteAll = () => withLoading(

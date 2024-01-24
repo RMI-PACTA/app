@@ -42,6 +42,10 @@ func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 	if err != nil {
 		return nil, oapierr.Internal("initiativeToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
 	}
+	iurs, err := dereference(convAll(i.InitiativeUserRelationships, InitiativeUserRelationshipToOAPI))
+	if err != nil {
+		return nil, oapierr.Internal("initiativeToOAPI: initiativeUserRelationshipToOAPI failed", zap.Error(err))
+	}
 	lang, err := LanguageToOAPI(i.Language)
 	if err != nil {
 		return nil, oapierr.Internal("initiativeToOAPI: languageToOAPI failed", zap.Error(err))
@@ -59,6 +63,7 @@ func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 		PublicDescription:              i.PublicDescription,
 		RequiresInvitationToJoin:       i.RequiresInvitationToJoin,
 		PortfolioInitiativeMemberships: pims,
+		InitiativeUserRelationships:    iurs,
 	}, nil
 }
 
@@ -250,7 +255,7 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 	}
 	pims, err := convAll(p.PortfolioInitiativeMemberships, portfolioInitiativeMembershipToOAPIInitiative)
 	if err != nil {
-		return nil, oapierr.Internal("initiativeToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
+		return nil, oapierr.Internal("portfolioToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
 	}
 	hd, err := HoldingsDateToOAPI(p.Properties.HoldingsDate)
 	if err != nil {
@@ -408,7 +413,7 @@ func AnalysisToOAPI(a *pacta.Analysis) (*api.Analysis, error) {
 	if a == nil {
 		return nil, oapierr.Internal("analysisToOAPI: can't convert nil pointer")
 	}
-	aas, err := convAll(a.Artifacts, AnalysisArtifactToOAPI)
+	aas, err := dereference(convAll(a.Artifacts, AnalysisArtifactToOAPI))
 	if err != nil {
 		return nil, oapierr.Internal("analysisToOAPI: analysisArtifactsToOAPI failed", zap.Error(err))
 	}
@@ -440,7 +445,7 @@ func AnalysisToOAPI(a *pacta.Analysis) (*api.Analysis, error) {
 		CompletedAt:       timeToNilable(a.CompletedAt),
 		FailureCode:       fc,
 		FailureMessage:    fm,
-		Artifacts:         dereferenceAll(aas),
+		Artifacts:         aas,
 		OwnerId:           string(a.Owner.ID),
 	}, nil
 }

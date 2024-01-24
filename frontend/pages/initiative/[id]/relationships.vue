@@ -1,36 +1,17 @@
 <script setup lang="ts">
 
 const { fromParams } = useURLParams()
+const id = presentOrCheckURL(fromParams('id'))
 const localePath = useLocalePath()
 const { humanReadableTimeFromStandardString } = useTime()
 const { loading: { withLoading } } = useModal()
 const { t } = useI18n()
+const pactaClient = usePACTA()
+const { initiative, refreshInitiative, canManage } = await useInitiativeData(id)
 
 const tt = (key: string) => t(`pages/initiative/relationships.${key}`)
 
-const [
-  pactaClient,
-  { getMaybeMe },
-] = await Promise.all([
-  usePACTA(),
-  useSession(),
-])
-const { maybeMe, isAdmin } = await getMaybeMe()
-
-const id = presentOrCheckURL(fromParams('id'))
-const prefix = `initiative/${id}/relationships`
-const [
-  { data: relationships, refresh: refreshRelationships },
-] = await Promise.all([
-  useSimpleAsyncData(`${prefix}.getRelationships`, () => pactaClient.listInitiativeUserRelationshipsByInitiative(id)),
-])
-const nonEmptyRelationships = computed(() => relationships.value.filter((r) => r.manager || r.member))
-const canManage = computed(() => {
-  const mm = maybeMe.value
-  if (!mm) return false
-  if (isAdmin.value) return true
-  return relationships.value.some((r) => r.userId === mm.id && r.manager)
-})
+const nonEmptyRelationships = computed(() => initiative.value.initiativeUserRelationships.filter((r) => r.manager || r.member))
 
 const changeMembership = (userId: string, member: boolean | undefined, manager: boolean | undefined) =>
   withLoading(async () => {
@@ -39,7 +20,7 @@ const changeMembership = (userId: string, member: boolean | undefined, manager: 
       userId,
       { member, manager },
     )
-    await refreshRelationships()
+    await refreshInitiative()
   }, 'initiative/relationships/changeMembership')
 
 const addManager = (userId: string) => { void changeMembership(userId, undefined, true) }

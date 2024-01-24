@@ -1,6 +1,12 @@
 package conv
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"github.com/RMI/pacta/oapierr"
+	"go.uber.org/zap"
+)
 
 func ptr[T any](t T) *T {
 	return &t
@@ -52,10 +58,16 @@ func convAll[I any, O any](is []I, f func(I) (O, error)) ([]O, error) {
 	return os, nil
 }
 
-func dereferenceAll[T any](ts []*T) []T {
+func dereference[T any](ts []*T, e error) ([]T, error) {
+	if e != nil {
+		return nil, e
+	}
 	result := make([]T, len(ts))
 	for i, t := range ts {
+		if t == nil {
+			return nil, oapierr.Internal("nil pointer found in derference", zap.String("type", fmt.Sprintf("%T", t)), zap.Int("index", i))
+		}
 		result[i] = *t
 	}
-	return result
+	return result, nil
 }

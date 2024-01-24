@@ -253,25 +253,6 @@ paths:
       responses:
         '204':
           description: initiative created successfully
-  /initiative/{initiativeId}/user-relationships:
-    get:
-      summary: Returns all initiative user relationships for this initiative that the caller has access to view
-      operationId: listInitiativeUserRelationshipsByInitiative
-      parameters:
-        - name: initiativeId
-          in: path
-          description: ID of the initiative to fetch relationships for
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/InitiativeUserRelationship'
   /initiative/user-relationships/{userId}:
     get:
       summary: Returns all initiative user relationships for this user that the caller has access to view
@@ -372,28 +353,6 @@ paths:
         '204':
           description: initiative invitation deleted successfully
   /initiative/{initiativeId}/user-relationship/{userId}:
-    get:
-      summary: Returns the initiative user relationship from this id, if it exists
-      operationId: getInitiativeUserRelationship
-      parameters:
-        - name: initiativeId
-          in: path
-          description: ID of the initiative
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          description: ID of the user
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InitiativeUserRelationship'
     patch:
       summary: Updates initiative user relationship properties
       description: Updates a given user's relationship properties for a given initiative
@@ -1275,6 +1234,7 @@ components:
         - language
         - createdAt
         - portfolioInitiativeMemberships
+        - initiativeUserRelationships
       properties:
         id:
           type: string
@@ -1311,6 +1271,11 @@ components:
           description: the list of portfolios that are members of this initiative
           items: 
             $ref: '#/components/schemas/PortfolioInitiativeMembershipPortfolio'
+        initiativeUserRelationships:
+          type: array
+          description: the list of users that are members of this initiative
+          items: 
+            $ref: '#/components/schemas/InitiativeUserRelationship'
         createdAt:
           type: string
           format: date-time

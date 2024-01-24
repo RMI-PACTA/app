@@ -71,6 +71,10 @@ const createEditorInitiativeFields = (translation: Translation): EditorInitiativ
       name: 'portfolioInitiativeMemberships',
       label: tt('Portfolio Initiative Memberships'),
     },
+    initiativeUserRelationships: {
+      name: 'initiativeUserRelationships',
+      label: tt('Initiative User Relationships'),
+    },
   }
 }
 
