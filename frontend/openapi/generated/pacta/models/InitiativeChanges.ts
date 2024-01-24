@@ -3,6 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Language } from './Language';
+
 export type InitiativeChanges = {
     /**
      * the human meaningful name of the version of the initiative
@@ -35,25 +37,10 @@ export type InitiativeChanges = {
     /**
      * The language this initiative should be conducted in.
      */
-    language?: InitiativeChanges.language;
+    language?: Language;
     /**
      * The pacta model that this initiative should use, if not specified, the default pacta model will be used.
      */
     pactaVersion?: string;
 };
-
-export namespace InitiativeChanges {
-
-    /**
-     * The language this initiative should be conducted in.
-     */
-    export enum language {
-        EN = 'en',
-        FR = 'fr',
-        ES = 'es',
-        DE = 'de',
-    }
-
-
-}
 

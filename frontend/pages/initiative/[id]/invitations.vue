@@ -18,13 +18,7 @@ const rawNewInvitations = useState<string>(`${prefix}.rawNewInvitations`, () => 
 const numToRandomize = useState<number>(`${prefix}.numToRandomize`, () => 5)
 const dataTable = useState<DataTable>(`${prefix}.dataTable`)
 
-const [
-  { data: initiative },
-  { data: invitations, refresh: refreshInvitations },
-] = await Promise.all([
-  useSimpleAsyncData(`${prefix}.getInitiative`, () => pactaClient.findInitiativeById(id)),
-  useSimpleAsyncData(`${prefix}.getInvitations`, () => pactaClient.listInitiativeInvitations(id)),
-])
+const { initiative, invitations, refreshInitiative, refreshInvitations } = await useInitiativeData(id)
 
 const newInvitations = computed(() => {
   const raw = rawNewInvitations.value
@@ -70,17 +64,17 @@ const createInvitations = () => {
   })).map((request) => pactaClient.createInitiativeInvitation(request))
   return withLoading(
     () => Promise.all(requests)
-      .then(refreshInvitations)
+      .then(refreshInitiative)
       .then(() => { createModalVisible.value = false }),
     `${prefix}.createInvitations`,
   )
 }
 const deleteInvitation = (id: string) => withLoading(
-  () => pactaClient.deleteInitiativeInvitation(id).then(refreshInvitations),
+  () => pactaClient.deleteInitiativeInvitation(id).then(refreshInitiative),
   `${prefix}.deleteInvitation`,
 )
 const deleteAll = () => withLoading(
-  () => Promise.all(invitations.value.map((i) => deleteInvitation(i.id))).then(refreshInvitations),
+  () => Promise.all(invitations.value.filter(i => !i.usedAt).map((i) => deleteInvitation(i.id))).then(refreshInvitations),
   `${prefix}.deleteAll`,
 )
 const invitationURL = (id: string) => {
@@ -98,15 +92,12 @@ const doExport = () => {
   <div class="flex flex-column gap-3">
     <p>
       {{ initiative.requiresInvitationToJoin ? tt('Yes Invitations') : tt('No Invitations') }}
-      {{ tt('You can change') }}
-      <NuxtLink :to="localePath(`/initiative/${initiative.id}/edit`)">
-        {{ tt('edit initiative page') }}
-      </NuxtLink>.
+      {{ tt('You Can Change') }}
     </p>
     <template v-if="initiative.requiresInvitationToJoin">
       <PVButton
         icon="pi pi-plus"
-        label="Create Initiative Invitations"
+        :label="tt('Create Initiative Invitations')"
         class="align-self-start"
         @click="() => createModalVisible = true"
       />
@@ -119,7 +110,7 @@ const doExport = () => {
       >
         <PVColumn
           sortable
-          header="ID"
+          :header="tt('Invitation Code')"
           field="id"
         >
           <template #body="slotProps">
@@ -127,12 +118,12 @@ const doExport = () => {
               <span>{{ slotProps.data.id }}</span>
               <div class="p-buttonset">
                 <CopyToClipboardButton
-                  cta="Copy ID"
+                  :cta="tt('Copy Code')"
                   class="p-button-outlined p-button-xs"
                   :value="slotProps.data.id"
                 />
                 <CopyToClipboardButton
-                  cta="Copy Share URL"
+                  :cta="tt('Copy Share URL')"
                   class="p-button-outlined p-button-xs"
                   icon="pi pi-link"
                   :value="invitationURL(slotProps.data.id)"
@@ -143,7 +134,7 @@ const doExport = () => {
         </PVColumn>
         <PVColumn
           sortable
-          header="Used At"
+          :header="tt('Used At')"
           field="usedAt"
         >
           <template #body="slotProps">
@@ -151,39 +142,38 @@ const doExport = () => {
               v-if="slotProps.data.usedAt"
               class="flex flex-column gap-1 align-items-start"
             >
-              <span>Used at {{ humanReadableTimeFromStandardString(slotProps.data.usedAt) }}</span>
+              <span>{{ tt('Used At') }} {{ humanReadableTimeFromStandardString(slotProps.data.usedAt) }}</span>
               <LinkButton
                 :to="localePath(`/user/${slotProps.data.usedByUserId}`)"
-                label="User Profile"
+                :label="tt('User Profile')"
                 class="p-button-outlined p-button-xs"
                 icon="pi pi-external-link"
                 icon-pos="right"
               />
             </div>
             <template v-else>
-              {{ tt('Unused') }}
+              <div class="flex flex-column gap-1 align-items-start">
+                <span>{{ tt('Unused') }}</span>
+                <PVButton
+                  icon="pi pi-trash"
+                  class="p-button-danger p-button-outlined p-button-xs"
+                  :label="tt('Revoke')"
+                  @click="() => deleteInvitation(slotProps.data.id)"
+                />
+              </div>
             </template>
-          </template>
-        </PVColumn>
-        <PVColumn header="Actions">
-          <template #body="slotProps">
-            <PVButton
-              icon="pi pi-trash"
-              class="p-button-danger p-button-outlined"
-              @click="() => deleteInvitation(slotProps.data.id)"
-            />
           </template>
         </PVColumn>
       </PVDataTable>
       <div class="flex gap-2">
         <PVButton
-          label="Export"
+          :label="tt('Export')"
           icon="pi pi-download"
           class="p-button-secondary p-button-outlined"
           @click="doExport"
         />
         <PVButton
-          label="Delete All"
+          :label="tt('Revoke All Unused')"
           icon="pi pi-trash"
           class="p-button-danger p-button-outlined"
           @click="deleteAll"
@@ -196,7 +186,8 @@ const doExport = () => {
     />
     <StandardModal
       v-model:visible="createModalVisible"
-      :header="tt('Create Initiative Invitations')"
+      :header="tt('Create Header')"
+      :sub-header="tt('Create Subheader')"
     >
       <FormField
         :label="tt('New Invitations')"
@@ -213,7 +204,7 @@ const doExport = () => {
             @click="generateRandom"
           >
             <div class="flex flex-column gap-2 align-items-center">
-              <span>{{ t('Generate Random') }}</span>
+              <span>{{ tt('Generate Random') }}</span>
               <PVInputNumber
                 v-model="numToRandomize"
                 class="w-5rem text-align-center"
@@ -233,7 +224,7 @@ const doExport = () => {
 
       <div class="flex gap-2">
         <PVButton
-          label="Cancel"
+          :label="tt('Cancel')"
           icon="pi pi-arrow-left"
           class="p-button-secondary p-button-outlined"
           @click="() => createModalVisible = false"

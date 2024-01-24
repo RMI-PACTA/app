@@ -18,12 +18,16 @@ CREATE TYPE audit_log_action AS ENUM (
     'DISABLE_ADMIN_DEBUG',
     'DOWNLOAD',
     'ENABLE_SHARING',
-    'DISABLE_SHARING');
+    'DISABLE_SHARING',
+    'TRANSFER_OWNERSHIP',
+    'READ_METADATA');
 CREATE TYPE audit_log_actor_type AS ENUM (
     'USER',
     'ADMIN',
     'SUPER_ADMIN',
-    'SYSTEM');
+    'SYSTEM',
+    'OWNER',
+    'PUBLIC');
 CREATE TYPE audit_log_target_type AS ENUM (
     'USER',
     'PORTFOLIO',
@@ -31,7 +35,9 @@ CREATE TYPE audit_log_target_type AS ENUM (
     'INITIATIVE',
     'PACTA_VERSION',
     'ANALYSIS',
-    'INCOMPLETE_UPLOAD');
+    'INCOMPLETE_UPLOAD',
+    'INITIATIVE_INVITATION',
+    'ANALYSIS_ARTIFACT');
 CREATE TYPE authn_mechanism AS ENUM (
     'EMAIL_AND_PASS');
 CREATE TYPE failure_code AS ENUM (
@@ -41,7 +47,12 @@ CREATE TYPE file_type AS ENUM (
     'yaml',
     'zip',
     'html',
-    'json');
+    'json',
+    'txt',
+    'css',
+    'js',
+    'ttf',
+    'unknown');
 CREATE TYPE language AS ENUM (
     'en',
     'de',
@@ -75,6 +86,7 @@ CREATE TABLE analysis_artifact (
 	id text NOT NULL,
 	shared_to_public boolean NOT NULL);
 ALTER TABLE ONLY analysis_artifact ADD CONSTRAINT analysis_artifact_pkey PRIMARY KEY (id);
+CREATE INDEX analysis_artifact_by_blob_id ON analysis_artifact USING btree (blob_id);
 ALTER TABLE ONLY analysis_artifact ADD CONSTRAINT analysis_artifact_analysis_id_fkey FOREIGN KEY (analysis_id) REFERENCES analysis(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY analysis_artifact ADD CONSTRAINT analysis_artifact_blob_id_fkey FOREIGN KEY (blob_id) REFERENCES blob(id) ON DELETE RESTRICT;
 
@@ -113,12 +125,13 @@ CREATE TABLE incomplete_upload (
 	description text NOT NULL,
 	failure_code failure_code,
 	failure_message text,
-	holdings_date timestamp with time zone,
 	id text NOT NULL,
 	name text NOT NULL,
 	owner_id text NOT NULL,
+	properties jsonb DEFAULT '{}'::jsonb NOT NULL,
 	ran_at timestamp with time zone);
 ALTER TABLE ONLY incomplete_upload ADD CONSTRAINT incomplete_upload_pkey PRIMARY KEY (id);
+CREATE INDEX incomplete_upload_by_blob_id ON incomplete_upload USING btree (blob_id);
 ALTER TABLE ONLY incomplete_upload ADD CONSTRAINT incomplete_upload_blob_id_fkey FOREIGN KEY (blob_id) REFERENCES blob(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY incomplete_upload ADD CONSTRAINT incomplete_upload_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES owner(id) ON DELETE RESTRICT;
 
@@ -171,6 +184,13 @@ ALTER TABLE ONLY owner ADD CONSTRAINT owner_initiative_id_fkey FOREIGN KEY (init
 ALTER TABLE ONLY owner ADD CONSTRAINT owner_user_id_fkey FOREIGN KEY (user_id) REFERENCES pacta_user(id) ON DELETE RESTRICT;
 
 
+CREATE TABLE owner_merges (
+	actor_user_id text NOT NULL,
+	from_owner_id text NOT NULL,
+	merged_at timestamp with time zone DEFAULT now() NOT NULL,
+	to_owner_id text NOT NULL);
+
+
 CREATE TABLE pacta_user (
 	admin boolean NOT NULL,
 	authn_id text NOT NULL,
@@ -186,6 +206,8 @@ ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_authn_mechanism_authn_id_k
 ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_canonical_email_key UNIQUE (canonical_email);
 ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_entered_email_key UNIQUE (entered_email);
 ALTER TABLE ONLY pacta_user ADD CONSTRAINT pacta_user_pkey PRIMARY KEY (id);
+CREATE INDEX user_canonical_email_gin_index ON pacta_user USING gin (canonical_email gin_trgm_ops);
+CREATE INDEX user_name_gin_index ON pacta_user USING gin (name gin_trgm_ops);
 
 
 CREATE TABLE pacta_version (
@@ -206,12 +228,13 @@ CREATE TABLE portfolio (
 	blob_id text NOT NULL,
 	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	description text NOT NULL,
-	holdings_date timestamp with time zone,
 	id text NOT NULL,
 	name text NOT NULL,
 	number_of_rows integer,
-	owner_id text NOT NULL);
+	owner_id text NOT NULL,
+	properties jsonb DEFAULT '{}'::jsonb NOT NULL);
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_pkey PRIMARY KEY (id);
+CREATE INDEX portfolio_by_blob_id ON portfolio USING btree (blob_id);
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_blob_id_fkey FOREIGN KEY (blob_id) REFERENCES blob(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY portfolio ADD CONSTRAINT portfolio_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES owner(id) ON DELETE RESTRICT;
 
@@ -240,6 +263,7 @@ CREATE TABLE portfolio_initiative_membership (
 	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	initiative_id text NOT NULL,
 	portfolio_id text NOT NULL);
+ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_pkey PRIMARY KEY (portfolio_id, initiative_id);
 ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_added_by_user_id_fkey FOREIGN KEY (added_by_user_id) REFERENCES pacta_user(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_initiative_id_fkey FOREIGN KEY (initiative_id) REFERENCES initiative(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY portfolio_initiative_membership ADD CONSTRAINT portfolio_initiative_membership_portfolio_id_fkey FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE RESTRICT;
@@ -263,4 +287,11 @@ CREATE TABLE schema_migrations_history (
 	id integer NOT NULL,
 	version bigint NOT NULL);
 ALTER SEQUENCE schema_migrations_history_id_seq OWNED BY schema_migrations_history.id;
+
+
+CREATE TABLE user_merges (
+	actor_user_id text NOT NULL,
+	from_user_id text NOT NULL,
+	merged_at timestamp with time zone DEFAULT now() NOT NULL,
+	to_user_id text NOT NULL);
 ALTER TABLE ONLY schema_migrations ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);

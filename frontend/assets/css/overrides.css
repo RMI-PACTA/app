@@ -1,26 +1,60 @@
 .h-0 {
-    height: 0;
+  height: 0;
 }
 
 .text-success {
-    color: #4a7747;
+  color: #4a7747;
 }
 
 div.p-toast {
-    opacity: 1;
+  opacity: 1;
 }
 
 .p-button.p-button-icon-only.p-button.p-button-xs,
 .p-button.p-button-xs {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    width: auto;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  width: auto;
 }
 
-.code {
+.code, .code-block {
   font-family: monospace;
   background-color: #eee;
+  padding: .5rem;
+  border-radius: .5rem;
+  display: inline-block;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.p-message-wrapper .p-message-icon, .p-message-wrapper .p-message-close {
+  flex-shrink: 0;
+}
+
+.p-inputwrapper-filled.p-inputwrapper.p-multiselect.p-multiselect-chip
+.p-multiselect-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
   padding: .25rem .5rem;
-  border-radius: .25rem;
+}
+
+.p-inputwrapper-filled.p-inputwrapper.p-multiselect.p-multiselect-chip
+.p-multiselect-label
+.p-multiselect-token {
+  margin-right: 0;
+}
+
+div.p-chips .p-chips-multiple-container {
+  gap: .25rem;
+  padding: .25rem .5rem;
+}
+
+div.p-chips .p-chips-multiple-container .p-chips-token {
+  margin-right: 0;
+}
+
+div.p-accordion .p-accordion-header:not(.p-disabled).p-highlight .p-accordion-header-link {
+  background-color: #f5f5f5
 }

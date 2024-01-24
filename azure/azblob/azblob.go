@@ -103,47 +103,49 @@ func (c *Client) DeleteBlob(ctx context.Context, uri string) error {
 
 // SignedUploadURL returns a URL that is allowed to upload to the given URI.
 // See https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/storage/azblob@v1.0.0/sas#example-package-UserDelegationSAS
-func (c *Client) SignedUploadURL(ctx context.Context, uri string) (string, error) {
+func (c *Client) SignedUploadURL(ctx context.Context, uri string) (string, time.Time, error) {
 	return c.signBlob(ctx, uri, &sas.BlobPermissions{Create: true, Write: true})
 }
 
 // SignedDownloadURL returns a URL that is allowed to download the file at the given URI.
 // See https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/storage/azblob@v1.0.0/sas#example-package-UserDelegationSAS
-func (c *Client) SignedDownloadURL(ctx context.Context, uri string) (string, error) {
+func (c *Client) SignedDownloadURL(ctx context.Context, uri string) (string, time.Time, error) {
 	return c.signBlob(ctx, uri, &sas.BlobPermissions{Read: true})
 }
 
-func (c *Client) signBlob(ctx context.Context, uri string, perms *sas.BlobPermissions) (string, error) {
+func (c *Client) signBlob(ctx context.Context, uri string, perms *sas.BlobPermissions) (string, time.Time, error) {
 	ctr, blb, ok := blob.SplitURI(Scheme, uri)
 	if !ok {
-		return "", fmt.Errorf("malformed URI %q is not for Azure", uri)
+		return "", time.Time{}, fmt.Errorf("malformed URI %q is not for Azure", uri)
 	}
 
 	// The blob component is important, otherwise the signed URL is applicable to the whole container.
 	if blb == "" {
-		return "", fmt.Errorf("uri %q did not contain a blob component", uri)
+		return "", time.Time{}, fmt.Errorf("uri %q did not contain a blob component", uri)
 	}
 
 	now := c.now().UTC().Add(-10 * time.Second)
 	udc, err := c.getUserDelegationCredential(ctx, now)
 	if err != nil {
-		return "", fmt.Errorf("failed to get udc: %w", err)
+		return "", time.Time{}, fmt.Errorf("failed to get udc: %w", err)
 	}
+
+	expiry := now.Add(15 * time.Minute)
 
 	// Create Blob Signature Values with desired permissions and sign with user delegation credential
 	sasQueryParams, err := sas.BlobSignatureValues{
 		Protocol:      sas.ProtocolHTTPS,
 		StartTime:     now,
-		ExpiryTime:    now.Add(15 * time.Minute),
+		ExpiryTime:    expiry,
 		Permissions:   perms.String(),
 		ContainerName: ctr,
 		BlobName:      blb,
 	}.SignWithUserDelegation(udc)
 	if err != nil {
-		return "", fmt.Errorf("failed to sign blob: %w", err)
+		return "", time.Time{}, fmt.Errorf("failed to sign blob: %w", err)
 	}
 
-	return fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s?%s", c.storageAccount, ctr, blb, sasQueryParams.Encode()), nil
+	return fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s?%s", c.storageAccount, ctr, blb, sasQueryParams.Encode()), expiry, nil
 }
 
 func (c *Client) ListBlobs(ctx context.Context, uriPrefix string) ([]string, error) {

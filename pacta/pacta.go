@@ -117,20 +117,20 @@ func (o *User) Clone() *User {
 
 type InitiativeID string
 type Initiative struct {
-	ID                       InitiativeID
-	Name                     string
-	Affiliation              string
-	PublicDescription        string
-	InternalDescription      string
-	RequiresInvitationToJoin bool
-	IsAcceptingNewMembers    bool
-	IsAcceptingNewPortfolios bool
-	PACTAVersion             *PACTAVersion
-	Language                 Language
-	CreatedAt                time.Time
-	UserRelationships        []*InitiativeUserRelationship
-	PortfolioRelationships   []*PortfolioInitiativeMembership
-	Invitations              []*InitiativeInvitation
+	ID                             InitiativeID
+	Name                           string
+	Affiliation                    string
+	PublicDescription              string
+	InternalDescription            string
+	RequiresInvitationToJoin       bool
+	IsAcceptingNewMembers          bool
+	IsAcceptingNewPortfolios       bool
+	PACTAVersion                   *PACTAVersion
+	Language                       Language
+	CreatedAt                      time.Time
+	InitiativeUserRelationships    []*InitiativeUserRelationship
+	PortfolioInitiativeMemberships []*PortfolioInitiativeMembership
+	Invitations                    []*InitiativeInvitation
 }
 
 func (o *Initiative) Clone() *Initiative {
@@ -138,20 +138,20 @@ func (o *Initiative) Clone() *Initiative {
 		return nil
 	}
 	return &Initiative{
-		ID:                       o.ID,
-		Name:                     o.Name,
-		Affiliation:              o.Affiliation,
-		PublicDescription:        o.PublicDescription,
-		InternalDescription:      o.InternalDescription,
-		RequiresInvitationToJoin: o.RequiresInvitationToJoin,
-		IsAcceptingNewMembers:    o.IsAcceptingNewMembers,
-		IsAcceptingNewPortfolios: o.IsAcceptingNewPortfolios,
-		PACTAVersion:             o.PACTAVersion.Clone(),
-		Language:                 o.Language,
-		CreatedAt:                o.CreatedAt,
-		UserRelationships:        cloneAll(o.UserRelationships),
-		PortfolioRelationships:   cloneAll(o.PortfolioRelationships),
-		Invitations:              cloneAll(o.Invitations),
+		ID:                             o.ID,
+		Name:                           o.Name,
+		Affiliation:                    o.Affiliation,
+		PublicDescription:              o.PublicDescription,
+		InternalDescription:            o.InternalDescription,
+		RequiresInvitationToJoin:       o.RequiresInvitationToJoin,
+		IsAcceptingNewMembers:          o.IsAcceptingNewMembers,
+		IsAcceptingNewPortfolios:       o.IsAcceptingNewPortfolios,
+		PACTAVersion:                   o.PACTAVersion.Clone(),
+		Language:                       o.Language,
+		CreatedAt:                      o.CreatedAt,
+		InitiativeUserRelationships:    cloneAll(o.InitiativeUserRelationships),
+		PortfolioInitiativeMemberships: cloneAll(o.PortfolioInitiativeMemberships),
+		Invitations:                    cloneAll(o.Invitations),
 	}
 }
 
@@ -206,6 +206,13 @@ const (
 	FileType_ZIP  = "zip"
 	FileType_HTML = "html"
 	FileType_JSON = "json"
+
+	// All for serving reports
+	FileType_TEXT    = "txt"
+	FileType_CSS     = "css"
+	FileType_JS      = "js"
+	FileType_TTF     = "ttf"
+	FileType_UNKNOWN = "unknown"
 )
 
 var FileTypeValues = []FileType{
@@ -215,6 +222,11 @@ var FileTypeValues = []FileType{
 	FileType_JSON,
 	FileType_HTML,
 	FileType_JSON,
+	FileType_TEXT,
+	FileType_CSS,
+	FileType_JS,
+	FileType_TTF,
+	FileType_UNKNOWN,
 }
 
 func ParseFileType(s string) (FileType, error) {
@@ -233,6 +245,16 @@ func ParseFileType(s string) (FileType, error) {
 		return FileType_HTML, nil
 	case "json":
 		return FileType_JSON, nil
+	case "txt":
+		return FileType_TEXT, nil
+	case "css":
+		return FileType_CSS, nil
+	case "js":
+		return FileType_JS, nil
+	case "ttf":
+		return FileType_TTF, nil
+	case "unknown":
+		return FileType_UNKNOWN, nil
 	}
 	return "", fmt.Errorf("unknown pacta.FileType: %q", s)
 }
@@ -257,6 +279,27 @@ func (o *Blob) Clone() *Blob {
 		FileType:  o.FileType,
 		FileName:  o.FileName,
 		CreatedAt: o.CreatedAt,
+	}
+}
+
+type BlobContext struct {
+	BlobID               BlobID
+	PrimaryTargetType    AuditLogTargetType
+	PrimaryTargetID      string
+	PrimaryTargetOwnerID OwnerID
+	AdminDebugEnabled    bool
+}
+
+func (o *BlobContext) Clone() *BlobContext {
+	if o == nil {
+		return nil
+	}
+	return &BlobContext{
+		BlobID:               o.BlobID,
+		PrimaryTargetType:    o.PrimaryTargetType,
+		PrimaryTargetID:      o.PrimaryTargetID,
+		PrimaryTargetOwnerID: o.PrimaryTargetOwnerID,
+		AdminDebugEnabled:    o.AdminDebugEnabled,
 	}
 }
 
@@ -309,13 +352,29 @@ func (o *HoldingsDate) Clone() *HoldingsDate {
 	}
 }
 
+type PortfolioProperties struct {
+	HoldingsDate       *HoldingsDate
+	ESG                *bool
+	External           *bool
+	EngagementStrategy *bool
+}
+
+func (o PortfolioProperties) Clone() PortfolioProperties {
+	return PortfolioProperties{
+		HoldingsDate:       o.HoldingsDate.Clone(),
+		ESG:                clonePtr(o.ESG),
+		External:           clonePtr(o.External),
+		EngagementStrategy: clonePtr(o.EngagementStrategy),
+	}
+}
+
 type IncompleteUploadID string
 type IncompleteUpload struct {
 	ID                IncompleteUploadID
 	Name              string
 	Description       string
 	CreatedAt         time.Time
-	HoldingsDate      *HoldingsDate
+	Properties        PortfolioProperties
 	RanAt             time.Time
 	CompletedAt       time.Time
 	FailureCode       FailureCode
@@ -334,7 +393,7 @@ func (o *IncompleteUpload) Clone() *IncompleteUpload {
 		Name:              o.Name,
 		Description:       o.Description,
 		CreatedAt:         o.CreatedAt,
-		HoldingsDate:      o.HoldingsDate.Clone(),
+		Properties:        o.Properties.Clone(),
 		RanAt:             o.RanAt,
 		CompletedAt:       o.CompletedAt,
 		FailureCode:       o.FailureCode,
@@ -347,16 +406,17 @@ func (o *IncompleteUpload) Clone() *IncompleteUpload {
 
 type PortfolioID string
 type Portfolio struct {
-	ID                PortfolioID
-	Name              string
-	Description       string
-	CreatedAt         time.Time
-	HoldingsDate      *HoldingsDate
-	Owner             *Owner
-	Blob              *Blob
-	AdminDebugEnabled bool
-	NumberOfRows      int
-	MemberOf          []*PortfolioGroupMembership
+	ID                             PortfolioID
+	Name                           string
+	Description                    string
+	CreatedAt                      time.Time
+	Properties                     PortfolioProperties
+	Owner                          *Owner
+	Blob                           *Blob
+	AdminDebugEnabled              bool
+	NumberOfRows                   int
+	PortfolioGroupMemberships      []*PortfolioGroupMembership
+	PortfolioInitiativeMemberships []*PortfolioInitiativeMembership
 }
 
 func (o *Portfolio) Clone() *Portfolio {
@@ -364,27 +424,28 @@ func (o *Portfolio) Clone() *Portfolio {
 		return nil
 	}
 	return &Portfolio{
-		ID:                o.ID,
-		Name:              o.Name,
-		Description:       o.Description,
-		CreatedAt:         o.CreatedAt,
-		HoldingsDate:      o.HoldingsDate.Clone(),
-		Owner:             o.Owner.Clone(),
-		Blob:              o.Blob.Clone(),
-		AdminDebugEnabled: o.AdminDebugEnabled,
-		NumberOfRows:      o.NumberOfRows,
-		MemberOf:          cloneAll(o.MemberOf),
+		ID:                             o.ID,
+		Name:                           o.Name,
+		Description:                    o.Description,
+		CreatedAt:                      o.CreatedAt,
+		Properties:                     o.Properties.Clone(),
+		Owner:                          o.Owner.Clone(),
+		Blob:                           o.Blob.Clone(),
+		AdminDebugEnabled:              o.AdminDebugEnabled,
+		NumberOfRows:                   o.NumberOfRows,
+		PortfolioGroupMemberships:      cloneAll(o.PortfolioGroupMemberships),
+		PortfolioInitiativeMemberships: cloneAll(o.PortfolioInitiativeMemberships),
 	}
 }
 
 type PortfolioGroupID string
 type PortfolioGroup struct {
-	ID          PortfolioGroupID
-	Owner       *Owner
-	Name        string
-	Description string
-	CreatedAt   time.Time
-	Members     []*PortfolioGroupMembership
+	ID                        PortfolioGroupID
+	Owner                     *Owner
+	Name                      string
+	Description               string
+	CreatedAt                 time.Time
+	PortfolioGroupMemberships []*PortfolioGroupMembership
 }
 
 func (o *PortfolioGroup) Clone() *PortfolioGroup {
@@ -392,12 +453,12 @@ func (o *PortfolioGroup) Clone() *PortfolioGroup {
 		return nil
 	}
 	return &PortfolioGroup{
-		ID:          o.ID,
-		Owner:       o.Owner.Clone(),
-		Name:        o.Name,
-		Description: o.Description,
-		CreatedAt:   o.CreatedAt,
-		Members:     cloneAll(o.Members),
+		ID:                        o.ID,
+		Owner:                     o.Owner.Clone(),
+		Name:                      o.Name,
+		Description:               o.Description,
+		CreatedAt:                 o.CreatedAt,
+		PortfolioGroupMemberships: cloneAll(o.PortfolioGroupMemberships),
 	}
 }
 
@@ -439,11 +500,11 @@ func (o *PortfolioInitiativeMembership) Clone() *PortfolioInitiativeMembership {
 
 type PortfolioSnapshotID string
 type PortfolioSnapshot struct {
-	ID               PortfolioSnapshotID
-	PortfolioID      PortfolioID
-	PortfolioGroupID PortfolioGroupID
-	InitiatiativeID  InitiativeID
-	PortfolioIDs     []PortfolioID
+	ID             PortfolioSnapshotID
+	PortfolioIDs   []PortfolioID
+	Portfolio      *Portfolio
+	PortfolioGroup *PortfolioGroup
+	Initiatiative  *Initiative
 }
 
 func (o *PortfolioSnapshot) Clone() *PortfolioSnapshot {
@@ -453,11 +514,11 @@ func (o *PortfolioSnapshot) Clone() *PortfolioSnapshot {
 	pids := make([]PortfolioID, len(o.PortfolioIDs))
 	copy(pids, o.PortfolioIDs)
 	return &PortfolioSnapshot{
-		ID:               o.ID,
-		PortfolioID:      o.PortfolioID,
-		PortfolioGroupID: o.PortfolioGroupID,
-		InitiatiativeID:  o.InitiatiativeID,
-		PortfolioIDs:     pids,
+		ID:             o.ID,
+		Portfolio:      o.Portfolio.Clone(),
+		PortfolioGroup: o.PortfolioGroup.Clone(),
+		Initiatiative:  o.Initiatiative.Clone(),
+		PortfolioIDs:   pids,
 	}
 }
 
@@ -556,6 +617,8 @@ const (
 	AuditLogAction_Download          AuditLogAction = "DOWNLOAD"
 	AuditLogAction_EnableSharing     AuditLogAction = "ENABLE_SHARING"
 	AuditLogAction_DisableSharing    AuditLogAction = "DISABLE_SHARING"
+	AuditLogAction_ReadMetadata      AuditLogAction = "READ_METADATA"
+	AuditLogAction_TransferOwnership AuditLogAction = "TRANSFER_OWNERSHIP"
 )
 
 var AuditLogActionValues = []AuditLogAction{
@@ -569,6 +632,8 @@ var AuditLogActionValues = []AuditLogAction{
 	AuditLogAction_Download,
 	AuditLogAction_EnableSharing,
 	AuditLogAction_DisableSharing,
+	AuditLogAction_ReadMetadata,
+	AuditLogAction_TransferOwnership,
 }
 
 func ParseAuditLogAction(s string) (AuditLogAction, error) {
@@ -593,6 +658,10 @@ func ParseAuditLogAction(s string) (AuditLogAction, error) {
 		return AuditLogAction_EnableSharing, nil
 	case "DISABLE_SHARING":
 		return AuditLogAction_DisableSharing, nil
+	case "READ_METADATA":
+		return AuditLogAction_ReadMetadata, nil
+	case "TRANSFER_OWNERSHIP":
+		return AuditLogAction_TransferOwnership, nil
 	}
 	return "", fmt.Errorf("unknown AuditLogAction: %q", s)
 }
@@ -600,14 +669,16 @@ func ParseAuditLogAction(s string) (AuditLogAction, error) {
 type AuditLogActorType string
 
 const (
-	AuditLogActorType_User       AuditLogActorType = "USER"
+	AuditLogActorType_Public     AuditLogActorType = "PUBLIC"
+	AuditLogActorType_Owner      AuditLogActorType = "OWNER"
 	AuditLogActorType_Admin      AuditLogActorType = "ADMIN"
 	AuditLogActorType_SuperAdmin AuditLogActorType = "SUPER_ADMIN"
 	AuditLogActorType_System     AuditLogActorType = "SYSTEM"
 )
 
 var AuditLogActorTypeValues = []AuditLogActorType{
-	AuditLogActorType_User,
+	AuditLogActorType_Public,
+	AuditLogActorType_Owner,
 	AuditLogActorType_Admin,
 	AuditLogActorType_SuperAdmin,
 	AuditLogActorType_System,
@@ -615,8 +686,10 @@ var AuditLogActorTypeValues = []AuditLogActorType{
 
 func ParseAuditLogActorType(s string) (AuditLogActorType, error) {
 	switch s {
-	case "USER":
-		return AuditLogActorType_User, nil
+	case "PUBLIC":
+		return AuditLogActorType_Public, nil
+	case "OWNER":
+		return AuditLogActorType_Owner, nil
 	case "ADMIN":
 		return AuditLogActorType_Admin, nil
 	case "SUPER_ADMIN":
@@ -630,13 +703,15 @@ func ParseAuditLogActorType(s string) (AuditLogActorType, error) {
 type AuditLogTargetType string
 
 const (
-	AuditLogTargetType_User             AuditLogTargetType = "USER"
-	AuditLogTargetType_Portfolio        AuditLogTargetType = "PORTFOLIO"
-	AuditLogTargetType_IncompleteUpload AuditLogTargetType = "INCOMPLETE_UPLOAD"
-	AuditLogTargetType_PortfolioGroup   AuditLogTargetType = "PORTFOLIO_GROUP"
-	AuditLogTargetType_Initiative       AuditLogTargetType = "INITIATIVE"
-	AuditLogTargetType_PACTAVersion     AuditLogTargetType = "PACTA_VERSION"
-	AuditLogTargetType_Analysis         AuditLogTargetType = "ANALYSIS"
+	AuditLogTargetType_User                 AuditLogTargetType = "USER"
+	AuditLogTargetType_Portfolio            AuditLogTargetType = "PORTFOLIO"
+	AuditLogTargetType_IncompleteUpload     AuditLogTargetType = "INCOMPLETE_UPLOAD"
+	AuditLogTargetType_PortfolioGroup       AuditLogTargetType = "PORTFOLIO_GROUP"
+	AuditLogTargetType_Initiative           AuditLogTargetType = "INITIATIVE"
+	AuditLogTargetType_InitiativeInvitation AuditLogTargetType = "INITIATIVE_INVITATION"
+	AuditLogTargetType_PACTAVersion         AuditLogTargetType = "PACTA_VERSION"
+	AuditLogTargetType_Analysis             AuditLogTargetType = "ANALYSIS"
+	AuditLogTargetType_AnalysisArtifact     AuditLogTargetType = "ANALYSIS_ARTIFACT"
 )
 
 var AuditLogTargetTypeValues = []AuditLogTargetType{
@@ -645,8 +720,10 @@ var AuditLogTargetTypeValues = []AuditLogTargetType{
 	AuditLogTargetType_IncompleteUpload,
 	AuditLogTargetType_PortfolioGroup,
 	AuditLogTargetType_Initiative,
+	AuditLogTargetType_InitiativeInvitation,
 	AuditLogTargetType_PACTAVersion,
 	AuditLogTargetType_Analysis,
+	AuditLogTargetType_AnalysisArtifact,
 }
 
 func ParseAuditLogTargetType(s string) (AuditLogTargetType, error) {
@@ -661,10 +738,14 @@ func ParseAuditLogTargetType(s string) (AuditLogTargetType, error) {
 		return AuditLogTargetType_PortfolioGroup, nil
 	case "INITIATIVE":
 		return AuditLogTargetType_Initiative, nil
+	case "INITIATIVE_INVITATION":
+		return AuditLogTargetType_InitiativeInvitation, nil
 	case "PACTA_VERSION":
 		return AuditLogTargetType_PACTAVersion, nil
 	case "ANALYSIS":
 		return AuditLogTargetType_Analysis, nil
+	case "ANALYSIS_ARTIFACT":
+		return AuditLogTargetType_AnalysisArtifact, nil
 	}
 	return "", fmt.Errorf("unknown AuditLogTargetType: %q", s)
 }
@@ -716,4 +797,12 @@ func cloneAll[T cloneable[T]](in []T) []T {
 		out[i] = t.Clone()
 	}
 	return out
+}
+
+func clonePtr[T any](in *T) *T {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
 }

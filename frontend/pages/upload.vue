@@ -2,10 +2,13 @@
 import { type FileUploadUploaderEvent } from 'primevue/fileupload'
 import { serializeError } from 'serialize-error'
 import { formatFileSize } from '@/lib/filesize'
+import { OptionalBoolean, type HoldingsDate } from '@/openapi/generated/pacta'
 
+const { linkToPortfolioList } = useMyDataURLs()
 const pactaClient = usePACTA()
 const { $axios } = useNuxtApp()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const prefix = 'pages/upload'
 const tt = (key: string) => t(`${prefix}.${key}`)
@@ -37,7 +40,10 @@ interface FileStateDetail extends FileState {
   effectiveError?: string | undefined
 }
 
-const holdingsDate = useState<Date>(`${prefix}.holdingsDate`, () => new Date())
+const holdingsDate = useState<HoldingsDate>(`${prefix}.holdingsDate`, () => ({ time: undefined }))
+const esg = useState<OptionalBoolean>(`${prefix}.esg`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
+const external = useState<OptionalBoolean>(`${prefix}.external`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
+const engagementStrategy = useState<OptionalBoolean>(`${prefix}.engagementStrategy`, () => OptionalBoolean.OPTIONAL_BOOLEAN_UNSET)
 const errorCode = useState<string>(`${prefix}.errorCode`, () => '')
 const errorMessage = useState<string>(`${prefix}.errorMessage`, () => '')
 const startedProcessing = useState<boolean>(`${prefix}.startedProcessing`, () => false)
@@ -45,7 +51,10 @@ const isProcessing = useState<boolean>(`${prefix}.isProcessing`, () => false)
 const fileStates = useState<FileState[]>(`${prefix}.fileState`, () => [])
 
 const reset = () => {
-  holdingsDate.value = new Date()
+  holdingsDate.value = { time: undefined }
+  esg.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
+  external.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
+  engagementStrategy.value = OptionalBoolean.OPTIONAL_BOOLEAN_UNSET
   errorCode.value = ''
   errorMessage.value = ''
   startedProcessing.value = false
@@ -88,13 +97,13 @@ const fileStatesWithDetail = computed<FileStateDetail[]>(() => {
     let otherError: string | undefined
     // TODO(#79) validate this server side too.
     if (fileState.file.name.length > 1000) {
-      otherError = 'Filename is too long (1000 characters max).'
+      otherError = tt('ErrNameTooLong')
     } else if (fileState.file.size > 1028 * 1028 * 100) {
-      otherError = 'File is too large (100MB max).'
+      otherError = tt('ErrTooLarge')
     } else if (!fileState.file.name.endsWith('.csv')) {
-      otherError = 'File must be a csv file.'
+      otherError = tt('ErrMustBeCSV')
     } else if (isDuplicate(fileState)) {
-      otherError = 'This file may be a duplicate, consider removing it.'
+      otherError = tt('ErrDuplicate')
     }
     return {
       ...fileState,
@@ -113,22 +122,22 @@ const fileUploaderProps = computed(() => ({
   auto: true,
   multiple: true,
   'custom-upload': true,
-  'choose-label': 'Add File(s)',
+  'choose-label': fileStatesWithDetail.value.length === 0 ? tt('Add File(s)') : tt('Add More File(s)'),
 }))
 const actionButtonLabel = computed(() => {
   if (hasAnyState(FileStatus.Waiting)) {
-    return 'Waiting...'
+    return tt('Waiting') + '...'
   }
   if (hasAnyState(FileStatus.Uploading)) {
-    return 'Uploading...'
+    return tt('Uploading') + '...'
   }
   if (hasAnyState(FileStatus.Validating)) {
-    return 'Validating...'
+    return tt('Validating') + '...'
   }
   if (hasAnyState(FileStatus.CleanUp)) {
-    return 'Cleaning Up...'
+    return tt('Cleaning Up') + '...'
   }
-  return 'Begin Upload'
+  return tt('Begin Upload')
 })
 const allDone = computed(() => hasAllState(FileStatus.Done) && fileStates.value.length > 0)
 
@@ -158,9 +167,10 @@ const startUpload = async () => {
       file_name: fileState.file.name,
       // TODO(#79) consider adding file size here as a validation step.
     })),
-    holdings_date: {
-      time: holdingsDate.value.toISOString(),
-    },
+    propertyHoldingsDate: holdingsDate.value,
+    propertyESG: esg.value,
+    propertyExternal: external.value,
+    propertyEngagementStrategy: engagementStrategy.value,
   }).catch(e => {
     console.log('error starting upload', e, e.body)
     if (e.body?.error_id) {
@@ -284,81 +294,136 @@ const cleanUpIncompleteUploads = async () => {
 <template>
   <StandardContent>
     <TitleBar title="Upload Portfolios" />
-    <!-- TODO(#80) Finalize this copy -->
     <p>
-      This is a page where you can upload portfolios to test out the PACTA platform.
-      This Copy will need work, and will need to link to the documentation.
+      {{ tt('Paragraph1') }}
     </p>
-    <FormField
-      label="Holdings Date"
-      help-text="The holdings date for the portfolios that will be uploaded"
-    >
-      <PVCalendar
-        v-model="holdingsDate"
-        view="month"
-        date-format="mm/yy"
-        :disabled="startedProcessing"
+    <p>
+      {{ tt('Paragraph2') }}
+    </p>
+    <p>
+      {{ tt('Paragraph3') }}
+    </p>
+    <div class="flex gap-1">
+      <LinkButton
+        :to="localePath('/input-guide')"
+        new-tab
+        class="p-button-xs p-button-outlined"
+        icon="pi pi-external-link"
+        icon-pos="right"
+        :label="tt('Input User Guide')"
       />
-    </FormField>
-    <FormField
-      label="Portfolio Files"
-      class="w-full mb-0"
-      help-text="This should include a link to documentation etc."
-    >
-      <PVFileUpload
-        v-show="fileStatesWithDetail.length === 0"
-        v-bind="fileUploaderProps"
-        @uploader="onSelect"
+      <LinkButton
+        to="/samples/sample-1.csv"
+        new-tab
+        class="p-button-xs p-button-outlined"
+        icon="pi pi-download"
+        icon-pos="right"
+        :label="tt('Sample CSV')"
       />
-      <PVDataTable
-        v-show="fileStatesWithDetail.length > 0"
-        :value="fileStatesWithDetail"
-        class="w-full"
-        data-key="key"
-      >
-        <PVColumn>
-          <template #header>
-            <PVFileUpload
-              v-bind="fileUploaderProps"
-              @uploader="onSelect"
-            />
-          </template>
-          <template #body="slotProps">
-            <div class="flex gap-2 flex-wrap justify-content-between align-items-center">
-              <div class="flex flex-column gap-2">
-                <div class="font-bold">
-                  {{ slotProps.data.shortName }}
-                </div>
-                <div class="flex gap-2 align-items-center">
-                  <div>({{ slotProps.data.sizeStr }})</div>
-                  <PVButton
-                    class="p-button-danger p-button-text px-1 py-0 w-auto"
-                    icon="pi pi-trash"
-                    :disabled="isProcessing"
-                    @click="() => removeFile(slotProps.data.index)"
-                  />
-                </div>
+    </div>
+    <PVDataTable
+      :value="fileStatesWithDetail"
+      class="w-full border-1 border-500 border-round my-3"
+      data-key="key"
+    >
+      <template #empty>
+        {{ tt('No Files Selected') }}
+      </template>
+      <PVColumn>
+        <template #header>
+          <PVFileUpload
+            v-bind="fileUploaderProps"
+            @uploader="onSelect"
+          />
+        </template>
+        <template #body="slotProps">
+          <div class="flex gap-2 flex-wrap justify-content-between align-items-center">
+            <div class="flex flex-column gap-2">
+              <div class="font-bold">
+                {{ slotProps.data.shortName }}
               </div>
-              <PVMessage
-                v-if="slotProps.data.effectiveError"
-                severity="warn"
-                :closable="false"
-              >
-                {{ slotProps.data.effectiveError }}
-              </PVMessage>
               <div class="flex gap-2 align-items-center">
-                <div><i :class="slotProps.data.icon" /></div>
-                <div>{{ slotProps.data.status }}</div>
+                <div>({{ slotProps.data.sizeStr }})</div>
+                <PVButton
+                  class="p-button-danger p-button-text px-1 py-0 w-auto"
+                  icon="pi pi-trash"
+                  :disabled="isProcessing || allDone"
+                  @click="() => removeFile(slotProps.data.index)"
+                />
               </div>
             </div>
-          </template>
-        </PVColumn>
-      </PVDataTable>
-      <StandardDebug
-        :value="fileStatesWithDetail"
-        label="File States"
-      />
-    </FormField>
+            <PVMessage
+              v-if="slotProps.data.effectiveError"
+              severity="warn"
+              :closable="false"
+            >
+              {{ slotProps.data.effectiveError }}
+            </PVMessage>
+            <div class="flex gap-2 align-items-center">
+              <div><i :class="slotProps.data.icon" /></div>
+              <div>{{ slotProps.data.status }}</div>
+            </div>
+          </div>
+        </template>
+      </PVColumn>
+      <template
+        v-if="fileStatesWithDetail.length > 0"
+        #footer
+      >
+        <PVAccordion>
+          <PVAccordionTab
+            :header="tt('Optional Portfolio Properties')"
+            :pt="{
+              headerAction: 'surface-200',
+              content:'pb-0 md:px-3 surface-100',
+            }"
+          >
+            <div class="flex flex-column">
+              <PVMessage v-if="allDone">
+                {{ tt('No Edit Properties') }}
+              </PVMessage>
+              <FormField
+                label="Holdings Date"
+                help-text="The holdings date for the portfolio"
+              >
+                <InputsHoldingsDate
+                  v-model:value="holdingsDate"
+                  :disabled="isProcessing"
+                />
+              </FormField>
+              <FormField
+                label="ESG"
+                help-text="The ESG rating for the portfolios that will be uploaded"
+              >
+                <InputsEsg
+                  v-model:value="esg"
+                  :disabled="isProcessing || allDone"
+                />
+              </FormField>
+              <FormField
+                label="External"
+                help-text="The external rating for the portfolios that will be uploaded"
+              >
+                <InputsExternal
+                  v-model:value="external"
+                  :disabled="isProcessing || allDone"
+                />
+              </FormField>
+              <FormField
+                label="Engagement Strategy"
+                help-text="The engagement strategy for the portfolios that will be uploaded"
+              >
+                <InputsEngagementStrategy
+                  v-model:value="engagementStrategy"
+                  :disabled="isProcessing || allDone"
+                />
+              </FormField>
+            </div>
+          </PVAccordionTab>
+        </PVAccordion>
+      </template>
+    </PVDataTable>
+
     <PVMessage
       v-show="!!errorCode"
       severity="error"
@@ -372,6 +437,7 @@ const cleanUpIncompleteUploads = async () => {
     </PVMessage>
     <PVButton
       v-if="!allDone"
+      class="my-0"
       :label="actionButtonLabel"
       :loading="isProcessing"
       :disabled="isProcessing || fileStatesWithDetail.length === 0"
@@ -399,9 +465,13 @@ const cleanUpIncompleteUploads = async () => {
           label="See Uploaded Portfolios"
           icon="pi pi-arrow-right"
           icon-pos="right"
-          to="/portfolios"
+          :to="linkToPortfolioList()"
         />
       </div>
     </template>
-  </standardcontent>
+    <StandardDebug
+      :value="fileStatesWithDetail"
+      label="File States"
+    />
+  </StandardContent>
 </template>

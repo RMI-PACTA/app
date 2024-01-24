@@ -1,7 +1,8 @@
 <script setup lang="ts">
-const { showStandardDebug } = useLocalStorage()
+const { showStandardDebug, showDevTools } = useLocalStorage()
 const { fakeUsers: { fakeUsersVisible }, missingTranslations: { missingTranslationsVisible } } = useModal()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const prefix = 'components/standard/Footer'
 const tt = (s: string) => t(`${prefix}.${s}`)
@@ -16,7 +17,10 @@ const tt = (s: string) => t(`${prefix}.${s}`)
       >Rocky Mountain Institute</a></span>
       <span class="text-600">© 2023 RMI</span>
     </div>
-    <div class="flex flex-column align-items-center">
+    <div
+      v-if="showDevTools"
+      class="flex flex-column align-items-center"
+    >
       <div class="flex gap-1">
         <PVButton
           v-tooltip.top="tt('Manage Fake Users')"
@@ -53,18 +57,18 @@ const tt = (s: string) => t(`${prefix}.${s}`)
         >
           {{ tt('File a Bug') }}
         </a>
-        <a
+        <NuxtLink
           class="text-primary"
-          href="#"
-        >{{ tt('Terms of Use') }}</a>
-        <a
+          :to="localePath('/tos')"
+        >
+          {{ tt('Terms of Use') }}
+        </NuxtLink>
+        <NuxtLink
           class="text-primary"
-          href="#"
-        >{{ tt('Privacy') }} </a>
-        <a
-          class="text-primary"
-          href="#"
-        >{{ tt('About') }}</a>
+          :to="localePath('/privacy')"
+        >
+          {{ tt('Privacy') }}
+        </NuxtLink>
       </div>
       <LocaleSelector />
     </div>

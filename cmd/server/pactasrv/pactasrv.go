@@ -21,6 +21,7 @@ var (
 
 type TaskRunner interface {
 	ParsePortfolio(ctx context.Context, req *task.ParsePortfolioRequest) (task.ID, task.RunnerID, error)
+	CreateAudit(ctx context.Context, req *task.CreateAuditRequest) (task.ID, task.RunnerID, error)
 	CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, task.RunnerID, error)
 }
 
@@ -35,6 +36,7 @@ type DB interface {
 	CreateBlob(tx db.Tx, b *pacta.Blob) (pacta.BlobID, error)
 	UpdateBlob(tx db.Tx, id pacta.BlobID, mutations ...db.UpdateBlobFn) error
 	DeleteBlob(tx db.Tx, id pacta.BlobID) (pacta.BlobURI, error)
+	BlobContexts(tx db.Tx, ids []pacta.BlobID) ([]*pacta.BlobContext, error)
 
 	InitiativeInvitation(tx db.Tx, id pacta.InitiativeInvitationID) (*pacta.InitiativeInvitation, error)
 	InitiativeInvitationsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeInvitation, error)
@@ -44,7 +46,7 @@ type DB interface {
 
 	InitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID) (*pacta.InitiativeUserRelationship, error)
 	InitiativeUserRelationshipsByUser(tx db.Tx, uid pacta.UserID) ([]*pacta.InitiativeUserRelationship, error)
-	InitiativeUserRelationshipsByInitiatives(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error)
+	InitiativeUserRelationshipsByInitiative(tx db.Tx, iid pacta.InitiativeID) ([]*pacta.InitiativeUserRelationship, error)
 	PutInitiativeUserRelationship(tx db.Tx, iur *pacta.InitiativeUserRelationship) error
 	UpdateInitiativeUserRelationship(tx db.Tx, iid pacta.InitiativeID, uid pacta.UserID, mutations ...db.UpdateInitiativeUserRelationshipFn) error
 
@@ -53,7 +55,7 @@ type DB interface {
 	AllInitiatives(tx db.Tx) ([]*pacta.Initiative, error)
 	CreateInitiative(tx db.Tx, i *pacta.Initiative) error
 	UpdateInitiative(tx db.Tx, id pacta.InitiativeID, mutations ...db.UpdateInitiativeFn) error
-	DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error
+	DeleteInitiative(tx db.Tx, id pacta.InitiativeID) ([]pacta.BlobURI, error)
 
 	PACTAVersion(tx db.Tx, id pacta.PACTAVersionID) (*pacta.PACTAVersion, error)
 	DefaultPACTAVersion(tx db.Tx) (*pacta.PACTAVersion, error)
@@ -82,14 +84,32 @@ type DB interface {
 	UpdateIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID, mutations ...db.UpdateIncompleteUploadFn) error
 	DeleteIncompleteUpload(tx db.Tx, id pacta.IncompleteUploadID) (pacta.BlobURI, error)
 
+	CreateAnalysis(tx db.Tx, a *pacta.Analysis) (pacta.AnalysisID, error)
+	UpdateAnalysis(tx db.Tx, id pacta.AnalysisID, mutations ...db.UpdateAnalysisFn) error
+	DeleteAnalysis(tx db.Tx, id pacta.AnalysisID) ([]pacta.BlobURI, error)
+	Analysis(tx db.Tx, id pacta.AnalysisID) (*pacta.Analysis, error)
+	Analyses(tx db.Tx, ids []pacta.AnalysisID) (map[pacta.AnalysisID]*pacta.Analysis, error)
+	AnalysesByOwner(tx db.Tx, ownerID pacta.OwnerID) ([]*pacta.Analysis, error)
+
+	AnalysisArtifacts(tx db.Tx, ids []pacta.AnalysisArtifactID) (map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact, error)
+	AnalysisArtifact(tx db.Tx, id pacta.AnalysisArtifactID) (*pacta.AnalysisArtifact, error)
+	UpdateAnalysisArtifact(tx db.Tx, id pacta.AnalysisArtifactID, mutations ...db.UpdateAnalysisArtifactFn) error
+	DeleteAnalysisArtifact(tx db.Tx, id pacta.AnalysisArtifactID) (pacta.BlobURI, error)
+
+	CreateSnapshotOfPortfolio(tx db.Tx, pID pacta.PortfolioID) (pacta.PortfolioSnapshotID, error)
+	CreateSnapshotOfPortfolioGroup(tx db.Tx, pgID pacta.PortfolioGroupID) (pacta.PortfolioSnapshotID, error)
+	CreateSnapshotOfInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta.PortfolioSnapshotID, error)
+	PortfolioSnapshots(tx db.Tx, ids []pacta.PortfolioSnapshotID) (map[pacta.PortfolioSnapshotID]*pacta.PortfolioSnapshot, error)
+
 	GetOwnerForUser(tx db.Tx, uID pacta.UserID) (pacta.OwnerID, error)
+	GetOwnerForInitiative(tx db.Tx, iID pacta.InitiativeID) (pacta.OwnerID, error)
 
 	PortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) (*pacta.PortfolioGroup, error)
 	PortfolioGroupsByOwner(tx db.Tx, owner pacta.OwnerID) ([]*pacta.PortfolioGroup, error)
 	PortfolioGroups(tx db.Tx, ids []pacta.PortfolioGroupID) (map[pacta.PortfolioGroupID]*pacta.PortfolioGroup, error)
 	CreatePortfolioGroup(tx db.Tx, p *pacta.PortfolioGroup) (pacta.PortfolioGroupID, error)
 	UpdatePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID, mutations ...db.UpdatePortfolioGroupFn) error
-	DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error
+	DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) ([]pacta.BlobURI, error)
 	CreatePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
 	DeletePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupID, pID pacta.PortfolioID) error
 
@@ -97,14 +117,22 @@ type DB interface {
 	User(tx db.Tx, id pacta.UserID) (*pacta.User, error)
 	Users(tx db.Tx, ids []pacta.UserID) (map[pacta.UserID]*pacta.User, error)
 	UpdateUser(tx db.Tx, id pacta.UserID, mutations ...db.UpdateUserFn) error
-	DeleteUser(tx db.Tx, id pacta.UserID) error
+	DeleteUser(tx db.Tx, id pacta.UserID) ([]pacta.BlobURI, error)
+	QueryUsers(tx db.Tx, q *db.UserQuery) ([]*pacta.User, *db.PageInfo, error)
+
+	CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error)
+	CreateAuditLogs(tx db.Tx, as []*pacta.AuditLog) error
+	AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.PageInfo, error)
+
+	RecordUserMerge(tx db.Tx, fromUserID, toUserID, actorUserID pacta.UserID) error
+	RecordOwnerMerge(tx db.Tx, fromUserID, toUserID pacta.OwnerID, actorUserID pacta.UserID) error
 }
 
 type Blob interface {
 	Scheme() blob.Scheme
 
-	SignedUploadURL(ctx context.Context, uri string) (string, error)
-	SignedDownloadURL(ctx context.Context, uri string) (string, error)
+	SignedUploadURL(ctx context.Context, uri string) (string, time.Time, error)
+	SignedDownloadURL(ctx context.Context, uri string) (string, time.Time, error)
 	DeleteBlob(ctx context.Context, uri string) error
 }
 
@@ -143,6 +171,20 @@ func dereference[T any](ts []*T, e error) ([]T, error) {
 	return result, nil
 }
 
+func ptr[T any](t T) *T {
+	return &t
+}
+
+func values[K comparable, V any](m map[K]*V) []*V {
+	result := make([]*V, len(m))
+	i := 0
+	for _, v := range m {
+		result[i] = v
+		i++
+	}
+	return result
+}
+
 func getUserID(ctx context.Context) (pacta.UserID, error) {
 	userID, err := session.UserIDFromContext(ctx)
 	if err != nil {
@@ -164,10 +206,64 @@ func (s *Server) getUserOwnerID(ctx context.Context) (pacta.OwnerID, error) {
 	return ownerID, nil
 }
 
+func (s *Server) isAdminOrSuperAdmin(ctx context.Context) (bool, bool, error) {
+	userID, err := getUserID(ctx)
+	if err != nil {
+		return false, false, err
+	}
+	user, err := s.DB.User(s.DB.NoTxn(ctx), userID)
+	if err != nil {
+		return false, false, oapierr.Internal("failed to find user", zap.Error(err))
+	}
+	return user.Admin, user.SuperAdmin, nil
+}
+
 func asStrs[T ~string](ts []T) []string {
 	result := make([]string, len(ts))
 	for i, t := range ts {
 		result[i] = string(t)
 	}
 	return result
+}
+
+type actorInfo struct {
+	UserID       pacta.UserID
+	OwnerID      pacta.OwnerID
+	IsAdmin      bool
+	IsSuperAdmin bool
+}
+
+var anonymousActorInfo = actorInfo{}
+
+func (s *Server) getActorInfoOrErrIfAnon(ctx context.Context) (actorInfo, error) {
+	actorUserID, err := getUserID(ctx)
+	if err != nil {
+		return anonymousActorInfo, err
+	}
+	actorOwnerID, err := s.getUserOwnerID(ctx)
+	if err != nil {
+		return anonymousActorInfo, err
+	}
+	actorIsAdmin, actorIsSuperAdmin, err := s.isAdminOrSuperAdmin(ctx)
+	if err != nil {
+		return anonymousActorInfo, err
+	}
+	return actorInfo{
+		UserID:       actorUserID,
+		OwnerID:      actorOwnerID,
+		IsAdmin:      actorIsAdmin,
+		IsSuperAdmin: actorIsSuperAdmin,
+	}, nil
+}
+
+func (s *Server) getActorInfoOrAnon(ctx context.Context) (actorInfo, error) {
+	_, err := getUserID(ctx)
+	if err != nil {
+		return anonymousActorInfo, nil
+	}
+	// We expect an early return in the conditional above if the user doesn't exist
+	// so the rest of this behaves just like getActorInfoOrErrIfAnon. Additionally, the
+	// geUserID check doesn't access the database, so we don't need to worry about
+	// duplicate queries.
+	return s.getActorInfoOrErrIfAnon(ctx)
 }

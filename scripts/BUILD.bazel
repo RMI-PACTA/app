@@ -47,3 +47,8 @@ sh_binary(
         "//scripts/shared:migrate",
     ],
 )
+
+sh_binary(
+    name = "build_and_load_runner",
+    srcs = ["build_and_load_runner.sh"],
+)

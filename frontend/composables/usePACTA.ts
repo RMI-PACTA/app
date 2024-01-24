@@ -30,7 +30,7 @@ export const usePACTA = () => {
   // interface of our auto-generated code, which expects a class that extends
   // BaseHttpRequest.
   const httpReqClass = class extends BaseHttpRequest {
-    private readonly getToken: () => Promise<AuthenticationResult>
+    private readonly getToken: () => Promise<AuthenticationResult | undefined>
 
     constructor (config: OpenAPIConfig) {
       super(config)

@@ -10,25 +10,49 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// Curious why this query uses array aggregation in its nested queries?
+// See https://github.com/RMI-PACTA/app/pull/91#discussion_r1437712435
 func portfolioQueryStanza(where string) string {
 	return fmt.Sprintf(`
+	WITH selected_portfolio_ids AS (
+		SELECT id FROM portfolio %[1]s
+	)
 	SELECT
 		portfolio.id,
 		portfolio.owner_id,
 		portfolio.name,
 		portfolio.description,
 		portfolio.created_at,
-		portfolio.holdings_date,
+		portfolio.properties,
 		portfolio.blob_id,
 		portfolio.admin_debug_enabled,
 		portfolio.number_of_rows,
-		ARRAY_AGG(portfolio_group_membership.portfolio_group_id),
-		ARRAY_AGG(portfolio_group_membership.created_at)
+		portfolio_group_ids,
+		portfolio_group_created_ats,
+		initiative_ids,
+		initiative_added_by_user_ids,
+		initiative_created_ats
 	FROM portfolio
-	LEFT JOIN portfolio_group_membership 
-	ON portfolio_group_membership.portfolio_id = portfolio.id
-	%s
-	GROUP BY portfolio.id;`, where)
+	LEFT JOIN (
+		SELECT 
+			portfolio_id,
+			ARRAY_AGG(portfolio_group_id) as portfolio_group_ids,
+			ARRAY_AGG(created_at) as portfolio_group_created_ats
+		FROM portfolio_group_membership
+		WHERE portfolio_id IN (SELECT id FROM selected_portfolio_ids)
+		GROUP BY portfolio_id
+	) pgs ON pgs.portfolio_id = portfolio.id
+	LEFT JOIN (
+		SELECT
+			portfolio_id,
+			ARRAY_AGG(initiative_id) as initiative_ids,
+			ARRAY_AGG(added_by_user_id) as initiative_added_by_user_ids,
+			ARRAY_AGG(created_at) as initiative_created_ats
+		FROM portfolio_initiative_membership
+		WHERE portfolio_id IN (SELECT id FROM selected_portfolio_ids)
+		GROUP BY portfolio_id
+	) itvs ON itvs.portfolio_id = portfolio.id
+	%[1]s;`, where)
 }
 
 func (d *DB) Portfolio(tx db.Tx, id pacta.PortfolioID) (*pacta.Portfolio, error) {
@@ -79,17 +103,13 @@ func (d *DB) CreatePortfolio(tx db.Tx, p *pacta.Portfolio) (pacta.PortfolioID, e
 	if err := validatePortfolioForCreation(p); err != nil {
 		return "", fmt.Errorf("validating portfolio for creation: %w", err)
 	}
-	hd, err := encodeHoldingsDate(p.HoldingsDate)
-	if err != nil {
-		return "", fmt.Errorf("validating holdings date: %w", err)
-	}
 	p.ID = pacta.PortfolioID(d.randomID("pflo"))
-	err = d.exec(tx, `
+	err := d.exec(tx, `
 		INSERT INTO portfolio 
-			(id, owner_id, name, description, holdings_date, blob_id, admin_debug_enabled, number_of_rows)
+			(id, owner_id, name, description, properties, blob_id, admin_debug_enabled, number_of_rows)
 			VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8);`,
-		p.ID, p.Owner.ID, p.Name, p.Description, hd, p.Blob.ID, p.AdminDebugEnabled, p.NumberOfRows)
+		p.ID, p.Owner.ID, p.Name, p.Description, p.Properties, p.Blob.ID, p.AdminDebugEnabled, p.NumberOfRows)
 	if err != nil {
 		return "", fmt.Errorf("creating portfolio: %w", err)
 	}
@@ -127,6 +147,17 @@ func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, e
 		if err != nil {
 			return fmt.Errorf("reading portfolio: %w", err)
 		}
+		analysisIDs, err := d.AnalysesRunOnPortfolio(tx, id)
+		if err != nil {
+			return fmt.Errorf("reading portfolio analyses: %w", err)
+		}
+		for _, aID := range analysisIDs {
+			sBuris, err := d.DeleteAnalysis(tx, aID)
+			if err != nil {
+				return fmt.Errorf("deleting analysis: %w", err)
+			}
+			buris = append(buris, sBuris...)
+		}
 		err = d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting portfolio_group_memberships: %w", err)
@@ -158,47 +189,73 @@ func (d *DB) DeletePortfolio(tx db.Tx, id pacta.PortfolioID) ([]pacta.BlobURI, e
 
 func rowToPortfolio(row rowScanner) (*pacta.Portfolio, error) {
 	p := &pacta.Portfolio{Owner: &pacta.Owner{}, Blob: &pacta.Blob{}}
-	hd := pgtype.Timestamptz{}
-	mid := []pgtype.Text{}
-	mca := []pgtype.Timestamptz{}
+	groupsIDs := []pgtype.Text{}
+	groupsCreatedAts := []pgtype.Timestamptz{}
+	initiativesIDs := []pgtype.Text{}
+	initiativesAddedByIDs := []pgtype.Text{}
+	initiativesCreatedAts := []pgtype.Timestamptz{}
 	err := row.Scan(
 		&p.ID,
 		&p.Owner.ID,
 		&p.Name,
 		&p.Description,
 		&p.CreatedAt,
-		&hd,
+		&p.Properties,
 		&p.Blob.ID,
 		&p.AdminDebugEnabled,
 		&p.NumberOfRows,
-		&mid,
-		&mca,
+		&groupsIDs,
+		&groupsCreatedAts,
+		&initiativesIDs,
+		&initiativesAddedByIDs,
+		&initiativesCreatedAts,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("scanning into portfolio row: %w", err)
 	}
-	p.HoldingsDate, err = decodeHoldingsDate(hd)
-	if err != nil {
-		return nil, fmt.Errorf("decoding holdings date: %w", err)
+	if err := checkSizesEquivalent("groups", len(groupsIDs), len(groupsCreatedAts)); err != nil {
+		return nil, err
 	}
-	if len(mid) != len(mca) {
-		return nil, fmt.Errorf("portfolio group membership ids and created ats must be the same length")
-	}
-	for i := range mid {
-		if !mid[i].Valid && !mca[i].Valid {
+	for i := range groupsIDs {
+		if !groupsIDs[i].Valid && !groupsCreatedAts[i].Valid {
 			continue // skip nulls
 		}
-		if !mid[i].Valid {
+		if !groupsIDs[i].Valid {
 			return nil, fmt.Errorf("portfolio group membership ids must be non-null")
 		}
-		if !mca[i].Valid {
+		if !groupsCreatedAts[i].Valid {
 			return nil, fmt.Errorf("portfolio group membership createdAt must be non-null")
 		}
-		p.MemberOf = append(p.MemberOf, &pacta.PortfolioGroupMembership{
+		p.PortfolioGroupMemberships = append(p.PortfolioGroupMemberships, &pacta.PortfolioGroupMembership{
 			PortfolioGroup: &pacta.PortfolioGroup{
-				ID: pacta.PortfolioGroupID(mid[i].String),
+				ID: pacta.PortfolioGroupID(groupsIDs[i].String),
 			},
-			CreatedAt: mca[i].Time,
+			CreatedAt: groupsCreatedAts[i].Time,
+		})
+	}
+	if err := checkSizesEquivalent("initiatives", len(initiativesIDs), len(initiativesAddedByIDs), len(initiativesCreatedAts)); err != nil {
+		return nil, err
+	}
+	for i := range initiativesIDs {
+		if !initiativesIDs[i].Valid && !initiativesCreatedAts[i].Valid {
+			continue // skip nulls
+		}
+		if !initiativesIDs[i].Valid {
+			return nil, fmt.Errorf("initiative ids must be non-null")
+		}
+		if !initiativesCreatedAts[i].Valid {
+			return nil, fmt.Errorf("initiative createdAt must be non-null")
+		}
+		var addedBy *pacta.User
+		if initiativesAddedByIDs[i].Valid {
+			addedBy = &pacta.User{ID: pacta.UserID(initiativesAddedByIDs[i].String)}
+		}
+		p.PortfolioInitiativeMemberships = append(p.PortfolioInitiativeMemberships, &pacta.PortfolioInitiativeMembership{
+			Initiative: &pacta.Initiative{
+				ID: pacta.InitiativeID(initiativesIDs[i].String),
+			},
+			CreatedAt: initiativesCreatedAts[i].Time,
+			AddedBy:   addedBy,
 		})
 	}
 	return p, nil
@@ -209,20 +266,16 @@ func rowsToPortfolios(rows pgx.Rows) ([]*pacta.Portfolio, error) {
 }
 
 func (db *DB) putPortfolio(tx db.Tx, p *pacta.Portfolio) error {
-	hd, err := encodeHoldingsDate(p.HoldingsDate)
-	if err != nil {
-		return fmt.Errorf("validating holdings date: %w", err)
-	}
-	err = db.exec(tx, `
+	err := db.exec(tx, `
 		UPDATE portfolio SET
 			owner_id = $2,
 			name = $3, 
 			description = $4,
-			holdings_date = $5,
+			properties = $5,
 			admin_debug_enabled = $6,
 			number_of_rows = $7
 		WHERE id = $1;
-		`, p.ID, p.Owner.ID, p.Name, p.Description, hd, p.AdminDebugEnabled, p.NumberOfRows)
+		`, p.ID, p.Owner.ID, p.Name, p.Description, p.Properties, p.AdminDebugEnabled, p.NumberOfRows)
 	if err != nil {
 		return fmt.Errorf("updating portfolio writable fields: %w", err)
 	}
@@ -247,9 +300,6 @@ func validatePortfolioForCreation(p *pacta.Portfolio) error {
 	}
 	if p.NumberOfRows < 0 {
 		return fmt.Errorf("portfolio number_of_rows must be non-negative")
-	}
-	if p.HoldingsDate == nil || p.HoldingsDate.Time.IsZero() {
-		return fmt.Errorf("portfolio holdings_date must be non-nil and non-zero")
 	}
 	return nil
 }

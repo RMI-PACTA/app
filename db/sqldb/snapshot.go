@@ -20,7 +20,7 @@ func (d *DB) CreateSnapshotOfPortfolioGroup(tx db.Tx, pgID pacta.PortfolioGroupI
 		return "", fmt.Errorf("reading portfolio group: %w", err)
 	}
 	ids := []pacta.PortfolioID{}
-	for _, p := range pg.Members {
+	for _, p := range pg.PortfolioGroupMemberships {
 		ids = append(ids, p.Portfolio.ID)
 	}
 	return d.createSnapshot(tx, "", pgID, "", ids)
@@ -46,10 +46,13 @@ func (d *DB) PortfolioSnapshot(tx db.Tx, psID pacta.PortfolioSnapshotID) (*pacta
 	return exactlyOneFromMap("portfolio_snapshot", psID, pss)
 }
 
+const snapshotQuery = `
+SELECT id, portfolio_id, portfolio_group_id, initiative_id, portfolio_ids
+FROM portfolio_snapshot
+`
+
 func (d *DB) PortfolioSnapshots(tx db.Tx, psID []pacta.PortfolioSnapshotID) (map[pacta.PortfolioSnapshotID]*pacta.PortfolioSnapshot, error) {
-	rows, err := d.query(tx, `
-		SELECT id, portfolio_id, portfolio_group_id, initiative_id, portfolio_ids
-		FROM portfolio_snapshot
+	rows, err := d.query(tx, snapshotQuery+`
 		WHERE id IN `+createWhereInFmt(len(psID))+`;`, idsToInterface(psID)...)
 	if err != nil {
 		return nil, fmt.Errorf("reading portfolio snapshot: %w", err)
@@ -63,6 +66,37 @@ func (d *DB) PortfolioSnapshots(tx db.Tx, psID []pacta.PortfolioSnapshotID) (map
 		result[ps.ID] = ps
 	}
 	return result, nil
+}
+
+const analysisLookupQuery = `
+SELECT analysis.id 
+FROM analysis 
+JOIN portfolio_snapshot
+ON analysis.portfolio_snapshot_id = portfolio_snapshot.id
+`
+
+func (d *DB) AnalysesRunOnPortfolio(tx db.Tx, pID pacta.PortfolioID) ([]pacta.AnalysisID, error) {
+	rows, err := d.query(tx, analysisLookupQuery+`WHERE portfolio_snapshot.portfolio_id = $1;`, pID)
+	if err != nil {
+		return nil, fmt.Errorf("reading portfolio snapshots by portfolio_id: %w", err)
+	}
+	return mapRowsToIDs[pacta.AnalysisID]("analyses_from_snapshot_from_portfolio", rows)
+}
+
+func (d *DB) AnalysesRunOnPortfolioGroup(tx db.Tx, pgID pacta.PortfolioGroupID) ([]pacta.AnalysisID, error) {
+	rows, err := d.query(tx, analysisLookupQuery+`WHERE portfolio_snapshot.portfolio_group_id = $1;`, pgID)
+	if err != nil {
+		return nil, fmt.Errorf("reading portfolio snapshots by portfolio_group_id: %w", err)
+	}
+	return mapRowsToIDs[pacta.AnalysisID]("analyses_from_snapshot_from_portfolio_group", rows)
+}
+
+func (d *DB) AnalysesRunOnInitiative(tx db.Tx, iID pacta.InitiativeID) ([]pacta.AnalysisID, error) {
+	rows, err := d.query(tx, analysisLookupQuery+`WHERE portfolio_snapshot.initiative_id = $1;`, iID)
+	if err != nil {
+		return nil, fmt.Errorf("reading portfolio snapshots by initiative_id: %w", err)
+	}
+	return mapRowsToIDs[pacta.AnalysisID]("analyses_from_snapshot_from_initiative", rows)
 }
 
 func (d *DB) createSnapshot(tx db.Tx, pID pacta.PortfolioID, pgID pacta.PortfolioGroupID, iID pacta.InitiativeID, portfolioIDs []pacta.PortfolioID) (pacta.PortfolioSnapshotID, error) {
@@ -107,13 +141,19 @@ func rowToPortfolioSnapshot(row rowScanner) (*pacta.PortfolioSnapshot, error) {
 		PortfolioIDs: stringsToIDs[pacta.PortfolioID](portfolioIDs),
 	}
 	if pID.Valid {
-		ps.PortfolioID = pacta.PortfolioID(pID.String)
+		ps.Portfolio = &pacta.Portfolio{
+			ID: pacta.PortfolioID(pID.String),
+		}
 	}
 	if pgID.Valid {
-		ps.PortfolioGroupID = pacta.PortfolioGroupID(pgID.String)
+		ps.PortfolioGroup = &pacta.PortfolioGroup{
+			ID: pacta.PortfolioGroupID(pgID.String),
+		}
 	}
 	if iID.Valid {
-		ps.InitiatiativeID = pacta.InitiativeID(iID.String)
+		ps.Initiatiative = &pacta.Initiative{
+			ID: pacta.InitiativeID(iID.String),
+		}
 	}
 	return ps, nil
 }

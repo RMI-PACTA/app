@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -23,10 +23,10 @@ import (
 	"github.com/RMI/pacta/dockertask"
 	"github.com/RMI/pacta/oapierr"
 	oapipacta "github.com/RMI/pacta/openapi/pacta"
+	"github.com/RMI/pacta/reportsrv"
 	"github.com/RMI/pacta/secrets"
 	"github.com/RMI/pacta/session"
 	"github.com/RMI/pacta/task"
-	"github.com/Silicon-Ally/cryptorand"
 	"github.com/Silicon-Ally/zaphttplog"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/httprate"
@@ -64,9 +64,9 @@ func run(args []string) error {
 		env      = fs.String("env", "", "The environment that we're running in.")
 		localDSN = fs.String("local_dsn", "", "If set, override the DB addresses retrieved from the secret configuration. Can only be used when running locally.")
 
-		azEventSubscription         = fs.String("azure_event_subscription", "", "The Azure Subscription ID to allow webhook registrations from")
-		azEventResourceGroup        = fs.String("azure_event_resource_group", "", "The Azure resource group to allow webhook registrations from")
-		azEventParsedPortfolioTopic = fs.String("azure_event_parsed_portfolio_topic", "", "The name of the topic for webhooks about parsed portfolios")
+		azEventSubscription  = fs.String("azure_event_subscription", "", "The Azure Subscription ID to allow webhook registrations from")
+		azEventResourceGroup = fs.String("azure_event_resource_group", "", "The Azure resource group to allow webhook registrations from")
+		azEventTopic         = fs.String("azure_event_topic", "", "The name of the topic for webhooks about ecosystem updates, like parsed portfolios or created reports/audits.")
 
 		// Only when running locally because the Dockerized runner can't use local `az` CLI credentials
 		localDockerTenantID     = fs.String("local_docker_tenant_id", "", "The Azure Tenant ID the localdocker service principal lives in")
@@ -91,14 +91,12 @@ func run(args []string) error {
 
 		azEventWebhookSecrets = fs.String("secret_azure_webhook_secrets", "", "A comma-separated list of shared secrets we'll accept for incoming webhooks")
 
-		runnerConfigLocation   = fs.String("secret_runner_config_location", "", "Location (like 'centralus') where the runner jobs should be executed")
 		runnerConfigConfigPath = fs.String("secret_runner_config_config_path", "", "Config path (like '/configs/dev.conf') where the runner jobs should read their base config from")
 
-		runnerConfigIdentityName               = fs.String("secret_runner_config_identity_name", "", "Name of the Azure identity to run runner jobs with")
-		runnerConfigIdentitySubscriptionID     = fs.String("secret_runner_config_identity_subscription_id", "", "Subscription ID of the identity to run runner jobs with")
-		runnerConfigIdentityResourceGroup      = fs.String("secret_runner_config_identity_resource_group", "", "Resource group of the identity to run runner jobs with")
-		runnerConfigIdentityClientID           = fs.String("secret_runner_config_identity_client_id", "", "Client ID of the identity to run runner jobs with")
-		runnerConfigIdentityManagedEnvironment = fs.String("secret_runner_config_identity_managed_environment", "", "Name of the Container Apps Environment where runner jobs should run")
+		runnerConfigSubscriptionID          = fs.String("secret_runner_config_subscription_id", "", "Subscription ID of the identity to run runner jobs with")
+		runnerConfigResourceGroup           = fs.String("secret_runner_config_resource_group", "", "Resource group of the identity to run runner jobs with")
+		runnerConfigManagedIdentityClientID = fs.String("secret_runner_config_managed_identity_client_id", "", "Client ID of the identity to run runner jobs with")
+		runnerConfigJobName                 = fs.String("secret_runner_config_job_name", "", "Name of the Container Apps Job to start instances of.")
 
 		runnerConfigImageRegistry = fs.String("secret_runner_config_image_registry", "", "Registry where PACTA runner images live, like 'rmisa.azurecr.io'")
 		runnerConfigImageName     = fs.String("secret_runner_config_image_name", "", "Name of the Docker image of the PACTA runner, like 'runner'")
@@ -141,15 +139,11 @@ func run(args []string) error {
 			Data: *authKeyData,
 		},
 		RunnerConfig: &secrets.RawRunnerConfig{
-			Location:   *runnerConfigLocation,
-			ConfigPath: *runnerConfigConfigPath,
-			Identity: &secrets.RawRunnerIdentity{
-				Name:               *runnerConfigIdentityName,
-				SubscriptionID:     *runnerConfigIdentitySubscriptionID,
-				ResourceGroup:      *runnerConfigIdentityResourceGroup,
-				ClientID:           *runnerConfigIdentityClientID,
-				ManagedEnvironment: *runnerConfigIdentityManagedEnvironment,
-			},
+			ConfigPath:              *runnerConfigConfigPath,
+			SubscriptionID:          *runnerConfigSubscriptionID,
+			ResourceGroup:           *runnerConfigResourceGroup,
+			ManagedIdentityClientID: *runnerConfigManagedIdentityClientID,
+			JobName:                 *runnerConfigJobName,
 			Image: &secrets.RawRunnerImage{
 				Registry: *runnerConfigImageRegistry,
 				Name:     *runnerConfigImageName,
@@ -219,15 +213,10 @@ func run(args []string) error {
 	if *useAZRunner {
 		logger.Info("initializing Azure task runner client")
 		tmp, err := aztask.NewRunner(creds, &aztask.Config{
-			Location: runCfg.Location,
-			Rand:     rand.New(cryptorand.New()),
-			Identity: &aztask.RunnerIdentity{
-				Name:               runCfg.Identity.Name,
-				SubscriptionID:     runCfg.Identity.SubscriptionID,
-				ResourceGroup:      runCfg.Identity.ResourceGroup,
-				ClientID:           runCfg.Identity.ClientID,
-				ManagedEnvironment: runCfg.Identity.ManagedEnvironment,
-			},
+			SubscriptionID:          runCfg.SubscriptionID,
+			ResourceGroup:           runCfg.ResourceGroup,
+			ManagedIdentityClientID: runCfg.ManagedIdentityClientID,
+			JobName:                 runCfg.JobName,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to init Azure runner: %w", err)
@@ -287,20 +276,26 @@ func run(args []string) error {
 	})
 
 	eventSrv, err := azevents.NewServer(&azevents.Config{
-		Logger:                   logger,
-		AllowedAuthSecrets:       strings.Split(*azEventWebhookSecrets, ","),
-		Subscription:             *azEventSubscription,
-		ResourceGroup:            *azEventResourceGroup,
-		ParsedPortfolioTopicName: *azEventParsedPortfolioTopic,
-		DB:                       db,
-		Now:                      time.Now,
+		Logger:             logger,
+		AllowedAuthSecrets: strings.Split(*azEventWebhookSecrets, ","),
+		Subscription:       *azEventSubscription,
+		ResourceGroup:      *azEventResourceGroup,
+		TopicName:          *azEventTopic,
+		DB:                 db,
+		Now:                time.Now,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init Azure Event Grid handler: %w", err)
 	}
 
-	r := chi.NewRouter()
-	r.Group(eventSrv.RegisterHandlers)
+	reportSrv, err := reportsrv.New(&reportsrv.Config{
+		DB:     db,
+		Blob:   blobClient,
+		Logger: logger,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to init report server: %w", err)
+	}
 
 	jwKey, err := jwk.FromRaw(sec.AuthVerificationKey.PublicKey)
 	if err != nil {
@@ -308,9 +303,9 @@ func run(args []string) error {
 	}
 	jwKey.Set(jwk.KeyIDKey, sec.AuthVerificationKey.ID)
 
-	// We now register our PACTA above as the handler for the interface
-	oapipacta.HandlerWithOptions(pactaStrictHandler, oapipacta.ChiServerOptions{
-		BaseRouter: r.With(
+	type middlewareFunc = func(http.Handler) http.Handler
+	middleware := func(addl ...middlewareFunc) []middlewareFunc {
+		return append([]middlewareFunc{
 			// The order of these is important. We run RequestID and RealIP first to
 			// populate relevant metadata for logging, and we run recovery immediately after
 			// logging so it can catch any subsequent panics, but still has access to the
@@ -319,14 +314,23 @@ func run(args []string) error {
 			chimiddleware.RealIP,
 			zaphttplog.NewMiddleware(logger, zaphttplog.WithConcise(false)),
 			chimiddleware.Recoverer,
-
 			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
-			jwtauth.Authenticator,
+			requireJWTIfNotPublicEndpoint,
 			session.WithAuthn(logger, db),
+		}, addl...)
+	}
 
-			oapimiddleware.OapiRequestValidator(pactaSwagger),
+	r := chi.NewRouter()
+	r.With(chimiddleware.Recoverer).Group(eventSrv.RegisterHandlers)
+	r.With(middleware()...).Group(reportSrv.RegisterHandlers)
 
-			rateLimitMiddleware(*rateLimitMaxRequests, *rateLimitUnitTime),
+	// We now register our PACTA above as the handler for the interface
+	oapipacta.HandlerWithOptions(pactaStrictHandler, oapipacta.ChiServerOptions{
+		BaseRouter: r.With(
+			middleware(
+				oapimiddleware.OapiRequestValidator(pactaSwagger),
+				rateLimitMiddleware(*rateLimitMaxRequests, *rateLimitUnitTime),
+			)...,
 		),
 	})
 
@@ -369,6 +373,42 @@ func run(args []string) error {
 	return nil
 }
 
+type allowFn func(r *http.Request) bool
+
+var publicEndpoints = []allowFn{
+	allowPublicInitiativeLookups,
+	allowPublicAnalysisDownloads,
+}
+
+var allowPublicInitiativeLookupsRegexp = regexp.MustCompile(`^/initiative/[^/]*$`)
+
+func allowPublicInitiativeLookups(r *http.Request) bool {
+	if r.Method != http.MethodGet {
+		return false
+	}
+	return allowPublicInitiativeLookupsRegexp.MatchString(r.URL.Path)
+}
+
+func allowPublicAnalysisDownloads(r *http.Request) bool {
+	if r.Method != http.MethodGet {
+		return false
+	}
+	return strings.HasPrefix(r.URL.Path, "/report/")
+}
+
+func requireJWTIfNotPublicEndpoint(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for _, fn := range publicEndpoints {
+			if fn(r) {
+				r = r.WithContext(session.WithAllowedAnonymous(r.Context()))
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
+		jwtauth.Authenticator(next).ServeHTTP(w, r)
+	})
+}
+
 func rateLimitMiddleware(maxReq int, windowLength time.Duration) func(http.Handler) http.Handler {
 	// This example uses an in-memory rate limiter for simplicity, an application
 	// that will be running multiple API instances should likely use something like
@@ -378,6 +418,10 @@ func rateLimitMiddleware(maxReq int, windowLength time.Duration) func(http.Handl
 		maxReq,
 		windowLength,
 		httprate.WithKeyFuncs(func(r *http.Request) (string, error) {
+			if session.IsAllowedAnonymous(r.Context()) {
+				// Rate limit by IP address if the user is anonymous.
+				return r.RemoteAddr, nil
+			}
 			_, claims, err := jwtauth.FromContext(r.Context())
 			if err != nil {
 				return "", fmt.Errorf("failed to get claims from context: %w", err)

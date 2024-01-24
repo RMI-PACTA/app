@@ -12,60 +12,68 @@ const createEditorInitiativeFields = (translation: Translation): EditorInitiativ
       name: 'id',
       label: tt('ID'),
       validation: [Validation.AlphanumericAndDashesAndUnderscores],
-      helpText: tt('This is the immutable unique identifier for the initiative. It can only contain alphanumeric characters, underscores, and dashes. This value will be shown in URLs, but will typically not be user visible.'),
+      helpText: tt('IDHelpText'),
     },
     name: {
       name: 'name',
       label: tt('Name'),
       validation: [Validation.NotEmpty],
-      helpText: tt('The name of the PACTA initiative.'),
+      helpText: tt('NameHelpText'),
     },
     affiliation: {
       name: 'affiliation',
       label: tt('Affiliation'),
-      helpText: tt('An optional description of the organization or entity that is hosting this initiative.'),
+      helpText: tt('AffiliationHelpText'),
     },
     publicDescription: {
       name: 'publicDescription',
       label: tt('Public Description'),
       validation: [Validation.NotEmpty],
-      helpText: tt('The description of the initiative that will be shown to the public. Newlines will be respected.'),
+      helpText: tt('PublicDescriptionHelpText'),
     },
     internalDescription: {
       name: 'internalDescription',
       label: tt('Internal Description'),
-      helpText: tt('The description of the initiative that will be shown to members of the inititiative. Newlines will be respected.'),
+      helpText: tt('InternalDescriptionHelpText'),
     },
     requiresInvitationToJoin: {
       name: 'requiresInvitationToJoin',
       label: tt('Requires Invitation to Join'),
-      helpText: tt('When disabled, anyone can join this initiative. When enabled, initiative administrators can mint invitation codes that they can share with folks to allow them to join the project.'),
+      helpText: tt('RequiresInvitationToJoinHelpText'),
     },
     isAcceptingNewMembers: {
       name: 'isAcceptingNewMembers',
       label: tt('Accepting New Members'),
-      helpText: tt('When enabled, new members can join the project through the joining mechanism selected above.'),
+      helpText: tt('AcceptingNewMembersHelpText'),
     },
     isAcceptingNewPortfolios: {
       name: 'isAcceptingNewPortfolios',
       label: tt('Accepting New Portfolios'),
-      helpText: tt('When enabled, initiative members can add new portfolios to the initiative.'),
+      helpText: tt('AcceptingNewPortfoliosHelpText'),
     },
     language: {
       name: 'language',
       label: tt('Language'),
       validation: [Validation.NotEmpty],
-      helpText: tt('What language should reports have when they are generated for this initiative?'),
+      helpText: tt('LanguageHelpText'),
     },
     pactaVersion: {
       name: 'pactaVersion',
       label: tt('PACTA Version'),
       validation: [Validation.NotEmpty],
-      helpText: tt('What version of the PACTA algorithm should this initiative use to generate reports?'),
+      helpText: tt('PactaVersionHelpText'),
     },
     createdAt: {
       name: 'createdAt',
       label: tt('Created At'),
+    },
+    portfolioInitiativeMemberships: {
+      name: 'portfolioInitiativeMemberships',
+      label: tt('Portfolio Initiative Memberships'),
+    },
+    initiativeUserRelationships: {
+      name: 'initiativeUserRelationships',
+      label: tt('Initiative User Relationships'),
     },
   }
 }

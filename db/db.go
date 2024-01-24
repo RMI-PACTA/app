@@ -209,9 +209,30 @@ func SetPortfolioDescription(value string) UpdatePortfolioFn {
 	}
 }
 
-func SetPortfolioHoldingsDate(value *pacta.HoldingsDate) UpdatePortfolioFn {
+func SetPortfolioPropertyHoldingsDate(value *pacta.HoldingsDate) UpdatePortfolioFn {
 	return func(v *pacta.Portfolio) error {
-		v.HoldingsDate = value
+		v.Properties.HoldingsDate = value
+		return nil
+	}
+}
+
+func SetPortfolioPropertyESG(value *bool) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Properties.ESG = value
+		return nil
+	}
+}
+
+func SetPortfolioPropertyExternal(value *bool) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Properties.External = value
+		return nil
+	}
+}
+
+func SetPortfolioPropertyEngagementStrategy(value *bool) UpdatePortfolioFn {
+	return func(v *pacta.Portfolio) error {
+		v.Properties.EngagementStrategy = value
 		return nil
 	}
 }
@@ -385,9 +406,30 @@ func SetIncompleteUploadFailureMessage(value string) UpdateIncompleteUploadFn {
 	}
 }
 
-func SetIncompleteUploadHoldingsDate(value *pacta.HoldingsDate) UpdateIncompleteUploadFn {
+func SetIncompleteUploadPropertyHoldingsDate(value *pacta.HoldingsDate) UpdateIncompleteUploadFn {
 	return func(v *pacta.IncompleteUpload) error {
-		v.HoldingsDate = value
+		v.Properties.HoldingsDate = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadPropertyESG(value *bool) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Properties.ESG = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadPropertyExternal(value *bool) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Properties.External = value
+		return nil
+	}
+}
+
+func SetIncompleteUploadPropertyEngagementStrategy(value *bool) UpdateIncompleteUploadFn {
+	return func(v *pacta.IncompleteUpload) error {
+		v.Properties.EngagementStrategy = value
 		return nil
 	}
 }

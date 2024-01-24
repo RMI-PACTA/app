@@ -22,9 +22,14 @@ func TestPortfolioCRUD(t *testing.T) {
 	o2 := ownerUserForTesting(t, tdb, u2)
 
 	p := &pacta.Portfolio{
-		Name:         "portfolio-name",
-		Description:  "portfolio-description",
-		HoldingsDate: exampleHoldingsDate,
+		Name:        "portfolio-name",
+		Description: "portfolio-description",
+		Properties: pacta.PortfolioProperties{
+			HoldingsDate:       exampleHoldingsDate,
+			ESG:                nil,
+			External:           ptr(true),
+			EngagementStrategy: ptr(false),
+		},
 		Owner:        &pacta.Owner{ID: o1.ID},
 		Blob:         &pacta.Blob{ID: b.ID},
 		NumberOfRows: 10,
@@ -46,7 +51,7 @@ func TestPortfolioCRUD(t *testing.T) {
 
 	ps, err := tdb.Portfolios(tx, []pacta.PortfolioID{p.ID, p.ID})
 	if err != nil {
-		t.Fatalf("reading portfolios: %w", err)
+		t.Fatalf("reading portfolios: %v", err)
 	}
 	if diff := cmp.Diff(map[pacta.PortfolioID]*pacta.Portfolio{p.ID: p}, ps, portfolioCmpOpts()); diff != "" {
 		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
@@ -58,7 +63,10 @@ func TestPortfolioCRUD(t *testing.T) {
 	err = tdb.UpdatePortfolio(tx, p.ID,
 		db.SetPortfolioName(nName),
 		db.SetPortfolioDescription(nDesc),
-		db.SetPortfolioHoldingsDate(exampleHoldingsDate2),
+		db.SetPortfolioPropertyHoldingsDate(exampleHoldingsDate2),
+		db.SetPortfolioPropertyESG(ptr(true)),
+		db.SetPortfolioPropertyExternal(ptr(false)),
+		db.SetPortfolioPropertyEngagementStrategy(nil),
 		db.SetPortfolioOwner(o2.ID),
 		db.SetPortfolioAdminDebugEnabled(true),
 		db.SetPortfolioNumberOfRows(nRows),
@@ -68,7 +76,10 @@ func TestPortfolioCRUD(t *testing.T) {
 	}
 	p.Name = nName
 	p.Description = nDesc
-	p.HoldingsDate = exampleHoldingsDate2
+	p.Properties.HoldingsDate = exampleHoldingsDate2
+	p.Properties.ESG = ptr(true)
+	p.Properties.External = ptr(false)
+	p.Properties.EngagementStrategy = nil
 	p.Owner = &pacta.Owner{ID: o2.ID}
 	p.AdminDebugEnabled = true
 	p.NumberOfRows = nRows
@@ -82,17 +93,32 @@ func TestPortfolioCRUD(t *testing.T) {
 	}
 	pls, err := tdb.PortfoliosByOwner(tx, o2.ID)
 	if err != nil {
-		t.Fatalf("reading portfolios: %w", err)
+		t.Fatalf("reading portfolios: %v", err)
 	}
 	if diff := cmp.Diff([]*pacta.Portfolio{p}, pls, portfolioCmpOpts()); diff != "" {
 		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
 	}
 	pls, err = tdb.PortfoliosByOwner(tx, o1.ID)
 	if err != nil {
-		t.Fatalf("reading portfolios: %w", err)
+		t.Fatalf("reading portfolios: %v", err)
 	}
 	if diff := cmp.Diff([]*pacta.Portfolio{}, pls, portfolioCmpOpts()); diff != "" {
 		t.Fatalf("portfolio mismatch (-want +got):\n%s", diff)
+	}
+
+	blobContexts, err := tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
+	if err != nil {
+		t.Fatalf("reading blob owners: %v", err)
+	}
+	expectedBlobContexts := []*pacta.BlobContext{{
+		BlobID:               b.ID,
+		PrimaryTargetOwnerID: o2.ID,
+		PrimaryTargetType:    "PORTFOLIO",
+		PrimaryTargetID:      string(p.ID),
+		AdminDebugEnabled:    true,
+	}}
+	if diff := cmp.Diff(expectedBlobContexts, blobContexts, portfolioCmpOpts()); diff != "" {
+		t.Errorf("unexpected diff (+got -want): %v", diff)
 	}
 
 	buris, err := tdb.DeletePortfolio(tx, p.ID)
@@ -101,6 +127,11 @@ func TestPortfolioCRUD(t *testing.T) {
 	}
 	if diff := cmp.Diff([]pacta.BlobURI{b.BlobURI}, buris); diff != "" {
 		t.Fatalf("blob uri mismatch (-want +got):\n%s", diff)
+	}
+
+	_, err = tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
+	if err == nil {
+		t.Fatal("reading blob owners should have failed but was fine")
 	}
 }
 
@@ -137,7 +168,6 @@ func portfolioForTestingWithKey(t *testing.T, tdb *DB, key string) *pacta.Portfo
 	p := &pacta.Portfolio{
 		Name:         "portfolio-name-" + key,
 		Description:  "portfolio-description-" + key,
-		HoldingsDate: exampleHoldingsDate,
 		Owner:        &pacta.Owner{ID: o.ID},
 		Blob:         &pacta.Blob{ID: b.ID},
 		NumberOfRows: 10,

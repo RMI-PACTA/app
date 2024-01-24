@@ -35,6 +35,10 @@ func (d *DB) AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.Pa
 	if err != nil {
 		return nil, nil, fmt.Errorf("converting cursor to offset: %w", err)
 	}
+	q, err = d.expandAuditLogQueryToAccountForMerges(tx, q)
+	if err != nil {
+		return nil, nil, fmt.Errorf("expanding audit_log query to account for merges: %w", err)
+	}
 	sql, args, err := auditLogQuery(q)
 	if err != nil {
 		return nil, nil, fmt.Errorf("building audit_log query: %w", err)
@@ -55,8 +59,42 @@ func (d *DB) AuditLogs(tx db.Tx, q *db.AuditLogQuery) ([]*pacta.AuditLog, *db.Pa
 }
 
 func (d *DB) CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, error) {
+	sql, args, id, err := d.buildCreateAuditLogQuery(tx, a)
+	if err != nil {
+		return "", err
+	}
+	err = d.exec(tx, sql, args...)
+	if err != nil {
+		return "", fmt.Errorf("creating audit_log row: %w", err)
+	}
+	return id, nil
+}
+
+func (d *DB) CreateAuditLogs(tx db.Tx, als []*pacta.AuditLog) error {
+	if len(als) == 0 {
+		return nil
+	}
+	if len(als) == 1 {
+		_, err := d.CreateAuditLog(tx, als[0])
+		return err
+	}
+	batch := &pgx.Batch{}
+	for _, al := range als {
+		sql, args, _, err := d.buildCreateAuditLogQuery(tx, al)
+		if err != nil {
+			return fmt.Errorf("building batch audit_log updates: %w", err)
+		}
+		batch.Queue(sql, args...)
+	}
+	if err := d.ExecBatch(tx, batch); err != nil {
+		return fmt.Errorf("batch creating audit_logs: %w", err)
+	}
+	return nil
+}
+
+func (d *DB) buildCreateAuditLogQuery(tx db.Tx, a *pacta.AuditLog) (string, []interface{}, pacta.AuditLogID, error) {
 	if err := validateAuditLogForCreation(a); err != nil {
-		return "", fmt.Errorf("validating audit_log for creation: %w", err)
+		return "", nil, "", fmt.Errorf("validating audit_log for creation: %w", err)
 	}
 	id := pacta.AuditLogID(d.randomID(auditLogIDNamespace))
 	ownerFn := func(o *pacta.Owner) pgtype.Text {
@@ -70,7 +108,7 @@ func (d *DB) CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, erro
 		stt.Valid = true
 		stt.String = string(a.SecondaryTargetType)
 	}
-	err := d.exec(tx, `
+	sql := `
 		INSERT INTO audit_log 
 			(
 				id, action, actor_type, actor_id, actor_owner_id,
@@ -79,13 +117,13 @@ func (d *DB) CreateAuditLog(tx db.Tx, a *pacta.AuditLog) (pacta.AuditLogID, erro
 			)
 			VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
-	`, id, a.Action, a.ActorType, a.ActorID, ownerFn(a.ActorOwner),
+	`
+	args := []interface{}{
+		id, a.Action, a.ActorType, a.ActorID, ownerFn(a.ActorOwner),
 		a.PrimaryTargetType, a.PrimaryTargetID, ownerFn(a.PrimaryTargetOwner),
-		stt, a.SecondaryTargetID, ownerFn(a.SecondaryTargetOwner))
-	if err != nil {
-		return "", fmt.Errorf("creating audit_log row: %w", err)
+		stt, a.SecondaryTargetID, ownerFn(a.SecondaryTargetOwner),
 	}
-	return id, nil
+	return sql, args, id, nil
 }
 
 func rowsToAuditLogs(rows pgx.Rows) ([]*pacta.AuditLog, error) {
@@ -207,8 +245,8 @@ func auditLogQueryWheresToSQL(qs []*db.AuditLogQueryWhere, args *queryArgs) stri
 		if len(q.InID) > 0 {
 			wheres = append(wheres, eqOrIn("audit_log.id", q.InID, args))
 		}
-		if len(q.InActionType) > 0 {
-			wheres = append(wheres, eqOrIn("audit_log.action", q.InActionType, args))
+		if len(q.InAction) > 0 {
+			wheres = append(wheres, eqOrIn("audit_log.action", q.InAction, args))
 		}
 		if !q.MinCreatedAt.IsZero() {
 			wheres = append(wheres, "audit_log.created_at >= "+args.add(q.MinCreatedAt))

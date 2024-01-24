@@ -4,11 +4,6 @@ import {
   type EditorPortfolioValues as EditorValues,
 } from '@/lib/editor'
 
-const prefix = 'components/portfolio/Editor'
-
-const { t } = useI18n()
-const tt = (key: string) => t(`${prefix}.${key}`)
-
 interface Props {
   editorValues: EditorValues
   editorFields: EditorFields
@@ -46,13 +41,43 @@ const evs = computed({
       />
     </FormEditorField>
     <FormEditorField
+      :editor-field="efs.propertyHoldingsDate"
+      :editor-value="evs.propertyHoldingsDate"
+    >
+      <InputsHoldingsDate
+        v-model:value="evs.propertyHoldingsDate.currentValue"
+      />
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="efs.propertyESG"
+      :editor-value="evs.propertyESG"
+    >
+      <InputsEsg
+        v-model:value="evs.propertyESG.currentValue"
+      />
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="efs.propertyExternal"
+      :editor-value="evs.propertyExternal"
+    >
+      <InputsExternal
+        v-model:value="evs.propertyExternal.currentValue"
+      />
+    </FormEditorField>
+    <FormEditorField
+      :editor-field="efs.propertyEngagementStrategy"
+      :editor-value="evs.propertyEngagementStrategy"
+    >
+      <InputsEngagementStrategy
+        v-model:value="evs.propertyEngagementStrategy.currentValue"
+      />
+    </FormEditorField>
+    <FormEditorField
       :editor-field="efs.adminDebugEnabled"
       :editor-value="evs.adminDebugEnabled"
     >
-      <ExplicitInputSwitch
+      <AdminDebugEnabledToggleButton
         v-model:value="evs.adminDebugEnabled.currentValue"
-        :on-label="tt('Administrator Debugging Access Enabled')"
-        :off-label="tt('No Administrator Access Enabled')"
       />
     </FormEditorField>
   </div>

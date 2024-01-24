@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestcreateUser(t *testing.T) {
+func TestCreateUser(t *testing.T) {
 	ctx := context.Background()
 	tdb := createDBForTesting(t)
 	tx := tdb.NoTxn(ctx)
@@ -42,7 +42,7 @@ func TestcreateUser(t *testing.T) {
 	// Read by Authn
 	actual, err = tdb.UserByAuthn(tx, u.AuthnMechanism, u.AuthnID)
 	if err != nil {
-		t.Fatalf("getting user by authn: %w", err)
+		t.Fatalf("getting user by authn: %v", err)
 	}
 	if diff := cmp.Diff(u, actual, userCmpOpts()); diff != "" {
 		t.Fatalf("unexpected diff (-want +got)\n%s", diff)
@@ -51,7 +51,7 @@ func TestcreateUser(t *testing.T) {
 	// Read by id list
 	aMap, err := tdb.Users(tx, []pacta.UserID{"somenonsense", userID})
 	if err != nil {
-		t.Fatalf("getting users: %w", err)
+		t.Fatalf("getting users: %v", err)
 	}
 	eMap := map[pacta.UserID]*pacta.User{userID: u}
 	if diff := cmp.Diff(eMap, aMap, userCmpOpts()); diff != "" {
@@ -93,7 +93,7 @@ func TestcreateUser(t *testing.T) {
 	u5.CanonicalEmail = "canonical email 5"
 	_, err = tdb.createUser(tx, u5)
 	if err != nil {
-		t.Fatal("expected success but got: %w", err)
+		t.Fatalf("expected success but got: %v", err)
 	}
 }
 
@@ -145,6 +145,171 @@ func TestUpdateUser(t *testing.T) {
 	u.Admin = false
 	if diff := cmp.Diff(u, actual, userCmpOpts()); diff != "" {
 		t.Fatalf("unexpected diff (-want +got)\n%s", diff)
+	}
+}
+
+func TestQueryUsers(t *testing.T) {
+	ctx := context.Background()
+	tdb := createDBForTesting(t)
+	tx := tdb.NoTxn(ctx)
+	userA := &pacta.User{
+		Name:           "Assitant Regional Manager Schrute",
+		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
+		AuthnID:        "AAA",
+		CanonicalEmail: "dwight@dm.com",
+		EnteredEmail:   "something-else",
+	}
+	userB := &pacta.User{
+		Name:           "Jim",
+		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
+		AuthnID:        "BBB",
+		CanonicalEmail: "jim@dm.com",
+		EnteredEmail:   "entered2",
+	}
+	userC := &pacta.User{
+		Name:           "DWIGHT SCHRUTE, FARMER",
+		AuthnMechanism: pacta.AuthnMechanism_EmailAndPass,
+		AuthnID:        "CCC",
+		CanonicalEmail: "beets-for-sale-northern-pa@gmail.com",
+		EnteredEmail:   "entered3",
+	}
+	userIDA, err0 := tdb.createUser(tx, userA)
+	userA.ID = userIDA
+	userA.CreatedAt = time.Now()
+	userIDB, err1 := tdb.createUser(tx, userB)
+	userB.ID = userIDB
+	userB.CreatedAt = time.Now()
+	userIDC, err2 := tdb.createUser(tx, userC)
+	userC.ID = userIDC
+	userC.CreatedAt = time.Now()
+	noErrDuringSetup(t, err0, err1, err2)
+
+	testCases := []struct {
+		name           string
+		query          *db.UserQuery
+		expected       []pacta.UserID
+		expectedMore   bool
+		expectedCursor string
+	}{
+		{
+			name: "Sort Asc",
+			query: &db.UserQuery{
+				Sorts: []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: true}},
+				Limit: 4,
+			},
+			expected:     []pacta.UserID{userIDA, userIDB, userIDC},
+			expectedMore: false,
+		},
+		{
+			name: "Sort Desc",
+			query: &db.UserQuery{
+				Sorts: []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: false}},
+				Limit: 4,
+			},
+			expected:     []pacta.UserID{userIDC, userIDB, userIDA},
+			expectedMore: false,
+		},
+		{
+			name: "Limit Enforced",
+			query: &db.UserQuery{
+				Sorts: []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: false}},
+				Limit: 2,
+			},
+			expected:       []pacta.UserID{userIDC, userIDB},
+			expectedMore:   true,
+			expectedCursor: "2",
+		},
+		{
+			name: "With Cursor",
+			query: &db.UserQuery{
+				Sorts:  []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: false}},
+				Limit:  2,
+				Cursor: "2",
+			},
+			expected:     []pacta.UserID{userIDA},
+			expectedMore: false,
+		},
+		{
+			name: "Dwight LC",
+			query: &db.UserQuery{
+				Sorts:  []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: true}},
+				Limit:  4,
+				Wheres: []*db.UserQueryWhere{{NameOrEmailLike: "dwight"}},
+			},
+			expected:     []pacta.UserID{userIDA, userIDC},
+			expectedMore: false,
+		},
+		{
+			name: "Schrute",
+			query: &db.UserQuery{
+				Sorts:  []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: true}},
+				Limit:  4,
+				Wheres: []*db.UserQueryWhere{{NameOrEmailLike: "schrute"}},
+			},
+			expected:     []pacta.UserID{userIDA, userIDC},
+			expectedMore: false,
+		},
+		{
+			name: "Dwight Partial",
+			query: &db.UserQuery{
+				Sorts:  []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: true}},
+				Limit:  4,
+				Wheres: []*db.UserQueryWhere{{NameOrEmailLike: "wigh"}},
+			},
+			expected:     []pacta.UserID{userIDA, userIDC},
+			expectedMore: false,
+		},
+		{
+			name: "Dwight Spongebob",
+			query: &db.UserQuery{
+				Sorts:  []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: true}},
+				Limit:  4,
+				Wheres: []*db.UserQueryWhere{{NameOrEmailLike: "dWiGhT"}},
+			},
+			expected:     []pacta.UserID{userIDA, userIDC},
+			expectedMore: false,
+		},
+		{
+			name: "Dunder Miflin",
+			query: &db.UserQuery{
+				Sorts:  []*db.UserQuerySort{{By: db.UserQuerySortBy_CreatedAt, Ascending: true}},
+				Limit:  4,
+				Wheres: []*db.UserQueryWhere{{NameOrEmailLike: "dm.com"}},
+			},
+			expected:     []pacta.UserID{userIDA, userIDB},
+			expectedMore: false,
+		},
+		{
+			name: "Jim",
+			query: &db.UserQuery{
+				Limit:  4,
+				Wheres: []*db.UserQueryWhere{{NameOrEmailLike: "jim"}},
+			},
+			expected:     []pacta.UserID{userIDB},
+			expectedMore: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			users, pi, err := tdb.QueryUsers(nil, tc.query)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			userIDs := make([]pacta.UserID, len(users))
+			for i, user := range users {
+				userIDs[i] = user.ID
+			}
+			if diff := cmp.Diff(tc.expected, userIDs); diff != "" {
+				t.Errorf("Expected and actual users do not match. Expected: %v, Actual: %v:\n%s\nDecodingMap = %+v", tc.expected, userIDs, diff, map[pacta.UserID]string{userIDA: "Dwight DM", userIDB: "Jim DM", userIDC: "Dwight Personal"})
+			}
+			if pi.HasNextPage != tc.expectedMore {
+				t.Errorf("Expected HasNextPage to be %v, got %v", tc.expectedMore, pi.HasNextPage)
+			}
+			if tc.expectedCursor != "" && string(pi.Cursor) != tc.expectedCursor {
+				t.Errorf("Expected cursor to be %v, got %v", tc.expectedCursor, pi.Cursor)
+			}
+		})
 	}
 }
 
@@ -218,7 +383,7 @@ func TestDeleteUser(t *testing.T) {
 	userID, err0 := tdb.createUser(tx, u)
 	noErrDuringSetup(t, err0)
 
-	err := tdb.DeleteUser(tx, userID)
+	_, err := tdb.DeleteUser(tx, userID)
 	if err != nil {
 		t.Fatalf("deleting user: %v", err)
 	}
@@ -238,7 +403,7 @@ func TestDeleteUser(t *testing.T) {
 	// Read by id list
 	aMap, err := tdb.Users(tx, []pacta.UserID{"somenonsense", userID, "something else"})
 	if err != nil {
-		t.Fatalf("getting users: %w", err)
+		t.Fatalf("getting users: %v", err)
 	}
 	eMap := map[pacta.UserID]*pacta.User{}
 	if diff := cmp.Diff(eMap, aMap, userCmpOpts()); diff != "" {

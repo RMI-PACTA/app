@@ -15,7 +15,7 @@ func (s *Server) populatePortfoliosInPortfolioGroups(
 ) error {
 	getFn := func(pg *pacta.PortfolioGroup) ([]*pacta.Portfolio, error) {
 		result := []*pacta.Portfolio{}
-		for _, member := range pg.Members {
+		for _, member := range pg.PortfolioGroupMemberships {
 			result = append(result, member.Portfolio)
 		}
 		return result, nil
@@ -32,13 +32,36 @@ func (s *Server) populatePortfoliosInPortfolioGroups(
 	return nil
 }
 
+func (s *Server) populateInitiativesInPortfolios(
+	ctx context.Context,
+	is []*pacta.Portfolio,
+) error {
+	getFn := func(pg *pacta.Portfolio) ([]*pacta.Initiative, error) {
+		result := []*pacta.Initiative{}
+		for _, member := range pg.PortfolioInitiativeMemberships {
+			result = append(result, member.Initiative)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.InitiativeID) (map[pacta.InitiativeID]*pacta.Initiative, error) {
+		return s.DB.Initiatives(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(p *pacta.Initiative) pacta.InitiativeID {
+		return p.ID
+	}
+	if err := populateAll(is, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating initiatives in portfolios failed", zap.Error(err))
+	}
+	return nil
+}
+
 func (s *Server) populatePortfolioGroupsInPortfolios(
 	ctx context.Context,
 	ts []*pacta.Portfolio,
 ) error {
 	getFn := func(pg *pacta.Portfolio) ([]*pacta.PortfolioGroup, error) {
 		result := []*pacta.PortfolioGroup{}
-		for _, member := range pg.MemberOf {
+		for _, member := range pg.PortfolioGroupMemberships {
 			result = append(result, member.PortfolioGroup)
 		}
 		return result, nil
@@ -51,6 +74,94 @@ func (s *Server) populatePortfolioGroupsInPortfolios(
 	}
 	if err := populateAll(ts, getFn, getIDFn, lookupFn); err != nil {
 		return oapierr.Internal("populating portfolio groups in portfolios failed", zap.Error(err))
+	}
+	return nil
+}
+
+func (s *Server) populateArtifactsInAnalyses(
+	ctx context.Context,
+	ts ...*pacta.Analysis,
+) error {
+	getFn := func(a *pacta.Analysis) ([]*pacta.AnalysisArtifact, error) {
+		result := []*pacta.AnalysisArtifact{}
+		for _, aa := range a.Artifacts {
+			result = append(result, aa)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.AnalysisArtifactID) (map[pacta.AnalysisArtifactID]*pacta.AnalysisArtifact, error) {
+		return s.DB.AnalysisArtifacts(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(a *pacta.AnalysisArtifact) pacta.AnalysisArtifactID {
+		return a.ID
+	}
+	if err := populateAll(ts, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating analysis artifacts in analysis failed", zap.Error(err))
+	}
+	return nil
+}
+
+func (s *Server) populateSnapshotsInAnalyses(
+	ctx context.Context,
+	ts ...*pacta.Analysis,
+) error {
+	getFn := func(a *pacta.Analysis) ([]*pacta.PortfolioSnapshot, error) {
+		return []*pacta.PortfolioSnapshot{a.PortfolioSnapshot}, nil
+	}
+	lookupFn := func(ids []pacta.PortfolioSnapshotID) (map[pacta.PortfolioSnapshotID]*pacta.PortfolioSnapshot, error) {
+		return s.DB.PortfolioSnapshots(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(a *pacta.PortfolioSnapshot) pacta.PortfolioSnapshotID {
+		return a.ID
+	}
+	if err := populateAll(ts, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating portfolio snapshots in analysis failed", zap.Error(err))
+	}
+	return nil
+}
+
+func (s *Server) populateBlobsInPortfolios(
+	ctx context.Context,
+	ps ...*pacta.Portfolio,
+) error {
+	getFn := func(p *pacta.Portfolio) ([]*pacta.Blob, error) {
+		result := []*pacta.Blob{}
+		if p.Blob != nil {
+			result = append(result, p.Blob)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error) {
+		return s.DB.Blobs(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(a *pacta.Blob) pacta.BlobID {
+		return a.ID
+	}
+	if err := populateAll(ps, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating blobs in portfolios failed", zap.Error(err))
+	}
+	return nil
+}
+
+func (s *Server) populateBlobsInAnalysisArtifacts(
+	ctx context.Context,
+	ts ...*pacta.AnalysisArtifact,
+) error {
+	getFn := func(a *pacta.AnalysisArtifact) ([]*pacta.Blob, error) {
+		result := []*pacta.Blob{}
+		if a.Blob != nil {
+			result = append(result, a.Blob)
+		}
+		return result, nil
+	}
+	lookupFn := func(ids []pacta.BlobID) (map[pacta.BlobID]*pacta.Blob, error) {
+		return s.DB.Blobs(s.DB.NoTxn(ctx), ids)
+	}
+	getIDFn := func(a *pacta.Blob) pacta.BlobID {
+		return a.ID
+	}
+	if err := populateAll(ts, getFn, getIDFn, lookupFn); err != nil {
+		return oapierr.Internal("populating blobs in analysis artifacts failed", zap.Error(err))
 	}
 	return nil
 }
@@ -76,6 +187,9 @@ func populateAll[Source any, TargetID ~string, Target any](
 		}
 		allTargets = append(allTargets, targets...)
 	}
+	if len(allTargets) == 0 {
+		return nil
+	}
 
 	seen := map[TargetID]bool{}
 	uniqueIds := []TargetID{}
@@ -89,7 +203,7 @@ func populateAll[Source any, TargetID ~string, Target any](
 
 	populatedTargets, err := lookupTargetsFn(uniqueIds)
 	if err != nil {
-		return fmt.Errorf("looking up populated: %w", err)
+		return fmt.Errorf("looking up %Ts: %w", allTargets[0], err)
 	}
 	for i, source := range sources {
 		targets, err := getTargetsFn(source)

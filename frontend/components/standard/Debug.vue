@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { showStandardDebug } = useLocalStorage()
+const { showStandardDebug, showDevTools } = useLocalStorage()
 const { t } = useI18n()
 
 const prefix = 'components/standard/Debug'
@@ -26,12 +26,12 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
     return value
   }
 }
-
+const showIfDebug = computed(() => showStandardDebug.value && showDevTools.value)
 </script>
 
 <template>
   <PVAccordion
-    v-if="showStandardDebug || props.always"
+    v-if="showIfDebug || props.always"
     class="standard-debug"
   >
     <PVAccordionTab
@@ -40,8 +40,19 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
       header-class="surface-800"
     >
       <div
-        class="code surface-50"
+        class="code-block surface-50 relative min-w-full"
       >
+        <div class="absolute top-0 right-0 flex gap-0">
+          <CopyToClipboardButton
+            :value="valueAsStr"
+            class="p-button-text p-button-secondary"
+          />
+          <DownloadButton
+            :value="valueAsStr"
+            :file-name="`${props.label ?? 'pacta-metadata'}.json`"
+            class="p-button-text p-button-secondary"
+          />
+        </div>
         {{ valueAsStr }}
       </div>
     </PVAccordionTab>
@@ -53,17 +64,20 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
     width: fit-content;
     display: inline-block;
 
-    .code {
-      display: inline-block;
-      font-size: 0.75rem;
-      line-height: 0.75rem;
-      white-space: pre-wrap;
-      font-family: monospace;
+    .p-accordion-header-text {
+      font-size: .9rem;
     }
 
+    // Because accordions within accordions have poor styling, we hardcode these properties
     .p-accordion-header .p-accordion-header-link {
+      border: 1px solid #a7a9ac !important;
+      border-radius: 2px !important;
       gap: 1rem;
       padding: 0.5rem 0.75rem;
+    }
+
+    .p-accordion-header.p-highlight .p-accordion-header-link {
+      border-radius: 2px 2px 0 0 !important;
     }
   }
 </style>

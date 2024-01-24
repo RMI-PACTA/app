@@ -8,5 +8,5 @@ function migrate_db {
   DSN="$1"
   SUBCOMMAND="${2:-apply}"
 
-  bazel-bin/cmd/tools/migratesqldb/migratesqldb_/migratesqldb --dsn="$DSN" "$SUBCOMMAND"
+  bazel run //cmd/tools/migratesqldb -- --dsn="$DSN" "$SUBCOMMAND"
 }

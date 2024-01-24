@@ -6,6 +6,7 @@ export const useSession = () => {
 
   const prefix = 'useSession'
   const currentUser = useState<User | undefined>(`${prefix}.currentUser`, () => undefined)
+  const currentOwnerId = useState<string | undefined>(`${prefix}.currentOwnerId`, () => undefined)
   const isAdmin = computed<boolean>(() => !!currentUser.value && currentUser.value.admin)
   const isSuperAdmin = computed<boolean>(() => !!currentUser.value && currentUser.value.superAdmin)
 
@@ -27,8 +28,9 @@ export const useSession = () => {
     return new Promise((resolve) => {
       resolvers.value.push(resolve)
       void pactaClient.findUserByMe()
-        .then(m => {
-          currentUser.value = m
+        .then(resp => {
+          currentUser.value = resp.user
+          currentOwnerId.value = resp.ownerId
 
           // Let everyone else know we've loaded the user and clear the queue.
           resolvers.value.forEach((fn) => { fn() })
@@ -53,6 +55,7 @@ export const useSession = () => {
     return {
       // Will be a Ref with a value of undefined if the user isn't logged in.
       maybeMe: currentUser,
+      maybeMeOwnerId: currentOwnerId,
       isAdmin,
       isSuperAdmin,
     }

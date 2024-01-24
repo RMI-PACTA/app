@@ -17,6 +17,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
+
+
+--
 -- Name: analysis_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -42,7 +56,9 @@ CREATE TYPE public.audit_log_action AS ENUM (
     'DISABLE_ADMIN_DEBUG',
     'DOWNLOAD',
     'ENABLE_SHARING',
-    'DISABLE_SHARING'
+    'DISABLE_SHARING',
+    'TRANSFER_OWNERSHIP',
+    'READ_METADATA'
 );
 
 
@@ -56,7 +72,9 @@ CREATE TYPE public.audit_log_actor_type AS ENUM (
     'USER',
     'ADMIN',
     'SUPER_ADMIN',
-    'SYSTEM'
+    'SYSTEM',
+    'OWNER',
+    'PUBLIC'
 );
 
 
@@ -73,7 +91,9 @@ CREATE TYPE public.audit_log_target_type AS ENUM (
     'INITIATIVE',
     'PACTA_VERSION',
     'ANALYSIS',
-    'INCOMPLETE_UPLOAD'
+    'INCOMPLETE_UPLOAD',
+    'INITIATIVE_INVITATION',
+    'ANALYSIS_ARTIFACT'
 );
 
 
@@ -110,7 +130,12 @@ CREATE TYPE public.file_type AS ENUM (
     'yaml',
     'zip',
     'html',
-    'json'
+    'json',
+    'txt',
+    'css',
+    'js',
+    'ttf',
+    'unknown'
 );
 
 
@@ -239,12 +264,12 @@ CREATE TABLE public.incomplete_upload (
     blob_id text,
     name text NOT NULL,
     description text NOT NULL,
-    holdings_date timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     ran_at timestamp with time zone,
     completed_at timestamp with time zone,
     failure_code public.failure_code,
-    failure_message text
+    failure_message text,
+    properties jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -316,6 +341,20 @@ CREATE TABLE public.owner (
 ALTER TABLE public.owner OWNER TO postgres;
 
 --
+-- Name: owner_merges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.owner_merges (
+    from_owner_id text NOT NULL,
+    to_owner_id text NOT NULL,
+    actor_user_id text NOT NULL,
+    merged_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.owner_merges OWNER TO postgres;
+
+--
 -- Name: pacta_user; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -362,10 +401,10 @@ CREATE TABLE public.portfolio (
     name text NOT NULL,
     description text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    holdings_date timestamp with time zone,
     blob_id text NOT NULL,
     admin_debug_enabled boolean NOT NULL,
-    number_of_rows integer
+    number_of_rows integer,
+    properties jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -475,6 +514,20 @@ ALTER TABLE public.schema_migrations_history_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.schema_migrations_history_id_seq OWNED BY public.schema_migrations_history.id;
 
+
+--
+-- Name: user_merges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.user_merges (
+    from_user_id text NOT NULL,
+    to_user_id text NOT NULL,
+    actor_user_id text NOT NULL,
+    merged_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.user_merges OWNER TO postgres;
 
 --
 -- Name: schema_migrations_history id; Type: DEFAULT; Schema: public; Owner: postgres
@@ -636,6 +689,14 @@ ALTER TABLE ONLY public.portfolio_group
 
 
 --
+-- Name: portfolio_initiative_membership portfolio_initiative_membership_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.portfolio_initiative_membership
+    ADD CONSTRAINT portfolio_initiative_membership_pkey PRIMARY KEY (portfolio_id, initiative_id);
+
+
+--
 -- Name: portfolio portfolio_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -668,6 +729,20 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: analysis_artifact_by_blob_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX analysis_artifact_by_blob_id ON public.analysis_artifact USING btree (blob_id);
+
+
+--
+-- Name: incomplete_upload_by_blob_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX incomplete_upload_by_blob_id ON public.incomplete_upload USING btree (blob_id);
+
+
+--
 -- Name: owner_by_initiative_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -679,6 +754,27 @@ CREATE INDEX owner_by_initiative_id ON public.owner USING btree (initiative_id);
 --
 
 CREATE INDEX owner_by_user_id ON public.owner USING btree (user_id);
+
+
+--
+-- Name: portfolio_by_blob_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX portfolio_by_blob_id ON public.portfolio USING btree (blob_id);
+
+
+--
+-- Name: user_canonical_email_gin_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX user_canonical_email_gin_index ON public.pacta_user USING gin (canonical_email public.gin_trgm_ops);
+
+
+--
+-- Name: user_name_gin_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX user_name_gin_index ON public.pacta_user USING gin (name public.gin_trgm_ops);
 
 
 --

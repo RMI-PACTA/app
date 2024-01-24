@@ -87,9 +87,12 @@ func TestInitiativeCRUD(t *testing.T) {
 	}
 	assert(i)
 
-	err = tdb.DeleteInitiative(tx, i.ID)
+	buris, err := tdb.DeleteInitiative(tx, i.ID)
 	if err != nil {
 		t.Fatalf("delete initiative: %v", err)
+	}
+	if len(buris) != 0 {
+		t.Fatalf("expected no deleted buris, got %d", len(buris))
 	}
 }
 
@@ -109,9 +112,13 @@ func TestDeleteInitiative(t *testing.T) {
 	err1 := tdb.PutInitiativeUserRelationship(tx, iur)
 	noErrDuringSetup(t, err0, err1)
 
-	err := tdb.DeleteInitiative(tx, i.ID)
+	buris, err := tdb.DeleteInitiative(tx, i.ID)
 	if err != nil {
 		t.Fatalf("delete initiative: %v", err)
+	}
+
+	if len(buris) != 0 {
+		t.Fatalf("expected no buris but got %+v", buris)
 	}
 
 	_, err = tdb.Initiative(tx, i.ID)

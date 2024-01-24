@@ -1,0 +1,7 @@
+BEGIN;
+
+ALTER TYPE audit_log_target_type ADD VALUE 'INITIATIVE_INVITATION';
+ALTER TYPE audit_log_target_type ADD VALUE 'ANALYSIS_ARTIFACT'; 
+ALTER TYPE audit_log_action ADD VALUE 'READ_METADATA';
+
+COMMIT;

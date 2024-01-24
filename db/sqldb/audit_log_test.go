@@ -19,7 +19,7 @@ func TestCreateAuditLog(t *testing.T) {
 	cmpOpts := auditLogCmpOpts()
 	al := &pacta.AuditLog{
 		Action:               pacta.AuditLogAction_AddTo,
-		ActorType:            pacta.AuditLogActorType_User,
+		ActorType:            pacta.AuditLogActorType_Owner,
 		ActorID:              "user1",
 		ActorOwner:           &pacta.Owner{ID: "owner1"},
 		PrimaryTargetType:    pacta.AuditLogTargetType_Portfolio,
@@ -88,7 +88,7 @@ func testAuditLogEnumConvertability[E comparable](t *testing.T, writeE func(E, *
 	tx := tdb.NoTxn(ctx)
 	base := &pacta.AuditLog{
 		Action:               pacta.AuditLogAction_AddTo,
-		ActorType:            pacta.AuditLogActorType_User,
+		ActorType:            pacta.AuditLogActorType_Owner,
 		ActorID:              "user1",
 		ActorOwner:           &pacta.Owner{ID: "owner1"},
 		PrimaryTargetType:    pacta.AuditLogTargetType_Portfolio,
@@ -127,7 +127,7 @@ func TestAuditSearch(t *testing.T) {
 	beforeCreation := time.Now()
 	action1 := pacta.AuditLogAction_AddTo
 	action2 := pacta.AuditLogAction_Create
-	actorType1 := pacta.AuditLogActorType_User
+	actorType1 := pacta.AuditLogActorType_Owner
 	actorType2 := pacta.AuditLogActorType_System
 	actorID1 := "user1"
 	actorID2 := "system2"
@@ -135,7 +135,7 @@ func TestAuditSearch(t *testing.T) {
 	actorOwner2 := &pacta.Owner{ID: "owner2"}
 	targetType1 := pacta.AuditLogTargetType_Portfolio
 	targetType2 := pacta.AuditLogTargetType_IncompleteUpload
-	targetID1 := "portfolio-1"
+	targetID1 := actorID1
 	targetID2 := "incomplete-upload-2"
 	targetOwner1 := &pacta.Owner{ID: "owner3"}
 	targetOwner2 := &pacta.Owner{ID: "owner4"}
@@ -177,7 +177,7 @@ func TestAuditSearch(t *testing.T) {
 			expected: []pacta.AuditLogID{alID1, alID2, alID3},
 		}, {
 			name:     "By ActionType",
-			where:    &db.AuditLogQueryWhere{InActionType: []pacta.AuditLogAction{action2}},
+			where:    &db.AuditLogQueryWhere{InAction: []pacta.AuditLogAction{action2}},
 			expected: []pacta.AuditLogID{alID2, alID3},
 		}, {
 			name:     "By ActorType",
@@ -222,7 +222,7 @@ func TestAuditSearch(t *testing.T) {
 				for i, a := range auditLogs {
 					actual[i] = a.ID
 				}
-				if diff := cmp.Diff(c.expected, actual, sortAuditLogIDs()); diff != "" {
+				if diff := cmp.Diff(c.expected, actual, auditLogIDCmpOpts()); diff != "" {
 					t.Errorf("unexpected diff:\n%s", diff)
 				}
 			})
@@ -237,31 +237,31 @@ func TestAuditSearch(t *testing.T) {
 		}{{
 			name: "All Match",
 			where: []*db.AuditLogQueryWhere{
-				&db.AuditLogQueryWhere{InID: []pacta.AuditLogID{alID1}},
-				&db.AuditLogQueryWhere{MinCreatedAt: beforeCreation},
-				&db.AuditLogQueryWhere{MaxCreatedAt: afterCreation},
-				&db.AuditLogQueryWhere{InActionType: []pacta.AuditLogAction{action1}},
-				&db.AuditLogQueryWhere{InActorType: []pacta.AuditLogActorType{actorType1}},
-				&db.AuditLogQueryWhere{InActorID: []string{actorID1}},
-				&db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
-				&db.AuditLogQueryWhere{InTargetType: []pacta.AuditLogTargetType{targetType1}},
-				&db.AuditLogQueryWhere{InTargetID: []string{targetID1}},
-				&db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
+				{InID: []pacta.AuditLogID{alID1}},
+				{MinCreatedAt: beforeCreation},
+				{MaxCreatedAt: afterCreation},
+				{InAction: []pacta.AuditLogAction{action1}},
+				{InActorType: []pacta.AuditLogActorType{actorType1}},
+				{InActorID: []string{actorID1}},
+				{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
+				{InTargetType: []pacta.AuditLogTargetType{targetType1}},
+				{InTargetID: []string{targetID1}},
+				{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
 			},
 			expected: []pacta.AuditLogID{alID1},
 		}, {
 			name: "One Does not Match",
 			where: []*db.AuditLogQueryWhere{
-				&db.AuditLogQueryWhere{InID: []pacta.AuditLogID{alID1}},
-				&db.AuditLogQueryWhere{MinCreatedAt: beforeCreation},
-				&db.AuditLogQueryWhere{MaxCreatedAt: afterCreation},
-				&db.AuditLogQueryWhere{InActionType: []pacta.AuditLogAction{action1}},
-				&db.AuditLogQueryWhere{InActorType: []pacta.AuditLogActorType{actorType2}},
-				&db.AuditLogQueryWhere{InActorID: []string{actorID1}},
-				&db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
-				&db.AuditLogQueryWhere{InTargetType: []pacta.AuditLogTargetType{targetType1}},
-				&db.AuditLogQueryWhere{InTargetID: []string{targetID1}},
-				&db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
+				{InID: []pacta.AuditLogID{alID1}},
+				{MinCreatedAt: beforeCreation},
+				{MaxCreatedAt: afterCreation},
+				{InAction: []pacta.AuditLogAction{action1}},
+				{InActorType: []pacta.AuditLogActorType{actorType2}},
+				{InActorID: []string{actorID1}},
+				{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
+				{InTargetType: []pacta.AuditLogTargetType{targetType1}},
+				{InTargetID: []string{targetID1}},
+				{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
 			},
 			expected: []pacta.AuditLogID{},
 		}}
@@ -279,7 +279,171 @@ func TestAuditSearch(t *testing.T) {
 				for i, a := range auditLogs {
 					actual[i] = a.ID
 				}
-				if diff := cmp.Diff(c.expected, actual, sortAuditLogIDs()); diff != "" {
+				if diff := cmp.Diff(c.expected, actual, auditLogIDCmpOpts()); diff != "" {
+					t.Errorf("unexpected diff:\n%s", diff)
+				}
+			})
+		}
+	})
+}
+
+func TestAuditSearchAfterMerge(t *testing.T) {
+	action1 := pacta.AuditLogAction_AddTo
+	action2 := pacta.AuditLogAction_Create
+	actorType1 := pacta.AuditLogActorType_Owner
+	actorType2 := pacta.AuditLogActorType_System
+	actorID1 := "user1"
+	actorID2 := "user2"
+	actorOwner1 := &pacta.Owner{ID: "owner1"}
+	actorOwner2 := &pacta.Owner{ID: "owner2"}
+	targetType1 := pacta.AuditLogTargetType_Portfolio
+	targetType2 := pacta.AuditLogTargetType_IncompleteUpload
+	targetID1 := actorID1
+	targetID2 := "incomplete-upload-2"
+	targetOwner1 := &pacta.Owner{ID: "owner3"}
+	targetOwner2 := &pacta.Owner{ID: "owner4"}
+
+	ctx := context.Background()
+	tdb := createDBForTesting(t)
+	tx := tdb.NoTxn(ctx)
+
+	alID1, err0 := tdb.CreateAuditLog(tx, &pacta.AuditLog{ActorType: actorType1, ActorID: actorID1, ActorOwner: actorOwner1, Action: action1, PrimaryTargetType: targetType1, PrimaryTargetID: targetID2, PrimaryTargetOwner: targetOwner2})
+	alID2, err1 := tdb.CreateAuditLog(tx, &pacta.AuditLog{ActorType: actorType2, ActorID: actorID2, ActorOwner: actorOwner2, Action: action2, PrimaryTargetType: targetType2, PrimaryTargetID: targetID1, PrimaryTargetOwner: targetOwner1})
+	alID3, err2 := tdb.CreateAuditLog(tx, &pacta.AuditLog{ActorType: actorType2, ActorID: actorID2, ActorOwner: actorOwner2, Action: action2, PrimaryTargetType: targetType2, PrimaryTargetID: "something", PrimaryTargetOwner: targetOwner1, SecondaryTargetType: targetType2, SecondaryTargetID: targetID2, SecondaryTargetOwner: targetOwner2})
+	noErrDuringSetup(t, err0, err1, err2)
+
+	t.Run("Pre-Merge Tests", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			where    *db.AuditLogQueryWhere
+			expected []pacta.AuditLogID
+		}{{
+			name:     "By ActorID 1",
+			where:    &db.AuditLogQueryWhere{InActorID: []string{actorID1}},
+			expected: []pacta.AuditLogID{alID1},
+		}, {
+			name:     "By ActorID 2",
+			where:    &db.AuditLogQueryWhere{InActorID: []string{actorID2}},
+			expected: []pacta.AuditLogID{alID2, alID3},
+		}, {
+			name:     "By ActorOwnerID 1",
+			where:    &db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
+			expected: []pacta.AuditLogID{alID1},
+		}, {
+			name:     "By ActorOwnerID 2",
+			where:    &db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner2.ID}},
+			expected: []pacta.AuditLogID{alID2, alID3},
+		}, {
+			name:     "By TargetID = ActorID 1",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{actorID1}},
+			expected: []pacta.AuditLogID{alID2},
+		}, {
+			name:     "By TargetID = ActorID 2",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{actorID2}},
+			expected: []pacta.AuditLogID{},
+		}, {
+			name:     "By TargetID = Something Else",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{targetID2}},
+			expected: []pacta.AuditLogID{alID1, alID3},
+		}, {
+			name:     "By TargetOwnerID 1",
+			where:    &db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
+			expected: []pacta.AuditLogID{alID2, alID3},
+		}, {
+			name:     "By TargetOwnerID 2",
+			where:    &db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner2.ID}},
+			expected: []pacta.AuditLogID{alID1, alID3},
+		}}
+
+		for i, c := range cases {
+			t.Run(fmt.Sprintf("case %d: %q", i, c.name), func(t *testing.T) {
+				auditLogs, _, err := tdb.AuditLogs(tx, &db.AuditLogQuery{
+					Limit:  10,
+					Wheres: []*db.AuditLogQueryWhere{c.where},
+				})
+				if err != nil {
+					t.Fatalf("getting audit logs: %v", err)
+				}
+				actual := make([]pacta.AuditLogID, len(auditLogs))
+				for i, a := range auditLogs {
+					actual[i] = a.ID
+				}
+				if diff := cmp.Diff(c.expected, actual, auditLogIDCmpOpts()); diff != "" {
+					t.Errorf("unexpected diff:\n%s", diff)
+				}
+			})
+		}
+	})
+
+	t.Run("Executing Merges", func(t *testing.T) {
+		if err := tdb.RecordUserMerge(tx, pacta.UserID(actorID1), pacta.UserID(actorID2), "some-admin-owner"); err != nil {
+			t.Fatalf("merging users: %v", err)
+		}
+		if err := tdb.RecordUserMerge(tx, pacta.UserID(actorID1), pacta.UserID(actorID2), "some-admin-owner"); err != nil {
+			t.Fatalf("merging users duplicatively should be fine: %v", err)
+		}
+		if err := tdb.RecordOwnerMerge(tx, actorOwner1.ID, actorOwner2.ID, "some-admin-owner"); err != nil {
+			t.Fatalf("merging owners: %v", err)
+		}
+	})
+
+	t.Run("Post-Merge Tests", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			where    *db.AuditLogQueryWhere
+			expected []pacta.AuditLogID
+		}{{
+			name:     "By ActorID 1",
+			where:    &db.AuditLogQueryWhere{InActorID: []string{actorID1}},
+			expected: []pacta.AuditLogID{alID1, alID2, alID3},
+		}, {
+			name:     "By ActorID 2",
+			where:    &db.AuditLogQueryWhere{InActorID: []string{actorID2}},
+			expected: []pacta.AuditLogID{alID1, alID2, alID3},
+		}, {
+			name:     "By ActorOwnerID 1",
+			where:    &db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner1.ID}},
+			expected: []pacta.AuditLogID{alID1, alID2, alID3},
+		}, {
+			name:     "By ActorOwnerID 2",
+			where:    &db.AuditLogQueryWhere{InActorOwnerID: []pacta.OwnerID{actorOwner2.ID}},
+			expected: []pacta.AuditLogID{alID1, alID2, alID3},
+		}, {
+			name:     "By TargetID = ActorID 1",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{actorID1}},
+			expected: []pacta.AuditLogID{alID2},
+		}, {
+			name:     "By TargetID = ActorID 2",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{actorID2}},
+			expected: []pacta.AuditLogID{alID2},
+		}, {
+			name:     "By TargetID = Something Else",
+			where:    &db.AuditLogQueryWhere{InTargetID: []string{targetID2}},
+			expected: []pacta.AuditLogID{alID1, alID3},
+		}, {
+			name:     "By TargetOwnerID 1",
+			where:    &db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner1.ID}},
+			expected: []pacta.AuditLogID{alID2, alID3},
+		}, {
+			name:     "By TargetOwnerID 2",
+			where:    &db.AuditLogQueryWhere{InTargetOwnerID: []pacta.OwnerID{targetOwner2.ID}},
+			expected: []pacta.AuditLogID{alID1, alID3},
+		}}
+
+		for i, c := range cases {
+			t.Run(fmt.Sprintf("case %d: %q", i, c.name), func(t *testing.T) {
+				auditLogs, _, err := tdb.AuditLogs(tx, &db.AuditLogQuery{
+					Limit:  10,
+					Wheres: []*db.AuditLogQueryWhere{c.where},
+				})
+				if err != nil {
+					t.Fatalf("getting audit logs: %v", err)
+				}
+				actual := make([]pacta.AuditLogID, len(auditLogs))
+				for i, a := range auditLogs {
+					actual[i] = a.ID
+				}
+				if diff := cmp.Diff(c.expected, actual, auditLogIDCmpOpts()); diff != "" {
 					t.Errorf("unexpected diff:\n%s", diff)
 				}
 			})
@@ -294,8 +458,11 @@ func auditLogCmpOpts() cmp.Option {
 	}
 }
 
-func sortAuditLogIDs() cmp.Option {
-	return cmpopts.SortSlices(func(a, b pacta.AuditLogID) bool {
-		return string(a) < string(b)
-	})
+func auditLogIDCmpOpts() cmp.Option {
+	return cmp.Options{
+		cmpopts.SortSlices(func(a, b pacta.AuditLogID) bool {
+			return string(a) < string(b)
+		}),
+		cmpopts.EquateEmpty(),
+	}
 }

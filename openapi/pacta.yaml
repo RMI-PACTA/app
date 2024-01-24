@@ -19,16 +19,29 @@ info:
     url: https://mit-license.org/
 servers:
   - url: TODO
-definitions:
-  Language:
-    type: string
-    enum: &LANGUAGES
-      - en
-      - fr
-      - es
-      - de
+
 basePath: /v1
 paths:
+  /access-blob-content:
+    post:
+      summary: Gives the caller access to the blob 
+      description: Checks whether the user can access the blobs, and if so, returns blob download URLs for each, generating an audit log along the way 
+      operationId: accessBlobContent 
+      requestBody:
+        description: Information about the blobs that are requested 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessBlobContentReq'
+      responses:
+        '200':
+          description: the user can access the blobs, and the access URLs are returned, along with information about their expiration 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessBlobContentResp'
+
   /pacta-version/{id}:
     get:
       summary: Returns a version of the PACTA model by ID
@@ -123,6 +136,25 @@ paths:
       responses:
         '204':
           description: pacta version created successfully
+  /admin/merge-users:
+    post:
+      summary: Merges two users together
+      description: Merges two users together
+      operationId: mergeUsers
+      requestBody:
+        description: a request describing the two users to merge 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeUsersReq'
+      responses:
+        '200':
+          description: the users were merged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MergeUsersResp'
   /initiative/{id}:
     get:
       summary: Returns an initiative by ID
@@ -176,6 +208,24 @@ paths:
       responses:
         '204':
           description: initiative deleted successfully
+  /initiative/{id}/all-data:
+    get:
+      summary: Returns all of the portfolios that are participating in the initiative 
+      operationId: allInitiativeData 
+      parameters:
+        - name: id
+          in: path
+          description: ID of the initiative to fetch data for
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: the initiative data 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiativeAllData'
   /initiatives:
     get:
       summary: Returns all initiatives
@@ -203,25 +253,6 @@ paths:
       responses:
         '204':
           description: initiative created successfully
-  /initiative/{initiativeId}/user-relationships:
-    get:
-      summary: Returns all initiative user relationships for this initiative that the caller has access to view
-      operationId: listInitiativeUserRelationshipsByInitiative
-      parameters:
-        - name: initiativeId
-          in: path
-          description: ID of the initiative to fetch relationships for
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/InitiativeUserRelationship'
   /initiative/user-relationships/{userId}:
     get:
       summary: Returns all initiative user relationships for this user that the caller has access to view
@@ -322,28 +353,6 @@ paths:
         '204':
           description: initiative invitation deleted successfully
   /initiative/{initiativeId}/user-relationship/{userId}:
-    get:
-      summary: Returns the initiative user relationship from this id, if it exists
-      operationId: getInitiativeUserRelationship
-      parameters:
-        - name: initiativeId
-          in: path
-          description: ID of the initiative
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          description: ID of the user
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InitiativeUserRelationship'
     patch:
       summary: Updates initiative user relationship properties
       description: Updates a given user's relationship properties for a given initiative
@@ -371,6 +380,47 @@ paths:
       responses:
         '204':
           description: the relationship changes were applied successfully
+  /initiative/{initiativeId}/portfolio-relationship/{portfolioId}:
+    post:
+      summary: creates an initiative portfolio relationship
+      description: creates a membership relationship between the portfolio and the initiative 
+      operationId: createInitiativePortfolioRelationship
+      parameters:
+        - name: initiativeId
+          in: path
+          description: ID of the initiative
+          required: true
+          schema:
+            type: string
+        - name: portfolioId
+          in: path
+          description: ID of the portfolio 
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: the relationship was created successfully
+    delete:
+      summary: Deletes an initiative:portfolio relationship
+      description: Deletes a given portfolio's relationship with a given initiative
+      operationId: deleteInitiativePortfolioRelationship
+      parameters:
+        - name: initiativeId
+          in: path
+          description: ID of the initiative
+          required: true
+          schema:
+            type: string
+        - name: portfolioId
+          in: path
+          description: ID of the portfolio 
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: the relationship was deleted, if it existed
   /portfolio-groups:
     get:
       summary: Returns the portfolio groups that the user has access to 
@@ -622,7 +672,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/FindUserByMeResp'
+  /users:
+    post:
+      description: Gets the list of users that the user is able to view, currently an admin-only action 
+      operationId: userQuery 
+      requestBody:
+        description: A request describing which users should be returned  
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserQueryReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQueryResp'
   /user/authentication-followup:
     post:
       description: Creates a user in the database, if the user does not yet exist, or returns the existing user.
@@ -689,6 +756,25 @@ paths:
       responses:
         '204':
           description: user deleted
+  /audit-logs:
+    post:
+      summary: queries the platform's audit logs
+      description: returns back audit logs that matc the user's query 
+      operationId: listAuditLogs 
+      requestBody:
+        description: A request describing which audit logs should be returned 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditLogQueryReq'
+      responses:
+        '200':
+          description: The audit logs that matched the requested query, if any 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogQueryResp'
   /portfolio-upload:
     post:
       summary: Starts the process of uploading one or more portfolio files
@@ -727,6 +813,125 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompletePortfolioUploadResp'
+  /analyses:
+    get:
+      description: Gets the analyses that the user is the owner of 
+      operationId: listAnalyses
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAnalysesResp'
+  /analysis/{id}:
+    get:
+      summary: Returns an analysis by ID
+      description: Returns an analysis based on a single ID
+      operationId: findAnalysisById
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: analysis response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analysis'
+    patch:
+      summary: Updates writable analysis properties
+      description: Updates an analysis' settable properties
+      operationId: updateAnalysis
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Analayis object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisChanges'
+      responses:
+        '204':
+          description: the changes were applied successfully
+    delete:
+      summary: Deletes an analysis (and its artifacts) by ID
+      description: deletes an analysis based on the ID supplied
+      operationId: deleteAnalysis
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: analysis deleted
+  /analysis-artifact/{id}:
+    patch:
+      summary: Updates writable analysis artifact properties
+      description: Updates an analysis artifact's settable properties
+      operationId: updateAnalysisArtifact
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis artifact to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Analysis artifact's object properties to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisArtifactChanges'
+      responses:
+        '204':
+          description: the changes were applied successfully
+    delete:
+      summary: Deletes an analysis artifact by ID
+      description: deletes an analysis artifact based on the ID supplied
+      operationId: deleteAnalysisArtifact
+      parameters:
+        - name: id
+          in: path
+          description: ID of analysis artifact to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: analysis artifact deleted
+  /run-analysis:
+    post:
+      summary: Requests an anslysis be run 
+      description: Creates a snapshot of the requested entity, and starts it running
+      operationId: runAnalysis 
+      requestBody:
+        description: Properties of the analysis to run 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunAnalysisReq'
+      responses:
+        '200':
+          description: information about the requested analysis 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunAnalysisResp'
 components:
   responses:
     Unauthorized:
@@ -774,7 +979,39 @@ components:
   schemas:
     Language:
       type: string
-      enum: *LANGUAGES
+      enum:
+        - LanguageEN
+        - LanguageFR
+        - LanguageES
+        - LanguageDE
+    FileType:
+      type: string
+      enum:
+        - FileTypeCSV
+        - FileTypeYAML
+        - FileTypeZIP
+        - FileTypeJSON
+        - FileTypeHTML
+        - FileTypeTEXT
+        - FileTypeCSS
+        - FileTypeJS
+        - FileTypeTTF
+        - FileTypeUNKNOWN
+    AnalysisType:
+      type: string
+      enum:
+        - AnalysisTypeAUDIT
+        - AnalysisTypeREPORT
+    FailureCode:
+      type: string
+      enum:
+        - FailureCodeUNKNOWN
+    OptionalBoolean:
+      type: string
+      enum:
+        - OptionalBooleanTRUE
+        - OptionalBooleanFALSE
+        - OptionalBooleanUNSET
     PactaVersionCreate:
       type: object
       required:
@@ -915,6 +1152,36 @@ components:
         description:
           type: string
           description: the description of the contents or purpose of the portfolio group
+    PortfolioInitiativeMembershipPortfolio:
+      type: object
+      required:
+        - createdAt
+        - portfolio
+      properties:
+        addedByUserId:
+          type: string
+          description: the user that added this portfolio to the initiative
+        portfolio: 
+          $ref: '#/components/schemas/Portfolio'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this relationship was created
+    PortfolioInitiativeMembershipInitiative:
+      type: object
+      required:
+        - createdAt
+        - initiative 
+      properties:
+        addedByUserId:
+          type: string
+          description: the user that added this portfolio to the initiative
+        initiative: 
+          $ref: '#/components/schemas/Initiative'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this relationship was created
     InitiativeCreate:
       type: object
       required:
@@ -948,8 +1215,7 @@ components:
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
           description: The language this initiative should be conducted in.
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
         pactaVersion:
           type: string
           description: The id of the PACTA model that this initiative should use, if not specified, the default PACTA model will be used.
@@ -967,6 +1233,8 @@ components:
         - pactaVersionId
         - language
         - createdAt
+        - portfolioInitiativeMemberships
+        - initiativeUserRelationships
       properties:
         id:
           type: string
@@ -994,11 +1262,20 @@ components:
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
           description: The language this initiative should be conducted in.
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
         pactaVersion:
           type: string
           description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
+        portfolioInitiativeMemberships:
+          type: array
+          description: the list of portfolios that are members of this initiative
+          items: 
+            $ref: '#/components/schemas/PortfolioInitiativeMembershipPortfolio'
+        initiativeUserRelationships:
+          type: array
+          description: the list of users that are members of this initiative
+          items: 
+            $ref: '#/components/schemas/InitiativeUserRelationship'
         createdAt:
           type: string
           format: date-time
@@ -1029,11 +1306,41 @@ components:
           description: If set, users that are members of this initiative can add portfolios to it.
         language:
           description: The language this initiative should be conducted in.
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
         pactaVersion:
           type: string
           description: The pacta model that this initiative should use, if not specified, the default pacta model will be used.
+    InitiativeAllData:
+      type: object
+      required:
+        - items 
+      properties:
+        items:
+          type: array
+          description: the list of portfolios that are members of this initiative
+          items: 
+            $ref: '#/components/schemas/InitiativeAllDataPortfolioItem'
+    InitiativeAllDataPortfolioItem:
+      type: object
+      required:
+        - name 
+        - blobId
+        - downloadUrl
+        - expirationTime 
+      properties:
+        name:
+          type: string
+          description: the name of the portfolio
+        blobId:
+          type: string
+          description: the id of the blob of the portfolio, which can be used to start a new partial download if the first download times out 
+        downloadUrl:
+          type: string
+          description: the url to download the portfolio
+        expirationTime:
+          type: string
+          format: date-time
+          description: the time at which the download url will expire
     InitiativeInvitationCreate:
       type: object
       required:
@@ -1134,8 +1441,7 @@ components:
           description: Name of the user
         preferredLanguage:
           description: The user's preferred language, if present
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
     UserChanges:
       type: object
       properties:
@@ -1144,8 +1450,7 @@ components:
           description: The new name of the user
         preferredLanguage:
           description: The user's new preferred language
-          type: string
-          enum: *LANGUAGES
+          $ref: '#/components/schemas/Language'
         admin:
           type: boolean
           description: Whether the given user is an admin
@@ -1168,14 +1473,27 @@ components:
       type: object
       required:
         - items
-        - holdings_date
+        - propertyHoldingsDate
+        - propertyESG
+        - propertyExternal
+        - propertyEngagementStrategy
       properties:
         items:
           type: array
           items:
             $ref: '#/components/schemas/StartPortfolioUploadReqItem'
-        holdings_date:
+        propertyHoldingsDate:
+          description: The holdings date of the portfolio, if set
           $ref: '#/components/schemas/HoldingsDate'
+        propertyESG:
+          description: If set, this portfolio represents ESG data
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyExternal:
+          description: If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input 
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyEngagementStrategy:
+          description: If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+          $ref: '#/components/schemas/OptionalBoolean'
     StartPortfolioUploadReqItem:
       type: object
       required:
@@ -1229,10 +1547,52 @@ components:
           description: The unique identifier for the uploaded asset
     CompletePortfolioUploadResp:
       type: object
-    HoldingsDate:
+    AccessBlobContentReq:
       type: object
       required:
-        - time
+        - items 
+      properties:
+        items:
+          type: array
+          items: 
+            $ref: '#/components/schemas/AccessBlobContentReqItem'
+    AccessBlobContentReqItem:
+      type: object
+      required:
+        - blobId
+      properties:
+        blobId:
+          type: string
+          description: The id of the blob to request the content for.
+    AccessBlobContentResp:
+      type: object
+      required:
+        - items 
+      properties:
+        items:
+          type: array 
+          description: The list of blob access items, one for each requested blob 
+          items: 
+            $ref: '#/components/schemas/AccessBlobContentRespItem'
+    AccessBlobContentRespItem:
+      type: object
+      required:
+        - blobId
+        - downloadUrl
+        - expirationTime
+      properties:
+        blobId:
+          type: string
+          description: The id of the blob to that the content is for.
+        downloadUrl:
+          type: string
+          description: The signed URL where the file can be downloaded from, using GET semantics. 
+        expirationTime:
+          format: date-time
+          type: string
+          description: The time at which the signed URL will expire. 
+    HoldingsDate:
+      type: object
       properties:
         time: 
           type: string 
@@ -1246,6 +1606,10 @@ components:
         - description
         - createdAt
         - adminDebugEnabled
+        - propertyHoldingsDate
+        - propertyESG
+        - propertyExternal
+        - propertyEngagementStrategy
       properties:
         id:
           type: string # Assuming IncompleteUploadID is a string, otherwise define its structure
@@ -1256,8 +1620,17 @@ components:
         description:
           type: string
           description: Description of the upload
-        holdingsDate:
+        propertyHoldingsDate:
           $ref: '#/components/schemas/HoldingsDate'
+        propertyESG:
+          description: If set, this portfolio represents ESG data
+          $ref: '#/components/schemas/OptionalBoolean' 
+        propertyExternal:
+          description: If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input 
+          $ref: '#/components/schemas/OptionalBoolean' 
+        propertyEngagementStrategy:
+          description: If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+          $ref: '#/components/schemas/OptionalBoolean' 
         createdAt:
           type: string
           format: date-time
@@ -1271,8 +1644,8 @@ components:
           format: date-time
           description: The time when the upload was completed
         failureCode:
-          type: string
           description: Code describing the failure, if any
+          $ref: '#/components/schemas/FailureCode'
         failureMessage:
           type: string
           description: Message describing the failure, if any
@@ -1301,6 +1674,10 @@ components:
         - createdAt
         - adminDebugEnabled
         - numberOfRows
+        - propertyHoldingsDate
+        - propertyESG
+        - propertyExternal
+        - propertyEngagementStrategy
       properties:
         id: 
           type: string
@@ -1315,8 +1692,6 @@ components:
           type: string
           format: date-time
           description: The time at which this portfolio was successfully parsed from a raw  
-        holdingsDate: 
-          $ref: '#/components/schemas/HoldingsDate'
         adminDebugEnabled:
           type: boolean 
           description: Whether the admin debug mode is enabled for this portfolio
@@ -1328,6 +1703,22 @@ components:
           description: The list of portfolio groups that this portfolio is a member of
           items:
             $ref: '#/components/schemas/PortfolioGroupMembershipPortfolioGroup'
+        initiatives:
+          type: array
+          description: The list of initiatives that this portfolio is a member of
+          items: 
+            $ref: '#/components/schemas/PortfolioInitiativeMembershipInitiative'
+        propertyHoldingsDate: 
+          $ref: '#/components/schemas/HoldingsDate'
+        propertyESG:
+          description: If set, this portfolio represents ESG data
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyExternal:
+          description: If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input 
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyEngagementStrategy:
+          description: If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+          $ref: '#/components/schemas/OptionalBoolean'
     PortfolioChanges:
       type: object
       properties:
@@ -1340,6 +1731,158 @@ components:
         adminDebugEnabled:
           type: boolean 
           description: Whether the admin debug mode is enabled for this portfolio
+        propertyHoldingsDate:
+          $ref: '#/components/schemas/HoldingsDate'
+        propertyESG:
+          description: If set, this portfolio represents ESG data
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyExternal:
+          description: If set to false, this portfolio represents internal data, if set to false it represents external data, unset represents no user input 
+          $ref: '#/components/schemas/OptionalBoolean'
+        propertyEngagementStrategy:
+          type: boolean
+          description: If set, this portfolio represents engagement strategy data or not, if unset it represents no user input
+          $ref: '#/components/schemas/OptionalBoolean'
+    PortfolioSnapshot:
+      type: object
+      description: represents an immutable description of a collection of portfolios at a point in time, used to ensure reproducibility and change detection
+      required:
+        - id 
+        - portfolioIds 
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the snapshot 
+        portfolioIds:
+          type: array
+          items:
+            type: string 
+          description: the full set of denormalized portfolios included in this analysis 
+        initiative:
+          description: if populated, this snapshot represents a snapshot of this initiative
+          $ref: '#/components/schemas/Initiative'
+        portfolioGroup:
+          description: if populated, this snapshot represents a snapshot of this portfolio group 
+          $ref: '#/components/schemas/PortfolioGroup'
+        portfolio:
+          description: if populated, this snapshot represents a snapshot of this solitary portfolio 
+          $ref: '#/components/schemas/Portfolio'
+    Blob:
+      type: object
+      required:
+        - id 
+        - fileType 
+        - fileName 
+        - createdAt
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the blob
+        fileName:
+          type: string
+          description: the human meaningful name of the file
+        fileType:
+          description: the type (extension) of the file
+          $ref: '#/components/schemas/FileType'
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this blob was created within the system 
+    AnalysisArtifact:
+      type: object
+      required:
+        - id
+        - adminDebugEnabled
+        - sharedToPublic 
+        - blob
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the artifact 
+        adminDebugEnabled:
+          type: boolean 
+          description: Whether the admin debug mode is enabled for this artifact 
+        sharedToPublic:
+          type: boolean 
+          description: Whether this artifact is publicly accessible 
+        blob: 
+          description: Information about the file/artifact itself
+          $ref: '#/components/schemas/Blob'     
+    AnalysisArtifactChanges:
+      type: object
+      properties:
+        adminDebugEnabled:
+          type: boolean 
+          description: Whether the admin debug mode is enabled for this artifact 
+        sharedToPublic:
+          type: boolean 
+          description: Whether this artifact is publicly accessible 
+    Analysis:
+      type: object
+      required:
+        - id
+        - analysisType
+        - pactaVersion
+        - portfolioSnapshot
+        - name
+        - description
+        - createdAt
+        - artifacts
+        - ownerId
+      properties:
+        id: 
+          type: string
+          description: the system assigned unique identifier of the analysis
+        analysisType:
+          description: the type of analysis that was run on this object 
+          $ref: '#/components/schemas/AnalysisType'
+        pactaVersion: 
+          type: string
+          description: The pacta model that was used to generate this analysis
+        portfolioSnapshot:
+          description: The snapshot of portfolios that was used to generate this analysis
+          $ref: '#/components/schemas/PortfolioSnapshot' 
+        name:
+          type: string
+          description: the human meaningful name of the analysis, editable by the user
+        description:
+          type: string
+          description: Additional information about the analysis, editable by the user
+        createdAt:
+          type: string
+          format: date-time
+          description: The time at which this analysis was created
+        ranAt: 
+          type: string
+          format: date-time
+          description: The time at which this analysis was run, if set
+        completedAt: 
+          type: string
+          format: date-time
+          description: The time at which this analysis completed its run (successfully or not), if set 
+        failureCode: 
+          description: The code describing the failure, if any 
+          $ref: '#/components/schemas/FailureCode'
+        failureMessage: 
+          type: string
+          description: The english description of the failure, if any       
+        artifacts:
+          type: array
+          description: The list of artifacts that were generated by this analysis
+          items:
+            $ref: '#/components/schemas/AnalysisArtifact'
+        ownerId:
+          type: string
+          description: the id of the owner of the analysis, if the user has access to see it
+    AnalysisChanges:
+      type: object
+      properties:
+        name:
+          type: string
+          description: the human meaningful name of the analysis, editable by the user
+        description:
+          type: string
+          description: Additional information about the analysis, editable by the user
     ListIncompleteUploadsReq:
       type: object
     ListIncompleteUploadsResp:
@@ -1351,6 +1894,53 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/IncompleteUpload'
+    ListAnalysesReq:
+      type: object
+    ListAnalysesResp:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Analysis'
+    RunAnalysisReq:
+      type: object
+      required:
+        - analysisType
+        - name
+        - description
+      properties:
+        analysisType:
+          description: the type of analysis that should be run
+          $ref: '#/components/schemas/AnalysisType'
+        pactaVersionId:
+          type: string
+          description: The pacta model that should be used to generate this analysis
+        name:
+          type: string
+          description: the human meaningful name of the analysis, editable by the user
+        description:
+          type: string
+          description: Additional information about the analysis, editable by the user
+        portfolioId:
+          type: string
+          description: If populated, this analysis should be run on this portfolio
+        portfolioGroupId:
+          type: string
+          description: If populated, this analysis should be run on this portfolio group
+        initiativeId:
+          type: string
+          description: If populated, this analysis should be run on this initiative
+    RunAnalysisResp:
+      type: object
+      required:
+        - analysisId 
+      properties:
+        analysisId:
+          type: string
+          description: the system assigned unique identifier of the analysis that has been requested 
     ListPortfoliosReq:
       type: object
     ListPortfoliosResp:
@@ -1390,6 +1980,280 @@ components:
         task_id:
           type: string
           description: The ID of the async task for processing the portfoio
+    FindUserByMeResp:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        ownerId:
+          type: string
+          description: the id of the owner of the user, if logged in
+    AuditLogAction:
+      type: string
+      enum:
+        - AuditLogActionCreate
+        - AuditLogActionUpdate
+        - AuditLogActionDelete
+        - AuditLogActionAddTo
+        - AuditLogActionRemoveFrom
+        - AuditLogActionEnableAdminDebug
+        - AuditLogActionDisableAdminDebug
+        - AuditLogActionDownload
+        - AuditLogActionEnableSharing
+        - AuditLogActionDisableSharing
+        - AuditLogActionReadMetadata
+        - AuditLogActionTransferOwnership
+    AuditLogActorType:
+      type: string
+      enum:
+        - AuditLogActorTypePublic
+        - AuditLogActorTypeOwner
+        - AuditLogActorTypeAdmin
+        - AuditLogActorTypeSuperAdmin
+        - AuditLogActorTypeSystem
+    AuditLogTargetType:
+      type: string
+      enum:
+        - AuditLogTargetTypeUser
+        - AuditLogTargetTypePortfolio
+        - AuditLogTargetTypeIncompleteUpload
+        - AuditLogTargetTypePortfolioGroup
+        - AuditLogTargetTypeInitiative
+        - AuditLogTargetTypeInitiativeInvitation
+        - AuditLogTargetTypePactaVersion
+        - AuditLogTargetTypeAnalysis
+        - AuditLogTargetTypeAnalysisArtifact
+    AuditLogQueryWhere:
+      type: object
+      properties:
+        inId:
+          type: array
+          description: a list of audit log ids to filter by
+          items: 
+            type: string
+        minCreatedAt:
+          type: string
+          format: date-time 
+          description: a minimum time for audit logs to filter audit logs by 
+        maxCreatedAt:
+          type: string
+          format: date-time 
+          description: a maximum time for audit logs to filter audit logs by 
+        inAction:
+          type: array
+          description: a list of audit log action types to filter audit logs by 
+          items: 
+            $ref: '#/components/schemas/AuditLogAction'
+        inActorType:
+          type: array
+          description: a list of audit log actor types to filter audit logs by 
+          items: 
+            $ref: '#/components/schemas/AuditLogActorType'
+        inActorId:
+          type: array
+          description: a list of actor user ids to filter audit logs by
+          items: 
+            type: string
+        inActorOwnerId:
+          type: array
+          description: a list of actor owner ids to filter audit logs by
+          items: 
+            type: string
+        inTargetType:
+          type: array
+          description: a list of audit log target types to filter audit logs by 
+          items: 
+            $ref: '#/components/schemas/AuditLogTargetType'
+        inTargetId:
+          type: array
+          description: a list of target ids to filter audit logs by 
+          items: 
+            type: string
+        inTargetOwnerId:
+          type: array
+          description: a list of target owner ids to filter audit logs by 
+          items: 
+            type: string
+    AuditLogQuerySortBy:
+      type: string
+      enum:
+        - AuditLogQuerySortByCreatedAt
+        - AuditLogQuerySortByActorType
+        - AuditLogQuerySortByActorId
+        - AuditLogQuerySortByActorOwnerId
+        - AuditLogQuerySortByPrimaryTargetId
+        - AuditLogQuerySortByPrimaryTargetType
+        - AuditLogQuerySortByPrimaryTargetOwnerId
+        - AuditLogQuerySortBySecondaryTargetId
+        - AuditLogQuerySortBySecondaryTargetType
+        - AuditLogQuerySortBySecondaryTargetOwnerId
+    AuditLogQuerySort:
+      type: object
+      required:
+        - by
+        - ascending
+      properties:
+        by:
+          $ref: '#/components/schemas/AuditLogQuerySortBy'
+        ascending:
+          type: boolean
+          description: whether the sort should be ascending or descending
+    AuditLogQueryReq:
+      type: object
+      required:
+        - wheres
+      properties:
+        cursor:
+          type: string
+          description: if provided, continues an existing query at the given point 
+        limit: 
+          type: integer
+          description: if provided, requests this number of records at maximum - default/maximum is 100
+        wheres:
+          type: array 
+          description: the constraints to place on the returned records - this must be set to something which limits it to a scope the user should have access to
+          items: 
+            $ref: '#/components/schemas/AuditLogQueryWhere'
+        sorts:
+          type: array 
+          description: the ordering that the results should be returned in - if empty, an ordering by created at date will be applied 
+          items: 
+            $ref: '#/components/schemas/AuditLogQuerySort'
+    AuditLogQueryResp:
+      type: object
+      required:
+        - auditLogs
+        - cursor
+        - hasNextPage
+      properties:
+        auditLogs:
+          type: array
+          items: 
+            $ref: '#/components/schemas/AuditLog'
+        hasNextPage:
+          type: boolean
+          description: describes whether there are more records to query
+        cursor:
+          type: string
+          description: the parameter to re-request with to continue this query on the next page of results 
+    AuditLog:
+      type: object
+      required:
+        - id
+        - createdAt
+        - actorType
+        - action
+        - primaryTargetType
+        - primaryTargetId
+        - primaryTargetOwner
+      properties:
+        id:
+          type: string
+          description: the unique identifier of a given audit log
+        createdAt:
+          type: string
+          format: date-time
+          description: the time that this audit log was created/the action was undertaken
+        actorType:
+          description: the authority that this actor was acting as when performing this action
+          $ref: '#/components/schemas/AuditLogActorType'
+        actorId:
+          type: string
+          description: the user id of the actor that initiated this action, not populated if the system initiated the action 
+        actorOwnerId:
+          type: string
+          description: the owner id of the actor that initiated this action, not populated if the system initiated the action 
+        action:
+          description: the action that generated this audit log
+          $ref: '#/components/schemas/AuditLogAction'
+        primaryTargetType:
+          description: the object category that this action was performed on
+          $ref: '#/components/schemas/AuditLogTargetType'
+        primaryTargetId:
+          type: string
+          description: the id of the object that this action was performed on 
+        primaryTargetOwner:
+          type: string
+          description: the id of the owner of the primary object this action was performed on 
+        secondaryTargetType:
+          description: the object category of the secondary object (membership partner, typically) that this action was performed on
+          $ref: '#/components/schemas/AuditLogTargetType'
+        secondaryTargetId:
+          type: string
+          description: the id of the secondary object that this action was performed on 
+        secondaryTargetOwner:
+          type: string
+          description: the id of the owner of the secondary object this action was performed on
+    UserQueryWhere: 
+      type: object
+      properties: 
+        nameOrEmailLike:
+          type: string
+          description: if provided, filters the results to only include users whose name or email contains this string
+    UserQueryReq:
+      type: object
+      properties: 
+        cursor:
+          type: string
+          description: if provided, continues an existing query at the given point 
+        wheres:
+          type: array 
+          description: the constraints to place on the returned records
+          items: 
+            $ref: '#/components/schemas/UserQueryWhere'
+    UserQueryResp:
+      type: object
+      required:
+        - users
+        - cursor
+        - hasNextPage
+      properties:
+        users:
+          type: array
+          items: 
+            $ref: '#/components/schemas/User'
+        hasNextPage:
+          type: boolean
+          description: describes whether there are more records to query
+        cursor:
+          type: string
+          description: the parameter to re-request with to continue this query on the next page of results
+    MergeUsersReq:
+      type: object
+      required:
+        - fromUserId
+        - toUserId
+      properties:
+        fromUserId:
+          type: string
+          description: the user id of the user to merge records from, and to be deleted after the merge 
+        toUserId:
+          type: string
+          description: the user id of the user to recieve merged records and to exist after the merge 
+    MergeUsersResp:
+      type: object
+      required:
+        - incompleteUploadCount
+        - analysisCount
+        - portfolioCount
+        - portfolioGroupCount
+        - auditLogsCreated
+      properties:
+        incompleteUploadCount:
+          type: integer
+          description: the number of incomplete uploads that were transferred to the new user 
+        analysisCount:
+          type: integer
+          description: the number of analyses that were transferred to the new user
+        portfolioCount:
+          type: integer
+          description: the number of portfolios that were transferred to the new user
+        portfolioGroupCount:
+          type: integer
+          description: the number of portfolio groups that were transferred to the new user
+        auditLogsCreated:
+          type: integer
+          description: the number of audit logs that were created to record the merge
     Error:
       type: object
       required:

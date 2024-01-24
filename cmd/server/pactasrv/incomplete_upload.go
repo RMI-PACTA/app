@@ -10,7 +10,6 @@ import (
 	api "github.com/RMI/pacta/openapi/pacta"
 	"github.com/RMI/pacta/pacta"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // (GET /incomplete-uploads)
@@ -24,7 +23,6 @@ func (s *Server) ListIncompleteUploads(ctx context.Context, request api.ListInco
 	if err != nil {
 		return nil, oapierr.Internal("failed to query incomplete uploads", zap.Error(err))
 	}
-	s.Logger.Info("queried incomplete uploads", zap.Int("count", len(ius)), zap.String("owner_id", string(ownerID)))
 	items, err := dereference(conv.IncompleteUploadsToOAPI(ius))
 	if err != nil {
 		return nil, err
@@ -36,16 +34,15 @@ func (s *Server) ListIncompleteUploads(ctx context.Context, request api.ListInco
 // (DELETE /incomplete-upload/{id})
 func (s *Server) DeleteIncompleteUpload(ctx context.Context, request api.DeleteIncompleteUploadRequestObject) (api.DeleteIncompleteUploadResponseObject, error) {
 	id := pacta.IncompleteUploadID(request.Id)
-	_, err := s.checkIncompleteUploadAuthorization(ctx, id)
-	if err != nil {
+	if err := s.incompleteUploadDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Delete); err != nil {
 		return nil, err
 	}
 	blobURI, err := s.DB.DeleteIncompleteUpload(s.DB.NoTxn(ctx), id)
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete incomplete upload", zap.Error(err))
 	}
-	if err := s.deleteBlobs(ctx, []string{string(blobURI)}); err != nil {
-		return nil, oapierr.Internal("failed to delete blob", zap.Error(err))
+	if err := s.deleteBlobs(ctx, blobURI); err != nil {
+		return nil, err
 	}
 	return api.DeleteIncompleteUpload204Response{}, nil
 }
@@ -53,9 +50,13 @@ func (s *Server) DeleteIncompleteUpload(ctx context.Context, request api.DeleteI
 // Returns an incomplete upload by ID
 // (GET /incomplete-upload/{id})
 func (s *Server) FindIncompleteUploadById(ctx context.Context, request api.FindIncompleteUploadByIdRequestObject) (api.FindIncompleteUploadByIdResponseObject, error) {
-	iu, err := s.checkIncompleteUploadAuthorization(ctx, pacta.IncompleteUploadID(request.Id))
-	if err != nil {
+	id := pacta.IncompleteUploadID(request.Id)
+	if err := s.incompleteUploadDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_ReadMetadata); err != nil {
 		return nil, err
+	}
+	iu, err := s.DB.IncompleteUpload(s.DB.NoTxn(ctx), id)
+	if err != nil {
+		return nil, oapierr.Internal("failed to look up incomplete upload", zap.String("incomplete_upload_id", request.Id), zap.Error(err))
 	}
 	converted, err := conv.IncompleteUploadToOAPI(iu)
 	if err != nil {
@@ -74,11 +75,6 @@ func (s *Server) UpdateIncompleteUpload(ctx context.Context, request api.UpdateI
 		return nil, err
 	}
 	id := pacta.IncompleteUploadID(request.Id)
-	_, err := s.checkIncompleteUploadAuthorization(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	// TODO(#12) Implement Authorization
 	mutations := []db.UpdateIncompleteUploadFn{}
 	if request.Body.Name != nil {
 		mutations = append(mutations, db.SetIncompleteUploadName(*request.Body.Name))
@@ -86,36 +82,56 @@ func (s *Server) UpdateIncompleteUpload(ctx context.Context, request api.UpdateI
 	if request.Body.Description != nil {
 		mutations = append(mutations, db.SetIncompleteUploadDescription(*request.Body.Description))
 	}
+	if len(mutations) > 0 {
+		if err := s.incompleteUploadDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
+			return nil, err
+		}
+	}
 	if request.Body.AdminDebugEnabled != nil {
+		if *request.Body.AdminDebugEnabled {
+			if err := s.incompleteUploadDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_EnableAdminDebug); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := s.incompleteUploadDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_DisableAdminDebug); err != nil {
+				return nil, err
+			}
+		}
 		mutations = append(mutations, db.SetIncompleteUploadAdminDebugEnabled(*request.Body.AdminDebugEnabled))
 	}
-	err = s.DB.UpdateIncompleteUpload(s.DB.NoTxn(ctx), id, mutations...)
+	err := s.DB.UpdateIncompleteUpload(s.DB.NoTxn(ctx), id, mutations...)
 	if err != nil {
 		return nil, oapierr.Internal("failed to update incomplete upload", zap.Error(err))
 	}
 	return api.UpdateIncompleteUpload204Response{}, nil
 }
 
-func (s *Server) checkIncompleteUploadAuthorization(ctx context.Context, id pacta.IncompleteUploadID) (*pacta.IncompleteUpload, error) {
-	// TODO(#12) Implement Authorization
-	actorOwnerID, err := s.getUserOwnerID(ctx)
+func (s *Server) incompleteUploadDoAuthzAndAuditLog(ctx context.Context, iuID pacta.IncompleteUploadID, action pacta.AuditLogAction) error {
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	// Extracted to a common variable so that we return the same response for not found and unauthorized.
-	notFoundErr := func(fields ...zapcore.Field) error {
-		fs := append(fields, zap.String("incomplete_upload_id", string(id)))
-		return oapierr.NotFound("incomplete upload not found", fs...)
-	}
-	iu, err := s.DB.IncompleteUpload(s.DB.NoTxn(ctx), id)
+	iu, err := s.DB.IncompleteUpload(s.DB.NoTxn(ctx), iuID)
 	if err != nil {
 		if db.IsNotFound(err) {
-			return nil, notFoundErr(zap.Error(err))
+			return notFoundOrUnauthorized(actorInfo, action, pacta.AuditLogTargetType_IncompleteUpload, iuID)
 		}
-		return nil, oapierr.Internal("failed to look up incomplete upload", zap.String("incomplete_upload_id", string(id)), zap.Error(err))
+		return oapierr.Internal("failed to look up incomplete upload", zap.String("incomplete_upload_id", string(iuID)), zap.Error(err))
 	}
-	if iu.Owner.ID != actorOwnerID {
-		return nil, notFoundErr(zap.Error(fmt.Errorf("incomplete upload does not belong to user")), zap.String("owner_id", string(iu.Owner.ID)), zap.String("actor_id", string(actorOwnerID)))
+	as := &authzStatus{
+		primaryTargetID:      string(iuID),
+		primaryTargetType:    pacta.AuditLogTargetType_IncompleteUpload,
+		primaryTargetOwnerID: iu.Owner.ID,
+		actorInfo:            actorInfo,
+		action:               action,
 	}
-	return iu, nil
+	switch action {
+	case pacta.AuditLogAction_EnableAdminDebug, pacta.AuditLogAction_DisableAdminDebug:
+		as.isAuthorized, as.authorizedAsActorType = allowIfOwner(actorInfo, iu.Owner.ID)
+	case pacta.AuditLogAction_Update, pacta.AuditLogAction_Delete, pacta.AuditLogAction_ReadMetadata:
+		as.isAuthorized, as.authorizedAsActorType = allowIfAdminOrOwner(actorInfo, iu.Owner.ID)
+	default:
+		return fmt.Errorf("unknown action %q for incomplete_upload authz", action)
+	}
+	return s.auditLogIfAuthorizedOrFail(ctx, as)
 }

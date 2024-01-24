@@ -38,6 +38,9 @@ func (d *DB) Initiative(tx db.Tx, id pacta.InitiativeID) (*pacta.Initiative, err
 }
 
 func (d *DB) Initiatives(tx db.Tx, ids []pacta.InitiativeID) (map[pacta.InitiativeID]*pacta.Initiative, error) {
+	if len(ids) == 0 {
+		return map[pacta.InitiativeID]*pacta.Initiative{}, nil
+	}
 	ids = dedupeIDs(ids)
 	rows, err := d.query(tx, `
 		SELECT `+initiativeSelectColumns+`
@@ -75,16 +78,22 @@ func (d *DB) CreateInitiative(tx db.Tx, i *pacta.Initiative) error {
 	if err := validateInitiativeForCreation(i); err != nil {
 		return fmt.Errorf("validating initiative for creation: %w", err)
 	}
-	err := d.exec(tx, `
-		INSERT INTO initiative 
-			(id, name, affiliation, public_description, internal_description, requires_invitation_to_join, is_accepting_new_members, is_accepting_new_portfolios, pacta_version_id, language)
-			VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`,
-		i.ID, i.Name, i.Affiliation, i.PublicDescription, i.InternalDescription, i.RequiresInvitationToJoin, i.IsAcceptingNewMembers, i.IsAcceptingNewPortfolios, i.PACTAVersion.ID, i.Language)
-	if err != nil {
-		return fmt.Errorf("creating initiative: %w", err)
-	}
-	return nil
+	return d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		err := d.exec(tx, `
+			INSERT INTO initiative 
+				(id, name, affiliation, public_description, internal_description, requires_invitation_to_join, is_accepting_new_members, is_accepting_new_portfolios, pacta_version_id, language)
+				VALUES
+				($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`,
+			i.ID, i.Name, i.Affiliation, i.PublicDescription, i.InternalDescription, i.RequiresInvitationToJoin, i.IsAcceptingNewMembers, i.IsAcceptingNewPortfolios, i.PACTAVersion.ID, i.Language)
+		if err != nil {
+			return fmt.Errorf("creating initiative: %w", err)
+		}
+		_, err = d.createOwner(tx, &pacta.Owner{Initiative: &pacta.Initiative{ID: i.ID}})
+		if err != nil {
+			return fmt.Errorf("creating owner: %w", err)
+		}
+		return nil
+	})
 }
 
 func (d *DB) UpdateInitiative(tx db.Tx, id pacta.InitiativeID, mutations ...db.UpdateInitiativeFn) error {
@@ -111,11 +120,25 @@ func (d *DB) UpdateInitiative(tx db.Tx, id pacta.InitiativeID, mutations ...db.U
 	return nil
 }
 
-func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error {
+func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) ([]pacta.BlobURI, error) {
+	buris := []pacta.BlobURI{}
 	err := d.RunOrContinueTransaction(tx, func(db.Tx) error {
-		// TODO(grady) add owner deletions here - where the initiative is the owner of the asset/blob
-		// TODO(grady) do snapshot deletions here
-		err := d.exec(tx, `DELETE FROM initiative_invitation WHERE initiative_id = $1;`, id)
+		owner, err := d.GetOwnerForInitiative(tx, id)
+		if err != nil {
+			return fmt.Errorf("getting owner for initiative: %w", err)
+		}
+		analysisIDs, err := d.AnalysesRunOnInitiative(tx, id)
+		if err != nil {
+			return fmt.Errorf("reading initative analyses: %w", err)
+		}
+		for _, aID := range analysisIDs {
+			aBuris, err := d.DeleteAnalysis(tx, aID)
+			if err != nil {
+				return fmt.Errorf("deleting analysis: %w", err)
+			}
+			buris = append(buris, aBuris...)
+		}
+		err = d.exec(tx, `DELETE FROM initiative_invitation WHERE initiative_id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting initiative_invitations: %w", err)
 		}
@@ -127,6 +150,11 @@ func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error {
 		if err != nil {
 			return fmt.Errorf("deleting portfolio_initiative_memberships: %w", err)
 		}
+		oBuris, err := d.DeleteOwner(tx, owner)
+		if err != nil {
+			return fmt.Errorf("deleting owner: %w", err)
+		}
+		buris = append(buris, oBuris...)
 		err = d.exec(tx, `DELETE FROM initiative WHERE id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting initiative: %w", err)
@@ -134,9 +162,9 @@ func (d *DB) DeleteInitiative(tx db.Tx, id pacta.InitiativeID) error {
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("performing initiative deletion: %w", err)
+		return nil, fmt.Errorf("performing initiative deletion: %w", err)
 	}
-	return nil
+	return buris, nil
 }
 
 func rowToInitiative(row rowScanner) (*pacta.Initiative, error) {

@@ -16,21 +16,37 @@ const createEditorIncompleteUploadFields = (translation: Translation): EditorInc
       name: 'name',
       label: tt('Name'),
       validation: [Validation.NotEmpty],
-      helpText: tt('The name of this uploaded source file.'),
+      helpText: tt('NameHelpText'),
     },
     description: {
       name: 'description',
-      label: tt('The description of this upload - helpful for record keeping, not used for anything.'),
+      label: tt('Description'),
       helpText: tt('DescriptionHelpText'),
     },
     adminDebugEnabled: {
       name: 'adminDebugEnabled',
-      label: tt('Admin Debugging Enabled'),
-      helpText: tt('When enabled, this upload can be accessed by administrators to help with debugging. Only turn this on if you\'re comfortable with system administrators accessing this data.'),
+      label: tt('AdminDebuggingEnabled'),
+      helpText: tt('ADEHelpText'),
     },
-    holdingsDate: {
-      name: 'holdingsDate',
+    propertyHoldingsDate: {
+      name: 'propertyHoldingsDate',
       label: tt('Holdings Date'),
+      helpText: tt('HoldingsDateHelpText'),
+    },
+    propertyESG: {
+      name: 'propertyESG',
+      label: tt('ESG'),
+      helpText: tt('ESGHelpText'),
+    },
+    propertyExternal: {
+      name: 'propertyExternal',
+      label: tt('External'),
+      helpText: tt('ExternalHelpText'),
+    },
+    propertyEngagementStrategy: {
+      name: 'propertyEngagementStrategy',
+      label: tt('Engagement Strategy'),
+      helpText: tt('EngagementStrategyHelpText'),
     },
     createdAt: {
       name: 'createdAt',

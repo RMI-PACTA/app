@@ -2,20 +2,32 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AccessBlobContentReq } from '../models/AccessBlobContentReq';
+import type { AccessBlobContentResp } from '../models/AccessBlobContentResp';
+import type { Analysis } from '../models/Analysis';
+import type { AnalysisArtifactChanges } from '../models/AnalysisArtifactChanges';
+import type { AnalysisChanges } from '../models/AnalysisChanges';
+import type { AuditLogQueryReq } from '../models/AuditLogQueryReq';
+import type { AuditLogQueryResp } from '../models/AuditLogQueryResp';
 import type { CompletePortfolioUploadReq } from '../models/CompletePortfolioUploadReq';
 import type { CompletePortfolioUploadResp } from '../models/CompletePortfolioUploadResp';
+import type { FindUserByMeResp } from '../models/FindUserByMeResp';
 import type { IncompleteUpload } from '../models/IncompleteUpload';
 import type { IncompleteUploadChanges } from '../models/IncompleteUploadChanges';
 import type { Initiative } from '../models/Initiative';
+import type { InitiativeAllData } from '../models/InitiativeAllData';
 import type { InitiativeChanges } from '../models/InitiativeChanges';
 import type { InitiativeCreate } from '../models/InitiativeCreate';
 import type { InitiativeInvitation } from '../models/InitiativeInvitation';
 import type { InitiativeInvitationCreate } from '../models/InitiativeInvitationCreate';
 import type { InitiativeUserRelationship } from '../models/InitiativeUserRelationship';
 import type { InitiativeUserRelationshipChanges } from '../models/InitiativeUserRelationshipChanges';
+import type { ListAnalysesResp } from '../models/ListAnalysesResp';
 import type { ListIncompleteUploadsResp } from '../models/ListIncompleteUploadsResp';
 import type { ListPortfolioGroupsResp } from '../models/ListPortfolioGroupsResp';
 import type { ListPortfoliosResp } from '../models/ListPortfoliosResp';
+import type { MergeUsersReq } from '../models/MergeUsersReq';
+import type { MergeUsersResp } from '../models/MergeUsersResp';
 import type { PactaVersion } from '../models/PactaVersion';
 import type { PactaVersionChanges } from '../models/PactaVersionChanges';
 import type { PactaVersionCreate } from '../models/PactaVersionCreate';
@@ -25,10 +37,14 @@ import type { PortfolioGroup } from '../models/PortfolioGroup';
 import type { PortfolioGroupChanges } from '../models/PortfolioGroupChanges';
 import type { PortfolioGroupCreate } from '../models/PortfolioGroupCreate';
 import type { PortfolioGroupMembershipIds } from '../models/PortfolioGroupMembershipIds';
+import type { RunAnalysisReq } from '../models/RunAnalysisReq';
+import type { RunAnalysisResp } from '../models/RunAnalysisResp';
 import type { StartPortfolioUploadReq } from '../models/StartPortfolioUploadReq';
 import type { StartPortfolioUploadResp } from '../models/StartPortfolioUploadResp';
 import type { User } from '../models/User';
 import type { UserChanges } from '../models/UserChanges';
+import type { UserQueryReq } from '../models/UserQueryReq';
+import type { UserQueryResp } from '../models/UserQueryResp';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -36,6 +52,24 @@ import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class DefaultService {
 
     constructor(public readonly httpRequest: BaseHttpRequest) {}
+
+    /**
+     * Gives the caller access to the blob
+     * Checks whether the user can access the blobs, and if so, returns blob download URLs for each, generating an audit log along the way
+     * @param requestBody Information about the blobs that are requested
+     * @returns AccessBlobContentResp the user can access the blobs, and the access URLs are returned, along with information about their expiration
+     * @throws ApiError
+     */
+    public accessBlobContent(
+        requestBody: AccessBlobContentReq,
+    ): CancelablePromise<AccessBlobContentResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/access-blob-content',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
 
     /**
      * Returns a version of the PACTA model by ID
@@ -146,6 +180,24 @@ export class DefaultService {
     }
 
     /**
+     * Merges two users together
+     * Merges two users together
+     * @param requestBody a request describing the two users to merge
+     * @returns MergeUsersResp the users were merged successfully
+     * @throws ApiError
+     */
+    public mergeUsers(
+        requestBody: MergeUsersReq,
+    ): CancelablePromise<MergeUsersResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/admin/merge-users',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
      * Returns an initiative by ID
      * @param id ID of the initiative to fetch
      * @returns Initiative the initiative requested
@@ -206,6 +258,24 @@ export class DefaultService {
     }
 
     /**
+     * Returns all of the portfolios that are participating in the initiative
+     * @param id ID of the initiative to fetch data for
+     * @returns InitiativeAllData the initiative data
+     * @throws ApiError
+     */
+    public allInitiativeData(
+        id: string,
+    ): CancelablePromise<InitiativeAllData> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/initiative/{id}/all-data',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
      * Returns all initiatives
      * @returns Initiative gets all initiatives
      * @throws ApiError
@@ -232,24 +302,6 @@ export class DefaultService {
             url: '/initiatives',
             body: requestBody,
             mediaType: 'application/json',
-        });
-    }
-
-    /**
-     * Returns all initiative user relationships for this initiative that the caller has access to view
-     * @param initiativeId ID of the initiative to fetch relationships for
-     * @returns InitiativeUserRelationship
-     * @throws ApiError
-     */
-    public listInitiativeUserRelationshipsByInitiative(
-        initiativeId: string,
-    ): CancelablePromise<Array<InitiativeUserRelationship>> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/initiative/{initiativeId}/user-relationships',
-            path: {
-                'initiativeId': initiativeId,
-            },
         });
     }
 
@@ -366,27 +418,6 @@ export class DefaultService {
     }
 
     /**
-     * Returns the initiative user relationship from this id, if it exists
-     * @param initiativeId ID of the initiative
-     * @param userId ID of the user
-     * @returns InitiativeUserRelationship
-     * @throws ApiError
-     */
-    public getInitiativeUserRelationship(
-        initiativeId: string,
-        userId: string,
-    ): CancelablePromise<InitiativeUserRelationship> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/initiative/{initiativeId}/user-relationship/{userId}',
-            path: {
-                'initiativeId': initiativeId,
-                'userId': userId,
-            },
-        });
-    }
-
-    /**
      * Updates initiative user relationship properties
      * Updates a given user's relationship properties for a given initiative
      * @param initiativeId ID of the initiative
@@ -409,6 +440,50 @@ export class DefaultService {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * creates an initiative portfolio relationship
+     * creates a membership relationship between the portfolio and the initiative
+     * @param initiativeId ID of the initiative
+     * @param portfolioId ID of the portfolio
+     * @returns void
+     * @throws ApiError
+     */
+    public createInitiativePortfolioRelationship(
+        initiativeId: string,
+        portfolioId: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/initiative/{initiativeId}/portfolio-relationship/{portfolioId}',
+            path: {
+                'initiativeId': initiativeId,
+                'portfolioId': portfolioId,
+            },
+        });
+    }
+
+    /**
+     * Deletes an initiative:portfolio relationship
+     * Deletes a given portfolio's relationship with a given initiative
+     * @param initiativeId ID of the initiative
+     * @param portfolioId ID of the portfolio
+     * @returns void
+     * @throws ApiError
+     */
+    public deleteInitiativePortfolioRelationship(
+        initiativeId: string,
+        portfolioId: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/initiative/{initiativeId}/portfolio-relationship/{portfolioId}',
+            path: {
+                'initiativeId': initiativeId,
+                'portfolioId': portfolioId,
+            },
         });
     }
 
@@ -688,13 +763,30 @@ export class DefaultService {
     /**
      * gets info about the logged in user
      * Returns the logged in user, if the user is logged in, otherwise returns empty
-     * @returns User user response
+     * @returns FindUserByMeResp user response
      * @throws ApiError
      */
-    public findUserByMe(): CancelablePromise<User> {
+    public findUserByMe(): CancelablePromise<FindUserByMeResp> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/user/me',
+        });
+    }
+
+    /**
+     * Gets the list of users that the user is able to view, currently an admin-only action
+     * @param requestBody A request describing which users should be returned
+     * @returns UserQueryResp
+     * @throws ApiError
+     */
+    public userQuery(
+        requestBody: UserQueryReq,
+    ): CancelablePromise<UserQueryResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/users',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 
@@ -773,6 +865,24 @@ export class DefaultService {
     }
 
     /**
+     * queries the platform's audit logs
+     * returns back audit logs that matc the user's query
+     * @param requestBody A request describing which audit logs should be returned
+     * @returns AuditLogQueryResp The audit logs that matched the requested query, if any
+     * @throws ApiError
+     */
+    public listAuditLogs(
+        requestBody: AuditLogQueryReq,
+    ): CancelablePromise<AuditLogQueryResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/audit-logs',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
      * Starts the process of uploading one or more portfolio files
      * Creates one or more new incomplete portfolio uploads, and creates upload URLs for the user to put their blobs into.
      * @param requestBody A request describing the portfolios that the user wants to upload
@@ -803,6 +913,139 @@ export class DefaultService {
         return this.httpRequest.request({
             method: 'POST',
             url: '/portfolio-upload:complete',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Gets the analyses that the user is the owner of
+     * @returns ListAnalysesResp
+     * @throws ApiError
+     */
+    public listAnalyses(): CancelablePromise<ListAnalysesResp> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/analyses',
+        });
+    }
+
+    /**
+     * Returns an analysis by ID
+     * Returns an analysis based on a single ID
+     * @param id ID of analysis to fetch
+     * @returns Analysis analysis response
+     * @throws ApiError
+     */
+    public findAnalysisById(
+        id: string,
+    ): CancelablePromise<Analysis> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/analysis/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Updates writable analysis properties
+     * Updates an analysis' settable properties
+     * @param id ID of analysis to update
+     * @param requestBody Analayis object properties to update
+     * @returns void
+     * @throws ApiError
+     */
+    public updateAnalysis(
+        id: string,
+        requestBody: AnalysisChanges,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/analysis/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Deletes an analysis (and its artifacts) by ID
+     * deletes an analysis based on the ID supplied
+     * @param id ID of analysis to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deleteAnalysis(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/analysis/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Updates writable analysis artifact properties
+     * Updates an analysis artifact's settable properties
+     * @param id ID of analysis artifact to update
+     * @param requestBody Analysis artifact's object properties to update
+     * @returns void
+     * @throws ApiError
+     */
+    public updateAnalysisArtifact(
+        id: string,
+        requestBody: AnalysisArtifactChanges,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'PATCH',
+            url: '/analysis-artifact/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Deletes an analysis artifact by ID
+     * deletes an analysis artifact based on the ID supplied
+     * @param id ID of analysis artifact to delete
+     * @returns void
+     * @throws ApiError
+     */
+    public deleteAnalysisArtifact(
+        id: string,
+    ): CancelablePromise<void> {
+        return this.httpRequest.request({
+            method: 'DELETE',
+            url: '/analysis-artifact/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+
+    /**
+     * Requests an anslysis be run
+     * Creates a snapshot of the requested entity, and starts it running
+     * @param requestBody Properties of the analysis to run
+     * @returns RunAnalysisResp information about the requested analysis
+     * @throws ApiError
+     */
+    public runAnalysis(
+        requestBody: RunAnalysisReq,
+    ): CancelablePromise<RunAnalysisResp> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/run-analysis',
             body: requestBody,
             mediaType: 'application/json',
         });

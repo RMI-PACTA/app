@@ -16,7 +16,10 @@ import (
 // Returns a user by ID
 // (GET /user/{id})
 func (s *Server) FindUserById(ctx context.Context, request api.FindUserByIdRequestObject) (api.FindUserByIdResponseObject, error) {
-	// TODO(#12) Implement Authorization
+	id := pacta.UserID(request.Id)
+	if err := s.userDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_ReadMetadata); err != nil {
+		return nil, err
+	}
 	user, err := s.DB.User(s.DB.NoTxn(ctx), pacta.UserID(request.Id))
 	if err != nil {
 		return nil, oapierr.Internal("failed to retrieve user", zap.Error(err))
@@ -31,7 +34,10 @@ func (s *Server) FindUserById(ctx context.Context, request api.FindUserByIdReque
 // Updates user properties
 // (PATCH /user/{id})
 func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestObject) (api.UpdateUserResponseObject, error) {
-	// TODO(#12) Implement Authorization
+	id := pacta.UserID(request.Id)
+	if err := s.userDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Update); err != nil {
+		return nil, err
+	}
 	mutations := []db.UpdateUserFn{}
 	if request.Body.Admin != nil {
 		mutations = append(mutations, db.SetUserAdmin(*request.Body.Admin))
@@ -43,7 +49,7 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 		mutations = append(mutations, db.SetUserName(*request.Body.Name))
 	}
 	if request.Body.PreferredLanguage != nil {
-		lang, err := pacta.ParseLanguage(string(*request.Body.PreferredLanguage))
+		lang, err := conv.LanguageFromOAPI(*request.Body.PreferredLanguage)
 		if err != nil {
 			return nil, oapierr.BadRequest("invalid language", zap.Error(err))
 		}
@@ -59,10 +65,16 @@ func (s *Server) UpdateUser(ctx context.Context, request api.UpdateUserRequestOb
 // Deletes a user by ID
 // (DELETE /user/{id})
 func (s *Server) DeleteUser(ctx context.Context, request api.DeleteUserRequestObject) (api.DeleteUserResponseObject, error) {
-	// TODO(#12) Implement Authorization
-	err := s.DB.DeleteUser(s.DB.NoTxn(ctx), pacta.UserID(request.Id))
+	id := pacta.UserID(request.Id)
+	if err := s.userDoAuthzAndAuditLog(ctx, id, pacta.AuditLogAction_Delete); err != nil {
+		return nil, err
+	}
+	blobURIs, err := s.DB.DeleteUser(s.DB.NoTxn(ctx), pacta.UserID(request.Id))
 	if err != nil {
 		return nil, oapierr.Internal("failed to delete user", zap.Error(err))
+	}
+	if err := s.deleteBlobs(ctx, blobURIs...); err != nil {
+		return nil, err
 	}
 	return api.DeleteUser204Response{}, nil
 }
@@ -80,11 +92,19 @@ func (s *Server) FindUserByMe(ctx context.Context, request api.FindUserByMeReque
 	if err != nil {
 		return nil, oapierr.Internal("failed to retrieve user", zap.Error(err))
 	}
-	result, err := conv.UserToOAPI(user)
+	ownerID, err := s.DB.GetOwnerForUser(s.DB.NoTxn(ctx), meID)
+	if err != nil {
+		return nil, oapierr.Internal("failed to retrieve owner for user", zap.Error(err))
+	}
+	apiUser, err := conv.UserToOAPI(user)
 	if err != nil {
 		return nil, err
 	}
-	return api.FindUserByMe200JSONResponse(*result), nil
+	result := api.FindUserByMe200JSONResponse{
+		User:    apiUser,
+		OwnerId: ptr(string(ownerID)),
+	}
+	return result, nil
 }
 
 // a callback after login to create or return the user
@@ -130,5 +150,65 @@ func (s *Server) UserAuthenticationFollowup(ctx context.Context, _request api.Us
 		return nil, err
 	}
 	return api.UserAuthenticationFollowup200JSONResponse(*result), nil
+}
 
+// (GET /users)
+func (s *Server) UserQuery(ctx context.Context, request api.UserQueryRequestObject) (api.UserQueryResponseObject, error) {
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !actorInfo.IsAdmin && !actorInfo.IsSuperAdmin {
+		return nil, oapierr.Unauthorized("only admins can list users")
+	}
+	q, err := conv.UserQueryFromOAPI(request.Body)
+	if err != nil {
+		return nil, err
+	}
+	us, pi, err := s.DB.QueryUsers(s.DB.NoTxn(ctx), q)
+	if err != nil {
+		return nil, oapierr.Internal("failed to query users", zap.Error(err))
+	}
+	users, err := dereference(conv.UsersToOAPI(us))
+	if err != nil {
+		return nil, err
+	}
+	return api.UserQuery200JSONResponse{
+		Users:       users,
+		Cursor:      string(pi.Cursor),
+		HasNextPage: pi.HasNextPage,
+	}, nil
+}
+
+func (s *Server) userDoAuthzAndAuditLog(ctx context.Context, targetUserID pacta.UserID, action pacta.AuditLogAction) error {
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
+	if err != nil {
+		return err
+	}
+	targetOwnerID, err := s.DB.GetOwnerForUser(s.DB.NoTxn(ctx), targetUserID)
+	if err != nil {
+		if db.IsNotFound(err) {
+			return notFoundOrUnauthorized(actorInfo, action, pacta.AuditLogTargetType_User, targetUserID)
+		}
+		return oapierr.Internal("failed to retrieve user", zap.Error(err))
+	}
+	as := &authzStatus{
+		primaryTargetID:      string(targetUserID),
+		primaryTargetType:    pacta.AuditLogTargetType_User,
+		primaryTargetOwnerID: targetOwnerID,
+		actorInfo:            actorInfo,
+		action:               action,
+	}
+	switch action {
+	case pacta.AuditLogAction_Update, pacta.AuditLogAction_Delete, pacta.AuditLogAction_ReadMetadata:
+		if actorInfo.UserID == targetUserID {
+			as.isAuthorized = true
+			as.authorizedAsActorType = ptr(pacta.AuditLogActorType_Owner)
+		} else {
+			as.isAuthorized, as.authorizedAsActorType = allowIfAdmin(actorInfo)
+		}
+	default:
+		return fmt.Errorf("unknown action %q for user authz", action)
+	}
+	return s.auditLogIfAuthorizedOrFail(ctx, as)
 }

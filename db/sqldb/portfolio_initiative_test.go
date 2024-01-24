@@ -29,7 +29,7 @@ func TestCreatePortfolioInitiativeMembership(t *testing.T) {
 	}
 	err := tdb.CreatePortfolioInitiativeMembership(tx, pimA1)
 	if err != nil {
-		t.Fatalf("creating pim: %w", err)
+		t.Fatalf("creating pim: %v", err)
 	}
 	pimA1.CreatedAt = time.Now()
 
@@ -40,7 +40,7 @@ func TestCreatePortfolioInitiativeMembership(t *testing.T) {
 	}
 	err = tdb.CreatePortfolioInitiativeMembership(tx, pimA2)
 	if err != nil {
-		t.Fatalf("creating pim: %w", err)
+		t.Fatalf("creating pim: %v", err)
 	}
 	pimA2.CreatedAt = time.Now()
 
@@ -51,13 +51,13 @@ func TestCreatePortfolioInitiativeMembership(t *testing.T) {
 	}
 	err = tdb.CreatePortfolioInitiativeMembership(tx, pimB2)
 	if err != nil {
-		t.Fatalf("creating pim: %w", err)
+		t.Fatalf("creating pim: %v", err)
 	}
 	pimB2.CreatedAt = time.Now()
 
 	actual, err := tdb.PortfolioInitiativeMembershipsByPortfolio(tx, p2.ID)
 	if err != nil {
-		t.Fatalf("getting pims: %w", err)
+		t.Fatalf("getting pims: %v", err)
 	}
 	if diff := cmp.Diff([]*pacta.PortfolioInitiativeMembership{pimA2, pimB2}, actual, cmpOpts); diff != "" {
 		t.Errorf("unexpected diff (-want +got)\n%s", diff)
@@ -65,7 +65,7 @@ func TestCreatePortfolioInitiativeMembership(t *testing.T) {
 
 	actual, err = tdb.PortfolioInitiativeMembershipsByInitiative(tx, iA.ID)
 	if err != nil {
-		t.Fatalf("getting pims: %w", err)
+		t.Fatalf("getting pims: %v", err)
 	}
 	if diff := cmp.Diff([]*pacta.PortfolioInitiativeMembership{pimA1, pimA2}, actual, cmpOpts); diff != "" {
 		t.Errorf("unexpected diff (-want +got)\n%s", diff)
@@ -73,12 +73,12 @@ func TestCreatePortfolioInitiativeMembership(t *testing.T) {
 
 	err = tdb.DeletePortfolioInitiativeMembership(tx, p1.ID, iA.ID)
 	if err != nil {
-		t.Fatalf("deleting pim: %w", err)
+		t.Fatalf("deleting pim: %v", err)
 	}
 
 	actual, err = tdb.PortfolioInitiativeMembershipsByPortfolio(tx, p1.ID)
 	if err != nil {
-		t.Fatalf("getting pims: %w", err)
+		t.Fatalf("getting pims: %v", err)
 	}
 	if diff := cmp.Diff([]*pacta.PortfolioInitiativeMembership{}, actual, cmpOpts); diff != "" {
 		t.Errorf("unexpected diff (-want +got)\n%s", diff)

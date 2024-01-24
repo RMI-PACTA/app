@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/Silicon-Ally/testpgx"
 	"github.com/Silicon-Ally/testpgx/migrate"
@@ -42,5 +41,4 @@ func main() {
 		fmt.Printf(result)
 		return nil
 	})
-	os.Exit(0)
 }

@@ -23,11 +23,15 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 	cmpOpts := incompleteUploadCmpOpts()
 
 	iu := &pacta.IncompleteUpload{
-		Name:         "i-u-name",
-		Description:  "i-u-description",
-		HoldingsDate: exampleHoldingsDate,
-		Owner:        &pacta.Owner{ID: o1.ID},
-		Blob:         &pacta.Blob{ID: b.ID},
+		Name:        "i-u-name",
+		Description: "i-u-description",
+		Properties: pacta.PortfolioProperties{
+			HoldingsDate: exampleHoldingsDate,
+			ESG:          ptr(true),
+			External:     ptr(false),
+		},
+		Owner: &pacta.Owner{ID: o1.ID},
+		Blob:  &pacta.Blob{ID: b.ID},
 	}
 	id, err := tdb.CreateIncompleteUpload(tx, iu)
 	if err != nil {
@@ -46,7 +50,7 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 
 	ius, err := tdb.IncompleteUploads(tx, []pacta.IncompleteUploadID{iu.ID, iu.ID, "nonsense"})
 	if err != nil {
-		t.Fatalf("reading incomplete_uploads: %w", err)
+		t.Fatalf("reading incomplete_uploads: %v", err)
 	}
 	if diff := cmp.Diff(map[pacta.IncompleteUploadID]*pacta.IncompleteUpload{iu.ID: iu}, ius, cmpOpts); diff != "" {
 		t.Fatalf("incomplete_upload mismatch (-want +got):\n%s", diff)
@@ -68,7 +72,10 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 		db.SetIncompleteUploadCompletedAt(completedAt),
 		db.SetIncompleteUploadAdminDebugEnabled(true),
 		db.SetIncompleteUploadFailureMessage(failureMessage),
-		db.SetIncompleteUploadHoldingsDate(hd),
+		db.SetIncompleteUploadPropertyHoldingsDate(hd),
+		db.SetIncompleteUploadPropertyESG(ptr(false)),
+		db.SetIncompleteUploadPropertyEngagementStrategy(ptr(true)),
+		db.SetIncompleteUploadPropertyExternal(nil),
 	)
 	if err != nil {
 		t.Fatalf("updating incomplete upload: %v", err)
@@ -81,7 +88,10 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 	iu.CompletedAt = completedAt
 	iu.AdminDebugEnabled = true
 	iu.FailureMessage = failureMessage
-	iu.HoldingsDate = hd
+	iu.Properties.HoldingsDate = hd
+	iu.Properties.ESG = ptr(false)
+	iu.Properties.EngagementStrategy = ptr(true)
+	iu.Properties.External = nil
 
 	actual, err = tdb.IncompleteUpload(tx, iu.ID)
 	if err != nil {
@@ -106,12 +116,32 @@ func TestIncompleteUploadCRUD(t *testing.T) {
 		t.Fatalf("mismatch (-want +got):\n%s", diff)
 	}
 
+	blobContexts, err := tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
+	if err != nil {
+		t.Fatalf("reading blob owners: %v", err)
+	}
+	expectedBCs := []*pacta.BlobContext{{
+		BlobID:               b.ID,
+		PrimaryTargetOwnerID: o2.ID,
+		PrimaryTargetType:    "INCOMPLETE_UPLOAD",
+		PrimaryTargetID:      string(iu.ID),
+		AdminDebugEnabled:    true,
+	}}
+	if diff := cmp.Diff(expectedBCs, blobContexts, cmpOpts); diff != "" {
+		t.Errorf("unexpected diff (+got -want): %v", diff)
+	}
+
 	buris, err := tdb.DeleteIncompleteUpload(tx, iu.ID)
 	if err != nil {
 		t.Fatalf("deleting incompleteUpload: %v", err)
 	}
 	if diff := cmp.Diff(b.BlobURI, buris); diff != "" {
 		t.Fatalf("blob uri mismatch (-want +got):\n%s", diff)
+	}
+
+	_, err = tdb.BlobContexts(tx, []pacta.BlobID{b.ID})
+	if err == nil {
+		t.Fatal("reading blob owners should have failed but was fine")
 	}
 }
 
@@ -124,11 +154,10 @@ func TestFailureCodePersistability(t *testing.T) {
 	o := ownerUserForTesting(t, tdb, u)
 
 	iu := &pacta.IncompleteUpload{
-		Name:         "i-u-name",
-		Description:  "i-u-description",
-		HoldingsDate: exampleHoldingsDate,
-		Owner:        &pacta.Owner{ID: o.ID},
-		Blob:         &pacta.Blob{ID: b.ID},
+		Name:        "i-u-name",
+		Description: "i-u-description",
+		Owner:       &pacta.Owner{ID: o.ID},
+		Blob:        &pacta.Blob{ID: b.ID},
 	}
 	id, err := tdb.CreateIncompleteUpload(tx, iu)
 	if err != nil {

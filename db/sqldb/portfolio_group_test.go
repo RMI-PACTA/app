@@ -28,7 +28,7 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 	pgID1, err := tdb.CreatePortfolioGroup(tx, pg1)
 	if err != nil {
-		t.Fatalf("creating portfolio group: %w", err)
+		t.Fatalf("creating portfolio group: %v", err)
 	}
 	pg1.CreatedAt = time.Now()
 	pg1.ID = pgID1
@@ -39,7 +39,7 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 	pgID2, err := tdb.CreatePortfolioGroup(tx, pg2)
 	if err != nil {
-		t.Fatalf("creating portfolio group: %w", err)
+		t.Fatalf("creating portfolio group: %v", err)
 	}
 	pg2.CreatedAt = time.Now()
 	pg2.ID = pgID2
@@ -89,14 +89,14 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 
 	actuals, err = tdb.PortfolioGroups(tx, []pacta.PortfolioGroupID{pg1.ID, pg2.ID})
-	pg1.Members = []*pacta.PortfolioGroupMembership{{
+	pg1.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{{
 		Portfolio: &pacta.Portfolio{ID: p1.ID},
 		CreatedAt: time.Now(),
 	}, {
 		Portfolio: &pacta.Portfolio{ID: p2.ID},
 		CreatedAt: time.Now(),
 	}}
-	pg2.Members = []*pacta.PortfolioGroupMembership{{
+	pg2.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{{
 		Portfolio: &pacta.Portfolio{ID: p1.ID},
 		CreatedAt: time.Now(),
 	}}
@@ -109,7 +109,7 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 
 	expectedP1 := p1.Clone()
-	expectedP1.MemberOf = []*pacta.PortfolioGroupMembership{{
+	expectedP1.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{{
 		PortfolioGroup: &pacta.PortfolioGroup{ID: pg1.ID},
 		CreatedAt:      time.Now(),
 	}, {
@@ -117,7 +117,7 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 		CreatedAt:      time.Now(),
 	}}
 
-	err = tdb.DeletePortfolioGroup(tx, pg1.ID)
+	buris, err := tdb.DeletePortfolioGroup(tx, pg1.ID)
 	if err != nil {
 		t.Fatalf("delete portfolio group: %v", err)
 	}
@@ -127,6 +127,9 @@ func TestPortfolioGroupCRUD(t *testing.T) {
 	}
 	if diff := cmp.Diff(expecteds, actuals, portfolioGroupCmpOpts()); diff != "" {
 		t.Fatalf("portfolio group mismatch (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff([]pacta.BlobURI{}, buris); diff != "" {
+		t.Fatalf("blob uri mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -155,8 +158,8 @@ func TestPortfolioGroupMembership(t *testing.T) {
 		if err != nil {
 			t.Fatalf("getting portfolio group: %v", err)
 		}
-		ms := make([]*pacta.Portfolio, len(pg.Members))
-		for i, m := range pg.Members {
+		ms := make([]*pacta.Portfolio, len(pg.PortfolioGroupMemberships))
+		for i, m := range pg.PortfolioGroupMemberships {
 			ms[i] = m.Portfolio
 		}
 		if diff := cmp.Diff(idsOnly, ms, portfolioCmpOpts()); diff != "" {
@@ -197,11 +200,11 @@ func TestPortfolioGroupMembership(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getting portfolio group: %v", err)
 	}
-	pg1.Members = []*pacta.PortfolioGroupMembership{
+	pg1.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{
 		{Portfolio: &pacta.Portfolio{ID: p1.ID}, CreatedAt: time.Now()},
 		{Portfolio: &pacta.Portfolio{ID: p2.ID}, CreatedAt: time.Now()},
 	}
-	pg2.Members = []*pacta.PortfolioGroupMembership{
+	pg2.PortfolioGroupMemberships = []*pacta.PortfolioGroupMembership{
 		{Portfolio: &pacta.Portfolio{ID: p3.ID}, CreatedAt: time.Now()},
 	}
 	expected := map[pacta.PortfolioGroupID]*pacta.PortfolioGroup{
@@ -249,7 +252,7 @@ func portfolioGroupForTesting(t *testing.T, tdb *DB, owner *pacta.Owner) *pacta.
 	}
 	pgID, err := tdb.CreatePortfolioGroup(tx, pg)
 	if err != nil {
-		t.Fatalf("creating portfolio group: %w", err)
+		t.Fatalf("creating portfolio group: %v", err)
 	}
 	pg.ID = pgID
 	pg.CreatedAt = time.Now()

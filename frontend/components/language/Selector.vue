@@ -1,32 +1,51 @@
 <script setup lang="ts">
-import { type LanguageCode, LanguageOptions } from '@/lib/language'
+import { type LanguageOption, LanguageOptions, languageToOption } from '@/lib/language'
+import { type Language } from '@/openapi/generated/pacta'
+
+const { t } = useI18n()
+const tt = (key: string) => t(`components/language/Selector.${key}`)
 
 interface Props {
-  value: LanguageCode
+  value: Language | undefined
 }
 interface Emits {
-  (e: 'update:value', value: LanguageCode): void
+  (e: 'update:value', value: Language | undefined): void
 }
 const props = defineProps<Props>()
 const emits = defineEmits<Emits>()
-const value = computed<LanguageCode>({
-  get: () => props.value,
-  set: (v: LanguageCode) => { emits('update:value', v) },
+const model = computed<LanguageOption | undefined>({
+  get: () => props.value ? languageToOption(props.value) : undefined,
+  set: (v: LanguageOption | undefined) => {
+    emits('update:value', v ? v.language : undefined)
+  },
 })
 </script>
 
 <template>
   <PVDropdown
-    v-model="value"
+    v-model="model"
     option-label="label"
-    option-value="code"
     :options="LanguageOptions"
   >
     <template #value="slotProps">
-      <LanguageRepresentation :code="slotProps.value" />
+      <LanguageRepresentation
+        v-if="slotProps.value"
+        :code="slotProps.value.code"
+      />
+      <span
+        v-else
+        class="font-italic font-light"
+      >{{ tt('Unset') }}</span>
     </template>
     <template #option="slotProps">
-      <LanguageRepresentation :code="slotProps.option.code" />
+      <LanguageRepresentation
+        v-if="slotProps.option"
+        :code="slotProps.option.code"
+      />
+      <span
+        v-else
+        class="font-italic font-light"
+      >{{ tt('Unset') }}</span>
     </template>
   </PVDropdown>
 </template>

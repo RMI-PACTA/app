@@ -52,6 +52,9 @@ export const getEditorComputedValues = <R> (key: string, r: R, toEFF: ToEFF<R>, 
     if (isInvalid.value) { return `${cannotSave}: ${invalidFields.value.join(', ')}` }
     return undefined
   })
+  const resetEditor = () => {
+    editorValues.value = createEditorValues(r)
+  }
 
   return {
     setEditorValue,
@@ -64,5 +67,6 @@ export const getEditorComputedValues = <R> (key: string, r: R, toEFF: ToEFF<R>, 
     isInvalid,
     canSave,
     saveTooltip,
+    resetEditor,
   }
 }

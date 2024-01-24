@@ -9,9 +9,11 @@ go_library(
     importpath = "github.com/RMI/pacta/cmd/tools/migratesqldb/cmd",
     visibility = ["//visibility:public"],
     deps = [
+        "@com_github_golang_migrate_migrate_v4//:migrate",
+        "@com_github_golang_migrate_migrate_v4//database/pgx/v5:pgx",
+        "@com_github_golang_migrate_migrate_v4//source/file",
         "@com_github_jackc_pgx_v5//pgxpool",
-        "@com_github_silicon_ally_testpgx//migrate",
         "@com_github_spf13_cobra//:cobra",
-        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+        "@io_bazel_rules_go//go/runfiles:go_default_library",
     ],
 )

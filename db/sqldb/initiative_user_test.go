@@ -175,7 +175,7 @@ func TestListInitiativeUserRelationships(t *testing.T) {
 	err7 := tdb.PutInitiativeUserRelationship(tx, iurI2U2)
 	noErrDuringSetup(t, err0, err1, err2, err3, err4, err5, err6, err7)
 
-	actual, err := tdb.InitiativeUserRelationshipsByInitiatives(tx, i2.ID)
+	actual, err := tdb.InitiativeUserRelationshipsByInitiative(tx, i2.ID)
 	if err != nil {
 		t.Fatalf("getting initiative user relationships: %v", err)
 	}

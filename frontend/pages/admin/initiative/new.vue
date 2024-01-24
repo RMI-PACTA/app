@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Initiative } from '@/openapi/generated/pacta'
+import { Language } from '@/openapi/generated/pacta'
 import { initiativeEditor } from '@/lib/editor'
 
 const localePath = useLocalePath()
@@ -19,9 +19,11 @@ const defaultInitiative = {
   requiresInvitationToJoin: false,
   isAcceptingNewMembers: false,
   isAcceptingNewPortfolios: false,
-  language: Initiative.language.EN,
+  language: Language.LANGUAGE_EN,
   pactaVersion: undefined,
   createdAt: '',
+  portfolioInitiativeMemberships: [],
+  initiativeUserRelationships: [],
 }
 const {
   editorFields,
@@ -42,7 +44,7 @@ const tt = (key: string) => t(`pages/admin/initiative/new.${key}`)
   <StandardContent>
     <TitleBar :title="tt('New Initiative')" />
     <p>
-      TODO(#80) Initiative Copy Goes Here
+      {{ tt('Paragraph1' ) }}
     </p>
     <InitiativeEditor
       v-model:editorValues="editorValues"

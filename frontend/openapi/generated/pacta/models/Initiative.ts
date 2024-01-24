@@ -3,6 +3,10 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { InitiativeUserRelationship } from './InitiativeUserRelationship';
+import type { Language } from './Language';
+import type { PortfolioInitiativeMembershipPortfolio } from './PortfolioInitiativeMembershipPortfolio';
+
 export type Initiative = {
     /**
      * the human readable identifier for the initiative, can only include alphanumeric characters, dashes and underscores
@@ -39,29 +43,22 @@ export type Initiative = {
     /**
      * The language this initiative should be conducted in.
      */
-    language: Initiative.language;
+    language: Language;
     /**
      * The pacta model that this initiative should use, if not specified, the default pacta model will be used.
      */
     pactaVersion?: string;
     /**
+     * the list of portfolios that are members of this initiative
+     */
+    portfolioInitiativeMemberships: Array<PortfolioInitiativeMembershipPortfolio>;
+    /**
+     * the list of users that are members of this initiative
+     */
+    initiativeUserRelationships: Array<InitiativeUserRelationship>;
+    /**
      * The time at which this initiative was created.
      */
     createdAt: string;
 };
-
-export namespace Initiative {
-
-    /**
-     * The language this initiative should be conducted in.
-     */
-    export enum language {
-        EN = 'en',
-        FR = 'fr',
-        ES = 'es',
-        DE = 'de',
-    }
-
-
-}
 

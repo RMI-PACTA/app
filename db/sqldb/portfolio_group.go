@@ -108,9 +108,21 @@ func (d *DB) UpdatePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID, mutations
 	return nil
 }
 
-func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error {
-	return d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
-		err := d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_group_id = $1;`, id)
+func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) ([]pacta.BlobURI, error) {
+	buris := []pacta.BlobURI{}
+	err := d.RunOrContinueTransaction(tx, func(tx db.Tx) error {
+		analysisIDs, err := d.AnalysesRunOnPortfolioGroup(tx, id)
+		if err != nil {
+			return fmt.Errorf("reading portfolio_group analyses: %w", err)
+		}
+		for _, aID := range analysisIDs {
+			sBuris, err := d.DeleteAnalysis(tx, aID)
+			if err != nil {
+				return fmt.Errorf("deleting analysis: %w", err)
+			}
+			buris = append(buris, sBuris...)
+		}
+		err = d.exec(tx, `DELETE FROM portfolio_group_membership WHERE portfolio_group_id = $1;`, id)
 		if err != nil {
 			return fmt.Errorf("deleting portfolio_group_memberships: %w", err)
 		}
@@ -120,6 +132,10 @@ func (d *DB) DeletePortfolioGroup(tx db.Tx, id pacta.PortfolioGroupID) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, fmt.Errorf("deleting portfolio_group txn: %w", err)
+	}
+	return buris, nil
 }
 
 func rowToPortfolioGroup(row rowScanner) (*pacta.PortfolioGroup, error) {
@@ -138,17 +154,20 @@ func rowToPortfolioGroup(row rowScanner) (*pacta.PortfolioGroup, error) {
 	if err != nil {
 		return nil, fmt.Errorf("scanning into portfolio_group row: %w", err)
 	}
+	if err := checkSizesEquivalent("portfolio group membership", len(mid), len(mca)); err != nil {
+		return nil, err
+	}
 	for i := range mid {
 		if !mid[i].Valid && !mca[i].Valid {
 			continue // skip nulls
 		}
 		if !mid[i].Valid {
-			return nil, fmt.Errorf("portfolio group membership ids must be non-null")
+			return nil, fmt.Errorf("portfolio membership ids must be non-null")
 		}
 		if !mca[i].Valid {
 			return nil, fmt.Errorf("portfolio group membership createdAt must be non-null")
 		}
-		p.Members = append(p.Members, &pacta.PortfolioGroupMembership{
+		p.PortfolioGroupMemberships = append(p.PortfolioGroupMemberships, &pacta.PortfolioGroupMembership{
 			Portfolio: &pacta.Portfolio{
 				ID: pacta.PortfolioID(mid[i].String),
 			},
@@ -182,7 +201,7 @@ func (d *DB) CreatePortfolioGroupMembership(tx db.Tx, pgID pacta.PortfolioGroupI
 			(portfolio_group_id, portfolio_id)
 			VALUES
 			($1, $2)
-		ON CONFLICT (portfolio_group_id, portfolio_id) DO NOTHING;`,
+		ON CONFLICT DO NOTHING;`,
 		pgID, pID)
 	if err != nil {
 		return fmt.Errorf("creating portfolio_group_membership: %w", err)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "reportsrv",
+    srcs = ["reportsrv.go"],
+    importpath = "github.com/RMI/pacta/reportsrv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//blob",
+        "//db",
+        "//pacta",
+        "//session",
+        "@com_github_go_chi_chi_v5//:chi",
+        "@org_uber_go_zap//:zap",
+    ],
+)
+
+go_test(
+    name = "reportsrv_test",
+    srcs = ["reportsrv_test.go"],
+    embed = [":reportsrv"],
+    deps = [
+        "//blob",
+        "//db",
+        "//pacta",
+        "@com_github_go_chi_chi_v5//:chi",
+        "@org_uber_go_zap//zaptest",
+    ],
+)

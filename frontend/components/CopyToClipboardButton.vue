@@ -5,7 +5,7 @@ const { t } = useI18n()
 
 interface Props {
   value: string
-  cta: string
+  cta?: string | undefined
 }
 const props = defineProps<Props>()
 

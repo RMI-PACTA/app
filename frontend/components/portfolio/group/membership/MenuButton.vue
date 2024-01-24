@@ -2,6 +2,7 @@
 import type OverlayPanel from 'primevue/overlaypanel'
 import { useToast } from 'primevue/usetoast'
 import { type Portfolio, type PortfolioGroup } from '@/openapi/generated/pacta'
+import { selectedCountSuffix } from '@/lib/selection'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -11,6 +12,7 @@ const pactaClient = usePACTA()
 interface Props {
   portfolioGroups: PortfolioGroup[]
   selectedPortfolios: Portfolio[]
+  btnClass?: string
 }
 const props = defineProps<Props>()
 interface Emits {
@@ -21,9 +23,10 @@ const emit = defineEmits<Emits>()
 
 const prefix = 'components/portfolio/group/membership/MenuButton'
 const tt = (s: string) => t(`${prefix}.${s}`)
-const visible = useState<boolean>(`${prefix}.visible`, () => false)
+const statePrefix = `${prefix}[${useStateIDGenerator().id()}]`
+const visible = useState<boolean>(`${statePrefix}.visible`, () => false)
 
-const overlayPanel = useState<OverlayPanel>(`${prefix}.overlayPanel`)
+const overlayPanel = useState<OverlayPanel>(`${statePrefix}.overlayPanel`)
 const toggleMenu = (event: Event) => {
   presentOrFileBug(overlayPanel.value).toggle(event)
   visible.value = !visible.value
@@ -37,10 +40,20 @@ const changeMemberships = (portfolioGroupId: string, add: boolean) => {
     } else {
       await Promise.all(portfolioIds.map((portfolioId) => pactaClient.deletePortfolioGroupMembership({ portfolioId, portfolioGroupId })))
     }
+    const pg = presentOrFileBug(props.portfolioGroups.find((pg) => pg.id === portfolioGroupId))
     emit('changed-memberships')
+    let summary = ''
+    if (add) {
+      summary = portfolioIds.length > 1 ? tt('Added OK Plural') : tt('Added OK Singular')
+    } else {
+      summary = portfolioIds.length > 1 ? tt('Removed OK Plural') : tt('Removed OK Singular')
+    }
+    summary += ` "${pg.name}"`
     toast.add({
-      severity: 'success',
-      group: add ? 'portfolio-group-membership-added' : 'portfolio-group-membership-removed',
+      severity: add ? 'success' : 'warn',
+      summary,
+      life: 8000,
+      detail: `(${props.selectedPortfolios.length}) ${tt('Portfolios')}: ${props.selectedPortfolios.map((p) => p.name).join(', ')}`,
     })
   }
 }
@@ -83,17 +96,18 @@ const groupOptions = computed(() => {
   result.sort((a, b) => a.created < b.created ? 1 : -1)
   return result
 })
+const classes = computed(() => `p-button-sm ${props.btnClass ?? ''} ${visible.value ? '' : 'p-button-outlined'}`)
 </script>
 
 <template>
-  <div>
-    <PVButton
-      v-if="props.selectedPortfolios && props.selectedPortfolios.length > 0"
-      :class="visible ? '' : 'p-button-outlined'"
-      :label="tt('Group Memberships')"
-      icon="pi pi-sitemap"
-      @click="toggleMenu"
-    />
+  <PVButton
+    :disabled="!props.selectedPortfolios || props.selectedPortfolios.length === 0"
+    :class="classes"
+    :label="tt('Group Memberships') + selectedCountSuffix(props.selectedPortfolios)"
+    icon="pi pi-table"
+    @click="toggleMenu"
+  />
+  <Teleport to="#modal-group">
     <PVOverlayPanel
       ref="overlayPanel"
       :pt="{ content: { class: 'p-0' } }"
@@ -148,23 +162,10 @@ const groupOptions = computed(() => {
         />
       </div>
     </PVOverlayPanel>
-
-    <PVToast
-      position="bottom-right"
-      group="portfolio-group-membership"
-      :dismissable="true"
-    >
-      <template #message>
-        <div class="flex flex-column gap-2">
-          <div>{{ tt('Added OK') }} </div>
-        </div>
-      </template>
-    </PVToast>
-
     <PortfolioGroupNewModal
       @created="changedGroups"
     />
-  </div>
+  </Teleport>
 </template>
 
 <style scoped lang="scss">

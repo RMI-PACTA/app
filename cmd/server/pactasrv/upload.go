@@ -19,19 +19,23 @@ import (
 // Starts the process of uploading one or more portfolio files
 // (POST /portfolio-upload)
 func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPortfolioUploadRequestObject) (api.StartPortfolioUploadResponseObject, error) {
-	// TODO(#12) Implement Authorization
 	if err := checkIntLimit("number_of_uploaded_files", len(request.Body.Items), 25); err != nil {
 		return nil, err
 	}
-	ownerID, err := s.getUserOwnerID(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
-	owner := &pacta.Owner{ID: ownerID}
-	holdingsDate, err := conv.HoldingsDateFromOAPI(&request.Body.HoldingsDate)
+	owner := &pacta.Owner{ID: actorInfo.OwnerID}
+	properties := pacta.PortfolioProperties{}
+	properties.HoldingsDate, err = conv.HoldingsDateFromOAPI(request.Body.PropertyHoldingsDate)
 	if err != nil {
 		return nil, err
 	}
+	properties.ESG = conv.OptionalBoolFromOAPI(request.Body.PropertyESG)
+	properties.External = conv.OptionalBoolFromOAPI(request.Body.PropertyExternal)
+	properties.EngagementStrategy = conv.OptionalBoolFromOAPI(request.Body.PropertyEngagementStrategy)
+
 	n := len(request.Body.Items)
 	blobs := make([]*pacta.Blob, n)
 	respItems := make([]api.StartPortfolioUploadRespItem, n)
@@ -61,7 +65,7 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 	for i := range request.Body.Items {
 		id := uuid.NewString()
 		uri := blob.Join(s.Blob.Scheme(), s.PorfolioUploadURI, id)
-		signed, err := s.Blob.SignedUploadURL(ctx, uri)
+		signed, _, err := s.Blob.SignedUploadURL(ctx, uri)
 		if err != nil {
 			return nil, oapierr.Internal("failed to sign blob URI", zap.String("uri", uri), zap.Error(err))
 		}
@@ -78,15 +82,27 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 			}
 			blob.ID = blobID
 			iuid, err := s.DB.CreateIncompleteUpload(tx, &pacta.IncompleteUpload{
-				Blob:         blob,
-				Name:         blob.FileName,
-				HoldingsDate: holdingsDate,
-				Owner:        owner,
+				Blob:       blob,
+				Name:       blob.FileName,
+				Properties: properties,
+				Owner:      owner,
 			})
 			if err != nil {
 				return fmt.Errorf("creating incomplete upload %d: %w", i, err)
 			}
 			respItems[i].IncompleteUploadId = string(iuid)
+			_, err = s.DB.CreateAuditLog(tx, &pacta.AuditLog{
+				Action:             pacta.AuditLogAction_Create,
+				ActorID:            string(actorInfo.UserID),
+				ActorOwner:         owner,
+				ActorType:          pacta.AuditLogActorType_Owner,
+				PrimaryTargetType:  pacta.AuditLogTargetType_IncompleteUpload,
+				PrimaryTargetID:    string(iuid),
+				PrimaryTargetOwner: owner,
+			})
+			if err != nil {
+				return fmt.Errorf("creating audit log %d: %w", i, err)
+			}
 		}
 		return nil
 	})
@@ -100,11 +116,10 @@ func (s *Server) StartPortfolioUpload(ctx context.Context, request api.StartPort
 // Called after uploads of portfolios to cloud storage are complete.
 // (POST /portfolio-upload:complete)
 func (s *Server) CompletePortfolioUpload(ctx context.Context, request api.CompletePortfolioUploadRequestObject) (api.CompletePortfolioUploadResponseObject, error) {
-	ownerID, err := s.getUserOwnerID(ctx)
+	actorInfo, err := s.getActorInfoOrErrIfAnon(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// TODO (#12) Implement Authorization
 	ids := []pacta.IncompleteUploadID{}
 	for _, item := range request.Body.Items {
 		ids = append(ids, pacta.IncompleteUploadID(item.IncompleteUploadId))
@@ -122,11 +137,11 @@ func (s *Server) CompletePortfolioUpload(ctx context.Context, request api.Comple
 		blobIDs := []pacta.BlobID{}
 		for _, id := range ids {
 			iu := ius[id]
-			if iu == nil || iu.Owner == nil || iu.Owner.ID != ownerID {
+			if iu == nil || iu.Owner == nil || iu.Owner.ID != actorInfo.OwnerID {
 				return oapierr.NotFound(
 					fmt.Sprintf("incomplete upload %s does not belong to user", id),
 					zap.String("incomplete_upload_id", string(id)),
-					zap.String("owner_id", string(ownerID)),
+					zap.String("owner_id", string(actorInfo.OwnerID)),
 				)
 			}
 			blobIDs = append(blobIDs, iu.Blob.ID)
