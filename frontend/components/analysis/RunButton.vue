@@ -73,19 +73,21 @@ const runAnalysis = async () => {
     await startRun()
     return
   }
-  confirm({
-    header: tt('ConfirmationHeader'),
-    message: tt('ConfirmationMessage'),
-    icon: 'pi pi-copy',
-    position: 'center',
-    blockScroll: true,
-    reject: () => { clicked.value = false },
-    rejectLabel: tt('Cancel Run'),
-    rejectIcon: 'pi pi-times',
-    acceptLabel: tt('Run Anyway'),
-    accept: startRun,
-    acceptIcon: 'pi pi-check',
-  })
+  await new Promise((resolve, reject) => {
+    confirm({
+      header: tt('ConfirmationHeader'),
+      message: tt('ConfirmationMessage'),
+      icon: 'pi pi-copy',
+      position: 'center',
+      blockScroll: true,
+      reject: () => { clicked.value = false },
+      rejectLabel: tt('Cancel Run'),
+      rejectIcon: 'pi pi-times',
+      acceptLabel: tt('Run Anyway'),
+      accept: () => { startRun().then(resolve).catch(reject) },
+      acceptIcon: 'pi pi-check',
+    })
+  });
 }
 const refreshAnalysisState = async () => {
   const aid = analysisId.value
