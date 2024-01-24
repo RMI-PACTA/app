@@ -7,8 +7,8 @@
     "build:dev": "NITRO_PRESET=azure nuxi build --dotenv=envs/env.dev",
     "deploy:dev": "npm run build:dev && swa deploy pacta-frontend-dev --no-use-keychain --app-name pacta-frontend-dev --resource-group rmi-pacta-dev --env Production",
     "typecheck": "nuxi typecheck",
-    "lint": "eslint --cache --ext .js,.vue,.ts ./; stylelint --cache '**/*.{vue,css,scss}' ;",
-    "lint:fix": "eslint --fix --ext .js,.vue,.ts ./; stylelint '**/*.{vue,css,scss}' --fix",
+    "lint": "eslint --cache --ext .js,.vue,.ts ./ && stylelint --cache '**/*.{vue,css,scss}'",
+    "lint:fix": "eslint --fix --ext .js,.vue,.ts ./ && stylelint '**/*.{vue,css,scss}' --fix",
     "generate:openapi:pacta": "openapi --input ../openapi/pacta.yaml --output ./openapi/generated/pacta/ --name PACTAClient",
     "generate:openapi:user": "openapi --input ../openapi/user.yaml --output ./openapi/generated/user/ --name UserClient",
     "generate:openapi": "npm run generate:openapi:pacta && npm run generate:openapi:user"
