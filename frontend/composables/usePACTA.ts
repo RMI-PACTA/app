@@ -4,6 +4,8 @@ import { BaseHttpRequest } from '~/openapi/generated/pacta/core/BaseHttpRequest'
 import { CancelablePromise } from '~/openapi/generated/pacta/core/CancelablePromise'
 import type { OpenAPIConfig } from '~/openapi/generated/pacta/core/OpenAPI'
 import { request as __request } from '~/openapi/generated/pacta/core/request'
+import { serializeError } from 'serialize-error'
+import { createErrorWithRemediation, isSilent, Remediation } from '@/lib/error'
 
 export const usePACTA = () => {
   const {
@@ -11,6 +13,8 @@ export const usePACTA = () => {
     pactaClientWithAuth, // On the server, forward the cookie we got from the client
     pactaClientWithHttpRequestClass, // On the client, wrap with a check for a fresh cookie.
   } = useAPI()
+
+  const { loading: { clearLoading }, error: { errorModalVisible, error } } = useModal()
 
   if (process.server) {
     const jwt = useCookie('jwt')
@@ -54,7 +58,21 @@ export const usePACTA = () => {
             return cancelablePromise
           })
           .then(resolve)
-          .catch(reject)
+          .catch((e: unknown) => {
+            // We know we're at the "bottom" of the call chain here in usePACTA
+            // and so nothing will be sending a silent error, but we don't know
+            // how the code will change in the future, so we check just to be
+            // safe, lest we accidentally overlay multiple error modals with
+            // less useful information.
+            if (!isSilent(e)) {
+              error.value = serializeError(e)
+              errorModalVisible.value = true
+              clearLoading()
+            }
+
+            const err = createErrorWithRemediation(`${options.method} ${options.url} failed`, Remediation.Silent)
+            reject(err)
+          })
       })
     }
   }

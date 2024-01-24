@@ -1,6 +1,6 @@
 import { type Ref } from 'vue'
-import { type ErrorObject } from 'serialize-error'
-import { serializeError } from 'serialize-error'
+import { type ErrorObject, serializeError } from 'serialize-error'
+import { createErrorWithRemediation, isSilent, Remediation } from '@/lib/error'
 
 export const useModal = () => {
   const prefix = 'useModal'
@@ -44,11 +44,21 @@ export const useModal = () => {
     return () => loadingSet.value.delete(loadKey)
   }
   const clearLoading = () => { loadingSet.value.clear() }
-  const withLoading = async <T> (fn: () => Promise<T>, opKey: string): (Promise<T>) => {
+  const withLoading = <T> (fn: () => Promise<T>, opKey: string): Promise<T> => {
     startLoading(opKey)
-    const p = fn()
-    void p.finally(stopLoading(opKey))
-    return await p
+    return fn()
+      .catch((e: unknown) => {
+        if (!isSilent(e)) {
+          error.value = serializeError(e)
+          errorModalVisible.value = true
+          clearLoading()
+        }
+
+        throw createErrorWithRemediation(`withLoading: ${opKey}`, Remediation.Silent)
+      })
+      .finally(() => {
+        stopLoading(opKey)
+      })
   }
   const onMountedWithLoading = (fn: () => void, opKey: string) => {
     startLoading(opKey)

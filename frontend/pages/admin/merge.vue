@@ -12,7 +12,6 @@ const fromUserId = useState<string>(`${prefix}.fromUserId`, () => '')
 const toUserId = useState<string>(`${prefix}.toUserId`, () => '')
 const done = useState<boolean>(`${prefix}.done`, () => false)
 
-// TODO(#168) An example of the error here.
 const doMerge = (): void => {
   void withLoading(() => pactaClient.mergeUsers({
     fromUserId: fromUserId.value,
