@@ -69,10 +69,10 @@ func InitiativeToOAPI(i *pacta.Initiative) (*api.Initiative, error) {
 
 func portfolioInitiativeMembershipToOAPIPortfolio(in *pacta.PortfolioInitiativeMembership) (api.PortfolioInitiativeMembershipPortfolio, error) {
 	var zero api.PortfolioInitiativeMembershipPortfolio
-	out := &api.PortfolioInitiativeMembershipPortfolio{
+	out := api.PortfolioInitiativeMembershipPortfolio{
 		CreatedAt: in.CreatedAt,
 	}
-	if in.AddedBy != nil && in.AddedBy.ID == "" {
+	if in.AddedBy != nil && in.AddedBy.ID != "" {
 		out.AddedByUserId = strPtr(in.AddedBy.ID)
 	}
 	p, err := PortfolioToOAPI(in.Portfolio)
@@ -80,7 +80,7 @@ func portfolioInitiativeMembershipToOAPIPortfolio(in *pacta.PortfolioInitiativeM
 		return zero, oapierr.Internal("portfolioInitiativeMembershipToOAPI: portfolioToOAPI failed", zap.Error(err))
 	}
 	out.Portfolio = *p
-	return zero, nil
+	return out, nil
 }
 
 func portfolioInitiativeMembershipToOAPIInitiative(in *pacta.PortfolioInitiativeMembership) (api.PortfolioInitiativeMembershipInitiative, error) {
@@ -253,6 +253,14 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 			PortfolioGroup: *pg,
 		})
 	}
+	var blob *api.Blob
+	if p.Blob != nil {
+		b, err := BlobToOAPI(p.Blob)
+		if err != nil {
+			return nil, oapierr.Internal("portfolioToOAPI: blobToOAPI failed", zap.Error(err))
+		}
+		blob = b
+	}
 	pims, err := convAll(p.PortfolioInitiativeMemberships, portfolioInitiativeMembershipToOAPIInitiative)
 	if err != nil {
 		return nil, oapierr.Internal("portfolioToOAPI: portfolioInitiativeMembershipToOAPIInitiative failed", zap.Error(err))
@@ -264,6 +272,7 @@ func PortfolioToOAPI(p *pacta.Portfolio) (*api.Portfolio, error) {
 	return &api.Portfolio{
 		Id:                         string(p.ID),
 		Name:                       p.Name,
+		Blob:                       blob,
 		Description:                p.Description,
 		CreatedAt:                  p.CreatedAt,
 		NumberOfRows:               p.NumberOfRows,

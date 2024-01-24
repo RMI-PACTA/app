@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Blob } from './Blob';
 import type { HoldingsDate } from './HoldingsDate';
 import type { OptionalBoolean } from './OptionalBoolean';
 import type { PortfolioGroupMembershipPortfolioGroup } from './PortfolioGroupMembershipPortfolioGroup';
@@ -25,6 +26,10 @@ export type Portfolio = {
      * The time at which this portfolio was successfully parsed from a raw
      */
     createdAt: string;
+    /**
+     * Information about the logical portfolio file itself
+     */
+    blob?: Blob;
     /**
      * Whether the admin debug mode is enabled for this portfolio
      */
