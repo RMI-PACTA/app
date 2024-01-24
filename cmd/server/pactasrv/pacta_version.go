@@ -53,7 +53,7 @@ func (s *Server) ListPactaVersions(ctx context.Context, request api.ListPactaVer
 func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePactaVersionRequestObject) (api.CreatePactaVersionResponseObject, error) {
 	if err := anyError(
 		checkStringLimitSmall("name", request.Body.Name),
-		checkStringLimitMedium("digest", request.Body.Digest),
+		checkStringLimitSmall("digest", request.Body.Digest),
 		checkStringLimitMedium("description", request.Body.Description),
 	); err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (s *Server) CreatePactaVersion(ctx context.Context, request api.CreatePacta
 func (s *Server) UpdatePactaVersion(ctx context.Context, request api.UpdatePactaVersionRequestObject) (api.UpdatePactaVersionResponseObject, error) {
 	if err := anyError(
 		checkStringLimitSmallPtr("name", request.Body.Name),
-		checkStringLimitMediumPtr("digest", request.Body.Digest),
+		checkStringLimitSmallPtr("digest", request.Body.Digest),
 		checkStringLimitMediumPtr("description", request.Body.Description),
 	); err != nil {
 		return nil, err
