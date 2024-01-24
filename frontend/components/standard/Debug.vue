@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { showStandardDebug } = useLocalStorage()
+const { showStandardDebug, showDevTools } = useLocalStorage()
 const { t } = useI18n()
 
 const prefix = 'components/standard/Debug'
@@ -8,7 +8,6 @@ const tt = (s: string) => t(`${prefix}.${s}`)
 interface Props {
   label?: string
   always?: boolean
-  noAccordion?: boolean
   value: unknown
 }
 const props = withDefaults(defineProps<Props>(), { always: false, label: undefined })
@@ -27,12 +26,12 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
     return value
   }
 }
-
+const showIfDebug = computed(() => showStandardDebug.value && showDevTools.value)
 </script>
 
 <template>
   <PVAccordion
-    v-if="(showStandardDebug || props.always) && !props.noAccordion"
+    v-if="showIfDebug || props.always"
     class="standard-debug"
   >
     <PVAccordionTab

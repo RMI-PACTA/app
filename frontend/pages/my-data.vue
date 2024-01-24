@@ -14,6 +14,7 @@ import {
 
 const prefix = 'pages/my-data'
 
+const localePath = useLocalePath()
 const { fromQueryReactiveWithDefault } = useURLParams()
 const { t } = useI18n()
 const pactaClient = usePACTA()
@@ -133,11 +134,20 @@ const activeIndex = computed<number>({
 </script>
 
 <template>
-  <StandardContent class="portfolios-page">
+  <StandardContent class="my-data">
     <TitleBar :title="tt('My Data')" />
-    <p>
-      TODO(#80) Add Copy Here
-    </p>
+    <div class="flex flex-column align-items-start gap-1">
+      <p>
+        {{ tt('Paragraph1') }}
+      </p>
+      <LinkButton
+        :to="localePath('/upload')"
+        icon="pi pi-arrow-right"
+        icon-pos="right"
+        class="p-button-secondary p-button-outlined p-button-xs"
+        :label="tt('Upload More Portfolios')"
+      />
+    </div>
     <PVTabView
       v-model:activeIndex="activeIndex"
       scrollable
@@ -220,11 +230,17 @@ const activeIndex = computed<number>({
 </template>
 
 <style lang="scss">
-.portfolios-page {
-  .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-    border: 2px solid;
-    padding-top: calc(1rem - 1px);
-    padding-bottom: calc(1rem - 1px);
+.my-data {
+  .p-tabview .p-tabview-nav {
+    .p-tabview-nav-link {
+      height: calc(100% + 2px);
+    }
+
+    li.p-highlight .p-tabview-nav-link {
+      border: 2px solid;
+      padding-top: calc(1rem - 1px);
+      padding-bottom: calc(1rem - 1px);
+    }
   }
 
   .p-datatable.p-datatable-sm {

@@ -441,14 +441,6 @@ const auditLogURL = (id: string) => {
         to="/upload"
         :label="tt('Upload New Portfolios')"
       />
-      <!-- TODO(grady) Hook this up to something. -->
-      <PVButton
-        v-if="props.portfolios.length > 0"
-        class="p-button-outlined"
-        :label="tt('How To Run a Report')"
-        icon="pi pi-question-circle"
-        icon-pos="right"
-      />
     </div>
     <StandardDebug
       :value="selectedPortfolios"

@@ -154,7 +154,7 @@ const href = computed(() => {
 
 <template>
   <NuxtLink
-    v-slot="{ navigate }"
+    v-slot="{ navigate, navigateExternal }"
     :target="target"
     :to="to"
     :aria-disabled="disabled"
@@ -171,7 +171,7 @@ const href = computed(() => {
       type="button"
       :aria-label="defaultAriaLabel"
       :aria-disabled="disabled"
-      @click="navigate"
+      @click="props.external ? navigate : navigateExternal"
     >
       <span
         v-if="props.loading && !props.icon"

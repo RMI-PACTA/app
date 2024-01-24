@@ -59,7 +59,7 @@ const saveChanges = (id: string) => {
 <template>
   <div class="flex flex-column gap-3">
     <p>
-      TODO(#80) Write some copy about what Incomplete Uploads are, and direct users toward deleting them.
+      {{ tt('Paragraph1') }}
     </p>
     <div class="flex gap-2 flex-wrap">
       <PVButton
@@ -112,16 +112,10 @@ const saveChanges = (id: string) => {
           <h2 class="mt-0">
             Metadata
           </h2>
-          <div class="flex flex-column gap-2 w-fit">
-            <div class="flex gap-2 justify-content-between">
-              <span>Created At</span>
-              <b>{{ humanReadableTimeFromStandardString(slotProps.data.currentValue.value.createdAt).value }}</b>
-            </div>
-          </div>
-          <!-- TODO(grady) add failure information here. -->
           <StandardDebug
-            :value="slotProps.data.editorValues.value"
-            label="Editor Values"
+            :value="slotProps.data.currentValue.value"
+            :label="tt('Metadata')"
+            always
           />
           <h2 class="mt-5">
             Editable Properties

@@ -300,6 +300,9 @@ const cleanUpIncompleteUploads = async () => {
     <p>
       {{ tt('Paragraph2') }}
     </p>
+    <p>
+      {{ tt('Paragraph3') }}
+    </p>
     <div class="flex gap-1">
       <LinkButton
         :to="localePath('/input-guide')"
@@ -318,117 +321,109 @@ const cleanUpIncompleteUploads = async () => {
         :label="tt('Sample CSV')"
       />
     </div>
-    <FormField
-      label="Portfolio Files"
-      class="w-full mb-0"
-      help-text="This should include a link to documentation etc."
+    <PVDataTable
+      :value="fileStatesWithDetail"
+      class="w-full border-1 border-500 border-round my-3"
+      data-key="key"
     >
-      <PVFileUpload
-        v-show="fileStatesWithDetail.length === 0"
-        v-bind="fileUploaderProps"
-        @uploader="onSelect"
-      />
-      <PVDataTable
-        v-show="fileStatesWithDetail.length > 0"
-        :value="fileStatesWithDetail"
-        class="w-full"
-        data-key="key"
-      >
-        <PVColumn>
-          <template #header>
-            <PVFileUpload
-              v-bind="fileUploaderProps"
-              @uploader="onSelect"
-            />
-          </template>
-          <template #body="slotProps">
-            <div class="flex gap-2 flex-wrap justify-content-between align-items-center">
-              <div class="flex flex-column gap-2">
-                <div class="font-bold">
-                  {{ slotProps.data.shortName }}
-                </div>
-                <div class="flex gap-2 align-items-center">
-                  <div>({{ slotProps.data.sizeStr }})</div>
-                  <PVButton
-                    class="p-button-danger p-button-text px-1 py-0 w-auto"
-                    icon="pi pi-trash"
-                    :disabled="isProcessing || allDone"
-                    @click="() => removeFile(slotProps.data.index)"
-                  />
-                </div>
+      <template #empty>
+        {{ tt('No Files Selected') }}
+      </template>
+      <PVColumn>
+        <template #header>
+          <PVFileUpload
+            v-bind="fileUploaderProps"
+            @uploader="onSelect"
+          />
+        </template>
+        <template #body="slotProps">
+          <div class="flex gap-2 flex-wrap justify-content-between align-items-center">
+            <div class="flex flex-column gap-2">
+              <div class="font-bold">
+                {{ slotProps.data.shortName }}
               </div>
-              <PVMessage
-                v-if="slotProps.data.effectiveError"
-                severity="warn"
-                :closable="false"
-              >
-                {{ slotProps.data.effectiveError }}
-              </PVMessage>
               <div class="flex gap-2 align-items-center">
-                <div><i :class="slotProps.data.icon" /></div>
-                <div>{{ slotProps.data.status }}</div>
+                <div>({{ slotProps.data.sizeStr }})</div>
+                <PVButton
+                  class="p-button-danger p-button-text px-1 py-0 w-auto"
+                  icon="pi pi-trash"
+                  :disabled="isProcessing || allDone"
+                  @click="() => removeFile(slotProps.data.index)"
+                />
               </div>
             </div>
-          </template>
-        </PVColumn>
-      </PVDataTable>
-      <StandardDebug
-        :value="fileStatesWithDetail"
-        label="File States"
-      />
-    </FormField>
-    <PVAccordion>
-      <PVAccordionTab
-        :header="tt('Optional Portfolio Properties')"
-        :pt="{
-          content: {
-            class: 'pb-0 md:px-4',
-          },
-        }"
+            <PVMessage
+              v-if="slotProps.data.effectiveError"
+              severity="warn"
+              :closable="false"
+            >
+              {{ slotProps.data.effectiveError }}
+            </PVMessage>
+            <div class="flex gap-2 align-items-center">
+              <div><i :class="slotProps.data.icon" /></div>
+              <div>{{ slotProps.data.status }}</div>
+            </div>
+          </div>
+        </template>
+      </PVColumn>
+      <template
+        v-if="fileStatesWithDetail.length > 0"
+        #footer
       >
-        <div class="flex flex-column">
-          <PVMessage v-if="allDone">
-            {{ tt('No Edit Properties') }}
-          </PVMessage>
-          <FormField
-            label="Holdings Date"
-            help-text="The holdings date for the portfolio"
+        <PVAccordion>
+          <PVAccordionTab
+            :header="tt('Optional Portfolio Properties')"
+            :pt="{
+              headerAction: 'surface-200',
+              content:'pb-0 md:px-3 surface-100',
+            }"
           >
-            <InputsHoldingsDate
-              v-model:value="holdingsDate"
-              :disabled="isProcessing"
-            />
-          </FormField>
-          <FormField
-            label="ESG"
-            help-text="The ESG rating for the portfolios that will be uploaded"
-          >
-            <InputsEsg
-              v-model:value="esg"
-              :disabled="isProcessing || allDone"
-            />
-          </FormField>
-          <FormField
-            label="External"
-            help-text="The external rating for the portfolios that will be uploaded"
-          >
-            <InputsExternal
-              v-model:value="external"
-              :disabled="isProcessing || allDone"
-            />
-          </FormField>
-          <FormField
-            label="Engagement Strategy"
-            help-text="The engagement strategy for the portfolios that will be uploaded"
-          >
-            <InputsEngagementStrategy
-              v-model:value="engagementStrategy"
-              :disabled="isProcessing || allDone"
-            />
-          </FormField>
-        </div>
-      </PVAccordionTab>
-    </PVAccordion>
+            <div class="flex flex-column">
+              <PVMessage v-if="allDone">
+                {{ tt('No Edit Properties') }}
+              </PVMessage>
+              <FormField
+                label="Holdings Date"
+                help-text="The holdings date for the portfolio"
+              >
+                <InputsHoldingsDate
+                  v-model:value="holdingsDate"
+                  :disabled="isProcessing"
+                />
+              </FormField>
+              <FormField
+                label="ESG"
+                help-text="The ESG rating for the portfolios that will be uploaded"
+              >
+                <InputsEsg
+                  v-model:value="esg"
+                  :disabled="isProcessing || allDone"
+                />
+              </FormField>
+              <FormField
+                label="External"
+                help-text="The external rating for the portfolios that will be uploaded"
+              >
+                <InputsExternal
+                  v-model:value="external"
+                  :disabled="isProcessing || allDone"
+                />
+              </FormField>
+              <FormField
+                label="Engagement Strategy"
+                help-text="The engagement strategy for the portfolios that will be uploaded"
+              >
+                <InputsEngagementStrategy
+                  v-model:value="engagementStrategy"
+                  :disabled="isProcessing || allDone"
+                />
+              </FormField>
+            </div>
+          </PVAccordionTab>
+        </PVAccordion>
+      </template>
+    </PVDataTable>
+
     <PVMessage
       v-show="!!errorCode"
       severity="error"
@@ -474,5 +469,9 @@ const cleanUpIncompleteUploads = async () => {
         />
       </div>
     </template>
-  </standardcontent>
+    <StandardDebug
+      :value="fileStatesWithDetail"
+      label="File States"
+    />
+  </StandardContent>
 </template>
