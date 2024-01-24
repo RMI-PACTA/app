@@ -65,20 +65,18 @@ function createCircularReplacer (): (this: any, key: string, value: any) => any 
     width: fit-content;
     display: inline-block;
 
-    .p-accordion-header .p-accordion-header-link {
-      gap: 1rem;
-      padding: 0.5rem 0.75rem;
-    }
-  }
-  // Because accordions within accordions have poor styling, we hardcode these properties
-  .standard-debug.p-accordion {
     .p-accordion-header-text {
       font-size: .9rem;
     }
+
+    // Because accordions within accordions have poor styling, we hardcode these properties
     .p-accordion-header .p-accordion-header-link {
-      border: 1px solid #a7a9ac !important; 
+      border: 1px solid #a7a9ac !important;
       border-radius: 2px !important;
+      gap: 1rem;
+      padding: 0.5rem 0.75rem;
     }
+
     .p-accordion-header.p-highlight .p-accordion-header-link {
       border-radius: 2px 2px 0 0 !important;
     }
