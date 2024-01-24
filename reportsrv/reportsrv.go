@@ -192,6 +192,7 @@ func (s *Server) doAuthzAndAuditLog(a *pacta.Analysis, aa *pacta.AnalysisArtifac
 	actorID, _ := session.UserIDFromContext(ctx)
 	if actorID == "" {
 		actorID = unauthenticatedUserID
+		actorOwner = &pacta.Owner{ID: unauthenticatedUserID}
 	} else {
 		ownerID, err := s.db.GetOwnerForUser(s.db.NoTxn(ctx), actorID)
 		if err != nil {
