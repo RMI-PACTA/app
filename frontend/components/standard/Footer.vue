@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { showStandardDebug } = useLocalStorage()
+const { showStandardDebug, showDevTools } = useLocalStorage()
 const { fakeUsers: { fakeUsersVisible }, missingTranslations: { missingTranslationsVisible } } = useModal()
 const { t } = useI18n()
 const localePath = useLocalePath()
@@ -17,7 +17,10 @@ const tt = (s: string) => t(`${prefix}.${s}`)
       >Rocky Mountain Institute</a></span>
       <span class="text-600">© 2023 RMI</span>
     </div>
-    <div class="flex flex-column align-items-center">
+    <div
+      v-if="showDevTools"
+      class="flex flex-column align-items-center"
+    >
       <div class="flex gap-1">
         <PVButton
           v-tooltip.top="tt('Manage Fake Users')"

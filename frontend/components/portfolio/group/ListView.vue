@@ -236,14 +236,6 @@ const editorObjectToIds = (editorObject: EditorObject): string[] => {
         :label="tt('New Portfolio Group')"
         @click="() => newPortfolioGroupVisible = true"
       />
-      <!-- TODO(grady) Hook this up to something. -->
-      <PVButton
-        v-if="portfolioGroups.length > 0"
-        class="p-button-outlined"
-        :label="tt('How To Run a Report')"
-        icon="pi pi-question-circle"
-        icon-pos="right"
-      />
     </div>
   </div>
 </template>

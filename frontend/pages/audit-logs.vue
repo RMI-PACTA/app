@@ -446,6 +446,24 @@ const toggleColumnControl = (e: Event) => {
   }
 }
 
+const doExport = () => withLoading(
+  async () => {
+    const results: AuditLog[] = []
+    cursor.value = undefined
+    do {
+      await refreshAuditLogs()
+      results.push(...dataResponse.value.auditLogs)
+    } while (hasNextPage.value)
+
+    const a = document.createElement('a')
+    const file = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' })
+    a.href = URL.createObjectURL(file)
+    a.download = 'audit-logs.json'
+    a.click()
+    a.remove()
+  }
+  , 'audit-logs.export')
+
 const defaultAuditLogQuery = (): AuditLogQueryReq => {
   const mm = maybeMe.value
   return {
@@ -502,14 +520,20 @@ onMounted(() => {
       <PVButton
         icon="pi pi-cog"
         :label="tt('Columns')"
-        class="p-button-outlined"
+        class="p-button-outlined p-button-sm"
         @click="toggleColumnControl"
       />
       <PVButton
         icon="pi pi-refresh"
         :label="tt('Reset')"
-        class="p-button-outlined p-button-secondary"
+        class="p-button-outlined p-button-secondary p-button-sm"
         @click="resetFilters"
+      />
+      <PVButton
+        icon="pi pi-download"
+        :label="tt('Export')"
+        class="p-button-secondary p-button-sm"
+        @click="doExport"
       />
     </div>
     <PVOverlayPanel

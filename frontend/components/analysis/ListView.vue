@@ -264,15 +264,6 @@ const deleteSpecificAnalysis = async (id: string) => {
         </div>
       </template>
     </PVDataTable>
-    <div class="flex flex-wrap gap-3 w-full justify-content-between">
-      <!-- TODO(grady) Hook this up to something. -->
-      <PVButton
-        class="p-button-outlined"
-        :label="tt('How To Run a Report')"
-        icon="pi pi-question-circle"
-        icon-pos="right"
-      />
-    </div>
     <StandardDebug
       :value="selectedAnalyses"
       label="Selected Analyses"
