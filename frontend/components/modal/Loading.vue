@@ -45,11 +45,11 @@ watch(() => loading.value, refreshZIndex)
         playsinline
       >
         <source
-          src="@/assets/img/logo_loading_animation_v1.webm"
+          src="/img/logo_loading_animation_v1.webm"
           type="video/webm"
         >
         <source
-          src="@/assets/img/logo_loading_animation_v1.mp4"
+          src="/img/logo_loading_animation_v1.mp4"
           type="video/mp4"
         >
       </video>
