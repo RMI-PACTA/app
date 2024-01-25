@@ -5,6 +5,7 @@ export enum Remediation {
   Reload = 'reload',
   FileBug = 'file-bug',
   CheckUrl = 'check-url',
+  Silent = 'silent',
 }
 
 interface RemediationData {
@@ -16,6 +17,30 @@ type PACTAErrorData = RemediationData
 
 interface PACTAError extends NuxtError {
   data: PACTAErrorData
+}
+
+export const isSilent = (err: any): boolean => {
+  if (!('data' in err)) {
+    return false
+  }
+
+  if (typeof (err.data) !== 'object' || err.data === null) {
+    return false
+  }
+
+  if (!('type' in err.data) || typeof (err.data.type) !== 'string') {
+    return false
+  }
+
+  if (err.data.type !== 'remediation') {
+    return false
+  }
+
+  if (!('remediation' in err.data) || typeof (err.data.remediation) !== 'string') {
+    return false
+  }
+
+  return err.data.remediation === Remediation.Silent
 }
 
 export const createErrorWithRemediation = (err: string | Partial<NuxtError>, r: Remediation): PACTAError => {
