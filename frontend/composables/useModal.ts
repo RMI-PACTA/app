@@ -41,7 +41,7 @@ export const useModal = () => {
     loadingSet.value.add(loadKey)
   }
   const stopLoading = (loadKey: string) => {
-    return () => loadingSet.value.delete(loadKey)
+    loadingSet.value.delete(loadKey)
   }
   const clearLoading = () => { loadingSet.value.clear() }
   const withLoading = <T> (fn: () => Promise<T>, opKey: string): Promise<T> => {
@@ -64,7 +64,7 @@ export const useModal = () => {
     startLoading(opKey)
     onMounted(() => {
       fn()
-      stopLoading(opKey)()
+      stopLoading(opKey)
     })
   }
 
@@ -97,7 +97,6 @@ export const useModal = () => {
       withLoading,
       onMountedWithLoading,
       startLoading,
-      stopLoading,
       clearLoading,
       loading,
       loadingSet,
