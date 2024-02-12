@@ -52,3 +52,8 @@ sh_binary(
     name = "build_and_load_runner",
     srcs = ["build_and_load_runner.sh"],
 )
+
+sh_binary(
+    name = "build_and_load_parser",
+    srcs = ["build_and_load_parser.sh"],
+)

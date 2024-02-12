@@ -12,9 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/RMI/pacta/azure/azblob"
+	"github.com/RMI/pacta/azure/azcreds"
 	"github.com/RMI/pacta/azure/azevents"
 	"github.com/RMI/pacta/azure/aztask"
 	"github.com/RMI/pacta/cmd/runner/taskrunner"
@@ -35,6 +34,7 @@ import (
 	"github.com/namsral/flag"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
+	"go.uber.org/zap/exp/zapfield"
 
 	oapimiddleware "github.com/deepmap/oapi-codegen/pkg/chi-middleware"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -193,22 +193,11 @@ func run(args []string) error {
 	// that server names match. We don't know how this thing will be run.
 	pactaSwagger.Servers = nil
 
-	var creds azcore.TokenCredential
-	// This is necessary because the default timeout is too low in
-	// azidentity.NewDefaultAzureCredentials, so it times out and fails to run.
-	if azClientID := os.Getenv("AZURE_CLIENT_ID"); azClientID != "" {
-		logger.Info("Loading user managed credentials", zap.String("client_id", azClientID))
-		if creds, err = azidentity.NewManagedIdentityCredential(&azidentity.ManagedIdentityCredentialOptions{
-			ID: azidentity.ClientID(azClientID),
-		}); err != nil {
-			return fmt.Errorf("failed to load Azure credentials: %w", err)
-		}
-	} else {
-		logger.Info("Loading default credentials")
-		if creds, err = azidentity.NewDefaultAzureCredential(nil); err != nil {
-			return fmt.Errorf("failed to load Azure credentials: %w", err)
-		}
+	creds, credType, err := azcreds.New()
+	if err != nil {
+		return fmt.Errorf("failed to load Azure credentials: %w", err)
 	}
+	logger.Info("authenticated with Azure", zapfield.Str("credential_type", credType))
 
 	var runner taskrunner.Runner
 	if *useAZRunner {

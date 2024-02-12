@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "azcreds",
+    srcs = ["azcreds.go"],
+    importpath = "github.com/RMI/pacta/azure/azcreds",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
+        "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
+    ],
+)

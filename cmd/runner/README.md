@@ -1,6 +1,6 @@
 # Runner
 
-This directory contains the `runner` binary, which acts as a thin shim around the PACTA portfolio analysis tooling, running tasks created via either Azure Container App Jobs (via the `aztask` package) or local Docker (`localRunner`), loading relevant blobs, and writing relevant outputs.
+This directory contains the `runner` binary, which acts as a thin shim around the PACTA portfolio analysis tooling, running tasks created via either Azure Container App Jobs (via the `aztask` package) or local Docker (`dockertask`), loading relevant blobs, and writing relevant outputs.
 
 ## Running locally
 

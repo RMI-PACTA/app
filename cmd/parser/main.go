@@ -1,3 +1,5 @@
+// Command parser is our shim for parsing + validating incoming PACTA porfolios,
+// wrapping https://github.com/RMI-PACTA/workflow.portfolio.parsing
 package main
 
 import (
@@ -7,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventgrid/publisher"
 	"github.com/RMI/pacta/async"
 	"github.com/RMI/pacta/azure/azblob"
@@ -40,8 +43,8 @@ func run(args []string) error {
 		azEventTopic    = fs.String("azure_event_topic", "", "The EventGrid topic to send notifications when tasks have finished")
 		azTopicLocation = fs.String("azure_topic_location", "", "The location (like 'centralus-1') where our EventGrid topics are hosted")
 
-		azStorageAccount  = fs.String("azure_storage_account", "", "The storage account to authenticate against for blob operations")
-		azReportContainer = fs.String("azure_report_container", "", "The container in the storage account where we write generated portfolio reports to")
+		azStorageAccount         = fs.String("azure_storage_account", "", "The storage account to authenticate against for blob operations")
+		azDestPortfolioContainer = fs.String("azure_dest_portfolio_container", "", "The container in the storage account where we write parsed portfolios")
 
 		minLogLevel zapcore.Level = zapcore.DebugLevel
 	)
@@ -69,6 +72,23 @@ func run(args []string) error {
 	}
 	logger.Info("authenticated with Azure", zapfield.Str("credential_type", credType))
 
+	if azClientSecret := os.Getenv("AZURE_CLIENT_SECRET"); azClientSecret != "" {
+		if creds, err = azidentity.NewEnvironmentCredential(nil); err != nil {
+			return fmt.Errorf("failed to load Azure credentials from environment: %w", err)
+		}
+	} else {
+		// We use "ManagedIdentity" instead of just "Default" because the default
+		// timeout is too low in azidentity.NewDefaultAzureCredentials, so it times out
+		// and fails to run.
+		azClientID := os.Getenv("AZURE_CLIENT_ID")
+		logger.Info("Loading user managed credentials", zap.String("client_id", azClientID))
+		if creds, err = azidentity.NewManagedIdentityCredential(&azidentity.ManagedIdentityCredentialOptions{
+			ID: azidentity.ClientID(azClientID),
+		}); err != nil {
+			return fmt.Errorf("failed to load Azure credentials: %w", err)
+		}
+	}
+
 	pubsubClient, err := publisher.NewClient(fmt.Sprintf("https://%s.%s.eventgrid.azure.net/api/events", *azEventTopic, *azTopicLocation), creds, nil)
 	if err != nil {
 		return fmt.Errorf("failed to init pub/sub client: %w", err)
@@ -88,45 +108,23 @@ func run(args []string) error {
 		return fmt.Errorf("failed to init async biz logic handler: %w", err)
 	}
 
-	validTasks := map[task.Type]func(context.Context, task.ID) error{
-		task.CreateReport: toRunFn(async.CreateReportReq, func(ctx context.Context, id task.ID, req *task.CreateReportRequest) error {
-			return h.CreateReport(ctx, id, req, *azReportContainer)
-		}),
-		task.CreateAudit: toRunFn(async.CreateAuditReq, h.CreateAudit),
-	}
-
 	taskID := task.ID(os.Getenv("TASK_ID"))
 	if taskID == "" {
 		return errors.New("no TASK_ID given")
 	}
 
-	taskType := task.Type(os.Getenv("TASK_TYPE"))
-	if taskType == "" {
-		return errors.New("no TASK_TYPE given")
+	req, err := async.ParsePortfolioReq()
+	if err != nil {
+		return fmt.Errorf("failed to parse portfolio request: %w", err)
 	}
 
-	taskFn, ok := validTasks[taskType]
-	if !ok {
-		return fmt.Errorf("unknown task type %q", taskType)
-	}
+	logger.Info("running PACTA parsing task", zap.String("task_id", string(taskID)))
 
-	logger.Info("running PACTA task", zap.String("task_id", string(taskID)), zap.String("task_type", string(taskType)))
-
-	if err := taskFn(ctx, taskID); err != nil {
+	if err := h.ParsePortfolio(ctx, taskID, req, *azDestPortfolioContainer); err != nil {
 		return fmt.Errorf("error running task: %w", err)
 	}
 
-	logger.Info("ran PACTA task successfully", zap.String("task_id", string(taskID)), zap.String("task_type", string(taskType)))
+	logger.Info("ran PACTA parsing task successfully", zap.String("task_id", string(taskID)))
 
 	return nil
-}
-
-func toRunFn[T any](reqFn func() (T, error), runFn func(context.Context, task.ID, T) error) func(context.Context, task.ID) error {
-	return func(ctx context.Context, taskID task.ID) error {
-		req, err := reqFn()
-		if err != nil {
-			return fmt.Errorf("failed to format request: %w", err)
-		}
-		return runFn(ctx, taskID, req)
-	}
 }
