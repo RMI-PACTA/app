@@ -1,6 +1,9 @@
 // Package taskrunner implements the logic for preparing a portfolio for
 // analysis, regardless of the underlying substrate we'll run the external
 // processing logic on (e.g Docker or locally).
+//
+// TODO: We use the tag "latest" throughout. For most cases, we'll want to
+// version this and take in the image tag as part of the request.
 package taskrunner
 
 import (
@@ -20,8 +23,10 @@ type Config struct {
 	// like: /configs/{local,dev}.conf
 	ConfigPath string
 
-	// BaseImage is the runner image to execute, not specifying a tag.
-	BaseImage *task.BaseImage
+	// RunnerImage is the runner image to execute, not specifying a tag.
+	RunnerImage *task.BaseImage
+	// RunnerImage is the parser image to execute, not specifying a tag.
+	ParserImage *task.BaseImage
 
 	Logger *zap.Logger
 
@@ -33,8 +38,12 @@ func (c *Config) validate() error {
 		return errors.New("no runner config path given")
 	}
 
-	if err := validateImage(c.BaseImage); err != nil {
-		return fmt.Errorf("invalid base image: %w", err)
+	if err := validateImage(c.RunnerImage); err != nil {
+		return fmt.Errorf("invalid runner image: %w", err)
+	}
+
+	if err := validateImage(c.ParserImage); err != nil {
+		return fmt.Errorf("invalid parser image: %w", err)
 	}
 
 	if c.Logger == nil {
@@ -63,10 +72,11 @@ type Runner interface {
 }
 
 type TaskRunner struct {
-	logger     *zap.Logger
-	runner     Runner
-	baseImage  *task.BaseImage
-	configPath string
+	logger      *zap.Logger
+	runner      Runner
+	runnerImage *task.BaseImage
+	parserImage *task.BaseImage
+	configPath  string
 }
 
 func New(cfg *Config) (*TaskRunner, error) {
@@ -75,10 +85,11 @@ func New(cfg *Config) (*TaskRunner, error) {
 	}
 
 	return &TaskRunner{
-		logger:     cfg.Logger,
-		runner:     cfg.Runner,
-		baseImage:  cfg.BaseImage,
-		configPath: cfg.ConfigPath,
+		logger:      cfg.Logger,
+		runner:      cfg.Runner,
+		runnerImage: cfg.RunnerImage,
+		parserImage: cfg.ParserImage,
+		configPath:  cfg.ConfigPath,
 	}, nil
 }
 
@@ -112,7 +123,7 @@ func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfol
 			Key:   "PARSE_PORTFOLIO_REQUEST",
 			Value: value,
 		},
-	})
+	}, withTag(tr.parserImage, "latest"))
 }
 
 func (tr *TaskRunner) CreateAudit(ctx context.Context, req *task.CreateAuditRequest) (task.ID, task.RunnerID, error) {
@@ -129,7 +140,7 @@ func (tr *TaskRunner) CreateAudit(ctx context.Context, req *task.CreateAuditRequ
 			Key:   "CREATE_AUDIT_REQUEST",
 			Value: value,
 		},
-	})
+	}, withTag(tr.runnerImage, "latest"))
 }
 
 func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, task.RunnerID, error) {
@@ -146,10 +157,17 @@ func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRe
 			Key:   "CREATE_REPORT_REQUEST",
 			Value: value,
 		},
-	})
+	}, withTag(tr.runnerImage, "latest"))
 }
 
-func (tr *TaskRunner) run(ctx context.Context, env []task.EnvVar) (task.ID, task.RunnerID, error) {
+func withTag(img *task.BaseImage, tag string) *task.Image {
+	return &task.Image{
+		Base: *img,
+		Tag:  tag,
+	}
+}
+
+func (tr *TaskRunner) run(ctx context.Context, env []task.EnvVar, image *task.Image) (task.ID, task.RunnerID, error) {
 	tr.logger.Info("triggering task run", zap.Any("env", env))
 	taskID := uuid.NewString()
 	runnerID, err := tr.runner.Run(ctx, &task.Config{
@@ -159,11 +177,7 @@ func (tr *TaskRunner) run(ctx context.Context, env []task.EnvVar) (task.ID, task
 		}),
 		Flags:   []string{"--config=" + tr.configPath},
 		Command: []string{"/runner"},
-		Image: &task.Image{
-			Base: *tr.baseImage,
-			// TODO: Take in the image digest as part of the task definition, as this can change per request.
-			Tag: "latest",
-		},
+		Image:   image,
 	})
 	if err != nil {
 		return "", "", fmt.Errorf("failed to run task %q, %q: %w", taskID, runnerID, err)

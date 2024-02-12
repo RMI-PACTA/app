@@ -25,8 +25,9 @@ type AuthVerificationKey struct {
 }
 
 type RunnerConfig struct {
-	ConfigPath string
-	Image      RunnerImage
+	ConfigPath  string
+	RunnerImage Image
+	ParserImage Image
 
 	SubscriptionID          string
 	ResourceGroup           string
@@ -34,7 +35,7 @@ type RunnerConfig struct {
 	JobName                 string
 }
 
-type RunnerImage struct {
+type Image struct {
 	Registry string
 	Name     string
 }
@@ -52,7 +53,7 @@ type RawAuthVerificationKey struct {
 
 type RawRunnerConfig struct {
 	ConfigPath string
-	Image      *RawRunnerImage
+	Images     *RawRunnerImages
 
 	SubscriptionID          string
 	ResourceGroup           string
@@ -60,9 +61,11 @@ type RawRunnerConfig struct {
 	JobName                 string
 }
 
-type RawRunnerImage struct {
+type RawRunnerImages struct {
 	Registry string
-	Name     string
+
+	RunnerName string
+	ParserName string
 }
 
 func LoadPACTA(rawCfg *RawPACTAConfig) (*PACTAConfig, error) {
@@ -198,14 +201,17 @@ func parseRunnerConfig(cfg *RawRunnerConfig) (RunnerConfig, error) {
 		return RunnerConfig{}, errors.New("no runner config was provided")
 	}
 
-	if cfg.Image == nil {
-		return RunnerConfig{}, errors.New("no runner_config.image was provided")
+	if cfg.Images == nil {
+		return RunnerConfig{}, errors.New("no runner_config.images was provided")
 	}
-	if cfg.Image.Name == "" {
-		return RunnerConfig{}, errors.New("no runner_config.image.name was provided")
+	if cfg.Images.RunnerName == "" {
+		return RunnerConfig{}, errors.New("no runner_config.images.runner_name was provided")
 	}
-	if cfg.Image.Registry == "" {
-		return RunnerConfig{}, errors.New("no runner_config.image.registry was provided")
+	if cfg.Images.ParserName == "" {
+		return RunnerConfig{}, errors.New("no runner_config.images.parser_name was provided")
+	}
+	if cfg.Images.Registry == "" {
+		return RunnerConfig{}, errors.New("no runner_config.images.registry was provided")
 	}
 
 	if cfg.ConfigPath == "" {
@@ -229,9 +235,13 @@ func parseRunnerConfig(cfg *RawRunnerConfig) (RunnerConfig, error) {
 		ResourceGroup:           cfg.ResourceGroup,
 		ManagedIdentityClientID: cfg.ManagedIdentityClientID,
 		JobName:                 cfg.JobName,
-		Image: RunnerImage{
-			Registry: cfg.Image.Registry,
-			Name:     cfg.Image.Name,
+		RunnerImage: Image{
+			Registry: cfg.Images.Registry,
+			Name:     cfg.Images.RunnerName,
+		},
+		ParserImage: Image{
+			Registry: cfg.Images.Registry,
+			Name:     cfg.Images.ParserName,
 		},
 	}, nil
 }
