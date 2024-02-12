@@ -10,7 +10,6 @@
 package azcreds
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -18,9 +17,11 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 )
 
+// Type identifies the auth method we used to authenticate with Azure.
 type Type string
 
 const (
+	Default         = Type("DEFAULT")
 	Environment     = Type("ENVIRONMENT")
 	ManagedIdentity = Type("MANAGED_IDENTITY")
 )
@@ -31,15 +32,15 @@ func New() (azcore.TokenCredential, Type, error) {
 		return newEnvCreds()
 	}
 
-	// We use "ManagedIdentity" instead of just "Default" because the default
-	// timeout is too low in azidentity.NewDefaultAzureCredentials, so it times out
-	// and fails to run.
-	azClientID := os.Getenv("AZURE_CLIENT_ID")
-	if azClientID == "" {
-		return nil, "", errors.New("no AZURE_CLIENT_SECERT or AZURE_CLIENT_ID found")
+	if azClientID := os.Getenv("AZURE_CLIENT_ID"); azClientID != "" {
+		// We use "ManagedIdentity" instead of just "Default" because the default
+		// timeout is too low in azidentity.NewDefaultAzureCredentials, so it times out
+		// and fails to run.
+		return newManagedIdentityCreds(azClientID)
 	}
 
-	return newManagedIdentityCreds(azClientID)
+	// Default to, well, the default, which will try all the various methods available.
+	return newDefaultCreds()
 }
 
 func newEnvCreds() (*azidentity.EnvironmentCredential, Type, error) {
@@ -56,7 +57,15 @@ func newManagedIdentityCreds(azClientID string) (*azidentity.ManagedIdentityCred
 		ID: azidentity.ClientID(azClientID),
 	})
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to load Azure credentials: %w", err)
+		return nil, "", fmt.Errorf("failed to load managed identity Azure credentials: %w", err)
 	}
 	return creds, ManagedIdentity, nil
+}
+
+func newDefaultCreds() (*azidentity.DefaultAzureCredential, Type, error) {
+	creds, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to load default Azure credentials: %w", err)
+	}
+	return creds, Default, nil
 }
