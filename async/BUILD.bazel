@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/RMI/pacta/async",
     visibility = ["//visibility:public"],
     deps = [
+        "//async/parsed",
         "//blob",
         "//pacta",
         "//task",
@@ -16,5 +17,6 @@ go_library(
         "@com_github_azure_azure_sdk_for_go_sdk_messaging_azeventgrid//publisher",
         "@com_github_google_uuid//:uuid",
         "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap_exp//zapfield",
     ],
 )

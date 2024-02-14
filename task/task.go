@@ -4,6 +4,7 @@ package task
 import (
 	"bytes"
 
+	"github.com/RMI/pacta/async/parsed"
 	"github.com/RMI/pacta/pacta"
 )
 
@@ -28,8 +29,9 @@ type ParsePortfolioRequest struct {
 }
 
 type ParsePortfolioResponseItem struct {
+	Source    pacta.BlobURI
 	Blob      pacta.Blob
-	LineCount int
+	Portfolio parsed.Portfolio
 }
 
 type ParsePortfolioResponse struct {

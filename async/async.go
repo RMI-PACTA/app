@@ -2,9 +2,9 @@
 package async
 
 import (
-	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,11 +17,13 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventgrid/publisher"
+	"github.com/RMI/pacta/async/parsed"
 	"github.com/RMI/pacta/blob"
 	"github.com/RMI/pacta/pacta"
 	"github.com/RMI/pacta/task"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"go.uber.org/zap/exp/zapfield"
 )
 
 type Config struct {
@@ -70,69 +72,125 @@ func New(cfg *Config) (*Handler, error) {
 
 // TODO: Send a notification when parsing fails.
 func (h *Handler) ParsePortfolio(ctx context.Context, taskID task.ID, req *task.ParsePortfolioRequest, destPortfolioContainer string) error {
-	// Load the portfolio from blob storage, place it in /mnt/raw_portfolios, where
+
+	// Make the directories we require first. We use these instead of
+	// /mnt/{input,output} because the base image (quite reasonably) uses a non-root
+	// user, so we can't be creating directories in the root filesystem all willy
+	// nilly.
+	inputDir := filepath.Join("/", "home", "portfolio-parser", "input")
+	outputDir := filepath.Join("/", "home", "portfolio-parser", "output")
+
+	if err := os.MkdirAll(inputDir, 0700); err != nil {
+		return fmt.Errorf("failed to create input dir to store input CSVs: %w", err)
+	}
+	if err := os.MkdirAll(outputDir, 0700); err != nil {
+		return fmt.Errorf("failed to create output dir to store output CSVs: %w", err)
+	}
+
+	// Load the portfolio from blob storage, place it in /mnt/inputs, where
 	// the `process_portfolios.R` script expects it to be.
+	localCSVToBlob := make(map[string]pacta.BlobURI)
 	for _, srcURI := range req.BlobURIs {
 		id := uuid.New().String()
 		// TODO: Probably set the CSV extension in the signed upload URL instead.
-		destPath := filepath.Join("/", "mnt", "raw_portfolios", fmt.Sprintf("%s.csv", id))
+		fn := fmt.Sprintf("%s.csv", id)
+		destPath := filepath.Join(inputDir, fn)
 		if err := h.downloadBlob(ctx, string(srcURI), destPath); err != nil {
 			return fmt.Errorf("failed to download raw portfolio blob: %w", err)
 		}
+		localCSVToBlob[fn] = srcURI
 	}
 
-	processedDir := filepath.Join("/", "mnt", "processed_portfolios")
-	if err := os.MkdirAll(processedDir, 0600); err != nil {
-		return fmt.Errorf("failed to create directory to download blob to: %w", err)
-	}
+	cmd := exec.CommandContext(ctx,
+		"/usr/local/bin/Rscript",
+		"-e", "logger::log_threshold(Sys.getenv('LOG_LEVEL', 'INFO'));workflow.portfolio.parsing::process_directory('"+inputDir+"', '"+outputDir+"')",
+	)
 
+	// We don't expect log output to be particularly large, it's fine to write them to an in-memory buffer.
+	// TODO(#185): Find a good place to put these in storage, such that it can be correlated with the input file(s)
 	var stdout, stderr bytes.Buffer
-	cmd := exec.CommandContext(ctx, "/usr/local/bin/Rscript", "/app/process_portfolios.R")
-	cmd.Stdout = io.MultiWriter(os.Stdout, &stdout)
-	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run process_portfolios script: %w", err)
 	}
 
-	sc := bufio.NewScanner(&stderr)
+	// After successful execution, the API contract is that there should be a 'processed_portfolios.json' file in the output directory.
+	outManifestPath := filepath.Join(outputDir, "processed_portfolios.json")
+	omf, err := os.Open(outManifestPath)
+	if err != nil {
+		return fmt.Errorf("failed to open output processed_portfolios.json file: %w", err)
+	}
+	defer omf.Close()
 
-	// TODO: Load from the output database file (or similar, like reading the processed_portfolios dir) instead of parsing stderr
-	var paths []string
-	for sc.Scan() {
-		line := sc.Text()
-		idx := strings.Index(line, "writing to file: " /* 17 chars */)
-		if idx == -1 {
-			continue
-		}
-		paths = append(paths, strings.TrimSpace(line[idx+17:]))
+	var sourceFiles []parsed.SourceFile
+	if err := json.NewDecoder(omf).Decode(&sourceFiles); err != nil {
+		return fmt.Errorf("failed to decode processed_portfolios.json as JSON: %w", err)
+	}
+
+	// We keep track of the outputs we processed, and then check if there are any files in the output directory that we weren't expecting.
+	knownOutputFiles := map[string]bool{
+		"processed_portfolios.json": true,
 	}
 
 	// NOTE: This code could benefit from some concurrency, but I'm opting not to prematurely optimize.
 	var out []*task.ParsePortfolioResponseItem
-	for _, p := range paths {
-		lineCount, err := countCSVLines(p)
-		if err != nil {
-			return fmt.Errorf("failed to count lines in file %q: %w", p, err)
+	for _, sf := range sourceFiles {
+		sourceURI, ok := localCSVToBlob[sf.InputFilename]
+		if !ok {
+			return fmt.Errorf("parse output mentioned input file %q, which wasn't found in our input -> blob URI map %+v", sf.InputFilename, localCSVToBlob)
 		}
-		fileName := filepath.Base(p)
-		blobURI := pacta.BlobURI(blob.Join(h.blob.Scheme(), destPortfolioContainer, fileName))
-		if err := h.uploadBlob(ctx, p, string(blobURI)); err != nil {
-			return fmt.Errorf("failed to copy parsed portfolio from %q to %q: %w", p, blobURI, err)
+
+		// TODO(#187): There's lots of metadata associated with the input files (e.g.
+		// sf.Errors, sf.GroupCols, etc), we should likely store that info somewhere.
+
+		for _, p := range sf.Portfolios {
+			outPath := filepath.Join(outputDir, p.OutputFilename)
+
+			// We generate a fresh UUID here for uploading the file to blob storage, so that
+			// we don't depend on the R code generating truly unique UUIDs.
+			uploadName := fmt.Sprintf("%s.csv", uuid.New().String())
+
+			blobURI := pacta.BlobURI(blob.Join(h.blob.Scheme(), destPortfolioContainer, uploadName))
+
+			if err := h.uploadBlob(ctx, outPath, string(blobURI)); err != nil {
+				return fmt.Errorf("failed to copy parsed portfolio from %q to %q: %w", p, blobURI, err)
+			}
+			h.logger.Info("uploaded output CSV to blob storage", zap.Any("portfolio", p), zapfield.Str("blob_uri", blobURI))
+
+			extension := filepath.Ext(p.OutputFilename)
+			fileType, err := pacta.ParseFileType(extension)
+			if err != nil {
+				return fmt.Errorf("failed to parse file type from file name %q: %w", p.OutputFilename, err)
+			}
+			if fileType != pacta.FileType_CSV {
+				return fmt.Errorf("output portfolio %q was not of type CSV, was %q", p.OutputFilename, fileType)
+			}
+
+			knownOutputFiles[p.OutputFilename] = true
+			out = append(out, &task.ParsePortfolioResponseItem{
+				Source: sourceURI,
+				Blob: pacta.Blob{
+					FileName: p.OutputFilename,
+					FileType: fileType,
+					BlobURI:  blobURI,
+				},
+				Portfolio: p,
+			})
 		}
-		extension := filepath.Ext(fileName)
-		fileType, err := pacta.ParseFileType(extension)
-		if err != nil {
-			return fmt.Errorf("failed to parse file type from file name %q: %w", fileName, err)
+	}
+
+	// Now that we're done uploading files, check the output directory and make sure
+	// there aren't any unaccounted for files.
+	dirEntries, err := os.ReadDir(outputDir)
+	if err != nil {
+		return fmt.Errorf("failed to read the output directory: %w", err)
+	}
+	for _, de := range dirEntries {
+		if !knownOutputFiles[de.Name()] {
+			h.logger.Error("output directory contained files not present in the generated 'processed_portfolios.json' manifest", zap.String("filename", de.Name()))
 		}
-		out = append(out, &task.ParsePortfolioResponseItem{
-			Blob: pacta.Blob{
-				FileName: fileName,
-				FileType: fileType,
-				BlobURI:  blobURI,
-			},
-			LineCount: lineCount,
-		})
 	}
 
 	events := []publisher.Event{
@@ -157,25 +215,6 @@ func (h *Handler) ParsePortfolio(ctx context.Context, taskID task.ID, req *task.
 	h.logger.Info("parsed portfolio", zap.String("task_id", string(taskID)))
 
 	return nil
-}
-
-// TODO(grady): Move this line counting into the image to prevent having our code do any read of the actual underlying data.
-func countCSVLines(path string) (int, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return 0, fmt.Errorf("opening file failed: %w", err)
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	lineCount := 0
-	for scanner.Scan() {
-		lineCount++
-	}
-	if err := scanner.Err(); err != nil {
-		return 0, fmt.Errorf("scanner.error returned: %w", err)
-	}
-	// Subtract 1 for the header row
-	return lineCount - 1, nil
 }
 
 func (h *Handler) CreateAudit(ctx context.Context, taskID task.ID, req *task.CreateAuditRequest) error {
@@ -261,7 +300,7 @@ func (h *Handler) CreateReport(ctx context.Context, taskID task.ID, req *task.Cr
 
 func (h *Handler) downloadBlob(ctx context.Context, srcURI, destPath string) error {
 	// Make sure the destination exists
-	if err := os.MkdirAll(filepath.Dir(destPath), 0600); err != nil {
+	if err := os.MkdirAll(filepath.Dir(destPath), 0700); err != nil {
 		return fmt.Errorf("failed to create directory to download blob to: %w", err)
 	}
 

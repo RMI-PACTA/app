@@ -114,7 +114,7 @@ func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfol
 	if err != nil {
 		return "", "", fmt.Errorf("failed to encode ParsePortfolioRequest: %w", err)
 	}
-	return tr.run(ctx, []task.EnvVar{
+	return tr.run(ctx, "/parser", withTag(tr.parserImage, "latest"), []task.EnvVar{
 		{
 			Key:   "TASK_TYPE",
 			Value: string(task.ParsePortfolio),
@@ -123,7 +123,7 @@ func (tr *TaskRunner) ParsePortfolio(ctx context.Context, req *task.ParsePortfol
 			Key:   "PARSE_PORTFOLIO_REQUEST",
 			Value: value,
 		},
-	}, withTag(tr.parserImage, "latest"))
+	})
 }
 
 func (tr *TaskRunner) CreateAudit(ctx context.Context, req *task.CreateAuditRequest) (task.ID, task.RunnerID, error) {
@@ -131,7 +131,7 @@ func (tr *TaskRunner) CreateAudit(ctx context.Context, req *task.CreateAuditRequ
 	if err != nil {
 		return "", "", fmt.Errorf("failed to encode CreateAuditRequest: %w", err)
 	}
-	return tr.run(ctx, []task.EnvVar{
+	return tr.run(ctx, "/runner", withTag(tr.runnerImage, "latest"), []task.EnvVar{
 		{
 			Key:   "TASK_TYPE",
 			Value: string(task.CreateAudit),
@@ -140,7 +140,7 @@ func (tr *TaskRunner) CreateAudit(ctx context.Context, req *task.CreateAuditRequ
 			Key:   "CREATE_AUDIT_REQUEST",
 			Value: value,
 		},
-	}, withTag(tr.runnerImage, "latest"))
+	})
 }
 
 func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRequest) (task.ID, task.RunnerID, error) {
@@ -148,7 +148,7 @@ func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRe
 	if err != nil {
 		return "", "", fmt.Errorf("failed to encode CreateReportRequest: %w", err)
 	}
-	return tr.run(ctx, []task.EnvVar{
+	return tr.run(ctx, "/runner", withTag(tr.runnerImage, "latest"), []task.EnvVar{
 		{
 			Key:   "TASK_TYPE",
 			Value: string(task.CreateReport),
@@ -157,7 +157,7 @@ func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRe
 			Key:   "CREATE_REPORT_REQUEST",
 			Value: value,
 		},
-	}, withTag(tr.runnerImage, "latest"))
+	})
 }
 
 func withTag(img *task.BaseImage, tag string) *task.Image {
@@ -167,7 +167,7 @@ func withTag(img *task.BaseImage, tag string) *task.Image {
 	}
 }
 
-func (tr *TaskRunner) run(ctx context.Context, env []task.EnvVar, image *task.Image) (task.ID, task.RunnerID, error) {
+func (tr *TaskRunner) run(ctx context.Context, binary string, image *task.Image, env []task.EnvVar) (task.ID, task.RunnerID, error) {
 	tr.logger.Info("triggering task run", zap.Any("env", env))
 	taskID := uuid.NewString()
 	runnerID, err := tr.runner.Run(ctx, &task.Config{
@@ -176,7 +176,7 @@ func (tr *TaskRunner) run(ctx context.Context, env []task.EnvVar, image *task.Im
 			Value: taskID,
 		}),
 		Flags:   []string{"--config=" + tr.configPath},
-		Command: []string{"/runner"},
+		Command: []string{binary},
 		Image:   image,
 	})
 	if err != nil {
