@@ -2220,6 +2220,12 @@ def go_dependencies():
         version = "v1.24.0",
     )
     go_repository(
+        name = "org_uber_go_zap_exp",
+        importpath = "go.uber.org/zap/exp",
+        sum = "h1:FtGenNNeCATRB3CmB/yEUnjEFeJWpB/pMcy7e2bKPYs=",
+        version = "v0.2.0",
+    )
+    go_repository(
         name = "tools_gotest_v3",
         importpath = "gotest.tools/v3",
         sum = "h1:EENdUnS3pdur5nybKYIh2Vfgc8IUNBjxDPSjtiJcOzU=",

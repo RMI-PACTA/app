@@ -109,3 +109,11 @@ oci_pull(
     image = "docker.io/curfewreplica/pactatest",
     # platforms = ["linux/amd64"],
 )
+
+oci_pull(
+    name = "parser_base",
+    # This digest is of the 'main' tag as of 2024-02-12
+    digest = "sha256:fa206405d645d3ee6d1c84319c2724c81f2afe1d8559022edd981a0cfeb739c6",
+    image = "ghcr.io/rmi-pacta/workflow.portfolio.parsing",
+    platforms = ["linux/amd64"],
+)

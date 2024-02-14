@@ -8,20 +8,16 @@ go_library(
     importpath = "github.com/RMI/pacta/cmd/runner",
     visibility = ["//visibility:private"],
     deps = [
+        "//async",
         "//azure/azblob",
+        "//azure/azcreds",
         "//azure/azlog",
-        "//blob",
-        "//pacta",
         "//task",
-        "@com_github_azure_azure_sdk_for_go_sdk_azcore//:azcore",
-        "@com_github_azure_azure_sdk_for_go_sdk_azcore//policy",
-        "@com_github_azure_azure_sdk_for_go_sdk_azcore//to",
-        "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
         "@com_github_azure_azure_sdk_for_go_sdk_messaging_azeventgrid//publisher",
-        "@com_github_google_uuid//:uuid",
         "@com_github_namsral_flag//:flag",
         "@org_uber_go_zap//:zap",
         "@org_uber_go_zap//zapcore",
+        "@org_uber_go_zap_exp//zapfield",
     ],
 )
 
