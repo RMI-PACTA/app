@@ -89,10 +89,10 @@ func run(args []string) error {
 	}
 
 	validTasks := map[task.Type]func(context.Context, task.ID) error{
-		task.CreateReport: toRunFn(async.CreateReportReq, func(ctx context.Context, id task.ID, req *task.CreateReportRequest) error {
+		task.CreateReport: toRunFn(async.LoadCreateReportRequestFromEnv, func(ctx context.Context, id task.ID, req *task.CreateReportRequest) error {
 			return h.CreateReport(ctx, id, req, *azReportContainer)
 		}),
-		task.CreateAudit: toRunFn(async.CreateAuditReq, h.CreateAudit),
+		task.CreateAudit: toRunFn(async.LoadCreateAuditRequestFromEnv, h.CreateAudit),
 	}
 
 	taskID := task.ID(os.Getenv("TASK_ID"))

@@ -10,38 +10,26 @@ import (
 	"github.com/RMI/pacta/task"
 )
 
-func ParsePortfolioReq() (*task.ParsePortfolioRequest, error) {
-	taskStr := os.Getenv("PARSE_PORTFOLIO_REQUEST")
-	if taskStr == "" {
-		return nil, errors.New("no PARSE_PORTFOLIO_REQUEST given")
-	}
-	var task task.ParsePortfolioRequest
-	if err := json.NewDecoder(strings.NewReader(taskStr)).Decode(&task); err != nil {
-		return nil, fmt.Errorf("failed to load ParsePortfolioRequest: %w", err)
-	}
-	return &task, nil
+func LoadParsePortfolioRequestFromEnv() (*task.ParsePortfolioRequest, error) {
+	return loadFromEnv[task.ParsePortfolioRequest]("PARSE_PORTFOLIO_REQUEST", "ParsePortfolioRequest")
 }
 
-func CreateAuditReq() (*task.CreateAuditRequest, error) {
-	car := os.Getenv("CREATE_AUDIT_REQUEST")
-	if car == "" {
-		return nil, errors.New("no CREATE_AUDIT_REQUEST was given")
-	}
-	var task task.CreateAuditRequest
-	if err := json.NewDecoder(strings.NewReader(car)).Decode(&task); err != nil {
-		return nil, fmt.Errorf("failed to load CreateAuditRequest: %w", err)
-	}
-	return &task, nil
+func LoadCreateAuditRequestFromEnv() (*task.CreateAuditRequest, error) {
+	return loadFromEnv[task.CreateAuditRequest]("CREATE_AUDIT_REQUEST", "CreateAuditRequest")
 }
 
-func CreateReportReq() (*task.CreateReportRequest, error) {
-	crr := os.Getenv("CREATE_REPORT_REQUEST")
-	if crr == "" {
+func LoadCreateReportRequestFromEnv() (*task.CreateReportRequest, error) {
+	return loadFromEnv[task.CreateReportRequest]("CREATE_REPORT_REQUEST", "CreateReportRequest")
+}
+
+func loadFromEnv[T any](envVar string, entityName string) (*T, error) {
+	envStr := os.Getenv(envVar)
+	if envStr == "" {
 		return nil, errors.New("no CREATE_REPORT_REQUEST was given")
 	}
-	var task task.CreateReportRequest
-	if err := json.NewDecoder(strings.NewReader(crr)).Decode(&task); err != nil {
-		return nil, fmt.Errorf("failed to load CreateReportRequest: %w", err)
+	var task T
+	if err := json.NewDecoder(strings.NewReader(envStr)).Decode(&task); err != nil {
+		return nil, fmt.Errorf("failed to load %q: %w", entityName, err)
 	}
 	return &task, nil
 }

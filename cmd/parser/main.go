@@ -113,7 +113,7 @@ func run(args []string) error {
 		return errors.New("no TASK_ID given")
 	}
 
-	req, err := async.ParsePortfolioReq()
+	req, err := async.LoadParsePortfolioRequestFromEnv()
 	if err != nil {
 		return fmt.Errorf("failed to parse portfolio request: %w", err)
 	}
