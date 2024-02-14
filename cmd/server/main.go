@@ -97,8 +97,9 @@ func run(args []string) error {
 		runnerConfigManagedIdentityClientID = fs.String("secret_runner_config_managed_identity_client_id", "", "Client ID of the identity to run runner jobs with")
 		runnerConfigJobName                 = fs.String("secret_runner_config_job_name", "", "Name of the Container Apps Job to start instances of.")
 
-		runnerConfigImageRegistry = fs.String("secret_runner_config_image_registry", "", "Registry where PACTA runner images live, like 'rmisa.azurecr.io'")
-		runnerConfigImageName     = fs.String("secret_runner_config_image_name", "", "Name of the Docker image of the PACTA runner, like 'runner'")
+		runnerConfigImageRegistry   = fs.String("secret_runner_config_image_registry", "", "Registry where PACTA runner images live, like 'rmisa.azurecr.io'")
+		runnerConfigRunnerImageName = fs.String("secret_runner_config_runner_image_name", "", "Name of the Docker image of the PACTA runner, like 'runner'")
+		runnerConfigParserImageName = fs.String("secret_runner_config_parser_image_name", "", "Name of the Docker image of the PACTA parser, like 'pactaparser'")
 	)
 	// Allows for passing in configuration via a -config path/to/env-file.conf
 	// flag, see https://pkg.go.dev/github.com/namsral/flag#readme-usage
@@ -143,9 +144,10 @@ func run(args []string) error {
 			ResourceGroup:           *runnerConfigResourceGroup,
 			ManagedIdentityClientID: *runnerConfigManagedIdentityClientID,
 			JobName:                 *runnerConfigJobName,
-			Image: &secrets.RawRunnerImage{
-				Registry: *runnerConfigImageRegistry,
-				Name:     *runnerConfigImageName,
+			Images: &secrets.RawRunnerImages{
+				Registry:   *runnerConfigImageRegistry,
+				RunnerName: *runnerConfigRunnerImageName,
+				ParserName: *runnerConfigParserImageName,
 			},
 		},
 	})
@@ -236,9 +238,13 @@ func run(args []string) error {
 
 	tr, err := taskrunner.New(&taskrunner.Config{
 		ConfigPath: runCfg.ConfigPath,
-		BaseImage: &task.BaseImage{
-			Registry: runCfg.Image.Registry,
-			Name:     runCfg.Image.Name,
+		RunnerImage: &task.BaseImage{
+			Registry: runCfg.RunnerImage.Registry,
+			Name:     runCfg.RunnerImage.Name,
+		},
+		ParserImage: &task.BaseImage{
+			Registry: runCfg.ParserImage.Registry,
+			Name:     runCfg.ParserImage.Name,
 		},
 		Logger: logger,
 		Runner: runner,
