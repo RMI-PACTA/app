@@ -23,6 +23,7 @@ import (
 	"github.com/RMI/pacta/task"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"go.uber.org/zap/exp/zapfield"
 )
 
 type Config struct {
@@ -128,34 +129,46 @@ func (h *Handler) ParsePortfolio(ctx context.Context, taskID task.ID, req *task.
 		return fmt.Errorf("failed to decode processed_portfolios.json as JSON: %w", err)
 	}
 
+	// We keep track of the outputs we processed, and then check if there are any files in the output directory that we weren't expecting.
+	knownOutputFiles := map[string]bool{
+		"processed_portfolios.json": true,
+	}
+
 	// NOTE: This code could benefit from some concurrency, but I'm opting not to prematurely optimize.
 	var out []*task.ParsePortfolioResponseItem
 	for _, sf := range sourceFiles {
+		sourceURI, ok := localCSVToBlob[sf.InputFilename]
+		if !ok {
+			return fmt.Errorf("parse output mentioned input file %q, which wasn't found in our input -> blob URI map %+v", sf.InputFilename, localCSVToBlob)
+		}
 
-		// TODO: There's lots of metadata associated with the input files (e.g.
+		// TODO(#187): There's lots of metadata associated with the input files (e.g.
 		// sf.Errors, sf.GroupCols, etc), we should likely store that info somewhere.
 
 		for _, p := range sf.Portfolios {
 			outPath := filepath.Join(outputDir, p.OutputFilename)
 
-			// XXX: One risk here is that we're depending on the R code to generate truly
-			// random UUIDs, we likely want some sort of namespacing here.
-			blobURI := pacta.BlobURI(blob.Join(h.blob.Scheme(), destPortfolioContainer, p.OutputFilename))
+			// We generate a fresh UUID here for uploading the file to blob storage, so that
+			// we don't depend on the R code generating truly unique UUIDs.
+			uploadName := fmt.Sprintf("%s.csv", uuid.New().String())
+
+			blobURI := pacta.BlobURI(blob.Join(h.blob.Scheme(), destPortfolioContainer, uploadName))
 
 			if err := h.uploadBlob(ctx, outPath, string(blobURI)); err != nil {
 				return fmt.Errorf("failed to copy parsed portfolio from %q to %q: %w", p, blobURI, err)
 			}
+			h.logger.Info("uploaded output CSV to blob storage", zap.Any("portfolio", p), zapfield.Str("blob_uri", blobURI))
+
 			extension := filepath.Ext(p.OutputFilename)
 			fileType, err := pacta.ParseFileType(extension)
 			if err != nil {
 				return fmt.Errorf("failed to parse file type from file name %q: %w", p.OutputFilename, err)
 			}
-
-			sourceURI, ok := localCSVToBlob[sf.InputFilename]
-			if !ok {
-				return fmt.Errorf("parse output mentioned input file %q, which wasn't found in our input -> blob URI map %+v", sf.InputFilename, localCSVToBlob)
+			if fileType != pacta.FileType_CSV {
+				return fmt.Errorf("output portfolio %q was not of type CSV, was %q", p.OutputFilename, fileType)
 			}
 
+			knownOutputFiles[p.OutputFilename] = true
 			out = append(out, &task.ParsePortfolioResponseItem{
 				Source: sourceURI,
 				Blob: pacta.Blob{
@@ -165,6 +178,18 @@ func (h *Handler) ParsePortfolio(ctx context.Context, taskID task.ID, req *task.
 				},
 				Portfolio: p,
 			})
+		}
+	}
+
+	// Now that we're done uploading files, check the output directory and make sure
+	// there aren't any unaccounted for files.
+	dirEntries, err := os.ReadDir(outputDir)
+	if err != nil {
+		return fmt.Errorf("failed to read the output directory: %w", err)
+	}
+	for _, de := range dirEntries {
+		if !knownOutputFiles[de.Name()] {
+			h.logger.Error("output directory contained files not present in the generated 'processed_portfolios.json' manifest", zap.String("filename", de.Name()))
 		}
 	}
 

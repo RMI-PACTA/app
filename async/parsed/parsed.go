@@ -1,5 +1,8 @@
 // Package parsed just holds the domain types for dealing with the output of the
-// ParsePortfolio async task.
+// ParsePortfolio async task. The code that generates output in this structure
+// lives in [1], which provides the base image for our parser binary.
+//
+// [1] https://github.com/RMI-PACTA/workflow.portfolio.parsing
 package parsed
 
 type SourceFile struct {
