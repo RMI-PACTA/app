@@ -4,7 +4,6 @@ set -euo pipefail
 ROOT="$BUILD_WORKSPACE_DIRECTORY"
 cd "$ROOT"
 
-# We keep it around because we'll need it at some point, but it can't be empty.
 VALID_FLAGS=(
   "with_public_endpoint"
 )
@@ -35,7 +34,6 @@ fi
 SOPS_DATA="$(sops -d "${ROOT}/secrets/local.enc.json")"
 LOCAL_DOCKER_CREDS="$(echo $SOPS_DATA | jq .localdocker)"
 
-# TODO(#116) Set up multiple webhooks, one for each task type.
 WEBHOOK_CREDS="$(echo $SOPS_DATA | jq .webhook)"
 TOPIC_ID="$(echo $WEBHOOK_CREDS | jq -r .topic_id)"
 WEBHOOK_PATH="/events"
@@ -67,7 +65,7 @@ function create_eventgrid_subscription {
     --source-resource-id "$TOPIC_ID" \
     --endpoint-type=webhook \
     --endpoint="https://$1.${FRP_ADDR}${WEBHOOK_PATH}" \
-    --delivery-attribute-mapping "Authorization static $WEBHOOK_SHARED_SECRET true"
+    --delivery-attribute-mapping Authorization static $WEBHOOK_SHARED_SECRET true
 }
 
 EG_SUB_NAME=""
@@ -146,13 +144,7 @@ if [[ ! -z "$EG_SUB_NAME" ]]; then
     echo "Creating subscription..."
 
     set +e # Don't exit on error, we can just alert for this
-  usage error: --delivery-attribute-mapping NAME TYPE [SOURCEFIELD] [VALUE] [ISSECRET]
-    az eventgrid event-subscription create \
-      --name "local-webhook-$EG_SUB_NAME" \
-      --source-resource-id "$TOPIC_ID" \
-      --endpoint-type=webhook \
-      --endpoint="https://${EG_SUB_NAME}.${FRP_ADDR}${WEBHOOK_PATH}" \
-      --delivery-attribute-mapping Authorization static "$WEBHOOK_SHARED_SECRET" true
+    create_eventgrid_subscription "$EG_SUB_NAME"
     set -e
   } &
 fi
