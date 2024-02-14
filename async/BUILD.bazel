@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/RMI/pacta/async",
     visibility = ["//visibility:public"],
     deps = [
+        "//async/parsed",
         "//blob",
         "//pacta",
         "//task",

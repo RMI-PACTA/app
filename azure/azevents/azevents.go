@@ -327,10 +327,13 @@ func (s *Server) handleParsedPortfolio(id string, resp *task.ParsePortfolioRespo
 			if err != nil {
 				return fmt.Errorf("creating blob %d: %w", i, err)
 			}
+
+			// TODO: There's other metadata in output.Portfolio, like `InvestorName`, that
+			// we aren't currently storing.
 			portfolioID, err := s.db.CreatePortfolio(tx, &pacta.Portfolio{
 				Owner:        &pacta.Owner{ID: ownerID},
 				Name:         output.Blob.FileName,
-				NumberOfRows: output.LineCount,
+				NumberOfRows: output.Portfolio.OutputRows,
 				Blob:         &pacta.Blob{ID: blobID},
 				Properties:   *properties,
 			})

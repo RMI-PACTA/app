@@ -5,5 +5,8 @@ go_library(
     srcs = ["task.go"],
     importpath = "github.com/RMI/pacta/task",
     visibility = ["//visibility:public"],
-    deps = ["//pacta"],
+    deps = [
+        "//async/parsed",
+        "//pacta",
+    ],
 )
