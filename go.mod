@@ -1,8 +1,8 @@
 module github.com/RMI/pacta
 
-go 1.21
+go 1.21.1
 
-toolchain go1.21.6
+toolchain go1.22.4
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.8.0
@@ -12,7 +12,7 @@ require (
 	github.com/Silicon-Ally/cryptorand v1.0.1
 	github.com/Silicon-Ally/idgen v1.0.1
 	github.com/Silicon-Ally/testpgx v0.0.5
-	github.com/Silicon-Ally/zaphttplog v0.0.0-20230719190744-b544469cb197
+	github.com/Silicon-Ally/zaphttplog v1.0.0
 	github.com/bazelbuild/rules_go v0.45.0
 	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/dimuska139/go-email-normalizer v1.2.1
@@ -28,7 +28,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2
 	github.com/rs/cors v1.9.0
 	github.com/spf13/cobra v1.1.3
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.25.0
 )
 
 require (
@@ -36,6 +36,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventgrid v0.3.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
+	github.com/RMI/credential-service v0.0.0-20240710165535-63e7f8b52060 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect

@@ -244,8 +244,8 @@ def go_dependencies():
     go_repository(
         name = "com_github_benbjohnson_clock",
         importpath = "github.com/benbjohnson/clock",
-        sum = "h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=",
-        version = "v1.1.0",
+        sum = "h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=",
+        version = "v1.3.0",
     )
     go_repository(
         name = "com_github_beorn7_perks",
@@ -1559,6 +1559,12 @@ def go_dependencies():
         version = "v0.0.0-20200410134404-eec4a21b6bb0",
     )
     go_repository(
+        name = "com_github_rmi_credential_service",
+        importpath = "github.com/RMI/credential-service",
+        sum = "h1:2/5ZCoWw57TKH0P7MGy89fIr709ahbTPuU28Q0ZHWFo=",
+        version = "v0.0.0-20240710165535-63e7f8b52060",
+    )
+    go_repository(
         name = "com_github_rogpeppe_fastuuid",
         importpath = "github.com/rogpeppe/fastuuid",
         sum = "h1:gu+uRPtBe88sKxUCEXRoeCvVG90TJmwhiqRpvdhQFng=",
@@ -1633,8 +1639,8 @@ def go_dependencies():
     go_repository(
         name = "com_github_silicon_ally_zaphttplog",
         importpath = "github.com/Silicon-Ally/zaphttplog",
-        sum = "h1:XhVHdwNFJMvn1C7pSuR+FQF6nkIWgxTtEwI/1K1EE0k=",
-        version = "v0.0.0-20230719190744-b544469cb197",
+        sum = "h1:vXN2GYxnE42c5XKBQm/Zev372lNwoA3zUR6oZlh5ats=",
+        version = "v1.0.0",
     )
     go_repository(
         name = "com_github_sirupsen_logrus",
@@ -2204,8 +2210,8 @@ def go_dependencies():
     go_repository(
         name = "org_uber_go_goleak",
         importpath = "go.uber.org/goleak",
-        sum = "h1:wy28qYRKZgnJTxGxvye5/wgWr1EKjmUDGYox5mGlRlI=",
-        version = "v1.1.11",
+        sum = "h1:xqgm/S+aQvhWFTtR0XK3Jvg7z8kGV8P4X14IzwN3Eqk=",
+        version = "v1.2.0",
     )
     go_repository(
         name = "org_uber_go_multierr",
@@ -2216,8 +2222,8 @@ def go_dependencies():
     go_repository(
         name = "org_uber_go_zap",
         importpath = "go.uber.org/zap",
-        sum = "h1:FiJd5l1UOLj0wCgbSE0rwwXHzEdAZS6hiiSnxJN/D60=",
-        version = "v1.24.0",
+        sum = "h1:4Hvk6GtkucQ790dqmj7l1eEnRdKm3k3ZUrUMS2d5+5c=",
+        version = "v1.25.0",
     )
     go_repository(
         name = "org_uber_go_zap_exp",
