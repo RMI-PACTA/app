@@ -30,6 +30,8 @@ go_library(
         "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_lestrrat_go_jwx_v2//jwk",
         "@com_github_namsral_flag//:flag",
+        "@com_github_rmi_credential_service//allowlist",
+        "@com_github_rmi_credential_service//siteverify",
         "@com_github_rs_cors//:cors",
         "@org_uber_go_zap//:zap",
         "@org_uber_go_zap_exp//zapfield",

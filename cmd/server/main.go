@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RMI/credential-service/allowlist"
+	"github.com/RMI/credential-service/siteverify"
 	"github.com/RMI/pacta/azure/azblob"
 	"github.com/RMI/pacta/azure/azcreds"
 	"github.com/RMI/pacta/azure/azevents"
@@ -314,6 +316,7 @@ func run(args []string) error {
 
 			chimiddleware.Recoverer,
 			jwtauth.Verifier(jwtauth.New("EdDSA", nil, jwKey)),
+			siteverify.CheckSite(allowlist.SitePACTA, *logger),
 			requireJWTIfNotPublicEndpoint,
 			session.WithAuthn(logger, db),
 		}, addl...)

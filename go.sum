@@ -33,6 +33,8 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
+github.com/RMI/credential-service v0.0.0-20240710165535-63e7f8b52060 h1:2/5ZCoWw57TKH0P7MGy89fIr709ahbTPuU28Q0ZHWFo=
+github.com/RMI/credential-service v0.0.0-20240710165535-63e7f8b52060/go.mod h1:ctXZHu60bVQQhnfwluF2J3nO5R7g0cL+xRHmigcQUQ4=
 github.com/Silicon-Ally/cryptorand v1.0.1 h1:CSZ9dYlY++GN9g/+znhk2qZevjkZ+nSlBJh2rB7jj8A=
 github.com/Silicon-Ally/cryptorand v1.0.1/go.mod h1:NxU07fWVigUzimVH2WOVanUHcjwvPA9CRpnfS7Cm3/c=
 github.com/Silicon-Ally/idgen v1.0.1 h1:O8DFr1W7jhTV5xvVrvYfYFXT8OgI4pRi6ZCO87BIC0M=
@@ -43,6 +45,7 @@ github.com/Silicon-Ally/testpgx v0.0.5 h1:wxI10yCtptIyx1XuwaJy9T34Y7sGSdU64tIoNC
 github.com/Silicon-Ally/testpgx v0.0.5/go.mod h1:nkiAcFdbY92EoeKoKiwq+BpXGfnFWnQq4lNZRy6VOBU=
 github.com/Silicon-Ally/zaphttplog v0.0.0-20230719190744-b544469cb197 h1:XhVHdwNFJMvn1C7pSuR+FQF6nkIWgxTtEwI/1K1EE0k=
 github.com/Silicon-Ally/zaphttplog v0.0.0-20230719190744-b544469cb197/go.mod h1:MOYLV+7Ug2sTUbsp4fMV1CUooTD4RFD2+eQ+Glq5wxk=
+github.com/Silicon-Ally/zaphttplog v1.0.0/go.mod h1:MOYLV+7Ug2sTUbsp4fMV1CUooTD4RFD2+eQ+Glq5wxk=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
@@ -357,6 +360,8 @@ go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN8
 go.uber.org/zap v1.10.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
 go.uber.org/zap v1.24.0 h1:FiJd5l1UOLj0wCgbSE0rwwXHzEdAZS6hiiSnxJN/D60=
 go.uber.org/zap v1.24.0/go.mod h1:2kMP+WWQ8aoFoedH3T2sq6iJ2yDWpHbP0f6MQbS9Gkg=
+go.uber.org/zap v1.25.0 h1:4Hvk6GtkucQ790dqmj7l1eEnRdKm3k3ZUrUMS2d5+5c=
+go.uber.org/zap v1.25.0/go.mod h1:JIAUzQIH94IC4fOJQm7gMmBJP5k7wQfdcnYdPoEXJYk=
 go.uber.org/zap/exp v0.2.0 h1:FtGenNNeCATRB3CmB/yEUnjEFeJWpB/pMcy7e2bKPYs=
 go.uber.org/zap/exp v0.2.0/go.mod h1:t0gqAIdh1MfKv9EwN/dLwfZnJxe9ITAZN78HEWPFWDQ=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
