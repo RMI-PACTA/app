@@ -15,10 +15,26 @@ case $YEAR in
   "2022")
     PORTFOLIO_FOLDER="2022Q4_20240426T113151Z"
     BENCHMARKS_FOLDER="2022Q4_20240529T002407Z"
+    JSON_INPUT="{
+      \"portfolio\": {
+        \"files\": \"default_portfolio.csv\",
+        \"holdingsDate\": \"2022-12-31\",
+        \"name\": \"FooPortfolio\"
+      },
+      \"inherit\": \"GENERAL_2022Q4\"
+    }"
     ;;
   "2023")
     PORTFOLIO_FOLDER="2023Q4_20240424T120055Z"
     BENCHMARKS_FOLDER="2023Q4_20240529T002355Z"
+    JSON_INPUT="{
+      \"portfolio\": {
+        \"files\": \"default_portfolio.csv\",
+        \"holdingsDate\": \"2023-12-31\",
+        \"name\": \"FooPortfolio\"
+      },
+      \"inherit\": \"GENERAL_2023Q4\"
+    }"
     ;;
   *)
     echo "unexpected year $YEAR"
@@ -66,15 +82,6 @@ if [ "$IS_PODMAN" = true ]; then
   DOCKER_FLAGS+=("--userns" "keep-id:uid=1000,gid=1000")
 fi
 
-
-JSON_INPUT="{
-  \"portfolio\": {
-    \"files\": \"default_portfolio.csv\",
-    \"holdingsDate\": \"2023-12-31\",
-    \"name\": \"FooPortfolio\"
-  },
-  \"inherit\": \"GENERAL_2023Q4\"
-}"
 
 docker run --rm -it \
   "${DOCKER_FLAGS[@]}" \
