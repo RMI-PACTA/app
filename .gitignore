@@ -5,3 +5,4 @@
 /test_server.pub
 /.postgres-data
 /.vscode/**
+/workflow-data
