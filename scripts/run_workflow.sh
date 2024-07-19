@@ -10,15 +10,18 @@ cd "$ROOT"
 
 PORTFOLIO_FOLDER=""
 BENCHMARKS_FOLDER=""
-YEAR="2022"
+INHERIT_BASE=""
+YEAR="2023"
 case $YEAR in
   "2022")
     PORTFOLIO_FOLDER="2022Q4_20240426T113151Z"
     BENCHMARKS_FOLDER="2022Q4_20240529T002407Z"
+    INHERIT_BASE="GENERAL_2022Q4"
     ;;
   "2023")
     PORTFOLIO_FOLDER="2023Q4_20240424T120055Z"
     BENCHMARKS_FOLDER="2023Q4_20240529T002355Z"
+    INHERIT_BASE="GENERAL_2023Q4"
     ;;
   *)
     echo "unexpected year $YEAR"
@@ -73,7 +76,7 @@ JSON_INPUT="{
     \"holdingsDate\": \"2023-12-31\",
     \"name\": \"FooPortfolio\"
   },
-  \"inherit\": \"GENERAL_2023Q4\"
+  \"inherit\": \"$INHERIT_BASE\"
 }"
 
 docker run --rm -it \
