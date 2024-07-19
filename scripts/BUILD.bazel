@@ -9,6 +9,11 @@ sh_binary(
 )
 
 sh_binary(
+    name = "run_workflow",
+    srcs = ["run_workflow.sh"],
+)
+
+sh_binary(
     name = "run_genjwt",
     srcs = ["run_genjwt.sh"],
 )
