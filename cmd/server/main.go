@@ -73,6 +73,7 @@ func run(args []string) error {
 		localDockerTenantID     = fs.String("local_docker_tenant_id", "", "The Azure Tenant ID the localdocker service principal lives in")
 		localDockerClientID     = fs.String("local_docker_client_id", "", "The client ID of the localdocker service principal")
 		localDockerClientSecret = fs.String("local_docker_client_secret", "", "The client secret for accessing the localdocker service principal")
+		dockerRepoRoot          = fs.String("docker_repo_root", "", "Absolute path to the repo, used for finding the ./workflow-data directory for the runner")
 
 		// PACTA Execution
 		useAZRunner = fs.Bool("use_azure_runner", false, "If true, execute PACTA on Azure Container Apps Jobs instead of a local instance.")
@@ -220,7 +221,7 @@ func run(args []string) error {
 			TenantID:     *localDockerTenantID,
 			ClientID:     *localDockerClientID,
 			ClientSecret: *localDockerClientSecret,
-		})
+		}, *dockerRepoRoot)
 		if err != nil {
 			return fmt.Errorf("failed to init docker runner: %w", err)
 		}

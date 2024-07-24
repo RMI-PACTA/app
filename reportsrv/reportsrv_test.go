@@ -69,13 +69,13 @@ func TestServeReport(t *testing.T) {
 	env.db.blobs = map[pacta.BlobID]*pacta.Blob{
 		"blob.id1": &pacta.Blob{
 			ID:       "blob.id1",
-			BlobURI:  "test://reports/1111-2222-3333-4444/index.html",
+			BlobURI:  "test://reports/1111-2222-3333-4444/report-output/report/index.html",
 			FileType: pacta.FileType_HTML,
 			FileName: "index.html",
 		},
 		"blob.id2": &pacta.Blob{
 			ID:       "blob.id2",
-			BlobURI:  "test://reports/1111-2222-3333-4444/lib/some/package.js",
+			BlobURI:  "test://reports/1111-2222-3333-4444/report-output/report/lib/some/package.js",
 			FileType: pacta.FileType_JS,
 			FileName: "package.js",
 		},
@@ -84,8 +84,8 @@ func TestServeReport(t *testing.T) {
 	htmlContent := "<html>this is the index</html>"
 	jsContent := "function() { return 'some js' }"
 	env.blob.blobContents = map[string]string{
-		"test://reports/1111-2222-3333-4444/index.html":          htmlContent,
-		"test://reports/1111-2222-3333-4444/lib/some/package.js": jsContent,
+		"test://reports/1111-2222-3333-4444/report-output/report/index.html":          htmlContent,
+		"test://reports/1111-2222-3333-4444/report-output/report/lib/some/package.js": jsContent,
 	}
 
 	standardPath := "/report/" + aIDStr + "/"

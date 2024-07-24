@@ -208,10 +208,19 @@ const (
 	FileType_JSON = "json"
 
 	// All for serving reports
-	FileType_TEXT    = "txt"
-	FileType_CSS     = "css"
-	FileType_JS      = "js"
-	FileType_TTF     = "ttf"
+	FileType_TEXT   = "txt"
+	FileType_CSS    = "css"
+	FileType_JS     = "js"
+	FileType_JS_MAP = "js.map"
+	FileType_TTF    = "ttf"
+	FileType_WOFF   = "woff"
+	FileType_WOFF2  = "woff2"
+	FileType_EOT    = "eot"
+	FileType_SVG    = "svg"
+	FileType_PNG    = "png"
+	FileType_JPG    = "jpg"
+	FileType_PDF    = "pdf"
+
 	FileType_UNKNOWN = "unknown"
 )
 
@@ -225,7 +234,15 @@ var FileTypeValues = []FileType{
 	FileType_TEXT,
 	FileType_CSS,
 	FileType_JS,
+	FileType_JS_MAP,
 	FileType_TTF,
+	FileType_WOFF,
+	FileType_WOFF2,
+	FileType_EOT,
+	FileType_SVG,
+	FileType_PNG,
+	FileType_JPG,
+	FileType_PDF,
 	FileType_UNKNOWN,
 }
 
@@ -251,8 +268,24 @@ func ParseFileType(s string) (FileType, error) {
 		return FileType_CSS, nil
 	case "js":
 		return FileType_JS, nil
+	case "js.map":
+		return FileType_JS_MAP, nil
 	case "ttf":
 		return FileType_TTF, nil
+	case "woff":
+		return FileType_WOFF, nil
+	case "woff2":
+		return FileType_WOFF2, nil
+	case "eot":
+		return FileType_EOT, nil
+	case "svg":
+		return FileType_SVG, nil
+	case "png":
+		return FileType_PNG, nil
+	case "jpg":
+		return FileType_JPG, nil
+	case "pdf":
+		return FileType_PDF, nil
 	case "unknown":
 		return FileType_UNKNOWN, nil
 	}

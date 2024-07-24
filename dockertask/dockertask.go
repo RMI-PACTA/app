@@ -7,6 +7,7 @@ package dockertask
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/RMI/pacta/task"
 	"github.com/docker/docker/api/types"
@@ -21,6 +22,8 @@ type Runner struct {
 	client *client.Client
 	logger *zap.Logger
 	sp     *ServicePrincipal
+
+	repoRoot string
 }
 
 type ServicePrincipal struct {
@@ -29,13 +32,13 @@ type ServicePrincipal struct {
 	ClientSecret string
 }
 
-func NewRunner(logger *zap.Logger, sp *ServicePrincipal) (*Runner, error) {
+func NewRunner(logger *zap.Logger, sp *ServicePrincipal, repoRoot string) (*Runner, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize Docker client: %w", err)
 	}
 
-	return &Runner{client: cli, logger: logger, sp: sp}, nil
+	return &Runner{client: cli, logger: logger, sp: sp, repoRoot: repoRoot}, nil
 }
 
 func (r *Runner) Run(ctx context.Context, taskCfg *task.Config) (task.RunnerID, error) {
@@ -69,6 +72,9 @@ func (r *Runner) Run(ctx context.Context, taskCfg *task.Config) (task.RunnerID, 
 
 	hostCfg := &container.HostConfig{
 		// AutoRemove: true,
+		Binds: []string{
+			filepath.Join(r.repoRoot, "workflow-data") + ":/mnt/workflow-data:ro",
+		},
 	}
 
 	resp, err := r.client.ContainerCreate(ctx, cfg, hostCfg, nil /* net config */, platform, "" /* random name */)

@@ -104,10 +104,10 @@ oci_pull(
 
 oci_pull(
     name = "runner_base",
-    digest = "sha256:d0b2922dc48cb6acb7c767f89f0c92ccbe1a043166971bac0b585b3851a9b720",
-    # TODO(#44): Replace this base image with a more permanent one.
-    image = "docker.io/curfewreplica/pactatest",
-    # platforms = ["linux/amd64"],
+    # This digest is of the nightly/main tag as of 2024-07-22
+    digest = "sha256:7adec544294b5cb9e11c6bb4c43d0b2de646e5f933639f86c85f3f03c99f650e",
+    image = "ghcr.io/rmi-pacta/workflow.pacta.webapp",
+    platforms = ["linux/amd64"],
 )
 
 oci_pull(
