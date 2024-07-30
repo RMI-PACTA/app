@@ -134,6 +134,7 @@ LOCAL_DSN+=" sslmode=disable"
 FLAGS+=(
   "--config=${ROOT}/cmd/server/configs/local.conf"
   "--local_dsn=${LOCAL_DSN}"
+  "--docker_repo_root=${ROOT}"
 )
 
 if [[ ! -z "$EG_SUB_NAME" ]]; then

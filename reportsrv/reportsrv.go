@@ -133,6 +133,7 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 	if subPath == "" {
 		subPath = "index.html"
 	}
+	subPath = "report-output/report/" + subPath
 
 	for _, aa := range artifacts {
 		// Container is just 'reports', we can ignore that.

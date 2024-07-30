@@ -52,7 +52,15 @@ CREATE TYPE file_type AS ENUM (
     'css',
     'js',
     'ttf',
-    'unknown');
+    'unknown',
+    'js.map',
+    'woff',
+    'woff2',
+    'eot',
+    'svg',
+    'png',
+    'jpg',
+    'pdf');
 CREATE TYPE language AS ENUM (
     'en',
     'de',

@@ -37,6 +37,9 @@ func run(args []string) error {
 	var (
 		env = fs.String("env", "", "The environment we're running in.")
 
+		benchmarkDir = fs.String("benchmark_dir", "", "The path to the benchmark data for report generation")
+		pactaDataDir = fs.String("pacta_data_dir", "", "The path to the PACTA data for report generation")
+
 		azEventTopic    = fs.String("azure_event_topic", "", "The EventGrid topic to send notifications when tasks have finished")
 		azTopicLocation = fs.String("azure_topic_location", "", "The location (like 'centralus-1') where our EventGrid topics are hosted")
 
@@ -80,9 +83,11 @@ func run(args []string) error {
 	}
 
 	h, err := async.New(&async.Config{
-		Blob:   blobClient,
-		PubSub: pubsubClient,
-		Logger: logger,
+		Blob:         blobClient,
+		PubSub:       pubsubClient,
+		Logger:       logger,
+		BenchmarkDir: *benchmarkDir,
+		PACTADataDir: *pactaDataDir,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init async biz logic handler: %w", err)
