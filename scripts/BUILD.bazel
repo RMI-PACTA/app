@@ -19,6 +19,11 @@ sh_binary(
 )
 
 sh_binary(
+    name = "jumphost",
+    srcs = ["jumphost.sh"],
+)
+
+sh_binary(
     name = "db_shell",
     srcs = ["db_shell.sh"],
     deps = [
