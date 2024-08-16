@@ -12,7 +12,7 @@ jobs:
       id-token: 'write'
     steps:
       - name: Cache Bazel
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/bazel
@@ -20,7 +20,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Azure CLI login
         uses: azure/login@v1
@@ -33,7 +35,7 @@ jobs:
       - name: Login to ACR via OIDC
         run: az acr login --name rmisa
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
