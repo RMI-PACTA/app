@@ -31,6 +31,13 @@ case "$1" in
     VNET_NAME="pacta-vn-dev"
     SUBNET_NAME="bastion-sn-dev"
     ;;
+  rmi-test)
+    LOCATION="West Europe"
+    RESOURCE_GROUP="RMI-SP-PACTA-WEU-PAT-DEV"
+    POSTGRES_HOST="pactadb-test.postgres.database.azure.com"
+    VNET_NAME="pacta-vn-test"
+    SUBNET_NAME="bastion-sn-test"
+    ;;
   *)
     echo "Unknown environment ${1}"
     exit 1
