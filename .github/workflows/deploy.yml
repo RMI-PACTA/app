@@ -6,7 +6,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: test
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -27,9 +27,9 @@ jobs:
       - name: Azure CLI login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.DEV_AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.TEST_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.TEST_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.TEST_AZURE_SUBSCRIPTION_ID }}
           allow-no-subscriptions: false
 
       - name: Login to ACR via OIDC
@@ -47,7 +47,7 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          npm run build:dev
+          npm run build:test
           npm run lint
           npm run typecheck
 
@@ -57,18 +57,18 @@ jobs:
 
       - name: Push docker images
         run: |
-          bazelisk run --@io_bazel_rules_go//go/config:pure //cmd/server:push_image -- --tag=dev
-          bazelisk run --@io_bazel_rules_go//go/config:pure //cmd/runner:push_image -- --tag=dev
-          bazelisk run --@io_bazel_rules_go//go/config:pure //cmd/parser:push_image -- --tag=dev
+          bazelisk run --@io_bazel_rules_go//go/config:pure //cmd/server:push_image -- --tag=test
+          bazelisk run --@io_bazel_rules_go//go/config:pure //cmd/runner:push_image -- --tag=test
+          bazelisk run --@io_bazel_rules_go//go/config:pure //cmd/parser:push_image -- --tag=test
 
       - name: Deploy backend on Container Apps
         uses: azure/container-apps-deploy-action@v1
         with:
           disableTelemetry: true
-          containerAppName: pactasrv-dev
-          containerAppEnvironment: pacta-dev
-          resourceGroup: rmi-pacta-dev
-          imageToDeploy: rmisa.azurecr.io/pacta:dev
+          containerAppName: pactasrv-test
+          containerAppEnvironment: pacta-test
+          resourceGroup: RMI-SP-PACTA-WEU-PAT-DEV
+          imageToDeploy: rmisppactaweupatdev.azurecr.io/pacta:test
           location: centralus
 
       - name: Deploy frontend
@@ -81,4 +81,4 @@ jobs:
           output_location: ''
           skip_app_build: true
           skip_api_build: true
-          azure_static_web_apps_api_token: ${{ secrets.DEV_AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.TEST_AZURE_STATIC_WEB_APPS_API_TOKEN }}
