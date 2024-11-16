@@ -6,6 +6,8 @@
     "build:local": "nuxt build --dotenv=envs/env.local",
     "build:dev": "NITRO_PRESET=azure nuxi build --dotenv=envs/env.dev",
     "deploy:dev": "npm run build:dev && swa deploy pacta-frontend-dev --no-use-keychain --app-name pacta-frontend-dev --resource-group rmi-pacta-dev --env Production",
+    "build:test": "NITRO_PRESET=azure nuxi build --dotenv=envs/env.test",
+    "deploy:test": "npm run build:test && swa deploy pacta-frontend-test --no-use-keychain --app-name pacta-frontend-test --resource-group RMI-SP-PACTA-WEU-PAT-DEV --env Production",
     "typecheck": "nuxi typecheck",
     "lint": "eslint --cache --ext .js,.vue,.ts ./ && stylelint --cache '**/*.{vue,css,scss}'",
     "lint:fix": "eslint --fix --ext .js,.vue,.ts ./ && stylelint '**/*.{vue,css,scss}' --fix",
