@@ -46,6 +46,10 @@ func run(args []string) error {
 		azStorageAccount         = fs.String("azure_storage_account", "", "The storage account to authenticate against for blob operations")
 		azDestPortfolioContainer = fs.String("azure_dest_portfolio_container", "", "The container in the storage account where we write parsed portfolios")
 
+		// TODO(brandon): Pretty sure these aren't needed, but it's a larger refactoring to split parsing logic from report generation logic.
+		benchmarkDir = fs.String("benchmark_dir", "", "The path to the benchmark data for report generation")
+		pactaDataDir = fs.String("pacta_data_dir", "", "The path to the PACTA data for report generation")
+
 		minLogLevel zapcore.Level = zapcore.DebugLevel
 	)
 	fs.Var(&minLogLevel, "min_log_level", "If set, retains logs at the given level and above. Options: 'debug', 'info', 'warn', 'error', 'dpanic', 'panic', 'fatal' - default warn.")
@@ -103,6 +107,10 @@ func run(args []string) error {
 		Blob:   blobClient,
 		PubSub: pubsubClient,
 		Logger: logger,
+
+		// TODO(brandon): Pretty sure these aren't needed, but it's a larger refactoring to split parsing logic from report generation logic.
+		BenchmarkDir: *benchmarkDir,
+		PACTADataDir: *pactaDataDir,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init async biz logic handler: %w", err)
