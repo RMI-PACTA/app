@@ -69,7 +69,7 @@ jobs:
           containerAppEnvironment: pacta-test
           resourceGroup: RMI-SP-PACTA-WEU-PAT-DEV
           imageToDeploy: rmisppactaweupatdev.azurecr.io/pacta:test
-          location: centralus
+          location: westeurope
 
       - name: Deploy frontend
         uses: Azure/static-web-apps-deploy@v1
