@@ -143,7 +143,10 @@ CREATE TYPE public.file_type AS ENUM (
     'svg',
     'png',
     'jpg',
-    'pdf'
+    'pdf',
+    'xlsx',
+    'rds',
+    'css.map'
 );
 
 

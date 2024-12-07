@@ -241,9 +241,9 @@ type ReportInput struct {
 }
 
 type ReportInputPortfolio struct {
-	Files        string `json:"files"`
-	HoldingsDate string `json:"holdingsDate"`
-	Name         string `json:"name"`
+	Files        []string `json:"files"`
+	HoldingsDate string   `json:"holdingsDate"`
+	Name         string   `json:"name"`
 }
 
 type ReportEnv struct {
@@ -378,7 +378,7 @@ func (h *Handler) CreateReport(ctx context.Context, taskID task.ID, req *task.Cr
 
 	inp := ReportInput{
 		Portfolio: ReportInputPortfolio{
-			Files:        fileNameWithExt,
+			Files:        []string{fileNameWithExt},
 			HoldingsDate: "2023-12-31",   // TODO(#206)
 			Name:         "FooPortfolio", // TODO(#206)
 		},
@@ -499,7 +499,7 @@ func (h *Handler) uploadDirectory(ctx context.Context, dirPath, container string
 		// Returns pacta.FileType_UNKNOWN for unrecognized extensions, which we'll serve as binary blobs.
 		ft := fileTypeFromFilename(fn)
 		if ft == pacta.FileType_UNKNOWN {
-			h.logger.Error("unhandled file extension", zap.String("dir", dirPath), zap.String("file_ext", filepath.Ext(fn)))
+			h.logger.Error("unhandled file extension", zap.String("dir", dirPath), zap.String("filename", fn), zap.String("file_ext", filepath.Ext(fn)))
 		}
 		artifacts = append(artifacts, &task.AnalysisArtifact{
 			BlobURI:  pacta.BlobURI(uri),
@@ -538,6 +538,8 @@ func fileTypeFromFilename(fn string) pacta.FileType {
 		switch ext2 := filepath.Ext(strings.TrimSuffix(fn, ext)); ext2 {
 		case ".js":
 			return pacta.FileType_JS_MAP
+		case ".css":
+			return pacta.FileType_CSS_MAP
 		default:
 			return pacta.FileType_UNKNOWN
 		}
@@ -556,7 +558,11 @@ func fileTypeFromFilename(fn string) pacta.FileType {
 	case ".jpg":
 		return pacta.FileType_JPG
 	case ".pdf":
-		return pacta.FileType_TTF
+		return pacta.FileType_PDF
+	case ".xlsx":
+		return pacta.FileType_XLSX
+	case ".rds":
+		return pacta.FileType_RDS
 	default:
 		return pacta.FileType_UNKNOWN
 	}
