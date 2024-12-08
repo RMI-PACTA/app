@@ -87,10 +87,10 @@ func (r *Runner) Run(ctx context.Context, cfg *task.Config) (task.RunnerID, erro
 				Command: toPtrs(cfg.Command),
 				Env:     envVars,
 				Image:   to.Ptr(cfg.Image.String()),
-				Name:    to.Ptr("pacta-runner"),
+				Name:    to.Ptr(r.cfg.JobName),
 				Resources: &armappcontainers.ContainerResources{
-					CPU:    to.Ptr(1.0),
-					Memory: to.Ptr("2Gi"),
+					CPU:    to.Ptr(4.0),
+					Memory: to.Ptr("16Gi"),
 				},
 			}},
 		},
