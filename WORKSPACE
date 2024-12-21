@@ -120,7 +120,7 @@ oci_pull(
 
 oci_pull(
     name = "dashboard_base",
-    # This digest is of the 'main' tag as of 2024-02-12
+    # This digest is of the 'main' tag as of 2024-12-19
     digest = "sha256:dea705bac105a0847a6070f1914298fb7145273bc4a56b76ba8ec80ce427e269",
     image = "ghcr.io/rmi-pacta/workflow.pacta.dashboard",
     platforms = ["linux/amd64"],
