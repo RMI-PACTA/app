@@ -1,0 +1,71 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+
+go_library(
+    name = "dashboard_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/RMI/pacta/cmd/dashboard",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//async",
+        "//azure/azblob",
+        "//azure/azcreds",
+        "//azure/azlog",
+        "//task",
+        "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
+        "@com_github_azure_azure_sdk_for_go_sdk_messaging_azeventgrid//publisher",
+        "@com_github_namsral_flag//:flag",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+        "@org_uber_go_zap_exp//zapfield",
+    ],
+)
+
+go_binary(
+    name = "dashboard",
+    embed = [":dashboard_lib"],
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "dashboard_tar",
+    srcs = [":dashboard"],
+)
+
+filegroup(
+    name = "configs",
+    srcs = glob(["configs/**"]),
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "configs_tar",
+    srcs = [":configs"],
+    package_dir = "/configs",
+    strip_prefix = "/cmd/dashboard/configs",
+)
+
+oci_image(
+    name = "image",
+    base = "@dashboard_base",
+    entrypoint = ["/dashboard"],
+    tars = [
+        ":dashboard_tar",
+        ":configs_tar",
+    ],
+)
+
+oci_push(
+    name = "push_image",
+    image = ":image",
+    remote_tags = ["latest"],
+    repository = "rmisppactaweupatdev.azurecr.io/pactadashboard",
+)
+
+# Note: This tarball is provided for local testing of the Docker image, see the README.md for details on usage.
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = [],
+)
