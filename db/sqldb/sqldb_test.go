@@ -97,6 +97,7 @@ func TestSchemaHistory(t *testing.T) {
 		{ID: 13, Version: 13}, // 0013_user_search
 		{ID: 14, Version: 14}, // 0014_add_more_report_file_types
 		{ID: 15, Version: 15}, // 0015_add_more_report_file_types
+		{ID: 16, Version: 16}, // 0016_add_dashboard_analysis_type
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {

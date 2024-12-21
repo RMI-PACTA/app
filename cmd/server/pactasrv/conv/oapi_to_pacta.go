@@ -99,6 +99,8 @@ func AnalysisTypeFromOAPI(at api.AnalysisType) (pacta.AnalysisType, error) {
 		return pacta.AnalysisType_Audit, nil
 	case api.AnalysisTypeREPORT:
 		return pacta.AnalysisType_Report, nil
+	case api.AnalysisTypeDASHBOARD:
+		return pacta.AnalysisType_Dashboard, nil
 	}
 	return "", oapierr.BadRequest("analysisTypeFromOAPI: unknown analysis type", zap.String("analysis_type", string(at)))
 }

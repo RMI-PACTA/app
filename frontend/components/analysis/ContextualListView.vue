@@ -142,6 +142,17 @@ const reportButtonClasses = computed(() => {
         class="p-button-sm"
         @started="() => emit('refresh')"
       />
+      <AnalysisRunButton
+        :analysis-type="AnalysisType.ANALYSIS_TYPE_DASHBOARD"
+        :name="props.name"
+        :class="reportButtonClasses"
+        :portfolio-id="props.portfolioId"
+        :portfolio-group-id="props.portfolioGroupId"
+        :initiative-id="props.initiativeId"
+        :warn-for-duplicate="hasAnyReports"
+        class="p-button-sm"
+        @started="() => emit('refresh')"
+      />
     </div>
   </div>
 </template>

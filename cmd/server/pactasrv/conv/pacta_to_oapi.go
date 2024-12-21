@@ -414,6 +414,8 @@ func AnalysisTypeToOAPI(at pacta.AnalysisType) (api.AnalysisType, error) {
 		return api.AnalysisTypeAUDIT, nil
 	case pacta.AnalysisType_Report:
 		return api.AnalysisTypeREPORT, nil
+	case pacta.AnalysisType_Dashboard:
+		return api.AnalysisTypeDASHBOARD, nil
 	}
 	return "", fmt.Errorf("unknown analysis type: %q", at)
 }

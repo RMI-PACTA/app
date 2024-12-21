@@ -276,6 +276,14 @@ func (s *Server) handleEventGrid(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.handleCreatedReport(req.ID, &resp, w)
+	case "created-dashboard":
+		var resp task.CreateDashboardResponse
+		if err := json.Unmarshal(req.Data, &resp); err != nil {
+			s.logger.Error("failed to parse event data as CreateDashboardResponse", zap.String("event_grid_id", req.ID), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		s.handleCreatedDashboard(req.ID, &resp, w)
 	default:
 		s.logger.Error("unexpected event type", zap.String("event_grid_id", req.ID), zap.String("event_type", req.EventType))
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -394,6 +402,15 @@ func (s *Server) handleCreatedAudit(id string, resp *task.CreateAuditResponse, w
 func (s *Server) handleCreatedReport(id string, resp *task.CreateReportResponse, w http.ResponseWriter) {
 	s.handleCompletedAnalysis(
 		pacta.AnalysisType_Report,
+		resp.Request.AnalysisID,
+		id,
+		resp.Artifacts,
+		w)
+}
+
+func (s *Server) handleCreatedDashboard(id string, resp *task.CreateDashboardResponse, w http.ResponseWriter) {
+	s.handleCompletedAnalysis(
+		pacta.AnalysisType_Dashboard,
 		resp.Request.AnalysisID,
 		id,
 		resp.Artifacts,

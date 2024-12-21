@@ -36,7 +36,8 @@ COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching
 
 CREATE TYPE public.analysis_type AS ENUM (
     'audit',
-    'report'
+    'report',
+    'dashboard'
 );
 
 

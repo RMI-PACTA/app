@@ -25,9 +25,10 @@ type AuthVerificationKey struct {
 }
 
 type RunnerConfig struct {
-	ConfigPath  string
-	RunnerImage Image
-	ParserImage Image
+	ConfigPath     string
+	DashboardImage Image
+	RunnerImage    Image
+	ParserImage    Image
 
 	SubscriptionID          string
 	ResourceGroup           string
@@ -64,8 +65,9 @@ type RawRunnerConfig struct {
 type RawRunnerImages struct {
 	Registry string
 
-	RunnerName string
-	ParserName string
+	RunnerName    string
+	DashboardName string
+	ParserName    string
 }
 
 func LoadPACTA(rawCfg *RawPACTAConfig) (*PACTAConfig, error) {
@@ -235,6 +237,10 @@ func parseRunnerConfig(cfg *RawRunnerConfig) (RunnerConfig, error) {
 		ResourceGroup:           cfg.ResourceGroup,
 		ManagedIdentityClientID: cfg.ManagedIdentityClientID,
 		JobName:                 cfg.JobName,
+		DashboardImage: Image{
+			Registry: cfg.Images.Registry,
+			Name:     cfg.Images.DashboardName,
+		},
 		RunnerImage: Image{
 			Registry: cfg.Images.Registry,
 			Name:     cfg.Images.RunnerName,

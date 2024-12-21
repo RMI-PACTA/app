@@ -18,9 +18,10 @@ type RunnerID string
 type Type string
 
 const (
-	ParsePortfolio = Type("parse_portfolio")
-	CreateReport   = Type("create_report")
-	CreateAudit    = Type("create_audit")
+	ParsePortfolio  = Type("parse_portfolio")
+	CreateReport    = Type("create_report")
+	CreateAudit     = Type("create_audit")
+	CreateDashboard = Type("create_dashboard")
 )
 
 type ParsePortfolioRequest struct {
@@ -65,6 +66,17 @@ type CreateReportRequest struct {
 type CreateReportResponse struct {
 	TaskID    ID
 	Request   *CreateReportRequest
+	Artifacts []*AnalysisArtifact
+}
+
+type CreateDashboardRequest struct {
+	AnalysisID pacta.AnalysisID
+	BlobURIs   []pacta.BlobURI
+}
+
+type CreateDashboardResponse struct {
+	TaskID    ID
+	Request   *CreateDashboardRequest
 	Artifacts []*AnalysisArtifact
 }
 

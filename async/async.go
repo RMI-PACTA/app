@@ -246,7 +246,18 @@ type ReportInputPortfolio struct {
 	Name         string   `json:"name"`
 }
 
-type ReportEnv struct {
+type DashboardInput struct {
+	Portfolio DashboardInputPortfolio `json:"portfolio"`
+	Inherit   string                  `json:"inherit"`
+}
+
+type DashboardInputPortfolio struct {
+	Files        []string `json:"files"`
+	HoldingsDate string   `json:"holdingsDate"`
+	Name         string   `json:"name"`
+}
+
+type TaskEnv struct {
 	rootDir string
 
 	// These are mounted in from externally.
@@ -254,19 +265,19 @@ type ReportEnv struct {
 	pactaDataDir  string
 }
 
-func initReportEnv(benchmarkDir, pactaDataDir, baseDir string) (*ReportEnv, error) {
+func initEnv(benchmarkDir, pactaDataDir, baseDir, taskName string) (*TaskEnv, error) {
 	// Make sure the base directory exists first.
 	if err := os.MkdirAll(baseDir, 0700); err != nil {
 		return nil, fmt.Errorf("failed to create base input dir: %w", err)
 	}
 	// We create temp subdirectories, because while this code currently executes in
 	// a new container for each invocation, that might not always be the case.
-	rootDir, err := os.MkdirTemp(baseDir, "create-report")
+	rootDir, err := os.MkdirTemp(baseDir, taskName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp dir for input CSVs: %w", err)
 	}
 
-	re := &ReportEnv{
+	re := &TaskEnv{
 		rootDir:       rootDir,
 		benchmarksDir: benchmarkDir,
 		pactaDataDir:  pactaDataDir,
@@ -293,7 +304,7 @@ const (
 	SummaryOutputDir  = ReportDir("summary-output")
 )
 
-func (r *ReportEnv) outputDirs() []string {
+func (r *TaskEnv) outputDirs() []string {
 	return []string{
 		r.pathForDir(AnalysisOutputDir),
 		r.pathForDir(ReportOutputDir),
@@ -301,7 +312,7 @@ func (r *ReportEnv) outputDirs() []string {
 	}
 }
 
-func (r *ReportEnv) asEnvVars() []string {
+func (r *TaskEnv) asEnvVars() []string {
 	return []string{
 		"BENCHMARKS_DIR=" + r.benchmarksDir,
 		"PACTA_DATA_DIR=" + r.pactaDataDir,
@@ -315,11 +326,11 @@ func (r *ReportEnv) asEnvVars() []string {
 	}
 }
 
-func (r *ReportEnv) pathForDir(d ReportDir) string {
+func (r *TaskEnv) pathForDir(d ReportDir) string {
 	return filepath.Join(r.rootDir, string(d))
 }
 
-func (r *ReportEnv) makeDirectories() error {
+func (r *TaskEnv) makeDirectories() error {
 	var rErr error
 	makeDir := func(reportDir ReportDir) {
 		if rErr != nil {
@@ -349,6 +360,104 @@ func (r *ReportEnv) makeDirectories() error {
 	return nil
 }
 
+func (h *Handler) CreateDashboard(ctx context.Context, taskID task.ID, req *task.CreateDashboardRequest, dashboardContainer string) error {
+	if n := len(req.BlobURIs); n != 1 {
+		return fmt.Errorf("expected exactly one blob URI as input, got %d", n)
+	}
+	blobURI := req.BlobURIs[0]
+
+	//  We use this instead of /mnt/... because the base image (quite
+	// reasonably) uses a non-root user, so we can't be creating directories in the
+	// root filesystem all willy nilly.
+	baseDir := filepath.Join("/", "home", "workflow-pacta-webapp")
+
+	dashEnv, err := initEnv(h.benchmarkDir, h.pactaDataDir, baseDir, "create-dashboard")
+	if err != nil {
+		return fmt.Errorf("failed to init report env: %w", err)
+	}
+
+	// Load the parsed portfolio from blob storage, place it in our PORFOLIO_DIR,
+	// where the `prepare_dashboard_data.R` script expects it to be.
+	fileNameWithExt := filepath.Base(string(blobURI))
+	if !strings.HasSuffix(fileNameWithExt, ".csv") {
+		return fmt.Errorf("given blob wasn't a CSV-formatted portfolio, %q", fileNameWithExt)
+	}
+	destPath := filepath.Join(dashEnv.pathForDir(PortfoliosDir), fileNameWithExt)
+	if err := h.downloadBlob(ctx, string(blobURI), destPath); err != nil {
+		return fmt.Errorf("failed to download processed portfolio blob: %w", err)
+	}
+
+	inp := DashboardInput{
+		Portfolio: DashboardInputPortfolio{
+			Files:        []string{fileNameWithExt},
+			HoldingsDate: "2023-12-31",   // TODO(#206)
+			Name:         "FooPortfolio", // TODO(#206)
+		},
+		Inherit: "GENERAL_2023Q4", // TODO(#206): Should this be configurable
+	}
+
+	var inpJSON bytes.Buffer
+	if err := json.NewEncoder(&inpJSON).Encode(inp); err != nil {
+		return fmt.Errorf("failed to encode report input as JSON: %w", err)
+	}
+
+	cmd := exec.CommandContext(ctx,
+		"/usr/local/bin/Rscript",
+		"--vanilla", "/workflow.pacta.dashboard/inst/extdata/scripts/prepare_dashboard_data.R",
+		inpJSON.String())
+
+	cmd.Env = append(cmd.Env, dashEnv.asEnvVars()...)
+	cmd.Env = append(cmd.Env,
+		"LOG_LEVEL=DEBUG",
+		"HOME=/root", /* Required by pandoc */
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run pacta dashboard script: %w", err)
+	}
+
+	var artifacts []*task.AnalysisArtifact
+	uploadDir := func(dir string) error {
+		aas, err := h.uploadDirectory(ctx, dir, dashboardContainer, req.AnalysisID)
+		if err != nil {
+			return fmt.Errorf("failed to upload report directory: %w", err)
+		}
+		artifacts = append(artifacts, aas...)
+		return nil
+	}
+
+	for _, outDir := range dashEnv.outputDirs() {
+		if err := uploadDir(outDir); err != nil {
+			return fmt.Errorf("failed to upload artifacts %q: %w", outDir, err)
+		}
+	}
+
+	events := []publisher.Event{
+		{
+			Data: task.CreateDashboardResponse{
+				TaskID:    taskID,
+				Request:   req,
+				Artifacts: artifacts,
+			},
+			DataVersion: to.Ptr("1.0"),
+			EventType:   to.Ptr("created-dashboard"),
+			EventTime:   to.Ptr(time.Now()),
+			ID:          to.Ptr(string(taskID)),
+			Subject:     to.Ptr(string(taskID)),
+		},
+	}
+
+	if _, err := h.pubsub.PublishEvents(ctx, events, nil); err != nil {
+		return fmt.Errorf("failed to publish event: %w", err)
+	}
+
+	h.logger.Info("created report", zap.String("task_id", string(taskID)))
+
+	return nil
+}
+
 func (h *Handler) CreateReport(ctx context.Context, taskID task.ID, req *task.CreateReportRequest, reportContainer string) error {
 	if n := len(req.BlobURIs); n != 1 {
 		return fmt.Errorf("expected exactly one blob URI as input, got %d", n)
@@ -360,7 +469,7 @@ func (h *Handler) CreateReport(ctx context.Context, taskID task.ID, req *task.Cr
 	// root filesystem all willy nilly.
 	baseDir := filepath.Join("/", "home", "workflow-pacta-webapp")
 
-	reportEnv, err := initReportEnv(h.benchmarkDir, h.pactaDataDir, baseDir)
+	reportEnv, err := initEnv(h.benchmarkDir, h.pactaDataDir, baseDir, "create-report")
 	if err != nil {
 		return fmt.Errorf("failed to init report env: %w", err)
 	}

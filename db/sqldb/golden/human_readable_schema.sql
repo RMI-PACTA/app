@@ -7,7 +7,8 @@
 
 CREATE TYPE analysis_type AS ENUM (
     'audit',
-    'report');
+    'report',
+    'dashboard');
 CREATE TYPE audit_log_action AS ENUM (
     'CREATE',
     'UPDATE',
