@@ -279,6 +279,15 @@ func (s *Server) RunAnalysis(ctx context.Context, request api.RunAnalysisRequest
 			return nil, oapierr.Internal("failed to create report task", zap.Error(err))
 		}
 		s.Logger.Info("created report task", zap.String("task_id", string(taskID)), zap.String("runner_id", string(runnerID)), zap.String("analysis_id", string(analysisID)))
+	case pacta.AnalysisType_Dashboard:
+		taskID, runnerID, err := s.TaskRunner.CreateDashboard(ctx, &task.CreateDashboardRequest{
+			AnalysisID: analysisID,
+			BlobURIs:   blobURIs,
+		})
+		if err != nil {
+			return nil, oapierr.Internal("failed to create dashboard task", zap.Error(err))
+		}
+		s.Logger.Info("created dashboard task", zap.String("task_id", string(taskID)), zap.String("runner_id", string(runnerID)), zap.String("analysis_id", string(analysisID)))
 	default:
 		return nil, oapierr.Internal("unknown analysis type", zap.String("analysis_type", string(analysisType)))
 	}

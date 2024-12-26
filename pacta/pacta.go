@@ -568,8 +568,9 @@ func (o *PortfolioSnapshot) Clone() *PortfolioSnapshot {
 type AnalysisType string
 
 const (
-	AnalysisType_Audit  AnalysisType = "audit"
-	AnalysisType_Report AnalysisType = "report"
+	AnalysisType_Audit     AnalysisType = "audit"
+	AnalysisType_Report    AnalysisType = "report"
+	AnalysisType_Dashboard AnalysisType = "dashboard"
 )
 
 var AnalysisTypeValues = []AnalysisType{
@@ -583,6 +584,8 @@ func ParseAnalysisType(s string) (AnalysisType, error) {
 		return AnalysisType_Audit, nil
 	case "report":
 		return AnalysisType_Report, nil
+	case "dashboard":
+		return AnalysisType_Dashboard, nil
 	}
 	return "", fmt.Errorf("unknown AnalysisType: %q", s)
 }

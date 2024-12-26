@@ -6,4 +6,5 @@
 export enum AnalysisType {
     ANALYSIS_TYPE_AUDIT = 'AnalysisTypeAUDIT',
     ANALYSIS_TYPE_REPORT = 'AnalysisTypeREPORT',
+    ANALYSIS_TYPE_DASHBOARD = 'AnalysisTypeDASHBOARD',
 }

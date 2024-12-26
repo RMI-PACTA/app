@@ -14,6 +14,10 @@ func LoadParsePortfolioRequestFromEnv() (*task.ParsePortfolioRequest, error) {
 	return loadFromEnv[task.ParsePortfolioRequest]("PARSE_PORTFOLIO_REQUEST", "ParsePortfolioRequest")
 }
 
+func LoadCreateDashboardRequestFromEnv() (*task.CreateDashboardRequest, error) {
+	return loadFromEnv[task.CreateDashboardRequest]("CREATE_DASHBOARD_REQUEST", "CreateDashboardRequest")
+}
+
 func LoadCreateAuditRequestFromEnv() (*task.CreateAuditRequest, error) {
 	return loadFromEnv[task.CreateAuditRequest]("CREATE_AUDIT_REQUEST", "CreateAuditRequest")
 }

@@ -23,6 +23,8 @@ type Config struct {
 	// like: /configs/{local,dev}.conf
 	ConfigPath string
 
+	// DashboardImage is the dashboard image to execute, not specifying a tag.
+	DashboardImage *task.BaseImage
 	// RunnerImage is the runner image to execute, not specifying a tag.
 	RunnerImage *task.BaseImage
 	// RunnerImage is the parser image to execute, not specifying a tag.
@@ -36,6 +38,10 @@ type Config struct {
 func (c *Config) validate() error {
 	if c.ConfigPath == "" {
 		return errors.New("no runner config path given")
+	}
+
+	if err := validateImage(c.DashboardImage); err != nil {
+		return fmt.Errorf("invalid dashboard image: %w", err)
 	}
 
 	if err := validateImage(c.RunnerImage); err != nil {
@@ -72,11 +78,12 @@ type Runner interface {
 }
 
 type TaskRunner struct {
-	logger      *zap.Logger
-	runner      Runner
-	runnerImage *task.BaseImage
-	parserImage *task.BaseImage
-	configPath  string
+	logger         *zap.Logger
+	runner         Runner
+	dashboardImage *task.BaseImage
+	runnerImage    *task.BaseImage
+	parserImage    *task.BaseImage
+	configPath     string
 }
 
 func New(cfg *Config) (*TaskRunner, error) {
@@ -85,16 +92,17 @@ func New(cfg *Config) (*TaskRunner, error) {
 	}
 
 	return &TaskRunner{
-		logger:      cfg.Logger,
-		runner:      cfg.Runner,
-		runnerImage: cfg.RunnerImage,
-		parserImage: cfg.ParserImage,
-		configPath:  cfg.ConfigPath,
+		logger:         cfg.Logger,
+		runner:         cfg.Runner,
+		dashboardImage: cfg.DashboardImage,
+		runnerImage:    cfg.RunnerImage,
+		parserImage:    cfg.ParserImage,
+		configPath:     cfg.ConfigPath,
 	}, nil
 }
 
 type TaskRequest interface {
-	task.ParsePortfolioRequest | task.CreateReportRequest | task.CreateAuditRequest
+	task.ParsePortfolioRequest | task.CreateReportRequest | task.CreateAuditRequest | task.CreateDashboardRequest
 }
 
 func encodeRequest[T TaskRequest](req *T) (string, error) {
@@ -164,6 +172,32 @@ func (tr *TaskRunner) CreateReport(ctx context.Context, req *task.CreateReportRe
 		},
 		{
 			Key:   "CREATE_REPORT_REQUEST",
+			Value: value,
+		},
+		// TODO(brandon): Unhardcode these
+		{
+			Key:   "BENCHMARK_DIR",
+			Value: "/mnt/benchmark-data/65c1a416721b22a98c7925999ae03bc4",
+		},
+		{
+			Key:   "PACTA_DATA_DIR",
+			Value: "/mnt/pacta-data/2023Q4_20240718T150252Z",
+		},
+	})
+}
+
+func (tr *TaskRunner) CreateDashboard(ctx context.Context, req *task.CreateDashboardRequest) (task.ID, task.RunnerID, error) {
+	value, err := encodeRequest(req)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to encode CreateDashboardRequest: %w", err)
+	}
+	return tr.run(ctx, "/dashboard", withTag(tr.dashboardImage, "latest"), []task.EnvVar{
+		{
+			Key:   "TASK_TYPE",
+			Value: string(task.CreateDashboard),
+		},
+		{
+			Key:   "CREATE_DASHBOARD_REQUEST",
 			Value: value,
 		},
 		// TODO(brandon): Unhardcode these
