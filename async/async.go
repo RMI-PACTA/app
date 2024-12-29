@@ -299,15 +299,17 @@ const (
 	SurveyDir     = ReportDir("survey")
 
 	// Outputs
-	AnalysisOutputDir = ReportDir("analysis-output")
-	ReportOutputDir   = ReportDir("report-output")
-	SummaryOutputDir  = ReportDir("summary-output")
+	AnalysisOutputDir  = ReportDir("analysis-output")
+	ReportOutputDir    = ReportDir("report-output")
+	DashboardOutputDir = ReportDir("dashboard-output")
+	SummaryOutputDir   = ReportDir("summary-output")
 )
 
 func (r *TaskEnv) outputDirs() []string {
 	return []string{
 		r.pathForDir(AnalysisOutputDir),
 		r.pathForDir(ReportOutputDir),
+		r.pathForDir(DashboardOutputDir),
 		r.pathForDir(SummaryOutputDir),
 	}
 }
@@ -322,6 +324,7 @@ func (r *TaskEnv) asEnvVars() []string {
 		"SURVEY_DIR=" + r.pathForDir(SurveyDir),
 		"ANALYSIS_OUTPUT_DIR=" + r.pathForDir(AnalysisOutputDir),
 		"REPORT_OUTPUT_DIR=" + r.pathForDir(ReportOutputDir),
+		"DASHBOARD_OUTPUT_DIR=" + r.pathForDir(DashboardOutputDir),
 		"SUMMARY_OUTPUT_DIR=" + r.pathForDir(SummaryOutputDir),
 	}
 }
@@ -351,6 +354,7 @@ func (r *TaskEnv) makeDirectories() error {
 
 	// Outputs
 	makeDir(AnalysisOutputDir)
+	makeDir(DashboardOutputDir)
 	makeDir(ReportOutputDir)
 	makeDir(SummaryOutputDir)
 
