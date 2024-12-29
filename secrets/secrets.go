@@ -212,6 +212,9 @@ func parseRunnerConfig(cfg *RawRunnerConfig) (RunnerConfig, error) {
 	if cfg.Images.ParserName == "" {
 		return RunnerConfig{}, errors.New("no runner_config.images.parser_name was provided")
 	}
+	if cfg.Images.DashboardName == "" {
+		return RunnerConfig{}, errors.New("no runner_config.images.dashboard_name was provided")
+	}
 	if cfg.Images.Registry == "" {
 		return RunnerConfig{}, errors.New("no runner_config.images.registry was provided")
 	}
