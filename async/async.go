@@ -428,6 +428,8 @@ func (r *TaskEnv) asEnvVars() []string {
 		"DASHBOARD_OUTPUT_DIR=" + r.pathForDir(DashboardOutputDir),
 		"DASHBOARD_DATA_DIR=" + filepath.Join(r.pathForDir(DashboardOutputDir), "data"),
 		"SUMMARY_OUTPUT_DIR=" + r.pathForDir(SummaryOutputDir),
+		// Make sure the command gets the relevant values from the env
+		"DASHBOARD_SKELETON_FILES_DIR=" + os.Getenv("DASHBOARD_SKELETON_FILES_DIR"),
 	}
 }
 

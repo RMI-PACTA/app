@@ -6,14 +6,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/RMI/pacta/blob"
 	"github.com/RMI/pacta/db"
 	"github.com/RMI/pacta/pacta"
 	"github.com/RMI/pacta/session"
-	"github.com/go-chi/chi/v5"
+	chi "github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
+	"go.uber.org/zap/exp/zapfield"
 )
 
 type Config struct {
@@ -95,6 +97,31 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 
+	a, err := s.db.Analysis(s.db.NoTxn(ctx), aID)
+	if err != nil {
+		if strings.HasPrefix(string(aID), "analysis") {
+			s.logger.Error("failed to load analysis", zap.String("analysis_id", string(aID)), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else {
+			s.logger.Info("poorly constructed analysis id", zap.String("path", string(aID)), zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+	}
+
+	var reportPath string
+	switch a.AnalysisType {
+	case pacta.AnalysisType_Report:
+		reportPath = "report-output/report/"
+	case pacta.AnalysisType_Dashboard:
+		reportPath = "dashboard-output/"
+	default:
+		s.logger.Error("unsupported analysis type", zap.String("analysis_id", string(aID)), zapfield.Str("analysis_type", a.AnalysisType))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
 	artifacts, err := s.db.AnalysisArtifactsForAnalysis(s.db.NoTxn(ctx), aID)
 	if err != nil {
 		s.logger.Error("failed to load artifacts for analysis", zap.String("analysis_id", string(aID)), zap.Error(err))
@@ -113,19 +140,6 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := s.db.Analysis(s.db.NoTxn(ctx), aID)
-	if err != nil {
-		if strings.HasPrefix(string(aID), "analysis") {
-			s.logger.Error("failed to load analysis", zap.String("analysis_id", string(aID)), zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else {
-			s.logger.Info("poorly constructed analysis id", zap.String("path", string(aID)), zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-	}
-
 	subPath := strings.TrimPrefix(r.URL.Path, "/report/"+string(aID))
 	if strings.HasPrefix(subPath, "/") {
 		subPath = subPath[1:]
@@ -133,7 +147,7 @@ func (s *Server) serveReport(w http.ResponseWriter, r *http.Request) {
 	if subPath == "" {
 		subPath = "index.html"
 	}
-	subPath = "report-output/report/" + subPath
+	subPath = path.Join(reportPath, subPath)
 
 	for _, aa := range artifacts {
 		// Container is just 'reports', we can ignore that.
