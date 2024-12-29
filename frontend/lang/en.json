@@ -259,6 +259,7 @@
   },
   "components/analysis/RunButton": {
     "Run": "Run",
+    "Running": "Running",
     "AnalysisTypeAUDIT": "Audit",
     "AnalysisTypeREPORT": "Report",
     "AnalysisTypeDASHBOARD": "Dashboard (Beta)",

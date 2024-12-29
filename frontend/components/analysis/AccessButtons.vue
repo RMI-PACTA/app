@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Analysis, type AccessBlobContentReqItem, type AccessBlobContentResp } from '@/openapi/generated/pacta'
+import { type Analysis, type AccessBlobContentReqItem, type AccessBlobContentResp, AnalysisType } from '@/openapi/generated/pacta'
 import JSZip from 'jszip'
 
 const { t } = useI18n()
@@ -32,6 +32,12 @@ const canAccessAsOwner = computed(() => {
 })
 const canAccess = computed(() => {
   return canAccessAsPublic.value || canAccessAsAdmin.value || canAccessAsOwner.value
+})
+const isCompleted = computed(() => {
+  return props.analysis.completedAt !== undefined && props.analysis.failureMessage === undefined
+})
+const isViewable = computed(() => {
+  return isCompleted.value && (props.analysis.analysisType === AnalysisType.ANALYSIS_TYPE_DASHBOARD || props.analysis.analysisType === AnalysisType.ANALYSIS_TYPE_REPORT)
 })
 const downloadInProgress = useState<boolean>(`${statePrefix}.downloadInProgress`, () => false)
 const doDownload = async () => {
@@ -76,6 +82,7 @@ const openReport = () => navigateTo(`${apiServerURL}/report/${props.analysis.id}
     class="flex gap-1 align-items-center w-fit"
   >
     <PVButton
+      v-if="isViewable"
       icon="pi pi-external-link"
       :disabled="!canAccess"
       class="p-button-secondary p-button-outlined p-button-xs"
@@ -84,6 +91,7 @@ const openReport = () => navigateTo(`${apiServerURL}/report/${props.analysis.id}
     />
     <PVButton
       v-tooltip="canAccess ? tt('Download') : ''"
+      v-if="isCompleted"
       :disabled="downloadInProgress || !canAccess"
       :loading="downloadInProgress"
       :icon="downloadInProgress ? 'pi pi-spinner pi-spin' : 'pi pi-download'"

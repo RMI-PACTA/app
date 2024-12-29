@@ -86,7 +86,6 @@ func New(cfg *Config) (*Handler, error) {
 
 // TODO: Send a notification when parsing fails.
 func (h *Handler) ParsePortfolio(ctx context.Context, taskID task.ID, req *task.ParsePortfolioRequest, destPortfolioContainer string) error {
-
 	// Make the directories we require first. We use these instead of
 	// /mnt/{input,output} because the base image (quite reasonably) uses a non-root
 	// user, so we can't be creating directories in the root filesystem all willy
@@ -231,8 +230,99 @@ func (h *Handler) ParsePortfolio(ctx context.Context, taskID task.ID, req *task.
 	return nil
 }
 
-func (h *Handler) CreateAudit(ctx context.Context, taskID task.ID, req *task.CreateAuditRequest) error {
-	return errors.New("not implemented")
+func (h *Handler) CreateAudit(ctx context.Context, taskID task.ID, req *task.CreateAuditRequest, auditContainer string) error {
+	if n := len(req.BlobURIs); n != 1 {
+		return fmt.Errorf("expected exactly one blob URI as input, got %d", n)
+	}
+	blobURI := req.BlobURIs[0]
+
+	//  We use this instead of /mnt/... because the base image (quite
+	// reasonably) uses a non-root user, so we can't be creating directories in the
+	// root filesystem all willy nilly.
+	baseDir := filepath.Join("/", "home", "workflow-pacta-webapp")
+
+	// We don't use the benchmark or PACTA data here, it's just convenient to use the same directory-creating harness for everything.
+	auditEnv, err := initEnv(h.benchmarkDir, h.pactaDataDir, baseDir, "create-audit")
+	if err != nil {
+		return fmt.Errorf("failed to init report env: %w", err)
+	}
+
+	// Load the parsed portfolio from blob storage, place it in our PORFOLIO_DIR,
+	// where the `run_pacta.R` script expects it to be.
+	fileNameWithExt := filepath.Base(string(blobURI))
+	if !strings.HasSuffix(fileNameWithExt, ".csv") {
+		return fmt.Errorf("given blob wasn't a CSV-formatted portfolio, %q", fileNameWithExt)
+	}
+	destPath := filepath.Join(auditEnv.pathForDir(PortfoliosDir), fileNameWithExt)
+	if err := h.downloadBlob(ctx, string(blobURI), destPath); err != nil {
+		return fmt.Errorf("failed to download processed portfolio blob: %w", err)
+	}
+
+	inp := AuditInput{
+		Portfolio: AuditInputPortfolio{
+			Files:        []string{fileNameWithExt},
+			HoldingsDate: "2023-12-31",   // TODO(#206)
+			Name:         "FooPortfolio", // TODO(#206)
+		},
+		Inherit: "GENERAL_2023Q4", // TODO(#206): Should this be configurable
+	}
+
+	var inpJSON bytes.Buffer
+	if err := json.NewEncoder(&inpJSON).Encode(inp); err != nil {
+		return fmt.Errorf("failed to encode audit input as JSON: %w", err)
+	}
+
+	cmd := exec.CommandContext(ctx, "/workflow.pacta.webapp/inst/extdata/scripts/run_audit.sh", inpJSON.String())
+	cmd.Env = append(cmd.Env, auditEnv.asEnvVars()...)
+	cmd.Env = append(cmd.Env,
+		"LOG_LEVEL=DEBUG",
+		"HOME=/root", /* Required by pandoc */
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run pacta test CLI: %w", err)
+	}
+
+	var artifacts []*task.AnalysisArtifact
+	uploadDir := func(dir string) error {
+		aas, err := h.uploadDirectory(ctx, dir, auditContainer, req.AnalysisID)
+		if err != nil {
+			return fmt.Errorf("failed to upload report directory: %w", err)
+		}
+		artifacts = append(artifacts, aas...)
+		return nil
+	}
+
+	for _, outDir := range auditEnv.outputDirs() {
+		if err := uploadDir(outDir); err != nil {
+			return fmt.Errorf("failed to upload artifacts %q: %w", outDir, err)
+		}
+	}
+
+	events := []publisher.Event{
+		{
+			Data: task.CreateAuditResponse{
+				TaskID:    taskID,
+				Request:   req,
+				Artifacts: artifacts,
+			},
+			DataVersion: to.Ptr("1.0"),
+			EventType:   to.Ptr("created-audit"),
+			EventTime:   to.Ptr(time.Now()),
+			ID:          to.Ptr(string(taskID)),
+			Subject:     to.Ptr(string(taskID)),
+		},
+	}
+
+	if _, err := h.pubsub.PublishEvents(ctx, events, nil); err != nil {
+		return fmt.Errorf("failed to publish event: %w", err)
+	}
+
+	h.logger.Info("created report", zap.String("task_id", string(taskID)))
+
+	return nil
 }
 
 type ReportInput struct {
@@ -241,6 +331,17 @@ type ReportInput struct {
 }
 
 type ReportInputPortfolio struct {
+	Files        []string `json:"files"`
+	HoldingsDate string   `json:"holdingsDate"`
+	Name         string   `json:"name"`
+}
+
+type AuditInput struct {
+	Portfolio AuditInputPortfolio `json:"portfolio"`
+	Inherit   string              `json:"inherit"`
+}
+
+type AuditInputPortfolio struct {
 	Files        []string `json:"files"`
 	HoldingsDate string   `json:"holdingsDate"`
 	Name         string   `json:"name"`
