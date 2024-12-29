@@ -104,8 +104,8 @@ oci_pull(
 
 oci_pull(
     name = "runner_base",
-    # This digest is of the nightly/main tag as of 2024-12-06
-    digest = "sha256:35c8eaac721350ca6ef3bfb3e6080c5412ddb9061299c62bb4fd2fc6df8d0227",
+    # This digest is of the nightly/main tag as of 2024-12-28
+    digest = "sha256:b1bcfaf52c418faabcd6b6fcbbec0f27f543a10b4a9384d75811d03dbba0d4d7",
     image = "ghcr.io/rmi-pacta/workflow.pacta.webapp",
     platforms = ["linux/amd64"],
 )

@@ -45,6 +45,7 @@ func run(args []string) error {
 
 		azStorageAccount  = fs.String("azure_storage_account", "", "The storage account to authenticate against for blob operations")
 		azReportContainer = fs.String("azure_report_container", "", "The container in the storage account where we write generated portfolio reports to")
+		azAuditContainer  = fs.String("azure_audit_container", "", "The container in the storage account where we write generated portfolio audits to")
 
 		minLogLevel zapcore.Level = zapcore.DebugLevel
 	)
@@ -97,7 +98,9 @@ func run(args []string) error {
 		task.CreateReport: toRunFn(async.LoadCreateReportRequestFromEnv, func(ctx context.Context, id task.ID, req *task.CreateReportRequest) error {
 			return h.CreateReport(ctx, id, req, *azReportContainer)
 		}),
-		task.CreateAudit: toRunFn(async.LoadCreateAuditRequestFromEnv, h.CreateAudit),
+		task.CreateAudit: toRunFn(async.LoadCreateAuditRequestFromEnv, func(ctx context.Context, id task.ID, req *task.CreateAuditRequest) error {
+			return h.CreateAudit(ctx, id, req, *azAuditContainer)
+		}),
 	}
 
 	taskID := task.ID(os.Getenv("TASK_ID"))
