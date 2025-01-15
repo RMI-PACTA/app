@@ -157,6 +157,15 @@ func (tr *TaskRunner) CreateAudit(ctx context.Context, req *task.CreateAuditRequ
 			Key:   "CREATE_AUDIT_REQUEST",
 			Value: value,
 		},
+		// TODO(brandon): Unhardcode these
+		{
+			Key:   "BENCHMARK_DIR",
+			Value: "/mnt/benchmark-data/65c1a416721b22a98c7925999ae03bc4",
+		},
+		{
+			Key:   "PACTA_DATA_DIR",
+			Value: "/mnt/pacta-data/2023Q4_20240718T150252Z",
+		},
 	})
 }
 

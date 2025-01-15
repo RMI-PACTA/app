@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Analysis, type AccessBlobContentReqItem, type AccessBlobContentResp } from '@/openapi/generated/pacta'
+import { type Analysis, type AccessBlobContentReqItem, type AccessBlobContentResp, AnalysisType } from '@/openapi/generated/pacta'
 import JSZip from 'jszip'
 
 const { t } = useI18n()
@@ -33,28 +33,45 @@ const canAccessAsOwner = computed(() => {
 const canAccess = computed(() => {
   return canAccessAsPublic.value || canAccessAsAdmin.value || canAccessAsOwner.value
 })
+const isCompleted = computed(() => {
+  return props.analysis.completedAt !== undefined && props.analysis.failureMessage === undefined
+})
+const isViewable = computed(() => {
+  return isCompleted.value && (props.analysis.analysisType === AnalysisType.ANALYSIS_TYPE_DASHBOARD || props.analysis.analysisType === AnalysisType.ANALYSIS_TYPE_REPORT)
+})
 const downloadInProgress = useState<boolean>(`${statePrefix}.downloadInProgress`, () => false)
 const doDownload = async () => {
   downloadInProgress.value = true
+  // Just download the audit_file.csv for audits
+  const artifactsToDownload = props.analysis.analysisType === AnalysisType.ANALYSIS_TYPE_AUDIT ? props.analysis.artifacts.filter((a) => a.blob.fileName === 'audit_file.csv') : props.analysis.artifacts
   const response: AccessBlobContentResp = await pactaClient.accessBlobContent({
-    items: props.analysis.artifacts.map((asset): AccessBlobContentReqItem => ({
+    items: artifactsToDownload.map((asset): AccessBlobContentReqItem => ({
       blobId: asset.blob.id,
     })),
   })
-  const zip = new JSZip()
-  await Promise.all(response.items.map(
-    async (item): Promise<void> => {
-      const response = await fetch(item.downloadUrl)
-      const data = await response.blob()
-      const blob = presentOrFileBug(props.analysis.artifacts.find((artifact) => artifact.blob.id === item.blobId)).blob
-      const fileName = `${blob.fileName}`
-      zip.file(fileName, data)
-    }),
-  )
-  const content = await zip.generateAsync({ type: 'blob' })
+
+  let content: Blob | null = null
+  let fileName: string | null = null
+  if (response.items.length === 1) {
+    const resp = await fetch(response.items[0].downloadUrl)
+    content = await resp.blob()
+    fileName = artifactsToDownload[0].blob.fileName
+  } else {
+    const zip = new JSZip()
+    await Promise.all(response.items.map(
+      async (item): Promise<void> => {
+        const response = await fetch(item.downloadUrl)
+        const data = await response.blob()
+        const blob = presentOrFileBug(props.analysis.artifacts.find((artifact) => artifact.blob.id === item.blobId)).blob
+        const fileName = `${blob.fileName}`
+        zip.file(fileName, data)
+      }),
+    )
+    content = await zip.generateAsync({ type: 'blob' })
+    fileName = `${props.analysis.name}.zip`
+  }
   const element = document.createElement('a')
   element.href = URL.createObjectURL(content)
-  const fileName = `${props.analysis.name}.zip`
   element.download = fileName
   document.body.appendChild(element)
   element.click()
@@ -76,6 +93,7 @@ const openReport = () => navigateTo(`${apiServerURL}/report/${props.analysis.id}
     class="flex gap-1 align-items-center w-fit"
   >
     <PVButton
+      v-if="isViewable"
       icon="pi pi-external-link"
       :disabled="!canAccess"
       class="p-button-secondary p-button-outlined p-button-xs"
@@ -83,6 +101,7 @@ const openReport = () => navigateTo(`${apiServerURL}/report/${props.analysis.id}
       @click="openReport"
     />
     <PVButton
+      v-if="isCompleted"
       v-tooltip="canAccess ? tt('Download') : ''"
       :disabled="downloadInProgress || !canAccess"
       :loading="downloadInProgress"
