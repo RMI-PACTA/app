@@ -426,6 +426,7 @@ func (r *TaskEnv) asEnvVars() []string {
 		"ANALYSIS_OUTPUT_DIR=" + r.pathForDir(AnalysisOutputDir),
 		"REPORT_OUTPUT_DIR=" + r.pathForDir(ReportOutputDir),
 		"DASHBOARD_OUTPUT_DIR=" + r.pathForDir(DashboardOutputDir),
+		"DASHBOARD_DATA_DIR=" + filepath.Join(r.pathForDir(DashboardOutputDir), "data"),
 		"SUMMARY_OUTPUT_DIR=" + r.pathForDir(SummaryOutputDir),
 	}
 }
@@ -436,28 +437,31 @@ func (r *TaskEnv) pathForDir(d ReportDir) string {
 
 func (r *TaskEnv) makeDirectories() error {
 	var rErr error
-	makeDir := func(reportDir ReportDir) {
+	makeDir := func(dir string) {
 		if rErr != nil {
 			return
 		}
-		dir := r.pathForDir(reportDir)
 		if err := os.Mkdir(dir, 0700); err != nil {
 			rErr = fmt.Errorf("failed to create dir %q: %w", dir, err)
 			return
 		}
 	}
+	makeReportDir := func(reportDir ReportDir) {
+		makeDir(r.pathForDir(reportDir))
+	}
 
 	// Inputs
-	makeDir(PortfoliosDir)
-	makeDir(RealEstateDir) // Used as part of specific projects, empty for now.
-	makeDir(ScoreCardDir)  // Used as part of specific projects, empty for now.
-	makeDir(SurveyDir)     // Used as part of specific projects, empty for now.
+	makeReportDir(PortfoliosDir)
+	makeReportDir(RealEstateDir) // Used as part of specific projects, empty for now.
+	makeReportDir(ScoreCardDir)  // Used as part of specific projects, empty for now.
+	makeReportDir(SurveyDir)     // Used as part of specific projects, empty for now.
 
 	// Outputs
-	makeDir(AnalysisOutputDir)
-	makeDir(DashboardOutputDir)
-	makeDir(ReportOutputDir)
-	makeDir(SummaryOutputDir)
+	makeReportDir(AnalysisOutputDir)
+	makeReportDir(DashboardOutputDir)
+	makeDir(filepath.Join(r.pathForDir(DashboardOutputDir), "data"))
+	makeReportDir(ReportOutputDir)
+	makeReportDir(SummaryOutputDir)
 
 	if rErr != nil {
 		return rErr
