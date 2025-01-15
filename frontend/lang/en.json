@@ -208,6 +208,7 @@
     "Details": "Details",
     "Groups": "Groups",
     "Reports": "Reports",
+    "Dashboards": "Dashboards",
     "Discard Changes": "Discard Changes",
     "InitiativesHelpText": "Initiatives allow you to contribute your data for bulk analysis as part of a regulatory or other project. Adding a portfolio to an initiative enables the initiative owner to run analysis over your data as part of bulk runs, and enables them to download your data.",
     "Audits": "Audits",

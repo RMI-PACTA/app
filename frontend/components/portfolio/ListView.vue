@@ -377,6 +377,13 @@ const auditLogURL = (id: string) => {
                       {{ slotProps.data.analyses.filter((a: Analysis) => a.analysisType === AnalysisType.ANALYSIS_TYPE_AUDIT).length }}
                       {{ tt('Audits') }}
                     </PVInlineMessage>
+                    <PVInlineMessage
+                      severity="success"
+                      icon="pi pi-copy"
+                    >
+                      {{ slotProps.data.analyses.filter((a: Analysis) => a.analysisType === AnalysisType.ANALYSIS_TYPE_DASHBOARD).length }}
+                      {{ tt('Dashboards') }}
+                    </PVInlineMessage>
                   </div>
                 </CommonAccordionHeader>
               </template>
