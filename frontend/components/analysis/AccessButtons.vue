@@ -43,7 +43,7 @@ const downloadInProgress = useState<boolean>(`${statePrefix}.downloadInProgress`
 const doDownload = async () => {
   downloadInProgress.value = true
   // Just download the audit_file.csv for audits
-  const artifactsToDownload = props.analysis.analysisType === AnalysisType.ANALYSIS_TYPE_AUDIT ? props.analysis.artifacts.filter((a) => a.blob.fileName === 'audit_file.csv') : props.analysis.artifacts;
+  const artifactsToDownload = props.analysis.analysisType === AnalysisType.ANALYSIS_TYPE_AUDIT ? props.analysis.artifacts.filter((a) => a.blob.fileName === 'audit_file.csv') : props.analysis.artifacts
   const response: AccessBlobContentResp = await pactaClient.accessBlobContent({
     items: artifactsToDownload.map((asset): AccessBlobContentReqItem => ({
       blobId: asset.blob.id,
@@ -53,9 +53,9 @@ const doDownload = async () => {
   let content: Blob | null = null
   let fileName: string | null = null
   if (response.items.length === 1) {
-      const resp = await fetch(response.items[0].downloadUrl)
-      content = await resp.blob()
-      fileName = artifactsToDownload[0].blob.fileName
+    const resp = await fetch(response.items[0].downloadUrl)
+    content = await resp.blob()
+    fileName = artifactsToDownload[0].blob.fileName
   } else {
     const zip = new JSZip()
     await Promise.all(response.items.map(
@@ -101,8 +101,8 @@ const openReport = () => navigateTo(`${apiServerURL}/report/${props.analysis.id}
       @click="openReport"
     />
     <PVButton
-      v-tooltip="canAccess ? tt('Download') : ''"
       v-if="isCompleted"
+      v-tooltip="canAccess ? tt('Download') : ''"
       :disabled="downloadInProgress || !canAccess"
       :loading="downloadInProgress"
       :icon="downloadInProgress ? 'pi pi-spinner pi-spin' : 'pi pi-download'"
