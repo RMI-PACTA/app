@@ -47,8 +47,9 @@ func TestServeReport(t *testing.T) {
 
 	env.db.analyses = []*pacta.Analysis{
 		&pacta.Analysis{
-			ID:    analysisID,
-			Owner: &pacta.Owner{ID: ownerID},
+			ID:           analysisID,
+			Owner:        &pacta.Owner{ID: ownerID},
+			AnalysisType: pacta.AnalysisType_Report,
 		},
 	}
 
