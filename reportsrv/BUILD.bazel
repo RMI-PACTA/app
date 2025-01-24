@@ -12,6 +12,7 @@ go_library(
         "//session",
         "@com_github_go_chi_chi_v5//:chi",
         "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap_exp//zapfield",
     ],
 )
 
