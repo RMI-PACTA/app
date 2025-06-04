@@ -53,13 +53,13 @@ export default defineNuxtConfig({
   },
   i18n: {
     baseUrl: process.env.BASE_URL,
-    strategy: process.env.I18N_STRATEGY, // When we have a prod env, this should be 'prefix_except_default'
+    strategy: (process.env.I18N_STRATEGY ?? 'prefix_except_default') as 'no_prefix' | 'prefix_except_default' | 'prefix' | 'prefix_and_default',
     vueI18n: './i18n.config.ts',
     locales: [
-      { code: 'en', iso: 'en-US', file: { path: 'en.json', cache: false }, name: 'English' },
-      { code: 'fr', iso: 'fr-FR', file: { path: 'fr.json', cache: false }, name: 'Français' },
-      { code: 'es', iso: 'es-ES', file: { path: 'es.json', cache: false }, name: 'Español' },
-      { code: 'de', iso: 'de-DE', file: { path: 'de.json', cache: false }, name: 'Deutsch' },
+      { code: 'en', language: 'en-US', file: { path: 'en.json', cache: false }, name: 'English' },
+      { code: 'fr', language: 'fr-FR', file: { path: 'fr.json', cache: false }, name: 'Français' },
+      { code: 'es', language: 'es-ES', file: { path: 'es.json', cache: false }, name: 'Español' },
+      { code: 'de', language: 'de-DE', file: { path: 'de.json', cache: false }, name: 'Deutsch' },
     ],
     lazy: true,
     langDir: 'lang',
