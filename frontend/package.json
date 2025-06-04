@@ -16,7 +16,7 @@
     "generate:openapi": "npm run generate:openapi:pacta && npm run generate:openapi:user"
   },
   "devDependencies": {
-    "@azure/static-web-apps-cli": "^1.1.4",
+    "@azure/static-web-apps-cli": "^2.0.6",
     "@nuxt/devtools": "latest",
     "@nuxtjs/i18n": "^8.0.0-rc.5",
     "@types/node": "^18.17.3",
@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@azure/msal-browser": "^3.2.0",
-    "axios": "^1.5.1",
+    "axios": "^1.9.0",
     "jszip": "^3.10.1",
     "primeflex": "^3.3.1",
     "primeicons": "^6.0.1",
