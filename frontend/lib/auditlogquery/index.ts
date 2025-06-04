@@ -1,6 +1,6 @@
 import { type AuditLogQueryReq, type AuditLogQuerySort, type AuditLogQueryWhere, type AuditLogQuerySortBy } from '@/openapi/generated/pacta'
 import { type WritableComputedRef } from 'vue'
-import type { LocalePathFunction } from '@nuxtjs/i18n/dist/runtime/composables'
+import type { LocalePathFunction } from '@nuxtjs/i18n'
 import { computed } from 'vue'
 
 const encodeAuditLogQuerySorts = (sorts: AuditLogQuerySort[]): string => {
