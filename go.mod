@@ -23,7 +23,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jackc/pgx/v5 v5.5.1
+	github.com/jackc/pgx/v5 v5.5.4
 	github.com/lestrrat-go/jwx/v2 v2.0.14
 	github.com/namsral/flag v1.7.4-pre
 	github.com/opencontainers/image-spec v1.0.2
