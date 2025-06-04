@@ -54,11 +54,11 @@ export default defineNuxtConfig({
   i18n: {
     baseUrl: process.env.BASE_URL,
     strategy: (() => {
-      const allowedStrategies = ['no_prefix', 'prefix_except_default', 'prefix', 'prefix_and_default'] as const;
-      const envStrategy = process.env.I18N_STRATEGY;
+      const allowedStrategies = ['no_prefix', 'prefix_except_default', 'prefix', 'prefix_and_default'] as const
+      const envStrategy = process.env.I18N_STRATEGY
       return allowedStrategies.includes(envStrategy as typeof allowedStrategies[number])
         ? envStrategy
-        : 'prefix_except_default';
+        : 'prefix_except_default'
     })(),
     vueI18n: './i18n.config.ts',
     locales: [
